@@ -11,36 +11,33 @@ export default function HomePage() {
 
         <div style={styles.buttonRow}>
           <a href="/sign-up" style={styles.primaryButton}>
-            Create Career Passport
-          </a>
-          <a href="/services" style={styles.secondaryButton}>
-            View Services
+            Create Career Passport / Sign Up
           </a>
         </div>
       </section>
 
       <section style={styles.featureGrid}>
         <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Create Your Passport</h2>
+          <h2 style={styles.cardTitle}>Who is HireMinds?</h2>
           <p style={styles.cardText}>
-            Build a professional profile with your bio, resume, media, and future
-            verification options.
+            HireMinds is a workforce platform built to help candidates showcase
+            their skills, readiness, and professional identity in a stronger way.
           </p>
         </div>
 
         <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Build Your Resume</h2>
+          <h2 style={styles.cardTitle}>What We Do</h2>
           <p style={styles.cardText}>
-            Start with a free one-page resume or upgrade for premium tools,
-            expanded formatting, and revisions.
+            We combine Career Passports, resumes, verification options, mock
+            interviews, and career support services into one platform.
           </p>
         </div>
 
         <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Verification + Services</h2>
+          <h2 style={styles.cardTitle}>What Comes Next</h2>
           <p style={styles.cardText}>
-            Add employer verification, mock interviews, resume revisions, and
-            other career support services as needed.
+            Create your Career Passport, complete your profile, build your resume,
+            and unlock support services as needed.
           </p>
         </div>
       </section>
@@ -104,16 +101,6 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
     color: "#09090b",
-    fontWeight: 700,
-  },
-  secondaryButton: {
-    display: "inline-block",
-    padding: "15px 20px",
-    borderRadius: "18px",
-    textDecoration: "none",
-    background: "#111827",
-    border: "1px solid #374151",
-    color: "#f3f4f6",
     fontWeight: 700,
   },
   featureGrid: {
