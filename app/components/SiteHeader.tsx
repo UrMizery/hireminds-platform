@@ -20,16 +20,12 @@ export default function SiteHeader() {
             gridTemplateColumns: isRTL ? "auto 1fr 180px" : "180px 1fr auto",
           }}
         >
-          <a
-            href="/"
-            style={{
-              ...styles.logo,
-              justifySelf: isRTL ? "end" : "start",
-            }}
-          >
+          {/* LOGO */}
+          <a href="/" style={styles.logo}>
             HireMinds
           </a>
 
+          {/* CENTER NAV */}
           <div style={styles.centerNav}>
             <a href="/" style={styles.link}>
               {t.home}
@@ -43,10 +39,7 @@ export default function SiteHeader() {
               {t.services}
             </a>
 
-            <a href="/cart" style={styles.link}>
-              {t.cart}
-            </a>
-
+            {/* SCHEDULE */}
             <div
               style={styles.dropdown}
               onMouseEnter={() => setScheduleOpen(true)}
@@ -55,14 +48,7 @@ export default function SiteHeader() {
               <span style={styles.link}>{t.schedule} ▾</span>
 
               {scheduleOpen && (
-                <div
-                  style={{
-                    ...styles.menu,
-                    left: isRTL ? "auto" : 0,
-                    right: isRTL ? 0 : "auto",
-                    textAlign: isRTL ? "right" : "left",
-                  }}
-                >
+                <div style={styles.menu}>
                   <span style={styles.lockedMenuItem}>{t.careerCoach} 🔒</span>
                   <span style={styles.lockedMenuItem}>{t.liveMockInterview} 🔒</span>
                   <span style={styles.lockedMenuItem}>{t.liveResumeRevision} 🔒</span>
@@ -72,6 +58,7 @@ export default function SiteHeader() {
               )}
             </div>
 
+            {/* PARTNER */}
             <div
               style={styles.dropdown}
               onMouseEnter={() => setPartnerOpen(true)}
@@ -80,20 +67,15 @@ export default function SiteHeader() {
               <span style={styles.link}>{t.partner} ▾</span>
 
               {partnerOpen && (
-                <div
-                  style={{
-                    ...styles.menu,
-                    left: isRTL ? "auto" : 0,
-                    right: isRTL ? 0 : "auto",
-                    textAlign: isRTL ? "right" : "left",
-                  }}
-                >
+                <div style={styles.menu}>
                   <a href="/partner/employers" style={styles.menuItem}>
                     {t.employers}
                   </a>
+
                   <a href="/partner/nonprofits" style={styles.menuItem}>
                     {t.nonprofits}
                   </a>
+
                   <a href="/partner/other" style={styles.menuItem}>
                     {t.other}
                   </a>
@@ -106,6 +88,7 @@ export default function SiteHeader() {
             </a>
           </div>
 
+          {/* RIGHT */}
           <div style={styles.rightNav}>
             <span style={styles.lockedLink}>
               {t.jobBoard} 🔒
@@ -118,6 +101,7 @@ export default function SiteHeader() {
         </div>
       </header>
 
+      {/* FLOATING CART */}
       <a
         href="/cart"
         style={{
@@ -142,6 +126,7 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: "blur(10px)",
     borderBottom: "1px solid #1f1f1f",
   },
+
   inner: {
     maxWidth: "1520px",
     margin: "0 auto",
@@ -150,85 +135,80 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: "20px",
   },
+
   logo: {
     color: "#f5f5f5",
     fontSize: "20px",
     fontWeight: 600,
     textDecoration: "none",
-    letterSpacing: "0.04em",
-    whiteSpace: "nowrap",
   },
+
   centerNav: {
     display: "flex",
     gap: "20px",
-    alignItems: "center",
     justifyContent: "center",
-    flexWrap: "wrap",
+    alignItems: "center",
   },
+
   rightNav: {
     display: "flex",
-    gap: "18px",
-    alignItems: "center",
+    gap: "16px",
     justifyContent: "flex-end",
-    flexWrap: "wrap",
   },
+
   link: {
     color: "#d4d4d8",
+    fontSize: 14,
     textDecoration: "none",
-    fontSize: "14px",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
   },
+
   lockedLink: {
-    color: "#7c7c85",
-    fontSize: "14px",
-    cursor: "not-allowed",
-    whiteSpace: "nowrap",
+    color: "#6b7280",
+    fontSize: 14,
   },
+
   dropdown: {
     position: "relative",
   },
+
   menu: {
     position: "absolute",
-    top: 28,
+    top: 26,
+    left: 0,
     background: "#111",
     border: "1px solid #333",
     borderRadius: 12,
     padding: 8,
-    minWidth: 220,
-    boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
+    minWidth: 200,
   },
+
   menuItem: {
     display: "block",
-    padding: "10px 12px",
-    color: "#f4f4f5",
+    padding: 8,
+    color: "#fff",
     textDecoration: "none",
-    fontSize: 14,
-    borderRadius: 8,
   },
+
   lockedMenuItem: {
     display: "block",
-    padding: "10px 12px",
-    color: "#7c7c85",
-    fontSize: 14,
-    borderRadius: 8,
-    cursor: "not-allowed",
+    padding: 8,
+    color: "#888",
   },
+
   floatingCart: {
     position: "fixed",
-    bottom: "24px",
-    zIndex: 120,
-    width: "54px",
-    height: "54px",
-    borderRadius: "999px",
+    bottom: 24,
+    zIndex: 200,
+    width: 56,
+    height: 56,
+    borderRadius: "50%",
     background: "#111827",
     border: "1px solid #374151",
-    color: "#f3f4f6",
-    textDecoration: "none",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "0 14px 30px rgba(0,0,0,0.35)",
-    fontSize: "24px",
+    fontSize: 24,
+    textDecoration: "none",
+    color: "#fff",
   },
 };
