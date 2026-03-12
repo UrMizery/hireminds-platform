@@ -1,17 +1,20 @@
+"use client";
+
+import { useLanguage } from "./lib/language-context";
+
 export default function HomePage() {
+  const { t } = useLanguage();
+
   return (
     <main style={styles.page}>
       <section style={styles.hero}>
         <p style={styles.kicker}>HIREMINDS</p>
-        <h1 style={styles.title}>Build Your Career Passport</h1>
-        <p style={styles.subtitle}>
-          Get prepared, get verified, and get hired. HireMinds helps candidates
-          showcase their readiness beyond a traditional resume.
-        </p>
+        <h1 style={styles.title}>{t.title}</h1>
+        <p style={styles.subtitle}>{t.subtitle}</p>
 
         <div style={styles.buttonRow}>
           <a href="/sign-up" style={styles.primaryButton}>
-            Create Career Passport / Sign Up
+            {t.createPassport}
           </a>
         </div>
       </section>
