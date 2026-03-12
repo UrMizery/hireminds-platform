@@ -89,7 +89,7 @@ export default function ServicesPage() {
             <div style={styles.serviceGrid}>
               <div style={styles.serviceCard}>
                 <p style={styles.serviceName}>AI Mock Interview</p>
-                <p style={styles.servicePrice}>$12.99</p>
+                <p style={styles.servicePrice}>$14.99</p>
                 <p style={styles.serviceText}>
                   Practice interview questions with AI-guided feedback.
                 </p>
