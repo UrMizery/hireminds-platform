@@ -1,6 +1,21 @@
 export type Lang = "en" | "es" | "ar" | "pl";
 
-export const translations = {
+export const translations: Record<
+  Lang,
+  {
+    home: string;
+    signIn: string;
+    services: string;
+    partner: string;
+    contact: string;
+    createPassport: string;
+    title: string;
+    subtitle: string;
+    language: string;
+    schedule: string;
+    jobBoard: string;
+  }
+> = {
   en: {
     home: "Home",
     signIn: "Sign In",
@@ -12,6 +27,8 @@ export const translations = {
     subtitle:
       "Get prepared, get verified, and get hired. HireMinds helps candidates showcase their readiness beyond a traditional resume.",
     language: "Language",
+    schedule: "Schedule 1:1",
+    jobBoard: "Job Board",
   },
 
   es: {
@@ -23,8 +40,10 @@ export const translations = {
     createPassport: "Crear Career Passport / Registrarse",
     title: "Construye tu Career Passport",
     subtitle:
-      "Prepárate, verifícate y consigue empleo. HireMinds ayuda a los candidatos a mostrar su preparación más allá de un currículum.",
+      "Prepárate, verifícate y consigue empleo. HireMinds ayuda a los candidatos a mostrar su preparación.",
     language: "Idioma",
+    schedule: "Programar 1:1",
+    jobBoard: "Bolsa de trabajo",
   },
 
   ar: {
@@ -38,6 +57,8 @@ export const translations = {
     subtitle:
       "استعد، تحقق، واحصل على وظيفة. تساعد HireMinds المرشحين على عرض جاهزيتهم.",
     language: "اللغة",
+    schedule: "حجز 1:1",
+    jobBoard: "الوظائف",
   },
 
   pl: {
@@ -51,5 +72,7 @@ export const translations = {
     subtitle:
       "Przygotuj się, zweryfikuj i zdobądź pracę. HireMinds pomaga kandydatom pokazać gotowość.",
     language: "Język",
+    schedule: "Umów 1:1",
+    jobBoard: "Oferty pracy",
   },
 };
