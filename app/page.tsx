@@ -3,45 +3,53 @@
 import { useLanguage } from "./lib/language-context";
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isRTL = lang === "ar";
 
   return (
     <main style={styles.page}>
-      <section style={styles.hero}>
+      <section
+        style={{
+          ...styles.hero,
+          textAlign: isRTL ? "right" : "center",
+          direction: isRTL ? "rtl" : "ltr",
+        }}
+      >
         <p style={styles.kicker}>HIREMINDS</p>
         <h1 style={styles.title}>{t.title}</h1>
         <p style={styles.subtitle}>{t.subtitle}</p>
 
-        <div style={styles.buttonRow}>
+        <div
+          style={{
+            ...styles.buttonRow,
+            justifyContent: isRTL ? "flex-start" : "center",
+          }}
+        >
           <a href="/sign-up" style={styles.primaryButton}>
             {t.createPassport}
           </a>
         </div>
       </section>
 
-      <section style={styles.featureGrid}>
+      <section
+        style={{
+          ...styles.featureGrid,
+          direction: isRTL ? "rtl" : "ltr",
+        }}
+      >
         <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Who is HireMinds?</h2>
-          <p style={styles.cardText}>
-            HireMinds is a workforce platform built to help candidates showcase
-            their skills, readiness, and professional identity in a stronger way.
-          </p>
+          <h2 style={styles.cardTitle}>{t.whoIs}</h2>
+          <p style={styles.cardText}>{t.whoIsText}</p>
         </div>
 
         <div style={styles.card}>
-          <h2 style={styles.cardTitle}>What We Do</h2>
-          <p style={styles.cardText}>
-            We combine Career Passports, resumes, verification options, mock
-            interviews, and career support services into one platform.
-          </p>
+          <h2 style={styles.cardTitle}>{t.whatWeDo}</h2>
+          <p style={styles.cardText}>{t.whatWeDoText}</p>
         </div>
 
         <div style={styles.card}>
-          <h2 style={styles.cardTitle}>What Comes Next</h2>
-          <p style={styles.cardText}>
-            Create your Career Passport, complete your profile, build your resume,
-            and unlock support services as needed.
-          </p>
+          <h2 style={styles.cardTitle}>{t.whatNext}</h2>
+          <p style={styles.cardText}>{t.whatNextText}</p>
         </div>
       </section>
     </main>
@@ -61,7 +69,6 @@ const styles: Record<string, React.CSSProperties> = {
   hero: {
     maxWidth: "1100px",
     margin: "0 auto 40px",
-    textAlign: "center",
     padding: "48px 24px",
     background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
     border: "1px solid #232323",
@@ -92,7 +99,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   buttonRow: {
     display: "flex",
-    justifyContent: "center",
     gap: "14px",
     flexWrap: "wrap",
     marginTop: "28px",
@@ -119,6 +125,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "24px",
     padding: "24px",
     boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
+    textAlign: "inherit",
   },
   cardTitle: {
     margin: "0 0 10px",
