@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "../lib/language-context";
 
 export default function SiteHeader() {
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <header style={styles.header}>
@@ -15,15 +17,15 @@ export default function SiteHeader() {
 
         <div style={styles.centerNav}>
           <a href="/" style={styles.link}>
-            Home
+            {t.home}
           </a>
 
           <a href="/sign-in" style={styles.link}>
-            Sign In
+            {t.signIn}
           </a>
 
           <a href="/services" style={styles.link}>
-            Services
+            {t.services}
           </a>
 
           <div
@@ -31,7 +33,7 @@ export default function SiteHeader() {
             onMouseEnter={() => setScheduleOpen(true)}
             onMouseLeave={() => setScheduleOpen(false)}
           >
-            <span style={styles.link}>Schedule 1:1 ▾</span>
+            <span style={styles.link}>{t.schedule} ▾</span>
 
             {scheduleOpen && (
               <div style={styles.menu}>
@@ -49,7 +51,7 @@ export default function SiteHeader() {
             onMouseEnter={() => setPartnerOpen(true)}
             onMouseLeave={() => setPartnerOpen(false)}
           >
-            <span style={styles.link}>Partner with HireMinds ▾</span>
+            <span style={styles.link}>{t.partner} ▾</span>
 
             {partnerOpen && (
               <div style={styles.menu}>
@@ -67,13 +69,13 @@ export default function SiteHeader() {
           </div>
 
           <a href="/contact" style={styles.link}>
-            Contact Us
+            {t.contact}
           </a>
         </div>
 
         <div style={styles.rightNav}>
           <span style={styles.lockedLink} title="Coming soon">
-            Job Board 🔒
+            {t.jobBoard} 🔒
           </span>
 
           <span style={styles.lockedLink} title="Coming soon">
