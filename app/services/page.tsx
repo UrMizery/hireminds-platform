@@ -121,10 +121,10 @@ export default function ServicesPage() {
               </div>
 
               <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>AI CV Revision</p>
+                <p style={styles.serviceName}>Live CV Revision</p>
                 <p style={styles.servicePrice}>$39.99</p>
                 <p style={styles.serviceText}>
-                  Expand and revise your CV with AI-assisted content refinement.
+                  Expand and revise your CV with Live-assisted content refinement.
                 </p>
               </div>
 
