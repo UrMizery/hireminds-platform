@@ -2,46 +2,54 @@ export type Lang = "en" | "es" | "ar" | "pl";
 
 export const translations = {
   en: {
+    home: "Home",
     signIn: "Sign In",
-    signUp: "Create Career Passport",
-    profile: "Profile",
-    resumeBuilder: "Resume Builder",
     services: "Services",
+    partner: "Partner with HireMinds",
+    contact: "Contact Us",
+    createPassport: "Create Career Passport / Sign Up",
+    title: "Build Your Career Passport",
+    subtitle:
+      "Get prepared, get verified, and get hired. HireMinds helps candidates showcase their readiness beyond a traditional resume.",
     language: "Language",
-    privacy:
-      "Your information is private. HireMinds does not sell or share your data.",
   },
 
   es: {
+    home: "Inicio",
     signIn: "Iniciar sesión",
-    signUp: "Crear Pasaporte Profesional",
-    profile: "Perfil",
-    resumeBuilder: "Constructor de CV",
     services: "Servicios",
+    partner: "Asociarse con HireMinds",
+    contact: "Contáctanos",
+    createPassport: "Crear Career Passport / Registrarse",
+    title: "Construye tu Career Passport",
+    subtitle:
+      "Prepárate, verifícate y consigue empleo. HireMinds ayuda a los candidatos a mostrar su preparación más allá de un currículum.",
     language: "Idioma",
-    privacy:
-      "Tu información es privada. HireMinds no vende ni comparte tus datos.",
   },
 
   ar: {
+    home: "الرئيسية",
     signIn: "تسجيل الدخول",
-    signUp: "إنشاء جواز مهني",
-    profile: "الملف الشخصي",
-    resumeBuilder: "منشئ السيرة الذاتية",
     services: "الخدمات",
+    partner: "الشراكة مع HireMinds",
+    contact: "اتصل بنا",
+    createPassport: "إنشاء Career Passport / تسجيل",
+    title: "أنشئ Career Passport الخاص بك",
+    subtitle:
+      "استعد، تحقق، واحصل على وظيفة. تساعد HireMinds المرشحين على عرض جاهزيتهم.",
     language: "اللغة",
-    privacy:
-      "معلوماتك خاصة. لا يقوم HireMinds ببيع أو مشاركة بياناتك.",
   },
 
   pl: {
+    home: "Strona główna",
     signIn: "Zaloguj się",
-    signUp: "Utwórz Paszport Kariery",
-    profile: "Profil",
-    resumeBuilder: "Kreator CV",
     services: "Usługi",
+    partner: "Współpraca z HireMinds",
+    contact: "Kontakt",
+    createPassport: "Utwórz Career Passport / Rejestracja",
+    title: "Zbuduj swój Career Passport",
+    subtitle:
+      "Przygotuj się, zweryfikuj i zdobądź pracę. HireMinds pomaga kandydatom pokazać gotowość.",
     language: "Język",
-    privacy:
-      "Twoje dane są prywatne. HireMinds nie sprzedaje ani nie udostępnia danych.",
   },
 };
