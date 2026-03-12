@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type ResumePlan = "free" | "premium";
+type ResumePlan = "free" | "premium" | "pro";
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
 
 type Bullet = {
@@ -71,7 +71,7 @@ type ResumeSectionKey =
   | "accomplishments";
 
 const FREE_BULLET_LIMIT = 4;
-const PAID_BULLET_LIMIT = 6;
+const PREMIUM_BULLET_LIMIT = 6;
 const FREE_SKILL_LIMIT = 9;
 
 function moveItem<T>(arr: T[], index: number, direction: "up" | "down") {
@@ -194,19 +194,37 @@ export default function ResumeBuilderPage() {
   useEffect(() => {
     async function loadUser() {
       const { data, error } = await supabase.auth.getUser();
+
       if (error || !data.user) {
-        setMessage("You must be signed in before saving your resume.");
         setLoadingUser(false);
         return;
       }
+
       setUserId(data.user.id);
+
+      const { data: profile } = await supabase
+        .from("candidate_profiles")
+        .select("full_name, phone, city, state, email")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      if (profile) {
+        setFullName(profile.full_name || "");
+        setPhone(profile.phone || "");
+        setCity(profile.city || "");
+        setStateName(profile.state || "");
+        setEmail(profile.email || data.user.email || "");
+      } else {
+        setEmail(data.user.email || "");
+      }
+
       setLoadingUser(false);
     }
 
     loadUser();
   }, []);
 
-  const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PAID_BULLET_LIMIT;
+  const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PREMIUM_BULLET_LIMIT;
 
   const skills = useMemo(() => {
     return skillsInput
@@ -440,7 +458,7 @@ export default function ResumeBuilderPage() {
 
     if (plan !== "free") {
       setMessage(
-        "Premium resumes can be built now, but saving premium versions requires payment first."
+        "Premium Resume starting at $19.99 and Premium Plus / Pro starting at $39.99 must be purchased before saving premium versions."
       );
       return;
     }
@@ -484,7 +502,7 @@ export default function ResumeBuilderPage() {
   function handlePrint() {
     if (plan !== "free") {
       setMessage(
-        "Premium resumes can be built now, but printing premium versions requires payment first."
+        "Premium Resume starting at $19.99 and Premium Plus / Pro starting at $39.99 must be purchased before printing premium versions."
       );
       return;
     }
@@ -496,6 +514,25 @@ export default function ResumeBuilderPage() {
     return (
       <main style={styles.page}>
         <div style={styles.centerWrap}>Loading...</div>
+      </main>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <main style={styles.page}>
+        <div style={styles.centerWrap}>
+          <div style={styles.lockedCard}>
+            <p style={styles.kicker}>Resume Builder</p>
+            <h1 style={styles.lockedTitle}>Sign up first to access this page.</h1>
+            <p style={styles.previewText}>
+              Create your Career Passport account first, then return here to build your free or premium resume.
+            </p>
+            <a href="/sign-up" style={styles.signUpButton}>
+              Go to Sign Up
+            </a>
+          </div>
+        </div>
       </main>
     );
   }
@@ -529,8 +566,8 @@ export default function ResumeBuilderPage() {
           <div style={styles.card}>
             <div style={styles.topRow}>
               <div>
-                <p style={styles.kicker}>Build Resume</p>
-                <h2 style={styles.sectionTitle}>Free or Premium</h2>
+                <p style={styles.kicker}>Pricing Tiers</p>
+                <h2 style={styles.sectionTitle}>Free, Premium, or Pro</h2>
               </div>
 
               <select
@@ -539,36 +576,54 @@ export default function ResumeBuilderPage() {
                 style={styles.planSelect}
               >
                 <option value="free">Free Resume</option>
-                <option value="premium">Premium Resume / CV</option>
+                <option value="premium">Premium Resume</option>
+                <option value="pro">Premium Plus / Pro</option>
               </select>
             </div>
 
-            <div style={styles.planBox}>
-              {plan === "free" ? (
-                <>
-                  <p style={styles.planBoxTitle}>Free includes</p>
-                  <ul style={styles.planList}>
-                    <li>1 page resume</li>
-                    <li>Up to 4 bullets per role</li>
-                    <li>Save free version</li>
-                    <li>Print free version</li>
-                    <li>1 complimentary live mock interview, 30 minutes</li>
-                  </ul>
-                </>
-              ) : (
-                <>
-                  <p style={styles.planBoxTitle}>Premium unlocks</p>
-                  <ul style={styles.planList}>
-                    <li>2 page resume</li>
-                    <li>CV builder</li>
-                    <li>Up to 6 bullets per role</li>
-                    <li>Employer verification</li>
-                    <li>AI mock interview</li>
-                    <li>Live mock interview</li>
-                    <li>Premium save / download after payment</li>
-                  </ul>
-                </>
-              )}
+            <div style={styles.priceGrid}>
+              <div style={styles.priceCard}>
+                <p style={styles.priceLabel}>Free</p>
+                <p style={styles.priceValue}>$0</p>
+                <ul style={styles.planList}>
+                  <li>1 page resume</li>
+                  <li>4 bullets per role</li>
+                  <li>Save + print free version</li>
+                  <li>1 complimentary live mock interview, 30 min</li>
+                </ul>
+              </div>
+
+              <div style={styles.priceCard}>
+                <p style={styles.priceLabel}>Premium Resume</p>
+                <p style={styles.priceValue}>Starting at $19.99</p>
+                <ul style={styles.planList}>
+                  <li>2 page resume</li>
+                  <li>6 bullets per role</li>
+                  <li>Premium save/download after payment</li>
+                  <li>Resume revision services</li>
+                </ul>
+              </div>
+
+              <div style={styles.priceCard}>
+                <p style={styles.priceLabel}>Premium Plus / Pro</p>
+                <p style={styles.priceValue}>Starting at $39.99</p>
+                <ul style={styles.planList}>
+                  <li>CV builder</li>
+                  <li>Employer verification</li>
+                  <li>AI mock interview</li>
+                  <li>Live mock interview</li>
+                  <li>AI + live resume revision</li>
+                </ul>
+              </div>
+            </div>
+
+            <div style={styles.addOnBox}>
+              <p style={styles.planBoxTitle}>Individual add-ons</p>
+              <ul style={styles.planList}>
+                <li>Single employment verification for free users</li>
+                <li>AI resume revision</li>
+                <li>Live resume revision</li>
+              </ul>
             </div>
           </div>
 
@@ -703,7 +758,7 @@ export default function ResumeBuilderPage() {
                 <p style={styles.helperText}>
                   {plan === "free"
                     ? "Free version allows up to 4 bullet points for each role."
-                    : "Premium allows up to 6 bullet points for each role."}
+                    : "Premium and Pro allow up to 6 bullet points for each role."}
                 </p>
 
                 {item.bullets.map((bullet, bulletIndex) => (
@@ -988,7 +1043,7 @@ export default function ResumeBuilderPage() {
                 <p style={styles.helperText}>
                   {plan === "free"
                     ? "Free version allows up to 4 bullet points for volunteer work."
-                    : "Premium allows up to 6 bullet points for volunteer work."}
+                    : "Premium and Pro allow up to 6 bullet points for volunteer work."}
                 </p>
 
                 {item.bullets.map((bullet, bulletIndex) => (
@@ -1077,7 +1132,7 @@ export default function ResumeBuilderPage() {
             <p style={styles.kicker}>Live Preview</p>
             <h2 style={styles.sectionTitle}>Resume Preview</h2>
             <p style={styles.previewText}>
-              Skills automatically shift into columns. Free version shows one-page logic and locks premium actions.
+              Skills shift into columns. Company and city/state are bold. Free users can save and print free resumes.
             </p>
           </div>
 
@@ -1354,6 +1409,31 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 auto",
     padding: "40px 24px",
   },
+  lockedCard: {
+    maxWidth: "720px",
+    margin: "80px auto",
+    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
+    border: "1px solid #262626",
+    borderRadius: "24px",
+    padding: "32px",
+    textAlign: "center",
+  },
+  signUpButton: {
+    display: "inline-block",
+    marginTop: "12px",
+    padding: "14px 18px",
+    borderRadius: "16px",
+    textDecoration: "none",
+    background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+    color: "#09090b",
+    fontWeight: 700,
+  },
+  lockedTitle: {
+    margin: "0 0 10px",
+    fontSize: "34px",
+    fontWeight: 500,
+    letterSpacing: "-0.03em",
+  },
   fontBar: {
     width: "100%",
     borderBottom: "1px solid #232323",
@@ -1456,11 +1536,33 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#0f0f10",
     color: "#f4f4f5",
     fontSize: "14px",
-    minWidth: "210px",
+    minWidth: "220px",
   },
-  planBox: {
+  priceGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: "14px",
     marginTop: "16px",
+    marginBottom: "16px",
+  },
+  priceCard: {
     background: "#0f172a",
+    border: "1px solid #273244",
+    borderRadius: "18px",
+    padding: "16px",
+  },
+  priceLabel: {
+    margin: "0 0 8px",
+    color: "#e5e7eb",
+    fontWeight: 700,
+  },
+  priceValue: {
+    margin: "0 0 12px",
+    color: "#93c5fd",
+    fontWeight: 700,
+  },
+  addOnBox: {
+    background: "#111827",
     border: "1px solid #273244",
     borderRadius: "18px",
     padding: "16px",
@@ -1652,12 +1754,13 @@ const styles: Record<string, React.CSSProperties> = {
   resumeStrong: {
     margin: 0,
     fontSize: "14px",
-    fontWeight: 700,
-    color: "#0f172a",
+    fontWeight: 900,
+    color: "#000000",
   },
   resumeRole: {
     margin: "4px 0 8px",
     fontSize: "14px",
+    fontWeight: 700,
     color: "#0f172a",
   },
   resumeDate: {
