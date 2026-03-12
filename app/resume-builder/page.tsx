@@ -192,7 +192,7 @@ export default function ResumeBuilderPage() {
   ]);
 
   useEffect(() => {
-    async function loadUser() {
+    async function loadUserAndProfile() {
       const { data, error } = await supabase.auth.getUser();
 
       if (error || !data.user) {
@@ -200,12 +200,13 @@ export default function ResumeBuilderPage() {
         return;
       }
 
-      setUserId(data.user.id);
+      const currentUserId = data.user.id;
+      setUserId(currentUserId);
 
       const { data: profile } = await supabase
         .from("candidate_profiles")
-        .select("full_name, phone, city, state, email")
-        .eq("user_id", data.user.id)
+        .select("full_name, phone, city, state, email, linkedin_url")
+        .eq("user_id", currentUserId)
         .maybeSingle();
 
       if (profile) {
@@ -214,6 +215,7 @@ export default function ResumeBuilderPage() {
         setCity(profile.city || "");
         setStateName(profile.state || "");
         setEmail(profile.email || data.user.email || "");
+        setLinkedinUrl((profile as any).linkedin_url || "");
       } else {
         setEmail(data.user.email || "");
       }
@@ -221,7 +223,7 @@ export default function ResumeBuilderPage() {
       setLoadingUser(false);
     }
 
-    loadUser();
+    loadUserAndProfile();
   }, []);
 
   const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PREMIUM_BULLET_LIMIT;
@@ -524,13 +526,22 @@ export default function ResumeBuilderPage() {
         <div style={styles.centerWrap}>
           <div style={styles.lockedCard}>
             <p style={styles.kicker}>Resume Builder</p>
-            <h1 style={styles.lockedTitle}>Sign up first to access this page.</h1>
+            <h1 style={styles.lockedTitle}>Sign in first to access this page.</h1>
             <p style={styles.previewText}>
-              Create your Career Passport account first, then return here to build your free or premium resume.
+              Create your Career Passport account first, then sign in and return here to build your free or premium resume.
             </p>
-            <a href="/sign-up" style={styles.signUpButton}>
-              Go to Sign Up
-            </a>
+
+            <div style={styles.lockedButtons}>
+              <a href="/sign-up" style={styles.signUpButton}>
+                Sign Up
+              </a>
+              <a href="/sign-in" style={styles.signUpButton}>
+                Sign In
+              </a>
+              <a href="/profile" style={styles.signUpButtonDark}>
+                Profile
+              </a>
+            </div>
           </div>
         </div>
       </main>
@@ -599,7 +610,7 @@ export default function ResumeBuilderPage() {
                 <ul style={styles.planList}>
                   <li>2 page resume</li>
                   <li>6 bullets per role</li>
-                  <li>Premium save/download after payment</li>
+                  <li>Premium save / download after payment</li>
                   <li>Resume revision services</li>
                 </ul>
               </div>
@@ -1410,7 +1421,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "40px 24px",
   },
   lockedCard: {
-    maxWidth: "720px",
+    maxWidth: "760px",
     margin: "80px auto",
     background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
     border: "1px solid #262626",
@@ -1418,9 +1429,21 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "32px",
     textAlign: "center",
   },
+  lockedTitle: {
+    margin: "0 0 10px",
+    fontSize: "34px",
+    fontWeight: 500,
+    letterSpacing: "-0.03em",
+  },
+  lockedButtons: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "12px",
+    flexWrap: "wrap",
+    marginTop: "18px",
+  },
   signUpButton: {
     display: "inline-block",
-    marginTop: "12px",
     padding: "14px 18px",
     borderRadius: "16px",
     textDecoration: "none",
@@ -1428,11 +1451,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#09090b",
     fontWeight: 700,
   },
-  lockedTitle: {
-    margin: "0 0 10px",
-    fontSize: "34px",
-    fontWeight: 500,
-    letterSpacing: "-0.03em",
+  signUpButtonDark: {
+    display: "inline-block",
+    padding: "14px 18px",
+    borderRadius: "16px",
+    textDecoration: "none",
+    background: "#111827",
+    border: "1px solid #374151",
+    color: "#f3f4f6",
+    fontWeight: 700,
   },
   fontBar: {
     width: "100%",
