@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -27,6 +36,8 @@ export default function SignUpPage() {
 
     try {
       setLoading(true);
+
+      const passportSlug = slugify(fullName);
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -65,12 +76,15 @@ export default function SignUpPage() {
         city,
         state: stateName,
         bio,
+        passport_slug: passportSlug,
         resume_url: resumeUrl || null,
       });
 
       if (profileError) throw profileError;
 
-      setMessage("Career Passport account created. You can now continue to build your resume.");
+      setMessage(
+        "Career Passport account created. Your information was saved securely. If email confirmation is enabled, verify your email and then sign in to continue to the resume builder."
+      );
     } catch (err: any) {
       setMessage(err.message || "Something went wrong.");
     } finally {
@@ -91,7 +105,6 @@ export default function SignUpPage() {
 
           <div style={styles.heroCard}>
             <p style={styles.heroCardTitle}>What happens next</p>
-
             <div style={styles.heroRow}>
               <span style={styles.heroValue}>1. Create your account</span>
             </div>
@@ -184,6 +197,14 @@ export default function SignUpPage() {
           </button>
 
           {message ? <p style={styles.message}>{message}</p> : null}
+
+          <div style={styles.privacyBox}>
+            <p style={styles.privacyTitle}>Privacy Notice</p>
+            <p style={styles.privacyText}>
+              Your Career Passport information is stored securely and is not sold
+              or shared for marketing purposes.
+            </p>
+          </div>
 
           <p style={styles.footerNote}>
             Intro video, verification, and advanced profile tools can be added later
@@ -397,6 +418,25 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#e5e5e5",
     fontSize: "14px",
     lineHeight: 1.6,
+  },
+  privacyBox: {
+    marginTop: "18px",
+    padding: "16px",
+    borderRadius: "18px",
+    border: "1px solid #2c2c2c",
+    background: "#101010",
+  },
+  privacyTitle: {
+    margin: "0 0 8px",
+    color: "#f3f4f6",
+    fontWeight: 700,
+    fontSize: "14px",
+  },
+  privacyText: {
+    margin: 0,
+    color: "#b8b8b8",
+    fontSize: "14px",
+    lineHeight: 1.7,
   },
   footerNote: {
     marginTop: "18px",
