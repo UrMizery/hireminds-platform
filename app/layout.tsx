@@ -1,18 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
 import SiteHeader from "./components/SiteHeader";
-import { translations, type Lang } from "./lib/translations";
+import { LanguageProvider, useLanguage } from "./lib/language-context";
 
-export default function RootLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const [lang, setLang] = useState<Lang>("en");
-
-  const t = useMemo(() => translations[lang], [lang]);
+function LayoutContent({ children }: { children: ReactNode }) {
+  const { lang, setLang, t } = useLanguage();
 
   return (
     <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>
@@ -22,7 +15,7 @@ export default function RootLayout({
             <label style={labelStyle}>{t.language}</label>
             <select
               value={lang}
-              onChange={(e) => setLang(e.target.value as Lang)}
+              onChange={(e) => setLang(e.target.value as typeof lang)}
               style={selectStyle}
             >
               <option value="en">English</option>
@@ -40,6 +33,18 @@ export default function RootLayout({
   );
 }
 
+export default function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <LanguageProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </LanguageProvider>
+  );
+}
+
 const bodyStyle: React.CSSProperties = {
   margin: 0,
   background: "#050505",
@@ -52,7 +57,7 @@ const topBarStyle: React.CSSProperties = {
 };
 
 const topBarInnerStyle: React.CSSProperties = {
-  maxWidth: "1400px",
+  maxWidth: "1520px",
   margin: "0 auto",
   padding: "10px 24px",
   display: "flex",
