@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabase";
 type ResumePlan = "free" | "premium";
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
 
-type ExperienceBullet = {
+type Bullet = {
   text: string;
 };
 
@@ -20,7 +20,7 @@ type ExperienceItem = {
   endMonth: string;
   endYear: string;
   isPresent: boolean;
-  bullets: ExperienceBullet[];
+  bullets: Bullet[];
 };
 
 type EducationItem = {
@@ -58,7 +58,7 @@ type VolunteerItem = {
   endMonth: string;
   endYear: string;
   isPresent: boolean;
-  bullets: ExperienceBullet[];
+  bullets: Bullet[];
 };
 
 type ResumeSectionKey =
@@ -91,7 +91,6 @@ function formatDateRange(
 ) {
   const from = [startMonth, startYear].filter(Boolean).join(" ");
   const to = isPresent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ");
-
   if (!from && !to) return "";
   return `${from || "Start"} - ${to || "End"}`;
 }
@@ -195,13 +194,11 @@ export default function ResumeBuilderPage() {
   useEffect(() => {
     async function loadUser() {
       const { data, error } = await supabase.auth.getUser();
-
       if (error || !data.user) {
         setMessage("You must be signed in before saving your resume.");
         setLoadingUser(false);
         return;
       }
-
       setUserId(data.user.id);
       setLoadingUser(false);
     }
@@ -209,18 +206,15 @@ export default function ResumeBuilderPage() {
     loadUser();
   }, []);
 
-  const skillLimit = FREE_SKILL_LIMIT;
   const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PAID_BULLET_LIMIT;
 
-  const skills = useMemo(
-    () =>
-      skillsInput
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .slice(0, skillLimit),
-    [skillsInput]
-  );
+  const skills = useMemo(() => {
+    return skillsInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, FREE_SKILL_LIMIT);
+  }, [skillsInput]);
 
   const activeExperiences = experiences.filter(
     (item) =>
@@ -298,7 +292,7 @@ export default function ResumeBuilderPage() {
   function updateExperience(
     index: number,
     field: keyof ExperienceItem,
-    value: string | boolean | ExperienceBullet[]
+    value: string | boolean
   ) {
     setExperiences((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
@@ -403,7 +397,7 @@ export default function ResumeBuilderPage() {
   function updateVolunteer(
     index: number,
     field: keyof VolunteerItem,
-    value: string | boolean | ExperienceBullet[]
+    value: string | boolean
   ) {
     setVolunteerItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
@@ -436,7 +430,7 @@ export default function ResumeBuilderPage() {
     setSectionOrder((prev) => moveItem(prev, index, direction));
   }
 
-  async function handleSaveFreeResume() {
+  async function handleSaveResume() {
     setMessage("");
 
     if (!userId) {
@@ -446,7 +440,7 @@ export default function ResumeBuilderPage() {
 
     if (plan !== "free") {
       setMessage(
-        "Premium resumes can be built now, but saving and downloading premium versions requires payment first."
+        "Premium resumes can be built now, but saving premium versions requires payment first."
       );
       return;
     }
@@ -478,35 +472,6 @@ export default function ResumeBuilderPage() {
       });
 
       if (resumeError) throw resumeError;
-
-      if (activeExperiences.length > 0) {
-        const { error: expError } = await supabase.from("work_experiences").insert(
-          activeExperiences.map((item, index) => ({
-            profile_id: profileId,
-            sort_order: index,
-            company_name: `${item.companyName}|${item.city}|${item.state}|${item.startMonth}|${item.startYear}|${item.endMonth}|${item.endYear}|${item.isPresent}`,
-            role_title: item.roleTitle,
-            description: JSON.stringify(
-              item.bullets.map((bullet) => bullet.text).filter(Boolean)
-            ),
-          }))
-        );
-
-        if (expError) throw expError;
-      }
-
-      if (activeCertificates.length > 0) {
-        const { error: certError } = await supabase.from("certificates").insert(
-          activeCertificates.map((item, index) => ({
-            profile_id: profileId,
-            sort_order: index,
-            certificate_name: `${item.certificateName}|${item.startMonth}|${item.startYear}|${item.endMonth}|${item.endYear}|${item.isPresent}`,
-            organization_name: `${item.organizationName}|${item.city}|${item.state}`,
-          }))
-        );
-
-        if (certError) throw certError;
-      }
 
       setMessage("Free resume saved successfully.");
     } catch (error: any) {
@@ -587,7 +552,7 @@ export default function ResumeBuilderPage() {
                     <li>Up to 4 bullets per role</li>
                     <li>Save free version</li>
                     <li>Print free version</li>
-                    <li>1 complimentary 30-minute live mock interview</li>
+                    <li>1 complimentary live mock interview, 30 minutes</li>
                   </ul>
                 </>
               ) : (
@@ -599,7 +564,7 @@ export default function ResumeBuilderPage() {
                     <li>Up to 6 bullets per role</li>
                     <li>Employer verification</li>
                     <li>AI mock interview</li>
-                    <li>Live mock interviews</li>
+                    <li>Live mock interview</li>
                     <li>Premium save / download after payment</li>
                   </ul>
                 </>
@@ -640,24 +605,15 @@ export default function ResumeBuilderPage() {
               label='Summary Heading (optional, can be blank or "Summary")'
               value={summaryHeading}
               onChange={setSummaryHeading}
-              placeholder='Summary'
+              placeholder="Summary"
             />
 
             <TextAreaField
               label="Summary"
               value={summaryText}
               onChange={setSummaryText}
-              placeholder="Example: Client-focused workforce development professional with experience in talent acquisition, resume writing, employer engagement, and job readiness coaching. Skilled in connecting candidates to opportunities through personalized support, strategic sourcing, and career-focused communication."
+              placeholder="Example: Client-focused workforce development professional with experience in talent acquisition, resume writing, employer engagement, and job readiness coaching."
             />
-
-            <div style={styles.aiCard}>
-              <p style={styles.aiTitle}>AI support coming here</p>
-              <ul style={styles.aiList}>
-                <li>Write or rewrite summary</li>
-                <li>Improve skills</li>
-                <li>Rewrite job descriptions into stronger bullets</li>
-              </ul>
-            </div>
 
             <Field
               label="Skills (comma separated, up to 9)"
@@ -1103,7 +1059,7 @@ export default function ResumeBuilderPage() {
 
           <div style={styles.card}>
             <div style={styles.actionRow}>
-              <button style={styles.primaryButton} onClick={handleSaveFreeResume} disabled={saving}>
+              <button style={styles.primaryButton} onClick={handleSaveResume} disabled={saving}>
                 {saving ? "Saving..." : "Save Resume"}
               </button>
 
@@ -1588,24 +1544,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "10px 14px",
     fontWeight: 700,
     cursor: "pointer",
-  },
-  aiCard: {
-    background: "rgba(148,163,184,0.08)",
-    border: "1px solid rgba(148,163,184,0.2)",
-    borderRadius: "18px",
-    padding: "16px",
-    marginBottom: "14px",
-  },
-  aiTitle: {
-    margin: "0 0 10px",
-    color: "#f5f5f5",
-    fontWeight: 700,
-  },
-  aiList: {
-    margin: 0,
-    paddingLeft: "18px",
-    color: "#d1d5db",
-    lineHeight: 1.7,
   },
   moveRow: {
     display: "flex",
