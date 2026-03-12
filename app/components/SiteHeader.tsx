@@ -1,15 +1,11 @@
-export default function SiteHeader() {
+export default function HeroSection() {
   return (
-    <header style={{ padding: "15px", borderBottom: "1px solid #ddd" }}>
-      <nav style={{ display: "flex", gap: "20px" }}>
-        <a href="/">Home</a>
-        <a href="/create-career-passport">Create Your Career Passport</a>
-        <a href="/pricing">Upgrade to Premium</a>
-        <a href="/sign-in">Sign In</a>
-        <a href="/partner/employers">Employers</a>
-        <a href="/partner/nonprofits">Nonprofits</a>
-        <a href="/contact">Contact</a>
-      </nav>
-    </header>
+    <section style={{ padding: "60px 20px", textAlign: "center" }}>
+      <h1>Build Your Career Passport</h1>
+      <p>
+        Get prepared, get verified, and get hired. HireMinds helps candidates
+        showcase their readiness beyond a traditional resume.
+      </p>
+    </section>
   );
 }
