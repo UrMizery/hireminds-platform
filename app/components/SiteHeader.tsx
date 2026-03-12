@@ -4,17 +4,20 @@ import { useState } from "react";
 import { useLanguage } from "../lib/language-context";
 
 export default function SiteHeader() {
+  const { t } = useLanguage();
+
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const { t } = useLanguage();
 
   return (
     <header style={styles.header}>
       <div style={styles.inner}>
+        {/* LEFT LOGO */}
         <a href="/" style={styles.logo}>
           HireMinds
         </a>
 
+        {/* CENTER NAV */}
         <div style={styles.centerNav}>
           <a href="/" style={styles.link}>
             {t.home}
@@ -28,6 +31,7 @@ export default function SiteHeader() {
             {t.services}
           </a>
 
+          {/* SCHEDULE */}
           <div
             style={styles.dropdown}
             onMouseEnter={() => setScheduleOpen(true)}
@@ -37,15 +41,30 @@ export default function SiteHeader() {
 
             {scheduleOpen && (
               <div style={styles.menu}>
-                <span style={styles.lockedMenuItem}>Career Coach 🔒</span>
-                <span style={styles.lockedMenuItem}>Live Mock Interview 🔒</span>
-                <span style={styles.lockedMenuItem}>Live Resume Revision 🔒</span>
-                <span style={styles.lockedMenuItem}>Consultation 🔒</span>
-                <span style={styles.lockedMenuItem}>Other 🔒</span>
+                <span style={styles.lockedMenuItem}>
+                  {t.careerCoach} 🔒
+                </span>
+
+                <span style={styles.lockedMenuItem}>
+                  {t.liveMockInterview} 🔒
+                </span>
+
+                <span style={styles.lockedMenuItem}>
+                  {t.liveResumeRevision} 🔒
+                </span>
+
+                <span style={styles.lockedMenuItem}>
+                  {t.consultation} 🔒
+                </span>
+
+                <span style={styles.lockedMenuItem}>
+                  {t.other} 🔒
+                </span>
               </div>
             )}
           </div>
 
+          {/* PARTNER */}
           <div
             style={styles.dropdown}
             onMouseEnter={() => setPartnerOpen(true)}
@@ -56,13 +75,15 @@ export default function SiteHeader() {
             {partnerOpen && (
               <div style={styles.menu}>
                 <a href="/partner/employers" style={styles.menuItem}>
-                  Employers
+                  {t.employers}
                 </a>
+
                 <a href="/partner/nonprofits" style={styles.menuItem}>
-                  Nonprofits
+                  {t.nonprofits}
                 </a>
+
                 <a href="/partner/other" style={styles.menuItem}>
-                  Other
+                  {t.other}
                 </a>
               </div>
             )}
@@ -73,13 +94,14 @@ export default function SiteHeader() {
           </a>
         </div>
 
+        {/* RIGHT NAV */}
         <div style={styles.rightNav}>
-          <span style={styles.lockedLink} title="Coming soon">
+          <span style={styles.lockedLink}>
             {t.jobBoard} 🔒
           </span>
 
-          <span style={styles.lockedLink} title="Coming soon">
-            Employer / Partner Sign In 🔒
+          <span style={styles.lockedLink}>
+            {t.employerPartnerSignIn} 🔒
           </span>
         </div>
       </div>
@@ -97,6 +119,7 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: "blur(10px)",
     borderBottom: "1px solid #1f1f1f",
   },
+
   inner: {
     maxWidth: "1520px",
     margin: "0 auto",
@@ -106,6 +129,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: "20px",
   },
+
   logo: {
     color: "#f5f5f5",
     fontSize: "20px",
@@ -113,8 +137,8 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     letterSpacing: "0.04em",
     whiteSpace: "nowrap",
-    justifySelf: "start",
   },
+
   centerNav: {
     display: "flex",
     gap: "20px",
@@ -122,6 +146,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     flexWrap: "wrap",
   },
+
   rightNav: {
     display: "flex",
     gap: "18px",
@@ -129,6 +154,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "flex-end",
     flexWrap: "wrap",
   },
+
   link: {
     color: "#d4d4d8",
     textDecoration: "none",
@@ -136,15 +162,18 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
+
   lockedLink: {
     color: "#7c7c85",
     fontSize: "14px",
     cursor: "not-allowed",
     whiteSpace: "nowrap",
   },
+
   dropdown: {
     position: "relative",
   },
+
   menu: {
     position: "absolute",
     top: 28,
@@ -156,6 +185,7 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 220,
     boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
   },
+
   menuItem: {
     display: "block",
     padding: "10px 12px",
@@ -163,8 +193,8 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     fontSize: 14,
     borderRadius: 8,
-    whiteSpace: "nowrap",
   },
+
   lockedMenuItem: {
     display: "block",
     padding: "10px 12px",
@@ -172,6 +202,5 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     borderRadius: 8,
     cursor: "not-allowed",
-    whiteSpace: "nowrap",
   },
 };
