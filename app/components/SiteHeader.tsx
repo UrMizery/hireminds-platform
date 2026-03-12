@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 export default function SiteHeader() {
-  const [open, setOpen] = useState(false);
+  const [partnerOpen, setPartnerOpen] = useState(false);
 
   return (
     <header style={styles.header}>
@@ -21,32 +21,37 @@ export default function SiteHeader() {
             Sign In
           </a>
 
-          <a href="/sign-up" style={styles.link}>
-            Create Career Passport
-          </a>
-
           <a href="/services" style={styles.link}>
             Services
           </a>
 
-          {/* Partner dropdown */}
+          <span style={styles.lockedLink} title="Coming soon">
+            Employment Opportunities 🔒
+          </span>
+
+          <span style={styles.lockedLink} title="Coming soon">
+            Employer / Partner Sign In 🔒
+          </span>
+
+          <span style={styles.lockedLink} title="Coming soon">
+            Schedule 1 🔒
+          </span>
+
           <div
             style={styles.dropdown}
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
+            onMouseEnter={() => setPartnerOpen(true)}
+            onMouseLeave={() => setPartnerOpen(false)}
           >
             <span style={styles.link}>Partner with HireMinds ▾</span>
 
-            {open && (
+            {partnerOpen && (
               <div style={styles.menu}>
                 <a href="/partner/employers" style={styles.menuItem}>
                   Employers
                 </a>
-
                 <a href="/partner/nonprofits" style={styles.menuItem}>
                   Nonprofits
                 </a>
-
                 <a href="/partner/other" style={styles.menuItem}>
                   Other
                 </a>
@@ -73,41 +78,46 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: "blur(10px)",
     borderBottom: "1px solid #1f1f1f",
   },
-
   inner: {
-    maxWidth: "1400px",
+    maxWidth: "1440px",
     margin: "0 auto",
     padding: "14px 24px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "20px",
   },
-
   logo: {
     color: "#f5f5f5",
     fontSize: "20px",
     fontWeight: 600,
     textDecoration: "none",
     letterSpacing: "0.04em",
+    whiteSpace: "nowrap",
   },
-
   nav: {
     display: "flex",
-    gap: "22px",
+    gap: "18px",
     alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
   },
-
   link: {
     color: "#d4d4d8",
     textDecoration: "none",
     fontSize: "14px",
     cursor: "pointer",
+    whiteSpace: "nowrap",
   },
-
+  lockedLink: {
+    color: "#7c7c85",
+    fontSize: "14px",
+    cursor: "not-allowed",
+    whiteSpace: "nowrap",
+  },
   dropdown: {
     position: "relative",
   },
-
   menu: {
     position: "absolute",
     top: 28,
@@ -116,14 +126,15 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #333",
     borderRadius: 12,
     padding: 8,
-    minWidth: 180,
+    minWidth: 200,
+    boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
   },
-
   menuItem: {
     display: "block",
-    padding: "8px 10px",
+    padding: "10px 12px",
     color: "#f4f4f5",
     textDecoration: "none",
     fontSize: 14,
+    borderRadius: 8,
   },
 };
