@@ -1,7 +1,7 @@
-import SiteHeader from "../components/SiteHeader";
-import HeroSection from "../components/HeroSection";
-import FeatureCard from "../components/FeatureCard";
-import CareerPassportCard from "../components/CareerPassportCard";
+import SiteHeader from "./components/SiteHeader";
+import HeroSection from "./components/HeroSection";
+import FeatureCard from "./components/FeatureCard";
+import CareerPassportCard from "./components/CareerPassportCard";
 
 export default function Home() {
   return (
@@ -9,22 +9,22 @@ export default function Home() {
       <SiteHeader />
       <HeroSection />
 
-      <section>
+      <section style={{ padding: "40px" }}>
         <h2>What We Do</h2>
 
         <FeatureCard
           title="For Candidates"
-          description="Build your resume, practice interviews, and create your Career Passport."
+          description="Build a Career Passport, improve your resume, and practice interviews."
         />
 
         <FeatureCard
           title="For Employers"
-          description="Find better talent with stronger readiness signals and verified experience."
+          description="Discover candidates with Resume Scores and verified experience."
         />
 
         <FeatureCard
           title="For Nonprofits"
-          description="Support participants with tools, resources, and certificate verification."
+          description="Support participants with training resources and certificate verification."
         />
       </section>
 
