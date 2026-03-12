@@ -11,17 +11,16 @@ export default function SignUpPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [referredBy, setReferredBy] = useState("");
   const [bio, setBio] = useState("");
-
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-
-  const [requestVerification, setRequestVerification] = useState(false);
 
   async function handleSignUp() {
     setMessage("");
 
-    if (!email || !password || !fullName) {
+    if (!fullName || !email || !password) {
       setMessage("Full name, email, and password are required.");
       return;
     }
@@ -39,49 +38,41 @@ export default function SignUpPage() {
       const userId = data.user?.id;
 
       if (!userId) {
-        setMessage("User created, please verify email.");
+        setMessage("Account created. Please verify your email before continuing.");
         return;
       }
 
       let resumeUrl = "";
-      let videoUrl = "";
 
       if (resumeFile) {
         const path = `${userId}/resume-${Date.now()}-${resumeFile.name}`;
 
-        await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from("resumes")
           .upload(path, resumeFile, { upsert: true });
 
-        resumeUrl = supabase.storage.from("resumes").getPublicUrl(path).data.publicUrl;
+        if (uploadError) throw uploadError;
+
+        const publicUrl = supabase.storage.from("resumes").getPublicUrl(path);
+        resumeUrl = publicUrl.data.publicUrl;
       }
 
-      if (videoFile) {
-        const path = `${userId}/video-${Date.now()}-${videoFile.name}`;
-
-        await supabase.storage
-          .from("profile-videos")
-          .upload(path, videoFile, { upsert: true });
-
-        videoUrl = supabase.storage
-          .from("profile-videos")
-          .getPublicUrl(path).data.publicUrl;
-      }
-
-      await supabase.from("candidate_profiles").insert({
+      const { error: profileError } = await supabase.from("candidate_profiles").insert({
         user_id: userId,
         full_name: fullName,
         phone,
         email,
+        city,
+        state: stateName,
         bio,
-        resume_url: resumeUrl,
-        intro_video_url: videoUrl,
+        resume_url: resumeUrl || null,
       });
 
-      setMessage("Account created. You can now build your resume.");
+      if (profileError) throw profileError;
 
+      setMessage("Career Passport account created. You can now continue to build your resume.");
     } catch (err: any) {
-      setMessage(err.message);
+      setMessage(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -89,138 +80,330 @@ export default function SignUpPage() {
 
   return (
     <main style={styles.page}>
-      <div style={styles.container}>
-        <h1 style={styles.title}>Create Your Career Passport</h1>
+      <div style={styles.shell}>
+        <section style={styles.heroPanel}>
+          <p style={styles.eyebrow}>HIREMINDS</p>
+          <h1 style={styles.title}>Create your Career Passport.</h1>
+          <p style={styles.subtitle}>
+            Set up your professional identity first. Once your account is created,
+            you can build a free or premium resume, save it to your profile, and
+            unlock advanced features when you are ready.
+          </p>
 
-        <input
-          placeholder="Full Name"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          style={styles.input}
-        />
+          <div style={styles.heroCard}>
+            <div style={styles.heroRow}>
+              <span style={styles.heroLabel}>Professional</span>
+              <span style={styles.heroValue}>Black / Graphite / Silver</span>
+            </div>
+            <div style={styles.heroRow}>
+              <span style={styles.heroLabel}>Designed for</span>
+              <span style={styles.heroValue}>Career readiness + verified talent</span>
+            </div>
+            <div style={styles.heroRow}>
+              <span style={styles.heroLabel}>Next step</span>
+              <span style={styles.heroValue}>Resume builder after sign up</span>
+            </div>
+          </div>
+        </section>
 
-        <input
-          placeholder="Phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          style={styles.input}
-        />
+        <section style={styles.formPanel}>
+          <div style={styles.formHeader}>
+            <p style={styles.formKicker}>Account Setup</p>
+            <h2 style={styles.formTitle}>Career Passport Sign Up</h2>
+          </div>
 
-        <input
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
-        />
+          <div style={styles.grid}>
+            <Field
+              label="Full Name"
+              value={fullName}
+              onChange={setFullName}
+              placeholder="Ismary Szegedi"
+            />
+            <Field
+              label="Phone Number"
+              value={phone}
+              onChange={setPhone}
+              placeholder="(203) 555-1234"
+            />
+          </div>
 
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
-        />
+          <div style={styles.grid}>
+            <Field
+              label="Email Address"
+              value={email}
+              onChange={setEmail}
+              placeholder="name@email.com"
+              type="email"
+            />
+            <Field
+              label="Password"
+              value={password}
+              onChange={setPassword}
+              placeholder="Create password"
+              type="password"
+            />
+          </div>
 
-        <textarea
-          placeholder="Short bio"
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          style={styles.textarea}
-        />
+          <div style={styles.grid}>
+            <Field
+              label="City"
+              value={city}
+              onChange={setCity}
+              placeholder="Bridgeport"
+            />
+            <Field
+              label="State"
+              value={stateName}
+              onChange={setStateName}
+              placeholder="Connecticut"
+            />
+          </div>
 
-        <label>Resume upload</label>
-        <input
-          type="file"
-          onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-          style={styles.input}
-        />
-
-        <label>Intro video upload</label>
-        <input
-          type="file"
-          onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-          style={styles.input}
-        />
-
-        <label style={styles.checkbox}>
-          <input
-            type="checkbox"
-            checked={requestVerification}
-            onChange={(e) => setRequestVerification(e.target.checked)}
+          <Field
+            label="Referred By"
+            value={referredBy}
+            onChange={setReferredBy}
+            placeholder="Name, organization, or source"
           />
-          Request employer verification (paid feature)
-        </label>
 
-        <button onClick={handleSignUp} style={styles.button}>
-          {loading ? "Creating..." : "Create Career Passport"}
-        </button>
+          <TextAreaField
+            label="Short Bio"
+            value={bio}
+            onChange={setBio}
+            placeholder="Write a short professional bio for your Career Passport."
+          />
 
-        {message && <p>{message}</p>}
+          <label style={styles.label}>Resume Upload (optional)</label>
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+            style={styles.input}
+          />
 
-        <div style={styles.premiumBox}>
-          <h3>Premium Features</h3>
-          <ul>
-            <li>2 page resume / CV</li>
-            <li>More than 4 bullets per role</li>
-            <li>Employer verification</li>
-            <li>AI mock interview</li>
-            <li>Live mock interview</li>
-            <li>Advanced resume AI</li>
-          </ul>
-        </div>
+          <button onClick={handleSignUp} disabled={loading} style={styles.button}>
+            {loading ? "Creating Account..." : "Create Career Passport"}
+          </button>
+
+          {message ? <p style={styles.message}>{message}</p> : null}
+
+          <p style={styles.footerNote}>
+            Intro video, verification, and advanced profile tools can be added after sign up
+            from your Career Passport profile.
+          </p>
+        </section>
       </div>
     </main>
   );
 }
 
-const styles: any = {
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <div style={styles.fieldWrap}>
+      <label style={styles.label}>{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={styles.input}
+      />
+    </div>
+  );
+}
+
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div style={styles.fieldWrap}>
+      <label style={styles.label}>{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={styles.textarea}
+      />
+    </div>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
   page: {
-    background: "#0a0a0a",
     minHeight: "100vh",
-    color: "#e5e5e5",
-    padding: 40,
+    background:
+      "radial-gradient(circle at top left, rgba(255,255,255,0.04), transparent 22%), linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
+    color: "#e7e7e7",
+    padding: "40px 24px",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
-  container: {
-    maxWidth: 500,
+  shell: {
+    maxWidth: "1280px",
     margin: "0 auto",
-    background: "#1a1a1a",
-    padding: 30,
-    borderRadius: 12,
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "28px",
+    alignItems: "stretch",
+  },
+  heroPanel: {
+    background: "linear-gradient(180deg, #111111 0%, #151515 100%)",
+    border: "1px solid #232323",
+    borderRadius: "28px",
+    padding: "40px",
+    boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
+  },
+  eyebrow: {
+    margin: "0 0 16px",
+    color: "#a3a3a3",
+    letterSpacing: "0.28em",
+    fontSize: "12px",
+    fontWeight: 600,
   },
   title: {
-    marginBottom: 20,
+    margin: "0 0 18px",
+    fontSize: "52px",
+    lineHeight: 1.02,
+    fontWeight: 500,
+    letterSpacing: "-0.04em",
+    color: "#f5f5f5",
+  },
+  subtitle: {
+    margin: 0,
+    fontSize: "16px",
+    lineHeight: 1.75,
+    color: "#b3b3b3",
+    maxWidth: "560px",
+  },
+  heroCard: {
+    marginTop: "36px",
+    padding: "22px",
+    borderRadius: "22px",
+    border: "1px solid #2d2d2d",
+    background: "rgba(255,255,255,0.02)",
+  },
+  heroRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "16px",
+    padding: "12px 0",
+    borderBottom: "1px solid #222",
+  },
+  heroLabel: {
+    color: "#8f8f8f",
+    fontSize: "14px",
+  },
+  heroValue: {
+    color: "#ececec",
+    fontSize: "14px",
+    textAlign: "right",
+  },
+  formPanel: {
+    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
+    border: "1px solid #262626",
+    borderRadius: "28px",
+    padding: "34px",
+    boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
+  },
+  formHeader: {
+    marginBottom: "22px",
+  },
+  formKicker: {
+    margin: "0 0 8px",
+    color: "#9a9a9a",
+    fontSize: "12px",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+  },
+  formTitle: {
+    margin: 0,
+    fontSize: "30px",
+    fontWeight: 500,
+    letterSpacing: "-0.03em",
+    color: "#f5f5f5",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "14px",
+  },
+  fieldWrap: {
+    marginBottom: "14px",
+  },
+  label: {
+    display: "block",
+    marginBottom: "8px",
+    color: "#c9c9c9",
+    fontSize: "13px",
+    fontWeight: 500,
+    letterSpacing: "0.02em",
   },
   input: {
     width: "100%",
-    padding: 10,
-    marginBottom: 10,
-    background: "#111",
-    border: "1px solid #333",
-    color: "white",
+    padding: "14px 16px",
+    borderRadius: "16px",
+    border: "1px solid #313131",
+    background: "#0f0f10",
+    color: "#f4f4f5",
+    fontSize: "15px",
+    outline: "none",
+    boxSizing: "border-box",
   },
   textarea: {
     width: "100%",
-    padding: 10,
-    marginBottom: 10,
-    background: "#111",
-    border: "1px solid #333",
-    color: "white",
+    minHeight: "120px",
+    padding: "14px 16px",
+    borderRadius: "16px",
+    border: "1px solid #313131",
+    background: "#0f0f10",
+    color: "#f4f4f5",
+    fontSize: "15px",
+    outline: "none",
+    resize: "vertical",
+    boxSizing: "border-box",
   },
   button: {
     width: "100%",
-    padding: 12,
-    background: "#c0c0c0",
-    color: "black",
-    border: "none",
-    marginTop: 10,
+    marginTop: "10px",
+    padding: "15px 18px",
+    borderRadius: "18px",
+    border: "1px solid #d1d5db",
+    background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+    color: "#09090b",
+    fontSize: "15px",
+    fontWeight: 700,
+    cursor: "pointer",
   },
-  premiumBox: {
-    marginTop: 20,
-    borderTop: "1px solid #333",
-    paddingTop: 10,
+  message: {
+    marginTop: "16px",
+    color: "#e5e5e5",
+    fontSize: "14px",
+    lineHeight: 1.6,
   },
-  checkbox: {
-    display: "block",
-    marginTop: 10,
+  footerNote: {
+    marginTop: "18px",
+    color: "#8f8f8f",
+    fontSize: "13px",
+    lineHeight: 1.7,
   },
 };
