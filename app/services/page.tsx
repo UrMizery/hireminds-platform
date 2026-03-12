@@ -27,8 +27,7 @@ export default function ServicesPage() {
               <li>Up to 4 bullets per role</li>
               <li>Save free version</li>
               <li>Print free version</li>
-              <li>1 complimentary mock interview, 30 min</li>
-              <li>Choose AI or live for the included mock interview</li>
+              <li>1 complimentary AI mock interview, 30 min</li>
             </ul>
           </div>
 
