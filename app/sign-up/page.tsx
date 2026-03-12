@@ -85,23 +85,21 @@ export default function SignUpPage() {
           <p style={styles.eyebrow}>HIREMINDS</p>
           <h1 style={styles.title}>Create your Career Passport.</h1>
           <p style={styles.subtitle}>
-            Set up your professional identity first. Once your account is created,
-            you can build a free or premium resume, save it to your profile, and
-            unlock advanced features when you are ready.
+            Set up your account first, then continue to the resume builder to
+            create a free or premium resume.
           </p>
 
           <div style={styles.heroCard}>
+            <p style={styles.heroCardTitle}>What happens next</p>
+
             <div style={styles.heroRow}>
-              <span style={styles.heroLabel}>Professional</span>
-              <span style={styles.heroValue}>Black / Graphite / Silver</span>
+              <span style={styles.heroValue}>1. Create your account</span>
             </div>
             <div style={styles.heroRow}>
-              <span style={styles.heroLabel}>Designed for</span>
-              <span style={styles.heroValue}>Career readiness + verified talent</span>
+              <span style={styles.heroValue}>2. Add your basic profile details</span>
             </div>
             <div style={styles.heroRow}>
-              <span style={styles.heroLabel}>Next step</span>
-              <span style={styles.heroValue}>Resume builder after sign up</span>
+              <span style={styles.heroValue}>3. Continue to the resume builder</span>
             </div>
           </div>
         </section>
@@ -188,7 +186,7 @@ export default function SignUpPage() {
           {message ? <p style={styles.message}>{message}</p> : null}
 
           <p style={styles.footerNote}>
-            Intro video, verification, and advanced profile tools can be added after sign up
+            Intro video, verification, and advanced profile tools can be added later
             from your Career Passport profile.
           </p>
         </section>
@@ -254,35 +252,35 @@ const styles: Record<string, React.CSSProperties> = {
     background:
       "radial-gradient(circle at top left, rgba(255,255,255,0.04), transparent 22%), linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
     color: "#e7e7e7",
-    padding: "40px 24px",
+    padding: "32px 24px",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   shell: {
-    maxWidth: "1280px",
+    maxWidth: "1240px",
     margin: "0 auto",
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "28px",
-    alignItems: "stretch",
+    gap: "24px",
+    alignItems: "start",
   },
   heroPanel: {
     background: "linear-gradient(180deg, #111111 0%, #151515 100%)",
     border: "1px solid #232323",
     borderRadius: "28px",
-    padding: "40px",
+    padding: "28px",
     boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
   },
   eyebrow: {
-    margin: "0 0 16px",
+    margin: "0 0 12px",
     color: "#a3a3a3",
     letterSpacing: "0.28em",
     fontSize: "12px",
     fontWeight: 600,
   },
   title: {
-    margin: "0 0 18px",
-    fontSize: "52px",
+    margin: "0 0 14px",
+    fontSize: "42px",
     lineHeight: 1.02,
     fontWeight: 500,
     letterSpacing: "-0.04em",
@@ -290,43 +288,43 @@ const styles: Record<string, React.CSSProperties> = {
   },
   subtitle: {
     margin: 0,
-    fontSize: "16px",
-    lineHeight: 1.75,
+    fontSize: "15px",
+    lineHeight: 1.7,
     color: "#b3b3b3",
-    maxWidth: "560px",
+    maxWidth: "520px",
   },
   heroCard: {
-    marginTop: "36px",
-    padding: "22px",
+    marginTop: "24px",
+    padding: "18px",
     borderRadius: "22px",
     border: "1px solid #2d2d2d",
     background: "rgba(255,255,255,0.02)",
   },
+  heroCardTitle: {
+    margin: "0 0 14px",
+    color: "#f5f5f5",
+    fontSize: "13px",
+    fontWeight: 600,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+  },
   heroRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "16px",
     padding: "12px 0",
     borderBottom: "1px solid #222",
-  },
-  heroLabel: {
-    color: "#8f8f8f",
-    fontSize: "14px",
   },
   heroValue: {
     color: "#ececec",
     fontSize: "14px",
-    textAlign: "right",
   },
   formPanel: {
     background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
     border: "1px solid #262626",
     borderRadius: "28px",
-    padding: "34px",
+    padding: "30px",
     boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
   },
   formHeader: {
-    marginBottom: "22px",
+    marginBottom: "20px",
   },
   formKicker: {
     margin: "0 0 8px",
@@ -337,7 +335,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   formTitle: {
     margin: 0,
-    fontSize: "30px",
+    fontSize: "28px",
     fontWeight: 500,
     letterSpacing: "-0.03em",
     color: "#f5f5f5",
