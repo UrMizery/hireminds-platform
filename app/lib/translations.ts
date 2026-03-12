@@ -6,6 +6,7 @@ export const translations: Record<
     home: string;
     signIn: string;
     services: string;
+    cart: string;
     partner: string;
     contact: string;
     createPassport: string;
@@ -34,6 +35,7 @@ export const translations: Record<
     home: "Home",
     signIn: "Sign In",
     services: "Services",
+    cart: "Cart / Checkout",
     partner: "Partner with HireMinds",
     contact: "Contact Us",
     createPassport: "Create Career Passport / Sign Up",
@@ -66,6 +68,7 @@ export const translations: Record<
     home: "Inicio",
     signIn: "Iniciar sesión",
     services: "Servicios",
+    cart: "Carrito / Pago",
     partner: "Asociarse con HireMinds",
     contact: "Contáctanos",
     createPassport: "Crear Career Passport / Registrarse",
@@ -75,7 +78,7 @@ export const translations: Record<
     language: "Idioma",
     schedule: "Programar 1:1",
     jobBoard: "Bolsa de trabajo",
-    employerPartnerSignIn: "Acceso Empleador / Socio",
+    employerPartnerSignIn: "Acceso para Empleadores / Socios",
     whoIs: "¿Quién es HireMinds?",
     whatWeDo: "Qué Hacemos",
     whatNext: "Qué Sigue",
@@ -98,6 +101,7 @@ export const translations: Record<
     home: "الرئيسية",
     signIn: "تسجيل الدخول",
     services: "الخدمات",
+    cart: "السلة / الدفع",
     partner: "الشراكة مع HireMinds",
     contact: "اتصل بنا",
     createPassport: "إنشاء Career Passport / تسجيل",
@@ -130,6 +134,7 @@ export const translations: Record<
     home: "Strona główna",
     signIn: "Zaloguj się",
     services: "Usługi",
+    cart: "Koszyk / Płatność",
     partner: "Współpraca z HireMinds",
     contact: "Kontakt",
     createPassport: "Utwórz Career Passport / Rejestracja",
