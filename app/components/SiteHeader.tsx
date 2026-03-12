@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function SiteHeader() {
   const [partnerOpen, setPartnerOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   return (
     <header style={styles.header}>
@@ -12,7 +13,7 @@ export default function SiteHeader() {
           HireMinds
         </a>
 
-        <nav style={styles.nav}>
+        <div style={styles.centerNav}>
           <a href="/" style={styles.link}>
             Home
           </a>
@@ -25,17 +26,23 @@ export default function SiteHeader() {
             Services
           </a>
 
-          <span style={styles.lockedLink} title="Coming soon">
-            Employment Opportunities 🔒
-          </span>
+          <div
+            style={styles.dropdown}
+            onMouseEnter={() => setScheduleOpen(true)}
+            onMouseLeave={() => setScheduleOpen(false)}
+          >
+            <span style={styles.link}>Schedule 1:1 ▾</span>
 
-          <span style={styles.lockedLink} title="Coming soon">
-            Employer / Partner Sign In 🔒
-          </span>
-
-          <span style={styles.lockedLink} title="Coming soon">
-            Schedule 1 🔒
-          </span>
+            {scheduleOpen && (
+              <div style={styles.menu}>
+                <span style={styles.lockedMenuItem}>Career Coach 🔒</span>
+                <span style={styles.lockedMenuItem}>Live Mock Interview 🔒</span>
+                <span style={styles.lockedMenuItem}>Live Resume Revision 🔒</span>
+                <span style={styles.lockedMenuItem}>Consultation 🔒</span>
+                <span style={styles.lockedMenuItem}>Other 🔒</span>
+              </div>
+            )}
+          </div>
 
           <div
             style={styles.dropdown}
@@ -62,7 +69,17 @@ export default function SiteHeader() {
           <a href="/contact" style={styles.link}>
             Contact Us
           </a>
-        </nav>
+        </div>
+
+        <div style={styles.rightNav}>
+          <span style={styles.lockedLink} title="Coming soon">
+            Job Board 🔒
+          </span>
+
+          <span style={styles.lockedLink} title="Coming soon">
+            Employer / Partner Sign In 🔒
+          </span>
+        </div>
       </div>
     </header>
   );
@@ -79,11 +96,11 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: "1px solid #1f1f1f",
   },
   inner: {
-    maxWidth: "1440px",
+    maxWidth: "1520px",
     margin: "0 auto",
     padding: "14px 24px",
-    display: "flex",
-    justifyContent: "space-between",
+    display: "grid",
+    gridTemplateColumns: "180px 1fr auto",
     alignItems: "center",
     gap: "20px",
   },
@@ -94,13 +111,21 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     letterSpacing: "0.04em",
     whiteSpace: "nowrap",
+    justifySelf: "start",
   },
-  nav: {
+  centerNav: {
+    display: "flex",
+    gap: "20px",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
+  },
+  rightNav: {
     display: "flex",
     gap: "18px",
     alignItems: "center",
-    flexWrap: "wrap",
     justifyContent: "flex-end",
+    flexWrap: "wrap",
   },
   link: {
     color: "#d4d4d8",
@@ -121,12 +146,12 @@ const styles: Record<string, React.CSSProperties> = {
   menu: {
     position: "absolute",
     top: 28,
-    right: 0,
+    left: 0,
     background: "#111",
     border: "1px solid #333",
     borderRadius: 12,
     padding: 8,
-    minWidth: 200,
+    minWidth: 220,
     boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
   },
   menuItem: {
@@ -136,5 +161,15 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     fontSize: 14,
     borderRadius: 8,
+    whiteSpace: "nowrap",
+  },
+  lockedMenuItem: {
+    display: "block",
+    padding: "10px 12px",
+    color: "#7c7c85",
+    fontSize: 14,
+    borderRadius: 8,
+    cursor: "not-allowed",
+    whiteSpace: "nowrap",
   },
 };
