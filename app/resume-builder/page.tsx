@@ -3,12 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type ResumePlan = "free" | "premium" | "pro";
+type ResumePlan = "free" | "access" | "premium" | "pro";
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
 
-type Bullet = {
-  text: string;
-};
+type Bullet = { text: string };
 
 type ExperienceItem = {
   companyName: string;
@@ -71,7 +69,7 @@ type ResumeSectionKey =
   | "accomplishments";
 
 const FREE_BULLET_LIMIT = 4;
-const PREMIUM_BULLET_LIMIT = 6;
+const PAID_BULLET_LIMIT = 6;
 const FREE_SKILL_LIMIT = 9;
 
 function moveItem<T>(arr: T[], index: number, direction: "up" | "down") {
@@ -226,7 +224,32 @@ export default function ResumeBuilderPage() {
     loadUserAndProfile();
   }, []);
 
-  const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PREMIUM_BULLET_LIMIT;
+  const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PAID_BULLET_LIMIT;
+
+  const planDetails = useMemo(() => {
+    if (plan === "free") {
+      return {
+        title: "Free",
+        text: "1 page only. 4 bullets per role. 1 live mock interview for 30 minutes. 1 free resume and 1 refresh after 7 days.",
+      };
+    }
+    if (plan === "access") {
+      return {
+        title: "Resume Access",
+        text: "$19.99/month. Unlimited resume edits, 1 employer verification offered once when enrolled, and ongoing resume access.",
+      };
+    }
+    if (plan === "premium") {
+      return {
+        title: "Premium",
+        text: "$29.99/month. Includes everything in Resume Access plus premium support and included employer verifications.",
+      };
+    }
+    return {
+      title: "Premium Plus / Pro",
+      text: "$45.99/month. Includes everything in Premium plus CV-level support and more included verification capacity.",
+    };
+  }, [plan]);
 
   const skills = useMemo(() => {
     return skillsInput
@@ -359,11 +382,7 @@ export default function ResumeBuilderPage() {
     ]);
   }
 
-  function updateEducation(
-    index: number,
-    field: keyof EducationItem,
-    value: string | boolean
-  ) {
+  function updateEducation(index: number, field: keyof EducationItem, value: string | boolean) {
     setEducationItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
@@ -414,11 +433,7 @@ export default function ResumeBuilderPage() {
     ]);
   }
 
-  function updateVolunteer(
-    index: number,
-    field: keyof VolunteerItem,
-    value: string | boolean
-  ) {
+  function updateVolunteer(index: number, field: keyof VolunteerItem, value: string | boolean) {
     setVolunteerItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
@@ -459,9 +474,7 @@ export default function ResumeBuilderPage() {
     }
 
     if (plan !== "free") {
-      setMessage(
-        "Premium Resume starting at $19.99 and Premium Plus / Pro starting at $39.99 must be purchased before saving premium versions."
-      );
+      setMessage("This builder is showing paid plans, but subscription checkout still needs to be wired to Stripe.");
       return;
     }
 
@@ -503,12 +516,9 @@ export default function ResumeBuilderPage() {
 
   function handlePrint() {
     if (plan !== "free") {
-      setMessage(
-        "Premium Resume starting at $19.99 and Premium Plus / Pro starting at $39.99 must be purchased before printing premium versions."
-      );
+      setMessage("Printing for paid plans should be unlocked after checkout is connected.");
       return;
     }
-
     window.print();
   }
 
@@ -528,9 +538,8 @@ export default function ResumeBuilderPage() {
             <p style={styles.kicker}>Resume Builder</p>
             <h1 style={styles.lockedTitle}>Sign in first to access this page.</h1>
             <p style={styles.previewText}>
-              Create your Career Passport account first, then sign in and return here to build your free or premium resume.
+              Create your Career Passport account first, then sign in and return here to build your resume.
             </p>
-
             <div style={styles.lockedButtons}>
               <a href="/sign-up" style={styles.signUpButton}>
                 Sign Up
@@ -575,10 +584,10 @@ export default function ResumeBuilderPage() {
       <div style={styles.shell}>
         <section style={styles.leftPanel}>
           <div style={styles.card}>
-            <div style={styles.topRow}>
+            <div style={styles.compactTopRow}>
               <div>
-                <p style={styles.kicker}>Pricing Tiers</p>
-                <h2 style={styles.sectionTitle}>Free, Premium, or Pro</h2>
+                <p style={styles.kicker}>Plan</p>
+                <h2 style={styles.sectionTitle}>Choose plan</h2>
               </div>
 
               <select
@@ -586,55 +595,16 @@ export default function ResumeBuilderPage() {
                 onChange={(e) => setPlan(e.target.value as ResumePlan)}
                 style={styles.planSelect}
               >
-                <option value="free">Free Resume</option>
-                <option value="premium">Premium Resume</option>
+                <option value="free">Free</option>
+                <option value="access">Resume Access</option>
+                <option value="premium">Premium</option>
                 <option value="pro">Premium Plus / Pro</option>
               </select>
             </div>
 
-            <div style={styles.priceGrid}>
-              <div style={styles.priceCard}>
-                <p style={styles.priceLabel}>Free</p>
-                <p style={styles.priceValue}>$0</p>
-                <ul style={styles.planList}>
-                  <li>1 page resume</li>
-                  <li>4 bullets per role</li>
-                  <li>Save + print free version</li>
-                  <li>1 complimentary live mock interview, 30 min</li>
-                </ul>
-              </div>
-
-              <div style={styles.priceCard}>
-                <p style={styles.priceLabel}>Premium Resume</p>
-                <p style={styles.priceValue}>Starting at $19.99</p>
-                <ul style={styles.planList}>
-                  <li>2 page resume</li>
-                  <li>6 bullets per role</li>
-                  <li>Premium save / download after payment</li>
-                  <li>Resume revision services</li>
-                </ul>
-              </div>
-
-              <div style={styles.priceCard}>
-                <p style={styles.priceLabel}>Premium Plus / Pro</p>
-                <p style={styles.priceValue}>Starting at $39.99</p>
-                <ul style={styles.planList}>
-                  <li>CV builder</li>
-                  <li>Employer verification</li>
-                  <li>AI mock interview</li>
-                  <li>Live mock interview</li>
-                  <li>AI + live resume revision</li>
-                </ul>
-              </div>
-            </div>
-
-            <div style={styles.addOnBox}>
-              <p style={styles.planBoxTitle}>Individual add-ons</p>
-              <ul style={styles.planList}>
-                <li>Single employment verification for free users</li>
-                <li>AI resume revision</li>
-                <li>Live resume revision</li>
-              </ul>
+            <div style={styles.planSummaryCard}>
+              <p style={styles.planSummaryTitle}>{planDetails.title}</p>
+              <p style={styles.planSummaryText}>{planDetails.text}</p>
             </div>
           </div>
 
@@ -654,12 +624,7 @@ export default function ResumeBuilderPage() {
 
             <div style={styles.twoCol}>
               <Field label="Email" value={email} onChange={setEmail} placeholder="Email" type="email" />
-              <Field
-                label="LinkedIn (optional)"
-                value={linkedinUrl}
-                onChange={setLinkedinUrl}
-                placeholder="LinkedIn URL"
-              />
+              <Field label="LinkedIn (optional)" value={linkedinUrl} onChange={setLinkedinUrl} placeholder="LinkedIn URL" />
             </div>
           </div>
 
@@ -768,8 +733,8 @@ export default function ResumeBuilderPage() {
 
                 <p style={styles.helperText}>
                   {plan === "free"
-                    ? "Free version allows up to 4 bullet points for each role."
-                    : "Premium and Pro allow up to 6 bullet points for each role."}
+                    ? "Free plan allows up to 4 bullet points for each role."
+                    : "Paid plans allow up to 6 bullet points for each role."}
                 </p>
 
                 {item.bullets.map((bullet, bulletIndex) => (
@@ -783,11 +748,7 @@ export default function ResumeBuilderPage() {
                 ))}
 
                 {item.bullets.length < bulletLimit ? (
-                  <button
-                    type="button"
-                    style={styles.secondaryButton}
-                    onClick={() => addExperienceBullet(index)}
-                  >
+                  <button type="button" style={styles.secondaryButton} onClick={() => addExperienceBullet(index)}>
                     + Add Bullet
                   </button>
                 ) : null}
@@ -856,7 +817,7 @@ export default function ResumeBuilderPage() {
                     checked={item.isPresent}
                     onChange={(e) => updateEducation(index, "isPresent", e.target.checked)}
                   />
-                  <span>I currently study here</span>
+                  <span>I currently attend here</span>
                 </label>
 
                 {!item.isPresent ? (
@@ -876,12 +837,7 @@ export default function ResumeBuilderPage() {
                   </div>
                 ) : null}
 
-                <Field
-                  label="GPA (optional)"
-                  value={item.gpa}
-                  onChange={(value) => updateEducation(index, "gpa", value)}
-                  placeholder="3.8"
-                />
+                <Field label="GPA (optional)" value={item.gpa} onChange={(value) => updateEducation(index, "gpa", value)} placeholder="3.8" />
               </div>
             ))}
 
@@ -947,7 +903,7 @@ export default function ResumeBuilderPage() {
                     checked={item.isPresent}
                     onChange={(e) => updateCertificate(index, "isPresent", e.target.checked)}
                   />
-                  <span>This is ongoing</span>
+                  <span>I am currently completing this certification</span>
                 </label>
 
                 {!item.isPresent ? (
@@ -1053,8 +1009,8 @@ export default function ResumeBuilderPage() {
 
                 <p style={styles.helperText}>
                   {plan === "free"
-                    ? "Free version allows up to 4 bullet points for volunteer work."
-                    : "Premium and Pro allow up to 6 bullet points for volunteer work."}
+                    ? "Free plan allows up to 4 bullet points for volunteer work."
+                    : "Paid plans allow up to 6 bullet points for volunteer work."}
                 </p>
 
                 {item.bullets.map((bullet, bulletIndex) => (
@@ -1068,11 +1024,7 @@ export default function ResumeBuilderPage() {
                 ))}
 
                 {item.bullets.length < bulletLimit ? (
-                  <button
-                    type="button"
-                    style={styles.secondaryButton}
-                    onClick={() => addVolunteerBullet(index)}
-                  >
+                  <button type="button" style={styles.secondaryButton} onClick={() => addVolunteerBullet(index)}>
                     + Add Bullet
                   </button>
                 ) : null}
@@ -1104,18 +1056,10 @@ export default function ResumeBuilderPage() {
               <div key={section} style={styles.moveRow}>
                 <span style={styles.moveLabel}>{section}</span>
                 <div style={styles.moveButtons}>
-                  <button
-                    type="button"
-                    style={styles.smallButton}
-                    onClick={() => moveSection(index, "up")}
-                  >
+                  <button type="button" style={styles.smallButton} onClick={() => moveSection(index, "up")}>
                     Up
                   </button>
-                  <button
-                    type="button"
-                    style={styles.smallButton}
-                    onClick={() => moveSection(index, "down")}
-                  >
+                  <button type="button" style={styles.smallButton} onClick={() => moveSection(index, "down")}>
                     Down
                   </button>
                 </div>
@@ -1143,7 +1087,7 @@ export default function ResumeBuilderPage() {
             <p style={styles.kicker}>Live Preview</p>
             <h2 style={styles.sectionTitle}>Resume Preview</h2>
             <p style={styles.previewText}>
-              Skills shift into columns. Company and city/state are bold. Free users can save and print free resumes.
+              The preview stays visible while you build and expands as you type.
             </p>
           </div>
 
@@ -1183,7 +1127,7 @@ export default function ResumeBuilderPage() {
                     >
                       {skills.map((skill, index) => (
                         <p key={index} style={styles.skillItem}>
-                          {skill}
+                          • {skill}
                         </p>
                       ))}
                     </div>
@@ -1203,13 +1147,7 @@ export default function ResumeBuilderPage() {
                               .join(" — ")}
                           </p>
                           <p style={styles.resumeDate}>
-                            {formatDateRange(
-                              item.startMonth,
-                              item.startYear,
-                              item.endMonth,
-                              item.endYear,
-                              item.isPresent
-                            )}
+                            {formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
                           </p>
                         </div>
                         <p style={styles.resumeRole}>{item.roleTitle}</p>
@@ -1238,13 +1176,7 @@ export default function ResumeBuilderPage() {
                               .join(" — ")}
                           </p>
                           <p style={styles.resumeDate}>
-                            {formatDateRange(
-                              item.startMonth,
-                              item.startYear,
-                              item.endMonth,
-                              item.endYear,
-                              item.isPresent
-                            )}
+                            {formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
                           </p>
                         </div>
                         <p style={styles.resumeText}>
@@ -1269,13 +1201,7 @@ export default function ResumeBuilderPage() {
                               .join(" — ")}
                           </p>
                           <p style={styles.resumeDate}>
-                            {formatDateRange(
-                              item.startMonth,
-                              item.startYear,
-                              item.endMonth,
-                              item.endYear,
-                              item.isPresent
-                            )}
+                            {formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
                           </p>
                         </div>
                         <p style={styles.resumeText}>{item.certificateName}</p>
@@ -1297,13 +1223,7 @@ export default function ResumeBuilderPage() {
                               .join(" — ")}
                           </p>
                           <p style={styles.resumeDate}>
-                            {formatDateRange(
-                              item.startMonth,
-                              item.startYear,
-                              item.endMonth,
-                              item.endYear,
-                              item.isPresent
-                            )}
+                            {formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
                           </p>
                         </div>
                         <p style={styles.resumeRole}>{item.roleTitle}</p>
@@ -1514,33 +1434,34 @@ const styles: Record<string, React.CSSProperties> = {
   shell: {
     maxWidth: "1480px",
     margin: "0 auto",
-    padding: "28px 24px 0",
+    padding: "20px 24px 0",
     display: "grid",
     gridTemplateColumns: "1.05fr 0.95fr",
-    gap: "24px",
+    gap: "18px",
     alignItems: "start",
   },
   leftPanel: {
     display: "grid",
-    gap: "20px",
+    gap: "16px",
   },
   rightPanel: {
     position: "sticky",
-    top: "108px",
+    top: "98px",
+    alignSelf: "start",
   },
   card: {
     background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
     border: "1px solid #262626",
     borderRadius: "24px",
-    padding: "24px",
+    padding: "22px",
     boxShadow: "0 30px 80px rgba(0,0,0,0.25)",
   },
-  topRow: {
+  compactTopRow: {
     display: "flex",
     justifyContent: "space-between",
     gap: "16px",
-    alignItems: "start",
-    marginBottom: "10px",
+    alignItems: "center",
+    marginBottom: "12px",
   },
   kicker: {
     margin: "0 0 8px",
@@ -1565,45 +1486,22 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
     minWidth: "220px",
   },
-  priceGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "14px",
-    marginTop: "16px",
-    marginBottom: "16px",
-  },
-  priceCard: {
+  planSummaryCard: {
     background: "#0f172a",
     border: "1px solid #273244",
     borderRadius: "18px",
     padding: "16px",
   },
-  priceLabel: {
+  planSummaryTitle: {
     margin: "0 0 8px",
-    color: "#e5e7eb",
+    color: "#f5f5f5",
     fontWeight: 700,
   },
-  priceValue: {
-    margin: "0 0 12px",
-    color: "#93c5fd",
-    fontWeight: 700,
-  },
-  addOnBox: {
-    background: "#111827",
-    border: "1px solid #273244",
-    borderRadius: "18px",
-    padding: "16px",
-  },
-  planBoxTitle: {
-    margin: "0 0 10px",
-    color: "#e5e7eb",
-    fontWeight: 700,
-  },
-  planList: {
+  planSummaryText: {
     margin: 0,
-    paddingLeft: "18px",
     color: "#cbd5e1",
-    lineHeight: 1.8,
+    lineHeight: 1.7,
+    fontSize: "14px",
   },
   fieldWrap: {
     marginBottom: "12px",
@@ -1733,6 +1631,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   previewHeader: {
     marginBottom: "14px",
+    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
+    border: "1px solid #262626",
+    borderRadius: "24px",
+    padding: "20px",
   },
   previewText: {
     color: "#9ca3af",
@@ -1742,8 +1644,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   resumePaper: {
     background: "#ffffff",
-    minHeight: "980px",
-    padding: "38px",
+    minHeight: "820px",
+    maxHeight: "calc(100vh - 220px)",
+    overflowY: "auto",
+    padding: "32px",
     borderRadius: "16px",
     color: "#0f172a",
     boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
