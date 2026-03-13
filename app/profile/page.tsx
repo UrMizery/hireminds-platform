@@ -44,6 +44,11 @@ export default function ProfilePage() {
     return passportSlug ? `/passport/${passportSlug}` : "";
   }, [passportSlug]);
 
+  const employerVerificationUrl = useMemo(() => {
+    const fallbackSlug = slugify(fullName || "career-passport");
+    return `/verify/${passportSlug || fallbackSlug}`;
+  }, [passportSlug, fullName]);
+
   useEffect(() => {
     async function loadProfile() {
       const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -152,19 +157,10 @@ export default function ProfilePage() {
       };
 
       if (profileId) {
-        const { error } = await supabase
-          .from("candidate_profiles")
-          .update(payload)
-          .eq("id", profileId);
-
+        const { error } = await supabase.from("candidate_profiles").update(payload).eq("id", profileId);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase
-          .from("candidate_profiles")
-          .insert(payload)
-          .select()
-          .single();
-
+        const { data, error } = await supabase.from("candidate_profiles").insert(payload).select().single();
         if (error) throw error;
         setProfileId(data.id);
       }
@@ -173,7 +169,6 @@ export default function ProfilePage() {
       setVideoUrl(nextVideoUrl);
       setResumeUrl(nextResumeUrl);
       setPassportSlug(finalSlug);
-
       setMessage("Profile saved successfully.");
     } catch (err: any) {
       setMessage(err.message || "Unable to save profile.");
@@ -212,66 +207,69 @@ export default function ProfilePage() {
             </div>
 
             <p style={styles.subtext}>
-              Add more to your profile here, including a photo, intro video, resume,
-              bio, and professional links.
+              Add your photo, intro video, resume, and profile details here.
             </p>
 
             <div style={styles.noticeBox}>
               <p style={styles.noticeTitle}>Privacy Notice</p>
               <p style={styles.noticeText}>
-                Your information is stored securely and is not sold or shared for
-                marketing purposes.
+                Your information is stored securely and is not sold or shared for marketing purposes.
               </p>
             </div>
           </div>
 
           <div style={styles.card}>
-            <p style={styles.kicker}>Profile Details</p>
-            <h2 style={styles.sectionTitle}>Basic Information</h2>
+            <div style={styles.profileHeaderRow}>
+              <div style={styles.photoBlock}>
+                {photoUrl ? (
+                  <img src={photoUrl} alt="Profile" style={styles.avatar} />
+                ) : (
+                  <div style={styles.avatarPlaceholder}>No Photo</div>
+                )}
 
-            <div style={styles.twoCol}>
-              <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="Full Name" />
-              <Field label="Phone" value={phone} onChange={setPhone} placeholder="Phone Number" />
+                <label style={styles.label}>Profile Photo</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.profileTextBlock}>
+                <p style={styles.kicker}>Profile Details</p>
+                <h2 style={styles.sectionTitle}>Basic Information</h2>
+
+                <div style={styles.twoCol}>
+                  <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="Full Name" />
+                  <Field label="Phone" value={phone} onChange={setPhone} placeholder="Phone Number" />
+                </div>
+
+                <div style={styles.twoCol}>
+                  <Field label="Email" value={email} onChange={setEmail} placeholder="Email" type="email" />
+                  <Field label="LinkedIn" value={linkedinUrl} onChange={setLinkedinUrl} placeholder="LinkedIn URL" />
+                </div>
+
+                <div style={styles.twoCol}>
+                  <Field label="City" value={city} onChange={setCity} placeholder="City" />
+                  <Field label="State" value={stateName} onChange={setStateName} placeholder="State" />
+                </div>
+
+                <Field label="Professional Headline" value={headline} onChange={setHeadline} placeholder="Professional Headline" />
+
+                <TextAreaField
+                  label="Short Bio"
+                  value={bio}
+                  onChange={setBio}
+                  placeholder="Write a short professional bio for your Career Passport."
+                />
+              </div>
             </div>
-
-            <div style={styles.twoCol}>
-              <Field label="Email" value={email} onChange={setEmail} placeholder="Email" type="email" />
-              <Field label="LinkedIn" value={linkedinUrl} onChange={setLinkedinUrl} placeholder="LinkedIn URL" />
-            </div>
-
-            <div style={styles.twoCol}>
-              <Field label="City" value={city} onChange={setCity} placeholder="City" />
-              <Field label="State" value={stateName} onChange={setStateName} placeholder="State" />
-            </div>
-
-            <Field label="Professional Headline" value={headline} onChange={setHeadline} placeholder="Professional Headline" />
-
-            <TextAreaField
-              label="Short Bio"
-              value={bio}
-              onChange={setBio}
-              placeholder="Write a short professional bio for your Career Passport."
-            />
-
-            <Field
-              label="Passport Slug"
-              value={passportSlug}
-              onChange={setPassportSlug}
-              placeholder="your-name"
-            />
           </div>
 
           <div style={styles.card}>
             <p style={styles.kicker}>Uploads</p>
             <h2 style={styles.sectionTitle}>Media + Resume</h2>
-
-            <label style={styles.label}>Profile Photo</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-              style={styles.input}
-            />
 
             <label style={styles.label}>Intro Video</label>
             <input
@@ -295,7 +293,7 @@ export default function ProfilePage() {
                 checked={requestVerification}
                 onChange={(e) => setRequestVerification(e.target.checked)}
               />
-              <span>Request employer verification (premium / add-on service)</span>
+              <span>Request employer verification</span>
             </label>
 
             <div style={styles.actionRow}>
@@ -317,17 +315,9 @@ export default function ProfilePage() {
             <p style={styles.kicker}>Profile Preview</p>
             <h2 style={styles.sectionTitle}>Career Passport Snapshot</h2>
 
-            {photoUrl ? (
-              <img src={photoUrl} alt="Profile" style={styles.avatar} />
-            ) : (
-              <div style={styles.avatarPlaceholder}>No Photo</div>
-            )}
-
             <h3 style={styles.previewName}>{fullName || "Your Name"}</h3>
             <p style={styles.previewLine}>{headline || "Professional Headline"}</p>
-            <p style={styles.previewLine}>
-              {[city, stateName].filter(Boolean).join(", ") || "City, State"}
-            </p>
+            <p style={styles.previewLine}>{[city, stateName].filter(Boolean).join(", ") || "City, State"}</p>
             <p style={styles.previewLine}>{email || "email@example.com"}</p>
             {linkedinUrl ? <p style={styles.previewLine}>{linkedinUrl}</p> : null}
 
@@ -343,6 +333,11 @@ export default function ProfilePage() {
                 <li>{videoUrl ? "Intro video uploaded" : "No intro video uploaded yet"}</li>
                 <li>{requestVerification ? "Verification requested" : "Verification not requested"}</li>
               </ul>
+            </div>
+
+            <div style={styles.previewBox}>
+              <p style={styles.previewBoxTitle}>Employer Verification Link</p>
+              <p style={styles.previewText}>{employerVerificationUrl}</p>
             </div>
 
             {publicPassportUrl ? (
@@ -505,6 +500,17 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
     lineHeight: 1.7,
   },
+  profileHeaderRow: {
+    display: "grid",
+    gridTemplateColumns: "220px 1fr",
+    gap: "20px",
+    alignItems: "start",
+  },
+  photoBlock: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  profileTextBlock: {},
   twoCol: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -597,17 +603,17 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.6,
   },
   avatar: {
-    width: "120px",
-    height: "120px",
-    borderRadius: "50%",
+    width: "180px",
+    height: "180px",
+    borderRadius: "18px",
     objectFit: "cover",
     marginBottom: "18px",
     border: "1px solid #2e2e2e",
   },
   avatarPlaceholder: {
-    width: "120px",
-    height: "120px",
-    borderRadius: "50%",
+    width: "180px",
+    height: "180px",
+    borderRadius: "18px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -643,6 +649,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     color: "#c8c8c8",
     lineHeight: 1.7,
+    wordBreak: "break-word",
   },
   previewList: {
     margin: 0,
