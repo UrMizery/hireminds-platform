@@ -44,11 +44,6 @@ export default function ProfilePage() {
     return passportSlug ? `/passport/${passportSlug}` : "";
   }, [passportSlug]);
 
-  const employerVerificationUrl = useMemo(() => {
-    const fallbackSlug = slugify(fullName || "career-passport");
-    return `/verify/${passportSlug || fallbackSlug}`;
-  }, [passportSlug, fullName]);
-
   useEffect(() => {
     async function loadProfile() {
       const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -91,21 +86,24 @@ export default function ProfilePage() {
       setPassportSlug(profile.passport_slug || "");
       setResumeUrl(profile.resume_url || "");
       setVideoUrl(profile.intro_video_url || "");
-      setPhotoUrl((profile as any).photo_url || "");
+      setPhotoUrl(profile.photo_url || "");
       setLoading(false);
     }
 
     loadProfile();
   }, []);
 
-  async function uploadFile(bucket: string, file: File, pathPrefix: string) {
-    const filePath = `${pathPrefix}/${Date.now()}-${file.name}`;
+  async function uploadFile(bucket: string, file: File, folder: string) {
+    const fileExt = file.name.split(".").pop() || "file";
+    const filePath = `${folder}/${Date.now()}.${fileExt}`;
 
-    const { error } = await supabase.storage.from(bucket).upload(filePath, file, {
-      upsert: true,
-    });
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file, { upsert: true });
 
-    if (error) throw error;
+    if (uploadError) {
+      throw uploadError;
+    }
 
     const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
     return data.publicUrl;
@@ -129,7 +127,7 @@ export default function ProfilePage() {
       let nextResumeUrl = resumeUrl;
 
       if (photoFile) {
-        nextPhotoUrl = await uploadFile("profile-videos", photoFile, `${userId}/photo`);
+        nextPhotoUrl = await uploadFile("profile-photos", photoFile, `${userId}/photo`);
       }
 
       if (videoFile) {
@@ -157,10 +155,19 @@ export default function ProfilePage() {
       };
 
       if (profileId) {
-        const { error } = await supabase.from("candidate_profiles").update(payload).eq("id", profileId);
+        const { error } = await supabase
+          .from("candidate_profiles")
+          .update(payload)
+          .eq("id", profileId);
+
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("candidate_profiles").insert(payload).select().single();
+        const { data, error } = await supabase
+          .from("candidate_profiles")
+          .insert(payload)
+          .select()
+          .single();
+
         if (error) throw error;
         setProfileId(data.id);
       }
@@ -169,6 +176,7 @@ export default function ProfilePage() {
       setVideoUrl(nextVideoUrl);
       setResumeUrl(nextResumeUrl);
       setPassportSlug(finalSlug);
+
       setMessage("Profile saved successfully.");
     } catch (err: any) {
       setMessage(err.message || "Unable to save profile.");
@@ -206,10 +214,6 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            <p style={styles.subtext}>
-              Add your photo, intro video, resume, and profile details here.
-            </p>
-
             <div style={styles.noticeBox}>
               <p style={styles.noticeTitle}>Privacy Notice</p>
               <p style={styles.noticeText}>
@@ -241,27 +245,27 @@ export default function ProfilePage() {
                 <h2 style={styles.sectionTitle}>Basic Information</h2>
 
                 <div style={styles.twoCol}>
-                  <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="Full Name" />
-                  <Field label="Phone" value={phone} onChange={setPhone} placeholder="Phone Number" />
+                  <Field label="Full Name" value={fullName} onChange={setFullName} />
+                  <Field label="Phone" value={phone} onChange={setPhone} />
                 </div>
 
                 <div style={styles.twoCol}>
-                  <Field label="Email" value={email} onChange={setEmail} placeholder="Email" type="email" />
-                  <Field label="LinkedIn" value={linkedinUrl} onChange={setLinkedinUrl} placeholder="LinkedIn URL" />
+                  <Field label="Email" value={email} onChange={setEmail} type="email" />
+                  <Field label="LinkedIn" value={linkedinUrl} onChange={setLinkedinUrl} />
                 </div>
 
                 <div style={styles.twoCol}>
-                  <Field label="City" value={city} onChange={setCity} placeholder="City" />
-                  <Field label="State" value={stateName} onChange={setStateName} placeholder="State" />
+                  <Field label="City" value={city} onChange={setCity} />
+                  <Field label="State" value={stateName} onChange={setStateName} />
                 </div>
 
-                <Field label="Professional Headline" value={headline} onChange={setHeadline} placeholder="Professional Headline" />
+                <Field label="Professional Headline" value={headline} onChange={setHeadline} />
 
                 <TextAreaField
                   label="Short Bio"
                   value={bio}
                   onChange={setBio}
-                  placeholder="Write a short professional bio for your Career Passport."
+                  placeholder="Write a short professional bio."
                 />
               </div>
             </div>
@@ -319,26 +323,6 @@ export default function ProfilePage() {
             <p style={styles.previewLine}>{headline || "Professional Headline"}</p>
             <p style={styles.previewLine}>{[city, stateName].filter(Boolean).join(", ") || "City, State"}</p>
             <p style={styles.previewLine}>{email || "email@example.com"}</p>
-            {linkedinUrl ? <p style={styles.previewLine}>{linkedinUrl}</p> : null}
-
-            <div style={styles.previewBox}>
-              <p style={styles.previewBoxTitle}>Bio</p>
-              <p style={styles.previewText}>{bio || "Your short bio will appear here."}</p>
-            </div>
-
-            <div style={styles.previewBox}>
-              <p style={styles.previewBoxTitle}>Saved Items</p>
-              <ul style={styles.previewList}>
-                <li>{resumeUrl ? "Resume uploaded" : "No resume uploaded yet"}</li>
-                <li>{videoUrl ? "Intro video uploaded" : "No intro video uploaded yet"}</li>
-                <li>{requestVerification ? "Verification requested" : "Verification not requested"}</li>
-              </ul>
-            </div>
-
-            <div style={styles.previewBox}>
-              <p style={styles.previewBoxTitle}>Employer Verification Link</p>
-              <p style={styles.previewText}>{employerVerificationUrl}</p>
-            </div>
 
             {publicPassportUrl ? (
               <a href={publicPassportUrl} style={styles.publicLink}>
@@ -406,8 +390,7 @@ function TextAreaField({
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top left, rgba(255,255,255,0.04), transparent 22%), linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
+    background: "linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
     color: "#e7e7e7",
     padding: "32px 24px",
     fontFamily:
@@ -439,14 +422,12 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #262626",
     borderRadius: "24px",
     padding: "24px",
-    boxShadow: "0 30px 80px rgba(0,0,0,0.25)",
   },
   previewCard: {
     background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
     border: "1px solid #262626",
     borderRadius: "24px",
     padding: "24px",
-    boxShadow: "0 30px 80px rgba(0,0,0,0.25)",
   },
   topBar: {
     display: "flex",
@@ -465,21 +446,13 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     fontSize: "34px",
     fontWeight: 500,
-    letterSpacing: "-0.03em",
     color: "#f5f5f5",
   },
   sectionTitle: {
     margin: 0,
     fontSize: "28px",
     fontWeight: 500,
-    letterSpacing: "-0.03em",
     color: "#f5f5f5",
-  },
-  subtext: {
-    marginTop: "12px",
-    color: "#b3b3b3",
-    fontSize: "15px",
-    lineHeight: 1.7,
   },
   noticeBox: {
     marginTop: "18px",
@@ -534,7 +507,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#0f0f10",
     color: "#f4f4f5",
     fontSize: "15px",
-    outline: "none",
     boxSizing: "border-box",
     marginBottom: "12px",
   },
@@ -547,7 +519,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#0f0f10",
     color: "#f4f4f5",
     fontSize: "15px",
-    outline: "none",
     resize: "vertical",
     boxSizing: "border-box",
   },
@@ -632,30 +603,6 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 0 8px",
     color: "#c8c8c8",
     lineHeight: 1.6,
-  },
-  previewBox: {
-    marginTop: "20px",
-    padding: "16px",
-    borderRadius: "18px",
-    border: "1px solid #2d2d2d",
-    background: "#101010",
-  },
-  previewBoxTitle: {
-    margin: "0 0 10px",
-    color: "#f5f5f5",
-    fontWeight: 700,
-  },
-  previewText: {
-    margin: 0,
-    color: "#c8c8c8",
-    lineHeight: 1.7,
-    wordBreak: "break-word",
-  },
-  previewList: {
-    margin: 0,
-    paddingLeft: "18px",
-    color: "#c8c8c8",
-    lineHeight: 1.8,
   },
   publicLink: {
     display: "inline-block",
