@@ -14,5 +14,10 @@
     "@supabase/supabase-js": "^2.45.0",
     "pdf-parse": "^1.1.1",
     "openai": "^4.56.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/react": "^18.2.0",
+    "@types/node": "^20.11.0"
   }
 }
