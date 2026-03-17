@@ -3,445 +3,165 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
-
 export default function SignUpPage() {
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
-  const [referredBy, setReferredBy] = useState("");
-  const [bio, setBio] = useState("");
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  async function handleSignUp() {
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
     setMessage("");
 
-    if (!fullName || !email || !password) {
-      setMessage("Full name, email, and password are required.");
+    // 1. Create Auth User
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
       return;
     }
 
-    try {
-      setLoading(true);
+    const user = data.user;
 
-      const passportSlug = slugify(fullName);
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      const userId = data.user?.id;
-
-      if (!userId) {
-        setMessage("Account created. Please verify your email before continuing.");
-        return;
-      }
-
-      let resumeUrl = "";
-
-      if (resumeFile) {
-        const path = `${userId}/resume-${Date.now()}-${resumeFile.name}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("resumes")
-          .upload(path, resumeFile, { upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        const publicUrl = supabase.storage.from("resumes").getPublicUrl(path);
-        resumeUrl = publicUrl.data.publicUrl;
-      }
-
-      const { error: profileError } = await supabase.from("candidate_profiles").insert({
-        user_id: userId,
-        full_name: fullName,
-        phone,
-        email,
-        city,
-        state: stateName,
-        bio,
-        passport_slug: passportSlug,
-        resume_url: resumeUrl || null,
-      });
-
-      if (profileError) throw profileError;
-
-      setMessage(
-        "Career Passport account created. Your information was saved securely. If email confirmation is enabled, verify your email and then sign in to continue to the resume builder."
-      );
-    } catch (err: any) {
-      setMessage(err.message || "Something went wrong.");
-    } finally {
+    if (!user) {
+      setMessage("User not created.");
       setLoading(false);
+      return;
     }
+
+    // 2. Save to candidate_profiles (THIS IS THE FIX)
+    const { error: profileError } = await supabase
+      .from("candidate_profiles")
+      .upsert({
+        user_id: user.id,
+        full_name: fullName,
+        phone: phone,
+        email: email,
+        city: city,
+        state: stateName,
+      });
+
+    if (profileError) {
+      setMessage(profileError.message);
+      setLoading(false);
+      return;
+    }
+
+    setMessage("Account created successfully!");
+    setLoading(false);
+
+    // Redirect to profile
+    window.location.href = "/profile";
   }
 
   return (
     <main style={styles.page}>
-      <div style={styles.shell}>
-        <section style={styles.heroPanel}>
-          <p style={styles.eyebrow}>HIREMINDS</p>
-          <h1 style={styles.title}>Create your Career Passport.</h1>
-          <p style={styles.subtitle}>
-            Set up your account first, then continue to the resume builder to
-            create a free or premium resume.
-          </p>
+      <form onSubmit={handleSignUp} style={styles.card}>
+        <h1 style={styles.title}>Create Career Passport / Sign Up</h1>
 
-          <div style={styles.heroCard}>
-            <p style={styles.heroCardTitle}>What happens next</p>
-            <div style={styles.heroRow}>
-              <span style={styles.heroValue}>1. Create your account</span>
-            </div>
-            <div style={styles.heroRow}>
-              <span style={styles.heroValue}>2. Add your basic profile details</span>
-            </div>
-            <div style={styles.heroRow}>
-              <span style={styles.heroValue}>3. Continue to the resume builder</span>
-            </div>
-          </div>
-        </section>
+        <input
+          placeholder="Full Name"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          style={styles.input}
+        />
 
-        <section style={styles.formPanel}>
-          <div style={styles.formHeader}>
-            <p style={styles.formKicker}>Account Setup</p>
-            <h2 style={styles.formTitle}>Career Passport Sign Up</h2>
-          </div>
+        <input
+          placeholder="Phone Number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          style={styles.input}
+        />
 
-          <div style={styles.grid}>
-            <Field
-              label="Full Name"
-              value={fullName}
-              onChange={setFullName}
-              placeholder="Ismary Szegedi"
-            />
-            <Field
-              label="Phone Number"
-              value={phone}
-              onChange={setPhone}
-              placeholder="(203) 555-1234"
-            />
-          </div>
+        <input
+          placeholder="City"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          style={styles.input}
+        />
 
-          <div style={styles.grid}>
-            <Field
-              label="Email Address"
-              value={email}
-              onChange={setEmail}
-              placeholder="name@email.com"
-              type="email"
-            />
-            <Field
-              label="Password"
-              value={password}
-              onChange={setPassword}
-              placeholder="Create password"
-              type="password"
-            />
-          </div>
+        <input
+          placeholder="State"
+          value={stateName}
+          onChange={(e) => setStateName(e.target.value)}
+          style={styles.input}
+        />
 
-          <div style={styles.grid}>
-            <Field
-              label="City"
-              value={city}
-              onChange={setCity}
-              placeholder="Bridgeport"
-            />
-            <Field
-              label="State"
-              value={stateName}
-              onChange={setStateName}
-              placeholder="Connecticut"
-            />
-          </div>
+        <input
+          placeholder="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={styles.input}
+        />
 
-          <Field
-            label="Referred By"
-            value={referredBy}
-            onChange={setReferredBy}
-            placeholder="Name, organization, or source"
-          />
+        <input
+          placeholder="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={styles.input}
+        />
 
-          <TextAreaField
-            label="Short Bio"
-            value={bio}
-            onChange={setBio}
-            placeholder="Write a short professional bio for your Career Passport."
-          />
+        <button type="submit" style={styles.button} disabled={loading}>
+          {loading ? "Creating..." : "Create Account"}
+        </button>
 
-          <label style={styles.label}>Resume Upload (optional)</label>
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-            style={styles.input}
-          />
-
-          <button onClick={handleSignUp} disabled={loading} style={styles.button}>
-            {loading ? "Creating Account..." : "Create Career Passport"}
-          </button>
-
-          {message ? <p style={styles.message}>{message}</p> : null}
-
-          <div style={styles.privacyBox}>
-            <p style={styles.privacyTitle}>Privacy Notice</p>
-            <p style={styles.privacyText}>
-              Your Career Passport information is stored securely and is not sold
-              or shared for marketing purposes.
-            </p>
-          </div>
-
-          <p style={styles.footerNote}>
-            Intro video, verification, and advanced profile tools can be added later
-            from your Career Passport profile.
-          </p>
-        </section>
-      </div>
+        {message && <p style={styles.message}>{message}</p>}
+      </form>
     </main>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <div style={styles.fieldWrap}>
-      <label style={styles.label}>{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={styles.input}
-      />
-    </div>
-  );
-}
-
-function TextAreaField({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div style={styles.fieldWrap}>
-      <label style={styles.label}>{label}</label>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={styles.textarea}
-      />
-    </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top left, rgba(255,255,255,0.04), transparent 22%), linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
-    color: "#e7e7e7",
-    padding: "32px 24px",
-    fontFamily:
-      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#0a0a0a",
   },
-  shell: {
-    maxWidth: "1240px",
-    margin: "0 auto",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "24px",
-    alignItems: "start",
-  },
-  heroPanel: {
-    background: "linear-gradient(180deg, #111111 0%, #151515 100%)",
-    border: "1px solid #232323",
-    borderRadius: "28px",
-    padding: "28px",
-    boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
-  },
-  eyebrow: {
-    margin: "0 0 12px",
-    color: "#a3a3a3",
-    letterSpacing: "0.28em",
-    fontSize: "12px",
-    fontWeight: 600,
+  card: {
+    background: "#111",
+    padding: "30px",
+    borderRadius: "20px",
+    width: "100%",
+    maxWidth: "420px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
   },
   title: {
-    margin: "0 0 14px",
-    fontSize: "42px",
-    lineHeight: 1.02,
-    fontWeight: 500,
-    letterSpacing: "-0.04em",
-    color: "#f5f5f5",
-  },
-  subtitle: {
-    margin: 0,
-    fontSize: "15px",
-    lineHeight: 1.7,
-    color: "#b3b3b3",
-    maxWidth: "520px",
-  },
-  heroCard: {
-    marginTop: "24px",
-    padding: "18px",
-    borderRadius: "22px",
-    border: "1px solid #2d2d2d",
-    background: "rgba(255,255,255,0.02)",
-  },
-  heroCardTitle: {
-    margin: "0 0 14px",
-    color: "#f5f5f5",
-    fontSize: "13px",
-    fontWeight: 600,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-  },
-  heroRow: {
-    padding: "12px 0",
-    borderBottom: "1px solid #222",
-  },
-  heroValue: {
-    color: "#ececec",
-    fontSize: "14px",
-  },
-  formPanel: {
-    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-    border: "1px solid #262626",
-    borderRadius: "28px",
-    padding: "30px",
-    boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
-  },
-  formHeader: {
-    marginBottom: "20px",
-  },
-  formKicker: {
-    margin: "0 0 8px",
-    color: "#9a9a9a",
-    fontSize: "12px",
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-  },
-  formTitle: {
-    margin: 0,
-    fontSize: "28px",
-    fontWeight: 500,
-    letterSpacing: "-0.03em",
-    color: "#f5f5f5",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "14px",
-  },
-  fieldWrap: {
-    marginBottom: "14px",
-  },
-  label: {
-    display: "block",
-    marginBottom: "8px",
-    color: "#c9c9c9",
-    fontSize: "13px",
-    fontWeight: 500,
-    letterSpacing: "0.02em",
+    color: "#fff",
+    marginBottom: "10px",
   },
   input: {
-    width: "100%",
-    padding: "14px 16px",
-    borderRadius: "16px",
-    border: "1px solid #313131",
-    background: "#0f0f10",
-    color: "#f4f4f5",
-    fontSize: "15px",
-    outline: "none",
-    boxSizing: "border-box",
-  },
-  textarea: {
-    width: "100%",
-    minHeight: "120px",
-    padding: "14px 16px",
-    borderRadius: "16px",
-    border: "1px solid #313131",
-    background: "#0f0f10",
-    color: "#f4f4f5",
-    fontSize: "15px",
-    outline: "none",
-    resize: "vertical",
-    boxSizing: "border-box",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "1px solid #333",
+    background: "#000",
+    color: "#fff",
   },
   button: {
-    width: "100%",
-    marginTop: "10px",
-    padding: "15px 18px",
-    borderRadius: "18px",
-    border: "1px solid #d1d5db",
-    background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
-    color: "#09090b",
-    fontSize: "15px",
-    fontWeight: 700,
+    padding: "12px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#2563eb",
+    color: "#fff",
+    fontWeight: "bold",
     cursor: "pointer",
   },
   message: {
-    marginTop: "16px",
-    color: "#e5e5e5",
-    fontSize: "14px",
-    lineHeight: 1.6,
-  },
-  privacyBox: {
-    marginTop: "18px",
-    padding: "16px",
-    borderRadius: "18px",
-    border: "1px solid #2c2c2c",
-    background: "#101010",
-  },
-  privacyTitle: {
-    margin: "0 0 8px",
-    color: "#f3f4f6",
-    fontWeight: 700,
-    fontSize: "14px",
-  },
-  privacyText: {
-    margin: 0,
-    color: "#b8b8b8",
-    fontSize: "14px",
-    lineHeight: 1.7,
-  },
-  footerNote: {
-    marginTop: "18px",
-    color: "#8f8f8f",
-    fontSize: "13px",
-    lineHeight: 1.7,
+    color: "#ccc",
+    marginTop: "10px",
   },
 };
