@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 type ResumePlan = "free" | "pro";
-type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
 
 type Bullet = { text: string };
 
@@ -20,7 +19,6 @@ const [loading, setLoading] = useState(true);
 const [message, setMessage] = useState("");
 
 const [plan, setPlan] = useState<ResumePlan>("free");
-const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
 
 const [fullName, setFullName] = useState("");
 const [phone, setPhone] = useState("");
@@ -48,6 +46,7 @@ setLoading(false);
 loadUser();
 }, []);
 
+// SKILLS
 const skills = useMemo(() => {
 return skillsInput
 .split(",")
@@ -55,6 +54,7 @@ return skillsInput
 .filter(Boolean);
 }, [skillsInput]);
 
+// PLAN DETAILS
 const planDetails = useMemo(() => {
 if (plan === "free") {
 return {
@@ -69,6 +69,7 @@ text: "$24.99/month. Full access to all features.",
 };
 }, [plan]);
 
+// EXPERIENCE FUNCTIONS
 function addExperience() {
 setExperiences([
 ...experiences,
@@ -94,6 +95,7 @@ updated[index].bullets.push({ text: "" });
 setExperiences(updated);
 }
 
+// SAVE
 async function handleSave() {
 if (!userId) {
 setMessage("Please sign in first.");
@@ -117,14 +119,18 @@ setMessage("Resume saved!");
 }
 }
 
-if (loading) return <div style={styles.page}>Loading...</div>;
+// STATES
+if (loading) {
+return <div style={styles.page}>Loading...</div>;
+}
 
-if (!userId)
+if (!userId) {
 return (
 <div style={styles.page}>
 <h2>Please sign in</h2>
 </div>
 );
+}
 
 return (
 <div style={styles.page}>
@@ -143,150 +149,5 @@ style={styles.input}
 <p>{planDetails.text}</p>
 
 <div style={styles.container}>
-{/* LEFT */}
-<div style={styles.form}>
-<input
-placeholder="Full Name"
-value={fullName}
-onChange={(e) => setFullName(e.target.value)}
-style={styles.input}
-/>
-
-<input
-placeholder="Phone"
-value={phone}
-onChange={(e) => setPhone(e.target.value)}
-style={styles.input}
-/>
-
-<input
-placeholder="Email"
-value={email}
-onChange={(e) => setEmail(e.target.value)}
-style={styles.input}
-/>
-
-<textarea
-placeholder="Summary"
-value={summary}
-onChange={(e) => setSummary(e.target.value)}
-style={styles.input}
-/>
-
-<input
-placeholder="Skills (comma separated)"
-value={skillsInput}
-onChange={(e) => setSkillsInput(e.target.value)}
-style={styles.input}
-/>
-
-<h3>Experience</h3>
-
-{experiences.map((exp, i) => (
-<div key={i}>
-<input
-placeholder="Company"
-value={exp.companyName}
-onChange={(e) =>
-updateExperience(i, "companyName", e.target.value)
-}
-style={styles.input}
-/>
-
-<input
-placeholder="Role"
-value={exp.roleTitle}
-onChange={(e) =>
-updateExperience(i, "roleTitle", e.target.value)
-}
-style={styles.input}
-/>
-
-{exp.bullets.map((b, j) => (
-<input
-key={j}
-placeholder="Bullet"
-value={b.text}
-onChange={(e) =>
-updateBullet(i, j, e.target.value)
-}
-style={styles.input}
-/>
-))}
-
-<button onClick={() => addBullet(i)}>+ Bullet</button>
-</div>
-))}
-
-<button onClick={addExperience}>+ Experience</button>
-
-<button onClick={handleSave} style={styles.button}>
-Save Resume
-</button>
-
-{message && <p>{message}</p>}
-</div>
-
-{/* RIGHT PREVIEW */}
-<div style={styles.preview}>
-<h2>{fullName || "Full Name"}</h2>
-<p>{phone} | {email}</p>
-
-<h3>Summary</h3>
-<p>{summary}</p>
-
-<h3>Skills</h3>
-{skills.map((s, i) => (
-<p key={i}>• {s}</p>
-))}
-
-<h3>Experience</h3>
-{experiences.map((exp, i) => (
-<div key={i}>
-<strong>{exp.companyName}</strong> - {exp.roleTitle}
-{exp.bullets.map((b, j) => (
-<p key={j}>• {b.text}</p>
-))}
-</div>
-))}
-</div>
-</div>
-</div>
-);
-}
-
-const styles: any = {
-page: {
-background: "#000",
-color: "#fff",
-minHeight: "100vh",
-padding: "20px",
-},
-container: {
-display: "flex",
-gap: "20px",
-},
-form: {
-flex: 1,
-display: "flex",
-flexDirection: "column",
-gap: "10px",
-},
-preview: {
-flex: 1,
-background: "#111",
-padding: "20px",
-},
-input: {
-padding: "10px",
-background: "#111",
-border: "1px solid #333",
-color: "#fff",
-},
-button: {
-padding: "10px",
-background: "#2563eb",
-color: "#fff",
-border: "none",
-},
-};
+{/* LEFT SIDE */}
+{/* RIGHT SIDE PREVIEW */}
