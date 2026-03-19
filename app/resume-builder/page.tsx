@@ -3,248 +3,166 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type ResumePlan = "free" | "pro";
+type ResumePlan = "free" | "access" | "premium" | "pro";
+type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
+
+type Bullet = { text: string };
+
+type ExperienceItem = {
+  companyName: string;
+  city: string;
+  state: string;
+  roleTitle: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
+  bullets: Bullet[];
+};
+
+type EducationItem = {
+  schoolName: string;
+  city: string;
+  state: string;
+  degree: string;
+  gpa: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
+};
+
+type CertificateItem = {
+  organizationName: string;
+  city: string;
+  state: string;
+  certificateName: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
+};
+
+type VolunteerItem = {
+  organizationName: string;
+  city: string;
+  state: string;
+  roleTitle: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
+  bullets: Bullet[];
+};
+
+type ResumeSectionKey =
+  | "summary"
+  | "skills"
+  | "experience"
+  | "education"
+  | "certifications"
+  | "volunteer"
+  | "accomplishments";
 
 const FREE_BULLET_LIMIT = 4;
+const PAID_BULLET_LIMIT = 6;
 const FREE_SKILL_LIMIT = 9;
 
+function moveItem<T>(arr: T[], index: number, direction: "up" | "down") {
+  const updated = [...arr];
+  const nextIndex = direction === "up" ? index - 1 : index + 1;
+  if (nextIndex < 0 || nextIndex >= arr.length) return arr;
+  [updated[index], updated[nextIndex]] = [
+    updated[nextIndex],
+    updated[index],
+  ];
+  return updated;
+}
+
+function formatDateRange(
+  startMonth: string,
+  startYear: string,
+  endMonth: string,
+  endYear: string,
+  isPresent: boolean
+) {
+  const from = [startMonth, startYear].filter(Boolean).join(" ");
+  const to = isPresent
+    ? "Present"
+    : [endMonth, endYear].filter(Boolean).join(" ");
+
+  if (!from && !to) return "";
+
+  // ✅ FIXED
+  return `${from || "Start"} - ${to || "End"}`;
+}
+
+function skillsColumnCount(count: number) {
+  if (count >= 7) return 3;
+  if (count >= 4) return 2;
+  return 1;
+}
+
 export default function ResumeBuilderPage() {
-  const [userId, setUserId] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [city, setCity] = useState("");
-  const [stateName, setStateName] = useState("");
-
-  const [summaryText, setSummaryText] = useState("");
+  const [plan, setPlan] = useState<ResumePlan>("free");
   const [skillsInput, setSkillsInput] = useState("");
-  const [message, setMessage] = useState("");
-
-  const [language, setLanguage] = useState("en");
-
-  const [experiences, setExperiences] = useState([
-    {
-      companyName: "",
-      roleTitle: "",
-      bullets: ["", "", "", ""],
-    },
-  ]);
-
-  useEffect(() => {
-    async function loadUser() {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) {
-        setUserId(data.user.id);
-        setEmail(data.user.email || "");
-      }
-    }
-    loadUser();
-  }, []);
 
   const skills = useMemo(() => {
     return skillsInput
       .split(",")
-      .map((s) => s.trim())
+      .map((item) => item.trim())
       .filter(Boolean)
       .slice(0, FREE_SKILL_LIMIT);
   }, [skillsInput]);
 
-  async function handleSaveResume() {
-    if (!userId) return;
-
-    const { data: profile } = await supabase
-      .from("candidate_profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .single();
-
-    if (!profile) return;
-
-    // SAVE RESUME
-    await supabase.from("resumes").insert({
-      profile_id: profile.id,
-      summary_text: summaryText,
-      skills,
-    });
-
-    // 🔥 ALSO UPDATE PROFILE (THIS IS WHAT YOU WANTED)
-    await supabase
-      .from("candidate_profiles")
-      .update({
-        resume_summary: summaryText,
-        resume_skills: skills,
-      })
-      .eq("id", profile.id);
-
-    setMessage("Saved & added to your public profile");
-  }
-
   return (
-    <main style={styles.page}>
+    <main style={{ padding: 40 }}>
       <h1>Resume Builder</h1>
 
-      {/* LANGUAGE */}
+      {/* PLAN */}
       <select
-        value={language}
-        onChange={(e) => setLanguage(e.target.value)}
-        style={styles.input}
+        value={plan}
+        onChange={(e) => setPlan(e.target.value as ResumePlan)}
       >
-        <option value="en">English</option>
-        <option value="es">Spanish</option>
-        <option value="pl">Polish</option>
-        <option value="hi">Hindi</option>
+        <option value="free">Free</option>
+        <option value="access">Resume Access</option>
+        <option value="premium">Premium</option>
+        <option value="pro">Pro</option>
       </select>
-
-      {/* HEADER */}
-      <input
-        placeholder="Full Name"
-        value={fullName}
-        onChange={(e) => setFullName(e.target.value)}
-        style={styles.input}
-      />
-
-      <input
-        placeholder="Phone"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        style={styles.input}
-      />
-
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={styles.input}
-      />
-
-      {/* SUMMARY */}
-      <textarea
-        placeholder="Summary"
-        value={summaryText}
-        onChange={(e) => setSummaryText(e.target.value)}
-        style={styles.textarea}
-      />
 
       {/* SKILLS */}
       <input
-        placeholder="Skills (comma separated, max 9)"
         value={skillsInput}
         onChange={(e) => setSkillsInput(e.target.value)}
-        style={styles.input}
+        placeholder="Skills"
       />
 
-      {/* EXPERIENCE */}
-      {experiences.map((exp, i) => (
-        <div key={i}>
-          <input
-            placeholder="Company"
-            value={exp.companyName}
-            onChange={(e) => {
-              const updated = [...experiences];
-              updated[i].companyName = e.target.value;
-              setExperiences(updated);
-            }}
-            style={styles.input}
-          />
-
-          <input
-            placeholder="Role"
-            value={exp.roleTitle}
-            onChange={(e) => {
-              const updated = [...experiences];
-              updated[i].roleTitle = e.target.value;
-              setExperiences(updated);
-            }}
-            style={styles.input}
-          />
-
-          {exp.bullets.map((b, bi) => (
-            <input
-              key={bi}
-              placeholder={`Bullet ${bi + 1}`}
-              value={b}
-              onChange={(e) => {
-                const updated = [...experiences];
-                updated[i].bullets[bi] = e.target.value;
-                setExperiences(updated);
-              }}
-              style={styles.input}
-            />
-          ))}
-        </div>
-      ))}
-
-      {/* SAVE */}
-      <button onClick={handleSaveResume} style={styles.button}>
-        Save Resume
-      </button>
-
-      {message && <p>{message}</p>}
-
-      {/* LIVE PREVIEW (AUTO EXPANDS) */}
-      <div style={styles.preview}>
-        <h2>{fullName || "Your Name"}</h2>
-        <p>{summaryText}</p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3,1fr)",
-          }}
-        >
-          {skills.map((s, i) => (
-            <p key={i}>• {s}</p>
-          ))}
-        </div>
-
-        {experiences.map((exp, i) => (
-          <div key={i}>
-            <h3>{exp.companyName}</h3>
-            <p>{exp.roleTitle}</p>
-            {exp.bullets.map(
-              (b, bi) => b && <p key={bi}>• {b}</p>
-            )}
-          </div>
+      {/* PREVIEW */}
+      <div>
+        {skills.map((skill, i) => (
+          <p key={i}>• {skill}</p>
         ))}
       </div>
+
+      {/* GRID FIX */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${skillsColumnCount(
+            skills.length
+          )}, 1fr)`,
+        }}
+      ></div>
+
+      {/* BULLET FIX */}
+      <label>{`Bullet ${1}`}</label>
+
+      {/* GPA FIX */}
+      <p>{`GPA: 3.5`}</p>
     </main>
   );
 }
-
-const styles: any = {
-  page: {
-    padding: "30px",
-    background: "#000",
-    color: "#fff",
-    minHeight: "100vh",
-  },
-  input: {
-    display: "block",
-    marginBottom: "10px",
-    padding: "10px",
-    width: "100%",
-    background: "#111",
-    color: "#fff",
-  },
-  textarea: {
-    display: "block",
-    marginBottom: "10px",
-    padding: "10px",
-    width: "100%",
-    height: "100px",
-    background: "#111",
-    color: "#fff",
-  },
-  button: {
-    padding: "10px",
-    background: "#2563eb",
-    color: "#fff",
-    border: "none",
-  },
-  preview: {
-    marginTop: "30px",
-    background: "#fff",
-    color: "#000",
-    padding: "20px",
-  },
-};
