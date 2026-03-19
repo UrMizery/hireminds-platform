@@ -37,7 +37,7 @@ export default function ResumeBuilder() {
       {/* Upload */}
       <input type="file" onChange={handleResumeUpload} />
 
-      {/* Prompt */}
+      {/* Autofill Prompt (ONLY ONCE) */}
       {showAutofillPrompt && (
         <div style={styles.prompt}>
           <p>Use this resume to auto-fill your new resume?</p>
@@ -45,11 +45,11 @@ export default function ResumeBuilder() {
           <button
             style={styles.primaryBtn}
             onClick={() => {
-              setSummary(parsedData.summary || "");
-              setSkills(parsedData.skills || []);
-              setEducation(parsedData.education || "");
-              setCertifications(parsedData.certifications || "");
-              setWorkHistory(parsedData.jobs || []);
+              setSummary(parsedData?.summary || "");
+              setSkills(parsedData?.skills || []);
+              setEducation(parsedData?.education || "");
+              setCertifications(parsedData?.certifications || "");
+              setWorkHistory(parsedData?.jobs || []);
               setShowAutofillPrompt(false);
             }}
           >
