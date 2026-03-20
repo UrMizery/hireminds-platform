@@ -556,24 +556,6 @@ Profile
 </main>
 );
 }
-
-return (
-  <main style={styles.page}>
-
-    <style>
-      {`
-        @media print {
-          .resumeHeader {
-            position: fixed;
-            top: 0;
-            width: 100%;
-          }
-
-          .resumePaper {
-            margin-top: 120px;
-          }
-        }
-      `}
     </style>
 <div style={styles.fontBar}>
 <div style={styles.fontBarInner}>
