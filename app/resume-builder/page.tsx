@@ -1746,3 +1746,4 @@ margin: 0,
 fontSize: "14px",
 color: "#0f172a",
 },
+};
