@@ -247,7 +247,7 @@ text: "$29.99/month. Includes everything in Resume Access plus premium support a
 }
 return {
 title: "Premium Plus / Pro",
-text: "$45.99/month. Includes everything in Premium plus CV-level support and 5 employer verifications once enrolled.",
+text: "$45.99/month. Includes everything in Premium plus CV-level support and 5 employer verifications once when enrolled.",
 };
 }, [plan]);
 
