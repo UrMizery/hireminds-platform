@@ -558,7 +558,23 @@ Profile
 }
 
 return (
-<main style={styles.page}>
+  <main style={styles.page}>
+
+    <style>
+      {`
+        @media print {
+          .resumeHeader {
+            position: fixed;
+            top: 0;
+            width: 100%;
+          }
+
+          .resumePaper {
+            margin-top: 120px;
+          }
+        }
+      `}
+    </style>
 <div style={styles.fontBar}>
 <div style={styles.fontBarInner}>
 <div>
@@ -1730,18 +1746,3 @@ margin: 0,
 fontSize: "14px",
 color: "#0f172a",
 },
-<style>
-{`
-@media print {
-  .resumeHeader {
-    position: fixed;
-    top: 0;
-    width: 100%;
-  }
-
-  .resumePaper {
-    margin-top: 120px;
-  }
-}
-`}
-</style>
