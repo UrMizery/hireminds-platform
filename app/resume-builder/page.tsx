@@ -1092,12 +1092,13 @@ The preview stays visible while you build and expands as you type.
 </div>
 
 <div
+className="resumePaper"
 style={{
-...styles.resumePaper,
-fontFamily: fontFamily,
+  ...styles.resumePaper,
+  fontFamily: fontFamily,
 }}
 >
-<div style={styles.resumeHeader}>
+<div style={styles.resumeHeader} className="resumeHeader">
 <h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
 <p style={styles.resumeContact}>
 {phone || "Phone"}
