@@ -230,24 +230,24 @@ const planDetails = useMemo(() => {
 if (plan === "free") {
 return {
 title: "Free",
-text: "2 page only. 4 bullets per role. 1 live mock interview for 30 minutes. 2 free resumes and 1 revision after 7 days.",
+text: "2 page only. 4 bullets per role. 1 virtual mock interview session for 30 minutes. 1 free resume per month.",
 };
 }
 if (plan === "access") {
 return {
 title: "Resume Access",
-text: "$19.99/month. Unlimited resume edits, 1 employer verification offered once when enrolled, and ongoing resume access.",
+text: "$19.99/month. Ongoing resume access, 1 employer verification offered once when enrolled, two 30min virtual mock interviews sessions per month with a Career Coach.",
 };
 }
 if (plan === "premium") {
 return {
 title: "Premium",
-text: "$29.99/month. Includes everything in Resume Access plus premium support and included employer verifications.",
+text: "$29.99/month. Includes everything in Resume Access plus premium support and 3 employer verifications once when enrolled.",
 };
 }
 return {
 title: "Premium Plus / Pro",
-text: "$45.99/month. Includes everything in Premium plus CV-level support and more included verification capacity.",
+text: "$45.99/month. Includes everything in Premium plus CV-level support and 5 employer verifications once enrolled.",
 };
 }, [plan]);
 
