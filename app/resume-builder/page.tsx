@@ -230,7 +230,7 @@ const planDetails = useMemo(() => {
 if (plan === "free") {
 return {
 title: "Free",
-text: "2 page only. 4 bullets per role. 1 live mock interview for 30 minutes. 2 free resume and 1 revision after 7 days.",
+text: "2 page only. 4 bullets per role. 1 live mock interview for 30 minutes. 2 free resumes and 1 revision after 7 days.",
 };
 }
 if (plan === "access") {
@@ -494,7 +494,7 @@ const profileId = profileData.id;
 const { error: resumeError } = await supabase.from("resumes").insert({
 profile_id: profileId,
 title: "Free Resume",
-page_limit: 1,
+page_limit: 2,
 summary_heading: summaryHeading,
 summary_text: summaryText,
 skills,
