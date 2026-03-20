@@ -1,251 +1,298 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
-/* =========================
-   TRANSLATIONS
-========================= */
-
-const T: any = {
-  en: {
-    summary: "Summary",
-    skills: "Skills",
-    experience: "Work Experience",
-    education: "Education",
-    certifications: "Certifications",
-  },
-  es: {
-    summary: "Resumen",
-    skills: "Habilidades",
-    experience: "Experiencia",
-    education: "Educación",
-    certifications: "Certificaciones",
-  },
-  hi: {
-    summary: "सारांश",
-    skills: "कौशल",
-    experience: "अनुभव",
-    education: "शिक्षा",
-    certifications: "प्रमाणपत्र",
-  },
-  pl: {
-    summary: "Podsumowanie",
-    skills: "Umiejętności",
-    experience: "Doświadczenie",
-    education: "Edukacja",
-    certifications: "Certyfikaty",
-  },
-};
-
-/* ========================= */
-
-const BULLET_LIMIT = 4;
-const SKILL_LIMIT = 9;
+import { useState } from "react";
+import { v4 as uuid } from "uuid";
 
 export default function ResumeBuilder() {
-  const [lang, setLang] = useState("en");
-  const t = T[lang];
+  const [font, setFont] = useState("serif");
 
-  const [font, setFont] = useState("Times New Roman");
+  const [data, setData] = useState<any>({
+    name: "",
+    phone: "",
+    email: "",
+    linkedin: "",
+    location: "",
+    summary: "",
+    skills: [],
+    education: [],
+    work: [],
+    sections: ["summary", "skills", "education", "work"],
+  });
 
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [linkedin, setLinkedin] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
+  const update = (field: string, value: any) => {
+    setData({ ...data, [field]: value });
+  };
 
-  const [summaryTitle, setSummaryTitle] = useState("Summary");
-  const [summary, setSummary] = useState("");
+  // ---------------- SKILLS ----------------
+  const addSkill = (skill: string) => {
+    if (!skill || data.skills.length >= 9) return;
+    update("skills", [...data.skills, skill]);
+  };
 
-  const [skillsInput, setSkillsInput] = useState("");
+  // ---------------- EDUCATION ----------------
+  const addEducation = () => {
+    update("education", [
+      ...data.education,
+      {
+        id: uuid(),
+        school: "",
+        location: "",
+        date: "",
+        degree: "",
+        details: "",
+      },
+    ]);
+  };
 
-  const skills = useMemo(() => {
-    return skillsInput
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, SKILL_LIMIT);
-  }, [skillsInput]);
+  // ---------------- WORK ----------------
+  const addWork = () => {
+    update("work", [
+      ...data.work,
+      {
+        id: uuid(),
+        company: "",
+        location: "",
+        date: "",
+        title: "",
+        bullets: [],
+      },
+    ]);
+  };
 
-  const [experience, setExperience] = useState([
-    {
-      company: "",
-      role: "",
-      city: "",
-      state: "",
-      start: "",
-      end: "",
-      bullets: ["", "", "", ""],
-    },
-  ]);
+  const addBullet = (id: string, text: string) => {
+    if (!text) return;
 
-  const [education, setEducation] = useState([
-    {
-      school: "",
-      degree: "",
-      city: "",
-      state: "",
-      start: "",
-      end: "",
-    },
-  ]);
+    const updated = data.work.map((job: any) => {
+      if (job.id === id && job.bullets.length < 4) {
+        return { ...job, bullets: [...job.bullets, text] };
+      }
+      return job;
+    });
 
-  /* =========================
-     HANDLERS
-  ========================= */
+    update("work", updated);
+  };
 
-  function updateExperience(i: number, field: string, value: any) {
-    const copy = [...experience];
-    (copy[i] as any)[field] = value;
-    setExperience(copy);
-  }
+  // ---------------- REORDER ----------------
+  const moveSection = (i: number, dir: number) => {
+    const arr = [...data.sections];
+    [arr[i], arr[i + dir]] = [arr[i + dir], arr[i]];
+    update("sections", arr);
+  };
 
-  function updateBullet(i: number, j: number, value: string) {
-    const copy = [...experience];
-    copy[i].bullets[j] = value;
-    setExperience(copy);
-  }
-
-  function addBullet(i: number) {
-    const copy = [...experience];
-    if (copy[i].bullets.length < BULLET_LIMIT) {
-      copy[i].bullets.push("");
-      setExperience(copy);
-    }
-  }
-
-  /* =========================
-     UI
-  ========================= */
+  // ---------------- FONTS ----------------
+  const fontClass =
+    font === "serif"
+      ? "font-serif"
+      : font === "modern"
+      ? "font-sans"
+      : "font-mono";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#000", color: "#fff" }}>
-      
-      {/* LEFT */}
-      <div style={{ flex: 1, padding: 20, overflowY: "auto" }}>
-        <h2>Resume Builder</h2>
+    <div className="flex h-screen">
 
-        {/* LANGUAGE */}
-        <select onChange={(e) => setLang(e.target.value)}>
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-          <option value="hi">India</option>
-          <option value="pl">Polish</option>
-        </select>
+      {/* LEFT SIDE FORM */}
+      <div className="w-1/2 overflow-y-scroll border-r p-6 space-y-4">
 
-        {/* FONT */}
+        <h2 className="font-bold text-lg">Header</h2>
+
+        <input placeholder="Full Name" onChange={(e) => update("name", e.target.value)} />
+        <input placeholder="Phone" onChange={(e) => update("phone", e.target.value)} />
+        <input placeholder="Email" onChange={(e) => update("email", e.target.value)} />
+        <input placeholder="LinkedIn" onChange={(e) => update("linkedin", e.target.value)} />
+        <input placeholder="City, State" onChange={(e) => update("location", e.target.value)} />
+
         <select onChange={(e) => setFont(e.target.value)}>
-          <option>Times New Roman</option>
-          <option>Arial</option>
-          <option>Calibri</option>
+          <option value="serif">Professional Serif</option>
+          <option value="modern">Modern Sans</option>
+          <option value="classic">Classic Mono</option>
         </select>
 
-        {/* HEADER */}
-        <input placeholder="Full Name" onChange={(e) => setFullName(e.target.value)} />
-        <input placeholder="Phone" onChange={(e) => setPhone(e.target.value)} />
-        <input placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-        <input placeholder="LinkedIn" onChange={(e) => setLinkedin(e.target.value)} />
-        <input placeholder="City" onChange={(e) => setCity(e.target.value)} />
-        <input placeholder="State" onChange={(e) => setState(e.target.value)} />
+        <h2 className="font-bold text-lg">Summary / Title</h2>
+        <textarea onChange={(e) => update("summary", e.target.value)} />
 
-        {/* SUMMARY */}
+        <h2 className="font-bold text-lg">Skills (max 9)</h2>
         <input
-          value={summaryTitle}
-          onChange={(e) => setSummaryTitle(e.target.value)}
-        />
-        <textarea onChange={(e) => setSummary(e.target.value)} />
-
-        {/* SKILLS */}
-        <input
-          placeholder="Skills (comma separated max 9)"
-          onChange={(e) => setSkillsInput(e.target.value)}
+          placeholder="Press Enter"
+          onKeyDown={(e: any) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addSkill(e.target.value);
+              e.target.value = "";
+            }
+          }}
         />
 
-        {/* EXPERIENCE */}
-        <h3>{t.experience}</h3>
-        {experience.map((exp, i) => (
-          <div key={i}>
-            <input placeholder="Company" onChange={(e)=>updateExperience(i,"company",e.target.value)} />
-            <input placeholder="Role" onChange={(e)=>updateExperience(i,"role",e.target.value)} />
+        {data.skills.map((s: string, i: number) => (
+          <div key={i}>• {s}</div>
+        ))}
 
-            {exp.bullets.map((b, j) => (
-              <input key={j} placeholder={`Bullet ${j+1}`} onChange={(e)=>updateBullet(i,j,e.target.value)} />
+        <h2 className="font-bold text-lg">Education</h2>
+        <button onClick={addEducation}>Add Education</button>
+
+        {data.education.map((ed: any, i: number) => (
+          <div key={ed.id}>
+            <input placeholder="School" onChange={(e) => {
+              const arr = [...data.education];
+              arr[i].school = e.target.value;
+              update("education", arr);
+            }} />
+            <input placeholder="Location" onChange={(e) => {
+              const arr = [...data.education];
+              arr[i].location = e.target.value;
+              update("education", arr);
+            }} />
+            <input placeholder="Dates" onChange={(e) => {
+              const arr = [...data.education];
+              arr[i].date = e.target.value;
+              update("education", arr);
+            }} />
+            <input placeholder="Degree" onChange={(e) => {
+              const arr = [...data.education];
+              arr[i].degree = e.target.value;
+              update("education", arr);
+            }} />
+          </div>
+        ))}
+
+        <h2 className="font-bold text-lg">Work Experience</h2>
+        <button onClick={addWork}>Add Job</button>
+
+        {data.work.map((job: any, i: number) => (
+          <div key={job.id}>
+            <input placeholder="Company" onChange={(e) => {
+              const arr = [...data.work];
+              arr[i].company = e.target.value;
+              update("work", arr);
+            }} />
+
+            <input placeholder="Location" onChange={(e) => {
+              const arr = [...data.work];
+              arr[i].location = e.target.value;
+              update("work", arr);
+            }} />
+
+            <input placeholder="Dates" onChange={(e) => {
+              const arr = [...data.work];
+              arr[i].date = e.target.value;
+              update("work", arr);
+            }} />
+
+            <input placeholder="Title" onChange={(e) => {
+              const arr = [...data.work];
+              arr[i].title = e.target.value;
+              update("work", arr);
+            }} />
+
+            <input
+              placeholder="Add bullet (max 4)"
+              onKeyDown={(e: any) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addBullet(job.id, e.target.value);
+                  e.target.value = "";
+                }
+              }}
+            />
+
+            {job.bullets.map((b: string, idx: number) => (
+              <div key={idx}>• {b}</div>
             ))}
-
-            {exp.bullets.length < BULLET_LIMIT && (
-              <button onClick={() => addBullet(i)}>+ Add Bullet</button>
-            )}
           </div>
         ))}
 
-        {/* EDUCATION */}
-        <h3>{t.education}</h3>
-        {education.map((edu, i) => (
-          <div key={i}>
-            <input placeholder="School" />
-            <input placeholder="Degree" />
+        <h2 className="font-bold text-lg">Reorder Sections</h2>
+        {data.sections.map((s: string, i: number) => (
+          <div key={i} className="flex gap-2">
+            <span>{s}</span>
+            {i > 0 && <button onClick={() => moveSection(i, -1)}>↑</button>}
+            {i < data.sections.length - 1 && <button onClick={() => moveSection(i, 1)}>↓</button>}
           </div>
         ))}
+
       </div>
 
-      {/* RIGHT PREVIEW */}
-      <div style={{
-        flex: 1,
-        padding: 30,
-        background: "#fff",
-        color: "#000",
-        fontFamily: font,
-        overflowY: "auto"
-      }}>
-        
-        {/* HEADER */}
-        <div style={{ textAlign: "center" }}>
-          <h1 style={{ fontWeight: "bold" }}>{fullName || "Full Name"}</h1>
+      {/* RIGHT SIDE PREVIEW */}
+      <div className="w-1/2 overflow-y-scroll bg-gray-100 p-6">
+        <div className={`bg-white p-10 shadow max-w-[850px] mx-auto ${fontClass}`}>
 
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>{phone}</span>
-            <span>{email} | {linkedin}</span>
-            <span>{city}, {state}</span>
+          {/* HEADER */}
+          <div className="text-center font-bold text-2xl">
+            {data.name}
           </div>
+
+          <div className="flex justify-between text-sm mt-2">
+            <div>{data.phone}</div>
+            <div>{data.email} | {data.linkedin}</div>
+            <div>{data.location}</div>
+          </div>
+
+          {/* SECTIONS */}
+          {data.sections.map((section: string) => {
+
+            if (section === "summary") {
+              return (
+                <div key={section}>
+                  <h2 className="text-center font-bold mt-4">Summary</h2>
+                  <p>{data.summary}</p>
+                </div>
+              );
+            }
+
+            if (section === "skills") {
+              return (
+                <div key={section}>
+                  <h2 className="text-center font-bold mt-4">Skills</h2>
+                  <div className="grid grid-cols-3">
+                    {data.skills.map((s: string, i: number) => (
+                      <div key={i}>• {s}</div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            if (section === "education") {
+              return (
+                <div key={section}>
+                  <h2 className="text-center font-bold mt-4">Education</h2>
+                  {data.education.map((ed: any) => (
+                    <div key={ed.id}>
+                      <div className="flex justify-between font-bold">
+                        <span>{ed.school}, {ed.location}</span>
+                        <span>{ed.date}</span>
+                      </div>
+                      <div><strong>{ed.degree}</strong></div>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+            if (section === "work") {
+              return (
+                <div key={section}>
+                  <h2 className="text-center font-bold mt-4">Work Experience</h2>
+                  {data.work.map((job: any) => (
+                    <div key={job.id}>
+                      <div className="flex justify-between font-bold">
+                        <span>{job.company}, {job.location}</span>
+                        <span>{job.date}</span>
+                      </div>
+                      <div>{job.title}</div>
+                      <ul>
+                        {job.bullets.map((b: string, i: number) => (
+                          <li key={i}>• {b}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+          })}
+
         </div>
-
-        {/* SUMMARY */}
-        <h2 style={{ textAlign: "center", fontWeight: "bold" }}>{summaryTitle}</h2>
-        <p>{summary}</p>
-
-        {/* SKILLS */}
-        <h2 style={{ textAlign: "center", fontWeight: "bold" }}>{t.skills}</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
-          {skills.map((s, i) => (
-            <div key={i}>• {s}</div>
-          ))}
-        </div>
-
-        {/* EXPERIENCE */}
-        <h2 style={{ textAlign: "center", fontWeight: "bold" }}>{t.experience}</h2>
-        {experience.map((exp, i) => (
-          <div key={i}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <strong>{exp.company}</strong>
-              <span>{exp.start} - {exp.end}</span>
-            </div>
-            <p>{exp.role}</p>
-            {exp.bullets.map((b, j) => b && <p key={j}>• {b}</p>)}
-          </div>
-        ))}
-
-        {/* EDUCATION */}
-        <h2 style={{ textAlign: "center", fontWeight: "bold" }}>{t.education}</h2>
-        {education.map((edu, i) => (
-          <div key={i}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <strong>{edu.school}</strong>
-              <span>{edu.start} - {edu.end}</span>
-            </div>
-            <p>{edu.degree}</p>
-          </div>
-        ))}
       </div>
     </div>
   );
