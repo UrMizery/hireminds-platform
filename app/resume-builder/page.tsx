@@ -1729,7 +1729,6 @@ margin: 0,
 fontSize: "14px",
 color: "#0f172a",
 },
-
 "@media print": {
   ".resumeHeader": {
     position: "fixed",
@@ -1739,6 +1738,4 @@ color: "#0f172a",
   ".resumePaper": {
     marginTop: "120px",
   },
-},
-
 };
