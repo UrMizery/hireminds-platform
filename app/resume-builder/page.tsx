@@ -1729,13 +1729,18 @@ margin: 0,
 fontSize: "14px",
 color: "#0f172a",
 },
-"@media print": {
-  ".resumeHeader": {
-    position: "fixed",
-    top: 0,
-    width: "100%",
-  },
-  ".resumePaper": {
-    marginTop: "120px",
-  },
-};
+<style>
+{`
+@media print {
+  .resumeHeader {
+    position: fixed;
+    top: 0;
+    width: 100%;
+  }
+
+  .resumePaper {
+    margin-top: 120px;
+  }
+}
+`}
+</style>
