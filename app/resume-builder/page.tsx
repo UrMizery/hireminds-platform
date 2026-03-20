@@ -230,7 +230,7 @@ const planDetails = useMemo(() => {
 if (plan === "free") {
 return {
 title: "Free",
-text: "1 page only. 4 bullets per role. 1 live mock interview for 30 minutes. 1 free resume and 1 refresh after 7 days.",
+text: "2 page only. 4 bullets per role. 1 live mock interview for 30 minutes. 2 free resume and 1 revision after 7 days.",
 };
 }
 if (plan === "access") {
