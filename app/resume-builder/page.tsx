@@ -516,19 +516,6 @@ await supabase
     resume_id: resumeData.id,
   })
   .eq("id", profileId);
-profile_id: profileId,
-title: "Free Resume",
-page_limit: 2,
-summary_heading: summaryHeading,
-summary_text: summaryText,
-skills,
-education: JSON.stringify(activeEducation),
-accomplishments,
-volunteer_work: JSON.stringify(activeVolunteer),
-section_order: sectionOrder,
-});
-
-if (resumeError) throw resumeError;
 
 setMessage("Free resume saved successfully.");
 } catch (error: any) {
@@ -619,7 +606,6 @@ Profile
 </main>
 );
 }
-    </style>
 <div style={styles.fontBar}>
 <div style={styles.fontBarInner}>
 <div>
