@@ -1643,7 +1643,7 @@ marginTop: "8px",
 },
 resumePaper: {
   background: "#ffffff",
-  minHeight: "1122px",
+  minHeight: "auto",
   height: "auto",
   overflow: "visible",
   padding: "32px",
