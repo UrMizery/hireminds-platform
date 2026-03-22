@@ -1444,7 +1444,7 @@ display: "grid",
 gap: "16px",
 },
 rightPanel: {
-position: "sticky",
+position: "relative",
 top: "98px",
 alignSelf: "start",
 },
