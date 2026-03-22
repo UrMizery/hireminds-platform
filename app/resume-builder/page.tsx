@@ -603,10 +603,6 @@ Profile
 </div>
 </div>
 </div>
-</main>
-);
-}
-<div style={styles.fontBar}>
 <div style={styles.fontBarInner}>
 <div>
 <p style={styles.fontBarKicker}>Resume Builder</p>
