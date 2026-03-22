@@ -1706,10 +1706,12 @@ color: "#475569",
 whiteSpace: "nowrap",
 },
 resumeBlock: {
-marginBottom: "12px",
+  marginBottom: "12px",
+  wordBreak: "break-word",
 },
 resumeTopLine: {
 display: "flex",
+flexWrap: "wrap",
 justifyContent: "space-between",
 gap: "12px",
 alignItems: "baseline",
