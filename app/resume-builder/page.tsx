@@ -580,6 +580,11 @@ return (
     page-break-inside: avoid;
   }
 
+  /* ✅ THIS IS STEP 5 (YOU WERE LOOKING FOR THIS) */
+  .resumeSection:nth-child(4) {
+    page-break-before: always;
+  }
+
 }
 `}
 </style>
