@@ -525,6 +525,40 @@ window.print();
 if (loadingUser) {
 return (
 <main style={styles.page}>
+<style>
+{`
+@media print {
+
+  body * {
+    visibility: hidden;
+  }
+
+  .resumePaper, .resumePaper * {
+    visibility: visible;
+  }
+
+  .resumePaper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none;
+  }
+
+  .resumeHeader {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: white;
+  }
+
+  .resumeSection {
+    page-break-inside: avoid;
+  }
+
+}
+`}
+</style>
 <div style={styles.centerWrap}>Loading...</div>
 </main>
 );
