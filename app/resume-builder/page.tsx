@@ -493,7 +493,22 @@ const profileId = profileData.id;
 const { data: resumeData, error: resumeError } = await supabase
   .from("resumes")
   .insert({
-   
+    profile_id: profileId,
+    title: "Free Resume",
+    page_limit: 2,
+    summary_heading: summaryHeading,
+    summary_text: summaryText,
+    skills,
+    education: JSON.stringify(activeEducation),
+    accomplishments,
+    volunteer_work: JSON.stringify(activeVolunteer),
+    section_order: sectionOrder,
+  })
+  .select()
+  .single();
+
+if (resumeError) throw resumeError;
+
 await supabase
   .from("candidate_profiles")
   .update({
