@@ -548,45 +548,50 @@ window.print();
 
 if (loadingUser) {
 return (
-<main style={styles.page}>
-<style>
-{`
-@media print {
+  <main style={styles.page}>
+    <style>
+      {`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
 
-  body * {
-    visibility: hidden;
-  }
+          .resumePaper, .resumePaper * {
+            visibility: visible;
+          }
 
-  .resumePaper, .resumePaper * {
-    visibility: visible;
-  }
+          .resumePaper {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            box-shadow: none;
+          }
 
-  .resumePaper {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    box-shadow: none;
-  }
+          .resumeHeader {
+            position: static;
+            width: 100%;
+            background: white;
+          }
 
-  .resumeHeader {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background: white;
-  }
+          .resumeSection {
+            page-break-inside: avoid;
+          }
 
-  .resumeSection {
-    page-break-inside: avoid;
-  }
+          .resumeSection:nth-child(4) {
+            page-break-before: always;
+          }
 
-  /* THIS IS STEP 5 (YOU WERE LOOKING FOR THIS) */
-  .resumeSection:nth-child(4) {
-    page-break-before: always;
-  }
+          @page {
+            margin: 0.5in;
+          }
+        }
+      `}
+    </style>
 
-}
-`}
+    {/* Rest of your content below */}
+    <div style={styles.fontBar}>
+      {/* ... your existing code ... */}
 </style>
 <div style={styles.centerWrap}>Loading...</div>
 </main>
@@ -1371,20 +1376,20 @@ style={styles.textarea}
 }
 
 function ResumeSection({
-title,
-hideTitle,
-children,
+  title,
+  hideTitle,
+  children,
 }: {
-title: string;
-hideTitle?: boolean;
-children: React.ReactNode;
+  title: string;
+  hideTitle?: boolean;
+  children: React.ReactNode;
 }) {
-return (
-<section style={styles.resumeSection}>
-{!hideTitle ? <h3 style={styles.resumeSectionTitle}>{title}</h3> : null}
-{children}
-</section>
-);
+  return (
+    <section style={styles.resumeSection} className="resumeSection">
+      {!hideTitle ? <h3 style={styles.resumeSectionTitle}>{title}</h3> : null}
+      {children}
+    </section>
+  );
 }
 
 const styles: Record<string, React.CSSProperties> = {
