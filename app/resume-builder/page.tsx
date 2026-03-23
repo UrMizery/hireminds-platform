@@ -578,7 +578,6 @@ return (
 <div style={styles.centerWrap}>Loading...</div>
 </main>
 );
-}
 return (
 <main style={styles.page}>
 <div style={styles.fontBar}>
