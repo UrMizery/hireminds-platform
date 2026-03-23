@@ -469,8 +469,58 @@ async function handleSaveResume() {
 setMessage("");
 
 if (!userId) {
-setMessage("You must be signed in before saving.");
-return;
+  return (
+    <main style={styles.page}>
+      <div style={styles.centerWrap}>
+        <div style={styles.lockedCard}>
+          <p style={styles.kicker}>Resume Builder</p>
+          <h1 style={styles.lockedTitle}>Sign in first to access this page.</h1>
+          <p style={styles.previewText}>
+            Create your Career Passport account first, then sign in and return here to build your resume.
+          </p>
+          <div style={styles.lockedButtons}>
+            <a href="/sign-up" style={styles.signUpButton}>
+              Sign Up
+            </a>
+            <a href="/sign-in" style={styles.signUpButton}>
+              Sign In
+            </a>
+            <a href="/profile" style={styles.signUpButtonDark}>
+              Profile
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+return (
+  <main style={styles.page}>
+    <div style={styles.fontBar}>
+      <div style={styles.fontBarInner}>
+        <div>
+          <p style={styles.fontBarKicker}>Resume Builder</p>
+          <h1 style={styles.fontBarTitle}>Choose your resume font before you begin.</h1>
+        </div>
+
+        <div style={styles.fontControls}>
+          <label style={styles.fontLabel}>Resume Font</label>
+          <select
+            value={fontFamily}
+            onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
+            style={styles.fontSelect}
+          >
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Arial">Arial</option>
+            <option value="Calibri">Calibri</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div style={styles.shell}>
+      <section style={styles.leftPanel}>
 }
 
 if (plan !== "free") {
