@@ -493,22 +493,7 @@ const profileId = profileData.id;
 const { data: resumeData, error: resumeError } = await supabase
   .from("resumes")
   .insert({
-    profile_id: profileId,
-    title: "Free Resume",
-    page_limit: 2,
-    summary_heading: summaryHeading,
-    summary_text: summaryText,
-    skills,
-    education: JSON.stringify(activeEducation),
-    accomplishments,
-    volunteer_work: JSON.stringify(activeVolunteer),
-    section_order: sectionOrder,
-  })
-  .select()
-  .single();
-
-if (resumeError) throw resumeError;
-
+   
 await supabase
   .from("candidate_profiles")
   .update({
@@ -610,7 +595,7 @@ Profile
 </main>
 );
 }
-    </style>
+    </style>
 <div style={styles.fontBar}>
 <div style={styles.fontBarInner}>
 <div>
@@ -1146,8 +1131,8 @@ The preview stays visible while you build and expands as you type.
 <div
 className="resumePaper"
 style={{
-  ...styles.resumePaper,
-  fontFamily: fontFamily,
+  ...styles.resumePaper,
+  fontFamily: fontFamily,
 }}
 >
 <div style={styles.resumeHeader} className="resumeHeader">
@@ -1696,22 +1681,22 @@ lineHeight: 1.7,
 marginTop: "8px",
 },
 resumePaper: {
-  background: "#ffffff",
-  minHeight: "auto",
-  height: "auto",
-  overflow: "visible",
-  padding: "32px",
-  borderRadius: "16px",
-  color: "#0f172a",
-  boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
+  background: "#ffffff",
+  minHeight: "auto",
+  height: "auto",
+  overflow: "visible",
+  padding: "32px",
+  borderRadius: "16px",
+  color: "#0f172a",
+  boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
 },
 resumeHeader: {
-  textAlign: "center",
-  marginBottom: "24px",
-  position: "sticky",
-  top: 0,
-  background: "#fff",
-  zIndex: 10,
+  textAlign: "center",
+  marginBottom: "24px",
+  position: "sticky",
+  top: 0,
+  background: "#fff",
+  zIndex: 10,
 },
 resumeName: {
 margin: 0,
@@ -1760,8 +1745,8 @@ color: "#475569",
 whiteSpace: "nowrap",
 },
 resumeBlock: {
-  marginBottom: "12px",
-  wordBreak: "break-word",
+  marginBottom: "12px",
+  wordBreak: "break-word",
 },
 resumeTopLine: {
 display: "flex",
@@ -1772,10 +1757,10 @@ alignItems: "baseline",
 marginBottom: "4px",
 },
 resumeBullet: {
-  fontSize: "14px",
-  lineHeight: 1.5,
-  wordBreak: "break-word",
-  whiteSpace: "normal",
+  fontSize: "14px",
+  lineHeight: 1.5,
+  wordBreak: "break-word",
+  whiteSpace: "normal",
 margin: "0 0 4px",
 color: "#0f172a",
 },
