@@ -598,50 +598,7 @@ if (loadingUser) {
     </main>
   );
 }
-          }
-
-          .resumePaper, .resumePaper * {
-            visibility: visible;
-          }
-
-          .resumePaper {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            box-shadow: none;
-          }
-
-          .resumeHeader {
-            position: static;
-            width: 100%;
-            background: white;
-          }
-
-          .resumeSection {
-            page-break-inside: avoid;
-          }
-
-          .resumeSection:nth-child(4) {
-            page-break-before: always;
-          }
-
-          @page {
-            margin: 0.5in;
-          }
-        }
-      `}
-    </style>
-
-    {/* Rest of your content below */}
-    <div style={styles.fontBar}>
-      {/* ... your existing code ... */}
-</style>
-<div style={styles.centerWrap}>Loading...</div>
-</main>
-);
-}
-
+         
 if (!userId) {
 return (
 <main style={styles.page}>
