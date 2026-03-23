@@ -1,1806 +1,2093 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
 type ResumePlan = "free" | "access" | "premium" | "pro";
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
+type ResumeLanguage = "English" | "Spanish" | "Hindi" | "Polish";
 
 type Bullet = { text: string };
 
 type ExperienceItem = {
-companyName: string;
-city: string;
-state: string;
-roleTitle: string;
-startMonth: string;
-startYear: string;
-endMonth: string;
-endYear: string;
-isPresent: boolean;
-bullets: Bullet[];
+  companyName: string;
+  city: string;
+  state: string;
+  roleTitle: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
+  bullets: Bullet[];
 };
 
 type EducationItem = {
-schoolName: string;
-city: string;
-state: string;
-degree: string;
-gpa: string;
-startMonth: string;
-startYear: string;
-endMonth: string;
-endYear: string;
-isPresent: boolean;
+  schoolName: string;
+  city: string;
+  state: string;
+  degree: string;
+  gpa: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
 };
 
 type CertificateItem = {
-organizationName: string;
-city: string;
-state: string;
-certificateName: string;
-startMonth: string;
-startYear: string;
-endMonth: string;
-endYear: string;
-isPresent: boolean;
+  organizationName: string;
+  city: string;
+  state: string;
+  certificateName: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
 };
 
 type VolunteerItem = {
-organizationName: string;
-city: string;
-state: string;
-roleTitle: string;
-startMonth: string;
-startYear: string;
-endMonth: string;
-endYear: string;
-isPresent: boolean;
-bullets: Bullet[];
+  organizationName: string;
+  city: string;
+  state: string;
+  roleTitle: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
+  bullets: Bullet[];
 };
 
 type ResumeSectionKey =
-| "summary"
-| "skills"
-| "experience"
-| "education"
-| "certifications"
-| "volunteer"
-| "accomplishments";
+  | "summary"
+  | "skills"
+  | "experience"
+  | "education"
+  | "certifications"
+  | "volunteer"
+  | "accomplishments";
 
 const FREE_BULLET_LIMIT = 4;
 const PAID_BULLET_LIMIT = 6;
-const FREE_SKILL_LIMIT = 9;
+const SKILL_LIMIT = 9;
+
+const MONTHS = [
+  "",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const PLAN_COPY: Record<ResumePlan, { label: string; description: string; pageLimit: number }> = {
+  free: {
+    label: "Free",
+    description:
+      "2 page only. 4 bullets per role. 1 virtual mock interview session for 30 minutes. 1 free resume per month.",
+    pageLimit: 2,
+  },
+  access: {
+    label: "Resume Access",
+    description:
+      "$19.99/month. Ongoing resume access. 1 employer verification offered once when enrolled. Two 30 minute virtual mock interview sessions per month with a Career Coach.",
+    pageLimit: 2,
+  },
+  premium: {
+    label: "Premium",
+    description:
+      "$29.99/month. Includes everything in Resume Access plus premium support and 3 employer verifications once when enrolled.",
+    pageLimit: 3,
+  },
+  pro: {
+    label: "Premium Plus / Pro",
+    description:
+      "$45.99/month. Includes everything in Premium plus CV-level support and 5 employer verifications once when enrolled.",
+    pageLimit: 4,
+  },
+};
+
+const TRANSLATIONS: Record<
+  ResumeLanguage,
+  {
+    pageKicker: string;
+    pageTitle: string;
+    plan: string;
+    font: string;
+    language: string;
+    livePreview: string;
+    previewHelp: string;
+    header: string;
+    summary: string;
+    summaryAndSkills: string;
+    experience: string;
+    education: string;
+    certifications: string;
+    volunteer: string;
+    accomplishments: string;
+    saveResume: string;
+    printResume: string;
+    moveSections: string;
+    currentlyWorkHere: string;
+    currentlyAttendHere: string;
+    currentlyCompletingCert: string;
+    currentlyVolunteerHere: string;
+  }
+> = {
+  English: {
+    pageKicker: "RESUME BUILDER",
+    pageTitle: "Choose your resume font before you begin.",
+    plan: "Choose plan",
+    font: "Resume Font",
+    language: "Language",
+    livePreview: "Resume Preview",
+    previewHelp: "The preview stays visible while you build and expands as you type.",
+    header: "Resume Header",
+    summary: "Summary",
+    summaryAndSkills: "Summary + Skills",
+    experience: "Work Experience",
+    education: "Education (optional)",
+    certifications: "Certifications (optional)",
+    volunteer: "Volunteer Work (optional)",
+    accomplishments: "Accomplishments (optional)",
+    saveResume: "Save Resume",
+    printResume: "Print Resume",
+    moveSections: "Move Resume Sections",
+    currentlyWorkHere: "I currently work here",
+    currentlyAttendHere: "I currently attend here",
+    currentlyCompletingCert: "I am currently completing this certification",
+    currentlyVolunteerHere: "I currently volunteer here",
+  },
+  Spanish: {
+    pageKicker: "CREADOR DE CURRÍCULUM",
+    pageTitle: "Elige la fuente de tu currículum antes de comenzar.",
+    plan: "Elegir plan",
+    font: "Fuente del currículum",
+    language: "Idioma",
+    livePreview: "Vista previa del currículum",
+    previewHelp: "La vista previa permanece visible mientras escribes y se expande a medida que agregas contenido.",
+    header: "Encabezado del currículum",
+    summary: "Resumen",
+    summaryAndSkills: "Resumen + Habilidades",
+    experience: "Experiencia laboral",
+    education: "Educación (opcional)",
+    certifications: "Certificaciones (opcional)",
+    volunteer: "Trabajo voluntario (opcional)",
+    accomplishments: "Logros (opcional)",
+    saveResume: "Guardar currículum",
+    printResume: "Imprimir currículum",
+    moveSections: "Mover secciones del currículum",
+    currentlyWorkHere: "Actualmente trabajo aquí",
+    currentlyAttendHere: "Actualmente estudio aquí",
+    currentlyCompletingCert: "Actualmente estoy completando esta certificación",
+    currentlyVolunteerHere: "Actualmente hago voluntariado aquí",
+  },
+  Hindi: {
+    pageKicker: "रिज़्यूमे बिल्डर",
+    pageTitle: "शुरू करने से पहले अपने रिज़्यूमे का फ़ॉन्ट चुनें।",
+    plan: "प्लान चुनें",
+    font: "रिज़्यूमे फ़ॉन्ट",
+    language: "भाषा",
+    livePreview: "रिज़्यूमे पूर्वावलोकन",
+    previewHelp: "जब आप बनाते हैं तो पूर्वावलोकन दिखाई देता रहता है और टाइप करते समय बढ़ता जाता है।",
+    header: "रिज़्यूमे हेडर",
+    summary: "सारांश",
+    summaryAndSkills: "सारांश + कौशल",
+    experience: "कार्य अनुभव",
+    education: "शिक्षा (वैकल्पिक)",
+    certifications: "प्रमाणपत्र (वैकल्पिक)",
+    volunteer: "स्वयंसेवी कार्य (वैकल्पिक)",
+    accomplishments: "उपलब्धियाँ (वैकल्पिक)",
+    saveResume: "रिज़्यूमे सहेजें",
+    printResume: "रिज़्यूमे प्रिंट करें",
+    moveSections: "रिज़्यूमे सेक्शन बदलें",
+    currentlyWorkHere: "मैं वर्तमान में यहाँ काम करता/करती हूँ",
+    currentlyAttendHere: "मैं वर्तमान में यहाँ पढ़ता/पढ़ती हूँ",
+    currentlyCompletingCert: "मैं वर्तमान में यह प्रमाणपत्र पूरा कर रहा/रही हूँ",
+    currentlyVolunteerHere: "मैं वर्तमान में यहाँ स्वयंसेवा करता/करती हूँ",
+  },
+  Polish: {
+    pageKicker: "KREATOR CV",
+    pageTitle: "Wybierz czcionkę CV przed rozpoczęciem.",
+    plan: "Wybierz plan",
+    font: "Czcionka CV",
+    language: "Język",
+    livePreview: "Podgląd CV",
+    previewHelp: "Podgląd pozostaje widoczny podczas tworzenia i rozszerza się w miarę pisania.",
+    header: "Nagłówek CV",
+    summary: "Podsumowanie",
+    summaryAndSkills: "Podsumowanie + Umiejętności",
+    experience: "Doświadczenie zawodowe",
+    education: "Wykształcenie (opcjonalnie)",
+    certifications: "Certyfikaty (opcjonalnie)",
+    volunteer: "Wolontariat (opcjonalnie)",
+    accomplishments: "Osiągnięcia (opcjonalnie)",
+    saveResume: "Zapisz CV",
+    printResume: "Drukuj CV",
+    moveSections: "Przenieś sekcje CV",
+    currentlyWorkHere: "Obecnie tu pracuję",
+    currentlyAttendHere: "Obecnie tu się uczę",
+    currentlyCompletingCert: "Obecnie kończę ten certyfikat",
+    currentlyVolunteerHere: "Obecnie jestem tu wolontariuszem",
+  },
+};
 
 function moveItem<T>(arr: T[], index: number, direction: "up" | "down") {
-const updated = [...arr];
-const nextIndex = direction === "up" ? index - 1 : index + 1;
-if (nextIndex < 0 || nextIndex >= arr.length) return arr;
-[updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
-return updated;
+  const updated = [...arr];
+  const nextIndex = direction === "up" ? index - 1 : index + 1;
+  if (nextIndex < 0 || nextIndex >= arr.length) return arr;
+  [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+  return updated;
 }
 
 function formatDateRange(
-startMonth: string,
-startYear: string,
-endMonth: string,
-endYear: string,
-isPresent: boolean
+  startMonth: string,
+  startYear: string,
+  endMonth: string,
+  endYear: string,
+  isPresent: boolean
 ) {
-const from = [startMonth, startYear].filter(Boolean).join(" ");
-const to = isPresent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ");
-if (!from && !to) return "";
-return `${from || "Start"} - ${to || "End"}`;
+  const from = [startMonth, startYear].filter(Boolean).join(" ");
+  const to = isPresent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ");
+  if (!from && !to) return "";
+  return `${from || "Start"} - ${to || "End"}`;
 }
 
-function skillsColumnCount(count: number) {
-if (count >= 7) return 3;
-if (count >= 4) return 2;
-return 1;
+function splitSkillsIntoColumns(skills: string[]) {
+  const safeSkills = skills.slice(0, SKILL_LIMIT);
+  const columns = [[], [], []] as string[][];
+  safeSkills.forEach((skill, index) => {
+    columns[index % 3].push(skill);
+  });
+  return columns;
+}
+
+function hasExperienceContent(item: ExperienceItem) {
+  return Boolean(
+    item.companyName ||
+      item.roleTitle ||
+      item.city ||
+      item.state ||
+      item.startMonth ||
+      item.startYear ||
+      item.endMonth ||
+      item.endYear ||
+      item.isPresent ||
+      item.bullets.some((b) => b.text.trim())
+  );
+}
+
+function hasEducationContent(item: EducationItem) {
+  return Boolean(
+    item.schoolName ||
+      item.degree ||
+      item.city ||
+      item.state ||
+      item.gpa ||
+      item.startMonth ||
+      item.startYear ||
+      item.endMonth ||
+      item.endYear ||
+      item.isPresent
+  );
+}
+
+function hasCertificateContent(item: CertificateItem) {
+  return Boolean(
+    item.organizationName ||
+      item.certificateName ||
+      item.city ||
+      item.state ||
+      item.startMonth ||
+      item.startYear ||
+      item.endMonth ||
+      item.endYear ||
+      item.isPresent
+  );
+}
+
+function hasVolunteerContent(item: VolunteerItem) {
+  return Boolean(
+    item.organizationName ||
+      item.roleTitle ||
+      item.city ||
+      item.state ||
+      item.startMonth ||
+      item.startYear ||
+      item.endMonth ||
+      item.endYear ||
+      item.isPresent ||
+      item.bullets.some((b) => b.text.trim())
+  );
 }
 
 export default function ResumeBuilderPage() {
-const [loadingUser, setLoadingUser] = useState(true);
-const [userId, setUserId] = useState("");
-const [message, setMessage] = useState("");
-const [saving, setSaving] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [userId, setUserId] = useState("");
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
-const [plan, setPlan] = useState<ResumePlan>("free");
-const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
+  const [plan, setPlan] = useState<ResumePlan>("free");
+  const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
+  const [language, setLanguage] = useState<ResumeLanguage>("English");
 
-const [fullName, setFullName] = useState("");
-const [phone, setPhone] = useState("");
-const [city, setCity] = useState("");
-const [stateName, setStateName] = useState("");
-const [email, setEmail] = useState("");
-const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [email, setEmail] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
 
-const [summaryHeading, setSummaryHeading] = useState("Summary");
-const [summaryText, setSummaryText] = useState("");
-const [skillsInput, setSkillsInput] = useState("");
-const [accomplishments, setAccomplishments] = useState("");
+  const [summaryHeading, setSummaryHeading] = useState("Summary");
+  const [summaryText, setSummaryText] = useState("");
+  const [skillsInput, setSkillsInput] = useState("");
+  const [accomplishments, setAccomplishments] = useState("");
 
-const [experiences, setExperiences] = useState<ExperienceItem[]>([
-{
-companyName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-},
-]);
+  const [experiences, setExperiences] = useState<ExperienceItem[]>([
+    {
+      companyName: "",
+      city: "",
+      state: "",
+      roleTitle: "",
+      startMonth: "",
+      startYear: "",
+      endMonth: "",
+      endYear: "",
+      isPresent: false,
+      bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+    },
+  ]);
 
-const [educationItems, setEducationItems] = useState<EducationItem[]>([
-{
-schoolName: "",
-city: "",
-state: "",
-degree: "",
-gpa: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-},
-]);
+  const [educationItems, setEducationItems] = useState<EducationItem[]>([
+    {
+      schoolName: "",
+      city: "",
+      state: "",
+      degree: "",
+      gpa: "",
+      startMonth: "",
+      startYear: "",
+      endMonth: "",
+      endYear: "",
+      isPresent: false,
+    },
+  ]);
 
-const [certificateItems, setCertificateItems] = useState<CertificateItem[]>([
-{
-organizationName: "",
-city: "",
-state: "",
-certificateName: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-},
-]);
+  const [certificateItems, setCertificateItems] = useState<CertificateItem[]>([
+    {
+      organizationName: "",
+      city: "",
+      state: "",
+      certificateName: "",
+      startMonth: "",
+      startYear: "",
+      endMonth: "",
+      endYear: "",
+      isPresent: false,
+    },
+  ]);
 
-const [volunteerItems, setVolunteerItems] = useState<VolunteerItem[]>([
-{
-organizationName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-},
-]);
+  const [volunteerItems, setVolunteerItems] = useState<VolunteerItem[]>([
+    {
+      organizationName: "",
+      city: "",
+      state: "",
+      roleTitle: "",
+      startMonth: "",
+      startYear: "",
+      endMonth: "",
+      endYear: "",
+      isPresent: false,
+      bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+    },
+  ]);
 
-const [sectionOrder, setSectionOrder] = useState<ResumeSectionKey[]>([
-"summary",
-"skills",
-"experience",
-"education",
-"certifications",
-"volunteer",
-"accomplishments",
-]);
+  const [sectionOrder, setSectionOrder] = useState<ResumeSectionKey[]>([
+    "summary",
+    "skills",
+    "experience",
+    "education",
+    "certifications",
+    "volunteer",
+    "accomplishments",
+  ]);
 
-useEffect(() => {
-async function loadUserAndProfile() {
-const { data, error } = await supabase.auth.getUser();
+  useEffect(() => {
+    async function loadUserAndProfile() {
+      const { data, error } = await supabase.auth.getUser();
 
-if (error || !data.user) {
-setLoadingUser(false);
-return;
-}
+      if (error || !data.user) {
+        setLoadingUser(false);
+        return;
+      }
 
-const currentUserId = data.user.id;
-setUserId(currentUserId);
+      const currentUserId = data.user.id;
+      setUserId(currentUserId);
 
-const { data: profile } = await supabase
-.from("candidate_profiles")
-.select("full_name, phone, city, state, email, linkedin_url")
-.eq("user_id", currentUserId)
-.maybeSingle();
+      const { data: profile } = await supabase
+        .from("candidate_profiles")
+        .select("full_name, phone, city, state, email, linkedin_url")
+        .eq("user_id", currentUserId)
+        .maybeSingle();
 
-if (profile) {
-setFullName(profile.full_name || "");
-setPhone(profile.phone || "");
-setCity(profile.city || "");
-setStateName(profile.state || "");
-setEmail(profile.email || data.user.email || "");
-setLinkedinUrl((profile as any).linkedin_url || "");
-} else {
-setEmail(data.user.email || "");
-}
+      if (profile) {
+        setFullName(profile.full_name || "");
+        setPhone(profile.phone || "");
+        setCity(profile.city || "");
+        setStateName(profile.state || "");
+        setEmail(profile.email || data.user.email || "");
+        setLinkedinUrl(profile.linkedin_url || "");
+      } else {
+        setEmail(data.user.email || "");
+      }
 
-setLoadingUser(false);
-}
+      setLoadingUser(false);
+    }
 
-loadUserAndProfile();
-}, []);
+    loadUserAndProfile();
+  }, []);
 
-const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PAID_BULLET_LIMIT;
+  const ui = TRANSLATIONS[language];
+  const planInfo = PLAN_COPY[plan];
+  const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PAID_BULLET_LIMIT;
 
-const planDetails = useMemo(() => {
-if (plan === "free") {
-return {
-title: "Free",
-text: "2 page only. 4 bullets per role. 1 virtual mock interview session for 30 minutes. 1 free resume per month.",
-};
-}
-if (plan === "access") {
-return {
-title: "Resume Access",
-text: "$19.99/month. Ongoing resume access, 1 employer verification offered once when enrolled, two 30min virtual mock interviews sessions per month with a Career Coach.",
-};
-}
-if (plan === "premium") {
-return {
-title: "Premium",
-text: "$29.99/month. Includes everything in Resume Access plus premium support and 3 employer verifications once when enrolled.",
-};
-}
-return {
-title: "Premium Plus / Pro",
-text: "$45.99/month. Includes everything in Premium plus CV-level support and 5 employer verifications once when enrolled.",
-};
-}, [plan]);
+  const skills = useMemo(() => {
+    return skillsInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, SKILL_LIMIT);
+  }, [skillsInput]);
 
-const skills = useMemo(() => {
-return skillsInput
-.split(",")
-.map((item) => item.trim())
-.filter(Boolean)
-.slice(0, FREE_SKILL_LIMIT);
-}, [skillsInput]);
+  const skillColumns = useMemo(() => splitSkillsIntoColumns(skills), [skills]);
 
-const activeExperiences = experiences.filter(
-(item) =>
-item.companyName ||
-item.roleTitle ||
-item.city ||
-item.state ||
-item.startMonth ||
-item.startYear ||
-item.endMonth ||
-item.endYear ||
-item.isPresent ||
-item.bullets.some((bullet) => bullet.text)
-);
+  const activeExperiences = useMemo(
+    () => experiences.filter((item) => hasExperienceContent(item)),
+    [experiences]
+  );
 
-const activeEducation = educationItems.filter(
-(item) =>
-item.schoolName ||
-item.degree ||
-item.city ||
-item.state ||
-item.gpa ||
-item.startMonth ||
-item.startYear ||
-item.endMonth ||
-item.endYear ||
-item.isPresent
-);
+  const activeEducation = useMemo(
+    () => educationItems.filter((item) => hasEducationContent(item)),
+    [educationItems]
+  );
 
-const activeCertificates = certificateItems.filter(
-(item) =>
-item.organizationName ||
-item.certificateName ||
-item.city ||
-item.state ||
-item.startMonth ||
-item.startYear ||
-item.endMonth ||
-item.endYear ||
-item.isPresent
-);
+  const activeCertificates = useMemo(
+    () => certificateItems.filter((item) => hasCertificateContent(item)),
+    [certificateItems]
+  );
 
-const activeVolunteer = volunteerItems.filter(
-(item) =>
-item.organizationName ||
-item.roleTitle ||
-item.city ||
-item.state ||
-item.startMonth ||
-item.startYear ||
-item.endMonth ||
-item.endYear ||
-item.isPresent ||
-item.bullets.some((bullet) => bullet.text)
-);
+  const activeVolunteer = useMemo(
+    () => volunteerItems.filter((item) => hasVolunteerContent(item)),
+    [volunteerItems]
+  );
 
-function addExperience() {
-setExperiences((prev) => [
-...prev,
-{
-companyName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-},
-]);
-}
-
-function updateExperience(
-index: number,
-field: keyof ExperienceItem,
-value: string | boolean
-) {
-setExperiences((prev) =>
-prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-);
-}
-
-function updateExperienceBullet(index: number, bulletIndex: number, value: string) {
-setExperiences((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-const bullets = item.bullets.map((bullet, j) =>
-j === bulletIndex ? { text: value } : bullet
-);
-return { ...item, bullets };
-})
-);
-}
-
-function addExperienceBullet(index: number) {
-setExperiences((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-if (item.bullets.length >= bulletLimit) return item;
-return { ...item, bullets: [...item.bullets, { text: "" }] };
-})
-);
-}
-
-function addEducation() {
-setEducationItems((prev) => [
-...prev,
-{
-schoolName: "",
-city: "",
-state: "",
-degree: "",
-gpa: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-},
-]);
-}
-
-function updateEducation(index: number, field: keyof EducationItem, value: string | boolean) {
-setEducationItems((prev) =>
-prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-);
-}
-
-function addCertificate() {
-setCertificateItems((prev) => [
-...prev,
-{
-organizationName: "",
-city: "",
-state: "",
-certificateName: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-},
-]);
-}
-
-function updateCertificate(
-index: number,
-field: keyof CertificateItem,
-value: string | boolean
-) {
-setCertificateItems((prev) =>
-prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-);
-}
-
-function addVolunteer() {
-setVolunteerItems((prev) => [
-...prev,
-{
-organizationName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-},
-]);
-}
-
-function updateVolunteer(index: number, field: keyof VolunteerItem, value: string | boolean) {
-setVolunteerItems((prev) =>
-prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-);
-}
-
-function updateVolunteerBullet(index: number, bulletIndex: number, value: string) {
-setVolunteerItems((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-const bullets = item.bullets.map((bullet, j) =>
-j === bulletIndex ? { text: value } : bullet
-);
-return { ...item, bullets };
-})
-);
-}
-
-function addVolunteerBullet(index: number) {
-setVolunteerItems((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-if (item.bullets.length >= bulletLimit) return item;
-return { ...item, bullets: [...item.bullets, { text: "" }] };
-})
-);
-}
-
-function moveSection(index: number, direction: "up" | "down") {
-setSectionOrder((prev) => moveItem(prev, index, direction));
-}
-
-async function handleSaveResume() {
-  setMessage("");
-
-  if (!userId) {
-    setMessage("You must be signed in before saving.");
-    return;
+  function addExperience() {
+    setExperiences((prev) => [
+      ...prev,
+      {
+        companyName: "",
+        city: "",
+        state: "",
+        roleTitle: "",
+        startMonth: "",
+        startYear: "",
+        endMonth: "",
+        endYear: "",
+        isPresent: false,
+        bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+      },
+    ]);
   }
 
-  if (plan !== "free") {
-    setMessage("This builder is showing paid plans, but subscription checkout still needs to be wired to Stripe.");
-    return;
+  function updateExperience(index: number, field: keyof ExperienceItem, value: string | boolean) {
+    setExperiences((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
   }
 
-  try {
-    setSaving(true);
-
-    const { data: profileData, error: profileError } = await supabase
-      .from("candidate_profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .single();
-
-    if (profileError) throw profileError;
-
-    const profileId = profileData.id;
-
-    const resumeData = {
-      user_id: userId,
-      profile_id: profileId,
-      full_name: fullName,
-      phone,
-      city,
-      state: stateName,
-      email,
-      linkedin_url: linkedinUrl,
-      summary_heading: summaryHeading,
-      summary_text: summaryText,
-      skills: skills,
-      experiences,
-      education: educationItems,
-      certificates: certificateItems,
-      volunteer: volunteerItems,
-      section_order: sectionOrder,
-      plan,
-      font_family: fontFamily,
-      accomplishments,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data: insertedResume, error: resumeError } = await supabase
-      .from("resumes")
-       .insert([resumeData])
-      .select();
-
-    if (resumeError) throw resumeError;
-
-    const resumeId = insertedResume[0].id;
-
-    const { error: updateError } = await supabase
-      .from("candidate_profiles")
-      .update({
-        resume_id: resumeId,
-        updated_at: new Date().toISOString(),
+  function updateExperienceBullet(index: number, bulletIndex: number, value: string) {
+    setExperiences((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        const bullets = item.bullets.map((bullet, j) =>
+          j === bulletIndex ? { text: value } : bullet
+        );
+        return { ...item, bullets };
       })
-      .eq("id", profileId);
-
-    if (updateError) throw updateError;
-
-    setMessage("✓ Resume saved successfully.");
-  } catch (error: any) {
-    console.error("Save error:", error);
-    setMessage(error.message || "Something went wrong while saving.");
-  } finally {
-    setSaving(false);
+    );
   }
-}
 
-function handlePrint() {
-  if (plan !== "free") {
-    setMessage("Printing for paid plans should be unlocked after checkout is connected.");
-    return;
+  function addExperienceBullet(index: number) {
+    setExperiences((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        if (item.bullets.length >= bulletLimit) return item;
+        return { ...item, bullets: [...item.bullets, { text: "" }] };
+      })
+    );
   }
-  window.print();
-}
 
-if (loadingUser) {
+  function addEducation() {
+    setEducationItems((prev) => [
+      ...prev,
+      {
+        schoolName: "",
+        city: "",
+        state: "",
+        degree: "",
+        gpa: "",
+        startMonth: "",
+        startYear: "",
+        endMonth: "",
+        endYear: "",
+        isPresent: false,
+      },
+    ]);
+  }
+
+  function updateEducation(index: number, field: keyof EducationItem, value: string | boolean) {
+    setEducationItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  }
+
+  function addCertificate() {
+    setCertificateItems((prev) => [
+      ...prev,
+      {
+        organizationName: "",
+        city: "",
+        state: "",
+        certificateName: "",
+        startMonth: "",
+        startYear: "",
+        endMonth: "",
+        endYear: "",
+        isPresent: false,
+      },
+    ]);
+  }
+
+  function updateCertificate(
+    index: number,
+    field: keyof CertificateItem,
+    value: string | boolean
+  ) {
+    setCertificateItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  }
+
+  function addVolunteer() {
+    setVolunteerItems((prev) => [
+      ...prev,
+      {
+        organizationName: "",
+        city: "",
+        state: "",
+        roleTitle: "",
+        startMonth: "",
+        startYear: "",
+        endMonth: "",
+        endYear: "",
+        isPresent: false,
+        bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+      },
+    ]);
+  }
+
+  function updateVolunteer(index: number, field: keyof VolunteerItem, value: string | boolean) {
+    setVolunteerItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  }
+
+  function updateVolunteerBullet(index: number, bulletIndex: number, value: string) {
+    setVolunteerItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        const bullets = item.bullets.map((bullet, j) =>
+          j === bulletIndex ? { text: value } : bullet
+        );
+        return { ...item, bullets };
+      })
+    );
+  }
+
+  function addVolunteerBullet(index: number) {
+    setVolunteerItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        if (item.bullets.length >= bulletLimit) return item;
+        return { ...item, bullets: [...item.bullets, { text: "" }] };
+      })
+    );
+  }
+
+  function moveSection(index: number, direction: "up" | "down") {
+    setSectionOrder((prev) => moveItem(prev, index, direction));
+  }
+
+  async function handleSaveResume() {
+    setMessage("");
+
+    if (!userId) {
+      setMessage("You must be signed in before saving.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("candidate_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const profileId = profileData.id;
+
+      await supabase
+        .from("candidate_profiles")
+        .update({
+          full_name: fullName,
+          phone,
+          city,
+          state: stateName,
+          email,
+          linkedin_url: linkedinUrl,
+        })
+        .eq("id", profileId);
+
+      const payload = {
+        profile_id: profileId,
+        title: plan === "free" ? "Free Resume" : "Primary Resume",
+        page_limit: planInfo.pageLimit,
+        summary_heading: summaryHeading || ui.summary,
+        summary_text: summaryText,
+        skills,
+        education: activeEducation,
+        accomplishments,
+        volunteer_work: activeVolunteer,
+        section_order: sectionOrder,
+        full_name: fullName,
+        email,
+        phone,
+        city,
+        state: stateName,
+        linkedin_url: linkedinUrl,
+        plan_type: plan,
+        plan_description: planInfo.description,
+        font_family: fontFamily,
+        language,
+        work_experience: activeExperiences,
+        certifications: activeCertificates,
+        header_settings: {
+          repeat_header_on_new_page: true,
+          preview_before_print: true,
+        },
+      };
+
+      const { data: existingResume } = await supabase
+        .from("resumes")
+        .select("id")
+        .eq("profile_id", profileId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingResume?.id) {
+        const { error: updateError } = await supabase
+          .from("resumes")
+          .update(payload)
+          .eq("id", existingResume.id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase.from("resumes").insert(payload);
+        if (insertError) throw insertError;
+      }
+
+      setMessage("Resume saved successfully to your HireMinds profile.");
+    } catch (error: any) {
+      setMessage(error?.message || "Something went wrong while saving.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handlePrint() {
+    setMessage("Review the preview, then use your browser print window to save as PDF or print.");
+    window.print();
+  }
+
+  function renderResumeSection(section: ResumeSectionKey) {
+    switch (section) {
+      case "summary":
+        if (!summaryText && !summaryHeading) return null;
+        return (
+          <section className="resumeSection" style={styles.resumeSectionBlock}>
+            <h3 style={styles.resumeSectionTitle}>{summaryHeading || ui.summary}</h3>
+            <p style={styles.resumeParagraph}>{summaryText || "Add your professional summary here."}</p>
+          </section>
+        );
+
+      case "skills":
+        if (!skills.length) return null;
+        return (
+          <section className="resumeSection" style={styles.resumeSectionBlock}>
+            <h3 style={styles.resumeSectionTitle}>SKILLS</h3>
+            <div style={styles.skillsGrid}>
+              {skillColumns.map((column, index) => (
+                <div key={index} style={styles.skillColumn}>
+                  {column.map((skill, skillIndex) => (
+                    <p key={`${skill}-${skillIndex}`} style={styles.skillItem}>
+                      • {skill}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+
+      case "experience":
+        if (!activeExperiences.length) return null;
+        return (
+          <section className="resumeSection" style={styles.resumeSectionBlock}>
+            <h3 style={styles.resumeSectionTitle}>WORK EXPERIENCE</h3>
+            {activeExperiences.map((item, index) => (
+              <div key={index} style={styles.resumeEntry}>
+                <div style={styles.resumeEntryTop}>
+                  <div>
+                    <p style={styles.resumeEntryHeading}>
+                      {item.companyName || "Company"}{" "}
+                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
+                    </p>
+                    <p style={styles.resumeEntrySubheading}>{item.roleTitle || "Role Title"}</p>
+                  </div>
+                  <p style={styles.resumeEntryDates}>
+                    {formatDateRange(
+                      item.startMonth,
+                      item.startYear,
+                      item.endMonth,
+                      item.endYear,
+                      item.isPresent
+                    )}
+                  </p>
+                </div>
+                {item.bullets.filter((b) => b.text.trim()).map((bullet, bulletIndex) => (
+                  <p key={bulletIndex} style={styles.resumeBullet}>
+                    • {bullet.text}
+                  </p>
+                ))}
+              </div>
+            ))}
+          </section>
+        );
+
+      case "education":
+        if (!activeEducation.length) return null;
+        return (
+          <section className="resumeSection" style={styles.resumeSectionBlock}>
+            <h3 style={styles.resumeSectionTitle}>EDUCATION</h3>
+            {activeEducation.map((item, index) => (
+              <div key={index} style={styles.resumeEntry}>
+                <div style={styles.resumeEntryTop}>
+                  <div>
+                    <p style={styles.resumeEntryHeading}>
+                      {item.schoolName || "School"}{" "}
+                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
+                    </p>
+                    <p style={styles.resumeEntrySubheading}>
+                      {item.degree || "Degree"}
+                      {item.gpa ? ` | GPA: ${item.gpa}` : ""}
+                    </p>
+                  </div>
+                  <p style={styles.resumeEntryDates}>
+                    {formatDateRange(
+                      item.startMonth,
+                      item.startYear,
+                      item.endMonth,
+                      item.endYear,
+                      item.isPresent
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </section>
+        );
+
+      case "certifications":
+        if (!activeCertificates.length) return null;
+        return (
+          <section className="resumeSection" style={styles.resumeSectionBlock}>
+            <h3 style={styles.resumeSectionTitle}>CERTIFICATIONS</h3>
+            {activeCertificates.map((item, index) => (
+              <div key={index} style={styles.resumeEntry}>
+                <div style={styles.resumeEntryTop}>
+                  <div>
+                    <p style={styles.resumeEntryHeading}>
+                      {item.organizationName || "Organization"}{" "}
+                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
+                    </p>
+                    <p style={styles.resumeEntrySubheading}>
+                      {item.certificateName || "Certificate / Course Name"}
+                    </p>
+                  </div>
+                  <p style={styles.resumeEntryDates}>
+                    {formatDateRange(
+                      item.startMonth,
+                      item.startYear,
+                      item.endMonth,
+                      item.endYear,
+                      item.isPresent
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </section>
+        );
+
+      case "volunteer":
+        if (!activeVolunteer.length) return null;
+        return (
+          <section className="resumeSection" style={styles.resumeSectionBlock}>
+            <h3 style={styles.resumeSectionTitle}>VOLUNTEER WORK</h3>
+            {activeVolunteer.map((item, index) => (
+              <div key={index} style={styles.resumeEntry}>
+                <div style={styles.resumeEntryTop}>
+                  <div>
+                    <p style={styles.resumeEntryHeading}>
+                      {item.organizationName || "Organization"}{" "}
+                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
+                    </p>
+                    <p style={styles.resumeEntrySubheading}>{item.roleTitle || "Role Title"}</p>
+                  </div>
+                  <p style={styles.resumeEntryDates}>
+                    {formatDateRange(
+                      item.startMonth,
+                      item.startYear,
+                      item.endMonth,
+                      item.endYear,
+                      item.isPresent
+                    )}
+                  </p>
+                </div>
+                {item.bullets.filter((b) => b.text.trim()).map((bullet, bulletIndex) => (
+                  <p key={bulletIndex} style={styles.resumeBullet}>
+                    • {bullet.text}
+                  </p>
+                ))}
+              </div>
+            ))}
+          </section>
+        );
+
+      case "accomplishments":
+        if (!accomplishments.trim()) return null;
+        return (
+          <section className="resumeSection" style={styles.resumeSectionBlock}>
+            <h3 style={styles.resumeSectionTitle}>ACCOMPLISHMENTS</h3>
+            <p style={styles.resumeParagraph}>{accomplishments}</p>
+          </section>
+        );
+
+      default:
+        return null;
+    }
+  }
+
+  if (loadingUser) {
+    return (
+      <main style={styles.page}>
+        <div style={styles.centerWrap}>Loading...</div>
+      </main>
+    );
+  }
+
   return (
     <main style={styles.page}>
-      <style>
-        {`
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-
-            .resumePaper, .resumePaper * {
-              visibility: visible;
-            }
-
-            .resumePaper {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              box-shadow: none;
-            }
-
-            .resumeHeader {
-              position: static;
-              width: 100%;
-              background: white;
-            }
-
-            .resumeSection {
-              page-break-inside: avoid;
-            }
-
-            .resumeSection:nth-child(4) {
-              page-break-before: always;
-            }
-
-            @page {
-              margin: 0.5in;
-            }
+      <style>{`
+        @media print {
+          body {
+            background: white !important;
           }
-        `}
-      </style>
 
-      <div style={styles.centerWrap}>Loading...</div>
+          body * {
+            visibility: hidden;
+          }
+
+          .resumePrintWrap,
+          .resumePrintWrap * {
+            visibility: visible;
+          }
+
+          .resumePrintWrap {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 24px;
+            background: white !important;
+          }
+
+          .resumePaper {
+            width: 100% !important;
+            max-width: none !important;
+            box-shadow: none !important;
+            border: none !important;
+            min-height: auto !important;
+          }
+
+          .resumeHeader {
+            position: sticky;
+            top: 0;
+            background: white;
+          }
+
+          .resumeSection {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .builderShell {
+            display: block !important;
+          }
+
+          .builderLeft,
+          .builderTopRow,
+          .siteButtons,
+          .flashMessage {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      <div style={styles.container}>
+        <div style={styles.topBar}>
+          <div>
+            <p style={styles.kicker}>{ui.pageKicker}</p>
+            <h1 style={styles.pageTitle}>{ui.pageTitle}</h1>
+          </div>
+
+          <div style={styles.topSelectors}>
+            <div style={styles.topSelectGroup}>
+              <label style={styles.topSelectLabel}>{ui.language}</label>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as ResumeLanguage)}
+                style={styles.select}
+              >
+                <option>English</option>
+                <option>Spanish</option>
+                <option>Hindi</option>
+                <option>Polish</option>
+              </select>
+            </div>
+
+            <div style={styles.topSelectGroup}>
+              <label style={styles.topSelectLabel}>{ui.font}</label>
+              <select
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
+                style={styles.select}
+              >
+                <option>Times New Roman</option>
+                <option>Arial</option>
+                <option>Calibri</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="builderShell" style={styles.layout}>
+          <div className="builderLeft" style={styles.leftCol}>
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>PLAN</p>
+              <div style={styles.rowBetween}>
+                <h2 style={styles.cardTitle}>{ui.plan}</h2>
+                <select
+                  value={plan}
+                  onChange={(e) => setPlan(e.target.value as ResumePlan)}
+                  style={styles.planSelect}
+                >
+                  <option value="free">Free</option>
+                  <option value="access">Resume Access</option>
+                  <option value="premium">Premium</option>
+                  <option value="pro">Premium Plus / Pro</option>
+                </select>
+              </div>
+              <div style={styles.planInfoBox}>
+                <p style={styles.planName}>{planInfo.label}</p>
+                <p style={styles.planDescription}>{planInfo.description}</p>
+              </div>
+            </section>
+
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>HEADER</p>
+              <h2 style={styles.cardTitle}>{ui.header}</h2>
+
+              <div style={styles.twoColForm}>
+                <div>
+                  <label style={styles.inputLabel}>Full Name</label>
+                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} style={styles.input} placeholder="Full Name" />
+                </div>
+                <div>
+                  <label style={styles.inputLabel}>Phone Number</label>
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} style={styles.input} placeholder="Phone Number" />
+                </div>
+                <div>
+                  <label style={styles.inputLabel}>City (optional)</label>
+                  <input value={city} onChange={(e) => setCity(e.target.value)} style={styles.input} placeholder="City" />
+                </div>
+                <div>
+                  <label style={styles.inputLabel}>State (optional)</label>
+                  <input value={stateName} onChange={(e) => setStateName(e.target.value)} style={styles.input} placeholder="State" />
+                </div>
+                <div>
+                  <label style={styles.inputLabel}>Email</label>
+                  <input value={email} onChange={(e) => setEmail(e.target.value)} style={styles.input} placeholder="Email" />
+                </div>
+                <div>
+                  <label style={styles.inputLabel}>LinkedIn (optional)</label>
+                  <input
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    style={styles.input}
+                    placeholder="LinkedIn URL"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>SUMMARY</p>
+              <h2 style={styles.cardTitle}>{ui.summaryAndSkills}</h2>
+
+              <label style={styles.inputLabel}>Summary Heading (optional, can be blank or "Summary")</label>
+              <input
+                value={summaryHeading}
+                onChange={(e) => setSummaryHeading(e.target.value)}
+                style={styles.input}
+                placeholder="Summary"
+              />
+
+              <label style={styles.inputLabel}>Summary</label>
+              <textarea
+                value={summaryText}
+                onChange={(e) => setSummaryText(e.target.value)}
+                style={styles.textarea}
+                placeholder="Example: Client-focused workforce development professional with experience in talent acquisition, resume writing, employer engagement, and job readiness coaching."
+              />
+
+              <label style={styles.inputLabel}>Skills (comma separated, up to 9)</label>
+              <input
+                value={skillsInput}
+                onChange={(e) => setSkillsInput(e.target.value)}
+                style={styles.input}
+                placeholder="Recruiting, ATS, Sourcing, Interviewing"
+              />
+            </section>
+
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>EXPERIENCE</p>
+              <h2 style={styles.cardTitle}>{ui.experience}</h2>
+
+              {experiences.map((item, index) => (
+                <div key={index} style={styles.sectionGroup}>
+                  <div style={styles.twoColForm}>
+                    <div>
+                      <label style={styles.inputLabel}>Company</label>
+                      <input
+                        value={item.companyName}
+                        onChange={(e) => updateExperience(index, "companyName", e.target.value)}
+                        style={styles.input}
+                        placeholder="Company Name"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>Role</label>
+                      <input
+                        value={item.roleTitle}
+                        onChange={(e) => updateExperience(index, "roleTitle", e.target.value)}
+                        style={styles.input}
+                        placeholder="Role Title"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>City</label>
+                      <input
+                        value={item.city}
+                        onChange={(e) => updateExperience(index, "city", e.target.value)}
+                        style={styles.input}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>State</label>
+                      <input
+                        value={item.state}
+                        onChange={(e) => updateExperience(index, "state", e.target.value)}
+                        style={styles.input}
+                        placeholder="State"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>From Month</label>
+                      <select
+                        value={item.startMonth}
+                        onChange={(e) => updateExperience(index, "startMonth", e.target.value)}
+                        style={styles.input}
+                      >
+                        {MONTHS.map((month) => (
+                          <option key={month} value={month}>
+                            {month || "Select"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>From Year</label>
+                      <input
+                        value={item.startYear}
+                        onChange={(e) => updateExperience(index, "startYear", e.target.value)}
+                        style={styles.input}
+                        placeholder="2022"
+                      />
+                    </div>
+                  </div>
+
+                  <label style={styles.checkboxRow}>
+                    <input
+                      type="checkbox"
+                      checked={item.isPresent}
+                      onChange={(e) => updateExperience(index, "isPresent", e.target.checked)}
+                    />
+                    <span>{ui.currentlyWorkHere}</span>
+                  </label>
+
+                  {!item.isPresent && (
+                    <div style={styles.twoColForm}>
+                      <div>
+                        <label style={styles.inputLabel}>To Month</label>
+                        <select
+                          value={item.endMonth}
+                          onChange={(e) => updateExperience(index, "endMonth", e.target.value)}
+                          style={styles.input}
+                        >
+                          {MONTHS.map((month) => (
+                            <option key={month} value={month}>
+                              {month || "Select"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>To Year</label>
+                        <input
+                          value={item.endYear}
+                          onChange={(e) => updateExperience(index, "endYear", e.target.value)}
+                          style={styles.input}
+                          placeholder="2024"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <p style={styles.helper}>
+                    {plan === "free"
+                      ? "Free plan allows up to 4 bullet points per role."
+                      : "Paid plans allow up to 6 bullet points per role."}
+                  </p>
+
+                  {item.bullets.map((bullet, bulletIndex) => (
+                    <div key={bulletIndex}>
+                      <label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
+                      <input
+                        value={bullet.text}
+                        onChange={(e) => updateExperienceBullet(index, bulletIndex, e.target.value)}
+                        style={styles.input}
+                        placeholder="Describe the work you did"
+                      />
+                    </div>
+                  ))}
+
+                  <button type="button" onClick={() => addExperienceBullet(index)} style={styles.smallButton}>
+                    + Add Bullet
+                  </button>
+                </div>
+              ))}
+
+              <button type="button" onClick={addExperience} style={styles.smallButton}>
+                + Add Work Experience
+              </button>
+            </section>
+
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>EDUCATION</p>
+              <h2 style={styles.cardTitle}>{ui.education}</h2>
+
+              {educationItems.map((item, index) => (
+                <div key={index} style={styles.sectionGroup}>
+                  <div style={styles.twoColForm}>
+                    <div>
+                      <label style={styles.inputLabel}>School / College</label>
+                      <input
+                        value={item.schoolName}
+                        onChange={(e) => updateEducation(index, "schoolName", e.target.value)}
+                        style={styles.input}
+                        placeholder="School / College"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>Degree / Course of Study</label>
+                      <input
+                        value={item.degree}
+                        onChange={(e) => updateEducation(index, "degree", e.target.value)}
+                        style={styles.input}
+                        placeholder="Degree / Course of Study"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>City</label>
+                      <input
+                        value={item.city}
+                        onChange={(e) => updateEducation(index, "city", e.target.value)}
+                        style={styles.input}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>State</label>
+                      <input
+                        value={item.state}
+                        onChange={(e) => updateEducation(index, "state", e.target.value)}
+                        style={styles.input}
+                        placeholder="State"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>From Month</label>
+                      <select
+                        value={item.startMonth}
+                        onChange={(e) => updateEducation(index, "startMonth", e.target.value)}
+                        style={styles.input}
+                      >
+                        {MONTHS.map((month) => (
+                          <option key={month} value={month}>
+                            {month || "Select"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>From Year</label>
+                      <input
+                        value={item.startYear}
+                        onChange={(e) => updateEducation(index, "startYear", e.target.value)}
+                        style={styles.input}
+                        placeholder="2019"
+                      />
+                    </div>
+                  </div>
+
+                  <label style={styles.checkboxRow}>
+                    <input
+                      type="checkbox"
+                      checked={item.isPresent}
+                      onChange={(e) => updateEducation(index, "isPresent", e.target.checked)}
+                    />
+                    <span>{ui.currentlyAttendHere}</span>
+                  </label>
+
+                  {!item.isPresent && (
+                    <div style={styles.twoColForm}>
+                      <div>
+                        <label style={styles.inputLabel}>To Month</label>
+                        <select
+                          value={item.endMonth}
+                          onChange={(e) => updateEducation(index, "endMonth", e.target.value)}
+                          style={styles.input}
+                        >
+                          {MONTHS.map((month) => (
+                            <option key={month} value={month}>
+                              {month || "Select"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>To Year</label>
+                        <input
+                          value={item.endYear}
+                          onChange={(e) => updateEducation(index, "endYear", e.target.value)}
+                          style={styles.input}
+                          placeholder="2023"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <label style={styles.inputLabel}>GPA (optional)</label>
+                  <input
+                    value={item.gpa}
+                    onChange={(e) => updateEducation(index, "gpa", e.target.value)}
+                    style={styles.input}
+                    placeholder="3.8"
+                  />
+                </div>
+              ))}
+
+              <button type="button" onClick={addEducation} style={styles.smallButton}>
+                + Add Education
+              </button>
+            </section>
+
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>CERTIFICATES</p>
+              <h2 style={styles.cardTitle}>{ui.certifications}</h2>
+
+              {certificateItems.map((item, index) => (
+                <div key={index} style={styles.sectionGroup}>
+                  <div style={styles.twoColForm}>
+                    <div>
+                      <label style={styles.inputLabel}>Organization / Program</label>
+                      <input
+                        value={item.organizationName}
+                        onChange={(e) => updateCertificate(index, "organizationName", e.target.value)}
+                        style={styles.input}
+                        placeholder="Organization / Program"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>Certificate / Course Name</label>
+                      <input
+                        value={item.certificateName}
+                        onChange={(e) => updateCertificate(index, "certificateName", e.target.value)}
+                        style={styles.input}
+                        placeholder="Certificate / Course Name"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>City</label>
+                      <input
+                        value={item.city}
+                        onChange={(e) => updateCertificate(index, "city", e.target.value)}
+                        style={styles.input}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>State</label>
+                      <input
+                        value={item.state}
+                        onChange={(e) => updateCertificate(index, "state", e.target.value)}
+                        style={styles.input}
+                        placeholder="State"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>From Month</label>
+                      <select
+                        value={item.startMonth}
+                        onChange={(e) => updateCertificate(index, "startMonth", e.target.value)}
+                        style={styles.input}
+                      >
+                        {MONTHS.map((month) => (
+                          <option key={month} value={month}>
+                            {month || "Select"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>From Year</label>
+                      <input
+                        value={item.startYear}
+                        onChange={(e) => updateCertificate(index, "startYear", e.target.value)}
+                        style={styles.input}
+                        placeholder="2024"
+                      />
+                    </div>
+                  </div>
+
+                  <label style={styles.checkboxRow}>
+                    <input
+                      type="checkbox"
+                      checked={item.isPresent}
+                      onChange={(e) => updateCertificate(index, "isPresent", e.target.checked)}
+                    />
+                    <span>{ui.currentlyCompletingCert}</span>
+                  </label>
+
+                  {!item.isPresent && (
+                    <div style={styles.twoColForm}>
+                      <div>
+                        <label style={styles.inputLabel}>To Month</label>
+                        <select
+                          value={item.endMonth}
+                          onChange={(e) => updateCertificate(index, "endMonth", e.target.value)}
+                          style={styles.input}
+                        >
+                          {MONTHS.map((month) => (
+                            <option key={month} value={month}>
+                              {month || "Select"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>To Year</label>
+                        <input
+                          value={item.endYear}
+                          onChange={(e) => updateCertificate(index, "endYear", e.target.value)}
+                          style={styles.input}
+                          placeholder="2024"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <button type="button" onClick={addCertificate} style={styles.smallButton}>
+                + Add Certification
+              </button>
+            </section>
+
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>VOLUNTEER</p>
+              <h2 style={styles.cardTitle}>{ui.volunteer}</h2>
+
+              {volunteerItems.map((item, index) => (
+                <div key={index} style={styles.sectionGroup}>
+                  <div style={styles.twoColForm}>
+                    <div>
+                      <label style={styles.inputLabel}>Organization</label>
+                      <input
+                        value={item.organizationName}
+                        onChange={(e) => updateVolunteer(index, "organizationName", e.target.value)}
+                        style={styles.input}
+                        placeholder="Organization Name"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>Role</label>
+                      <input
+                        value={item.roleTitle}
+                        onChange={(e) => updateVolunteer(index, "roleTitle", e.target.value)}
+                        style={styles.input}
+                        placeholder="Role Title"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>City</label>
+                      <input
+                        value={item.city}
+                        onChange={(e) => updateVolunteer(index, "city", e.target.value)}
+                        style={styles.input}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>State</label>
+                      <input
+                        value={item.state}
+                        onChange={(e) => updateVolunteer(index, "state", e.target.value)}
+                        style={styles.input}
+                        placeholder="State"
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>From Month</label>
+                      <select
+                        value={item.startMonth}
+                        onChange={(e) => updateVolunteer(index, "startMonth", e.target.value)}
+                        style={styles.input}
+                      >
+                        {MONTHS.map((month) => (
+                          <option key={month} value={month}>
+                            {month || "Select"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={styles.inputLabel}>From Year</label>
+                      <input
+                        value={item.startYear}
+                        onChange={(e) => updateVolunteer(index, "startYear", e.target.value)}
+                        style={styles.input}
+                        placeholder="2020"
+                      />
+                    </div>
+                  </div>
+
+                  <label style={styles.checkboxRow}>
+                    <input
+                      type="checkbox"
+                      checked={item.isPresent}
+                      onChange={(e) => updateVolunteer(index, "isPresent", e.target.checked)}
+                    />
+                    <span>{ui.currentlyVolunteerHere}</span>
+                  </label>
+
+                  {!item.isPresent && (
+                    <div style={styles.twoColForm}>
+                      <div>
+                        <label style={styles.inputLabel}>To Month</label>
+                        <select
+                          value={item.endMonth}
+                          onChange={(e) => updateVolunteer(index, "endMonth", e.target.value)}
+                          style={styles.input}
+                        >
+                          {MONTHS.map((month) => (
+                            <option key={month} value={month}>
+                              {month || "Select"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>To Year</label>
+                        <input
+                          value={item.endYear}
+                          onChange={(e) => updateVolunteer(index, "endYear", e.target.value)}
+                          style={styles.input}
+                          placeholder="2022"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <p style={styles.helper}>
+                    {plan === "free"
+                      ? "Free plan allows up to 4 bullet points for volunteer work."
+                      : "Paid plans allow up to 6 bullet points for volunteer work."}
+                  </p>
+
+                  {item.bullets.map((bullet, bulletIndex) => (
+                    <div key={bulletIndex}>
+                      <label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
+                      <input
+                        value={bullet.text}
+                        onChange={(e) => updateVolunteerBullet(index, bulletIndex, e.target.value)}
+                        style={styles.input}
+                        placeholder="Describe your volunteer work"
+                      />
+                    </div>
+                  ))}
+
+                  <button type="button" onClick={() => addVolunteerBullet(index)} style={styles.smallButton}>
+                    + Add Bullet
+                  </button>
+                </div>
+              ))}
+
+              <button type="button" onClick={addVolunteer} style={styles.smallButton}>
+                + Add Volunteer Work
+              </button>
+            </section>
+
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>ACCOMPLISHMENTS</p>
+              <h2 style={styles.cardTitle}>{ui.accomplishments}</h2>
+              <label style={styles.inputLabel}>Accomplishments</label>
+              <textarea
+                value={accomplishments}
+                onChange={(e) => setAccomplishments(e.target.value)}
+                style={styles.textarea}
+                placeholder="Awards, recognitions, achievements, notable wins"
+              />
+            </section>
+
+            <section style={styles.card}>
+              <p style={styles.cardKicker}>ORDER</p>
+              <h2 style={styles.cardTitle}>{ui.moveSections}</h2>
+
+              {sectionOrder.map((section, index) => (
+                <div key={section} style={styles.orderRow}>
+                  <span style={styles.orderLabel}>
+                    {section === "summary"
+                      ? "Summary"
+                      : section === "skills"
+                      ? "Skills"
+                      : section === "experience"
+                      ? "Experience"
+                      : section === "education"
+                      ? "Education"
+                      : section === "certifications"
+                      ? "Certifications"
+                      : section === "volunteer"
+                      ? "Volunteer"
+                      : "Accomplishments"}
+                  </span>
+                  <div style={styles.orderButtons}>
+                    <button type="button" onClick={() => moveSection(index, "up")} style={styles.orderButton}>
+                      Up
+                    </button>
+                    <button type="button" onClick={() => moveSection(index, "down")} style={styles.orderButton}>
+                      Down
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </section>
+
+            {message ? (
+              <div className="flashMessage" style={styles.messageBox}>
+                {message}
+              </div>
+            ) : null}
+
+            <div className="siteButtons" style={styles.footerButtons}>
+              <button type="button" onClick={handleSaveResume} disabled={saving} style={styles.saveButton}>
+                {saving ? "Saving..." : ui.saveResume}
+              </button>
+              <button type="button" onClick={handlePrint} style={styles.printButton}>
+                {ui.printResume}
+              </button>
+            </div>
+          </div>
+
+          <div className="resumePrintWrap" style={styles.rightCol}>
+            <div className="builderTopRow" style={styles.previewCard}>
+              <p style={styles.cardKicker}>LIVE PREVIEW</p>
+              <h2 style={styles.cardTitle}>{ui.livePreview}</h2>
+              <p style={styles.previewHelp}>{ui.previewHelp}</p>
+            </div>
+
+            <div
+              className="resumePaper"
+              style={{
+                ...styles.resumePaper,
+                fontFamily,
+              }}
+            >
+              <div className="resumeHeader" style={styles.resumeHeader}>
+                <h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
+                <p style={styles.resumeContact}>
+                  {[phone, email, [city, stateName].filter(Boolean).join(", ")]
+                    .filter(Boolean)
+                    .join(" • ")}
+                </p>
+                {linkedinUrl ? (
+                  <p style={styles.resumeLinkedin}>{linkedinUrl}</p>
+                ) : null}
+              </div>
+
+              {sectionOrder.map((section) => (
+                <div key={section}>{renderResumeSection(section)}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
-         
-if (!userId) {
-return (
-<main style={styles.page}>
-<div style={styles.centerWrap}>
-<div style={styles.lockedCard}>
-<p style={styles.kicker}>Resume Builder</p>
-<h1 style={styles.lockedTitle}>Sign in first to access this page.</h1>
-<p style={styles.previewText}>
-Create your Career Passport account first, then sign in and return here to build your resume.
-</p>
-<div style={styles.lockedButtons}>
-<a href="/sign-up" style={styles.signUpButton}>
-Sign Up
-</a>
-<a href="/sign-in" style={styles.signUpButton}>
-Sign In
-</a>
-<a href="/profile" style={styles.signUpButtonDark}>
-Profile
-</a>
-</div>
-</div>
-</div>
-</main>
-);
-}
-    </style>
-<div style={styles.fontBar}>
-<div style={styles.fontBarInner}>
-<div>
-<p style={styles.fontBarKicker}>Resume Builder</p>
-<h1 style={styles.fontBarTitle}>Choose your resume font before you begin.</h1>
-</div>
 
-<div style={styles.fontControls}>
-<label style={styles.fontLabel}>Resume Font</label>
-<select
-value={fontFamily}
-onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
-style={styles.fontSelect}
->
-<option value="Times New Roman">Times New Roman</option>
-<option value="Arial">Arial</option>
-<option value="Calibri">Calibri</option>
-</select>
-</div>
-</div>
-</div>
-
-<div style={styles.shell}>
-<section style={styles.leftPanel}>
-<div style={styles.card}>
-<div style={styles.compactTopRow}>
-<div>
-<p style={styles.kicker}>Plan</p>
-<h2 style={styles.sectionTitle}>Choose plan</h2>
-</div>
-
-<select
-value={plan}
-onChange={(e) => setPlan(e.target.value as ResumePlan)}
-style={styles.planSelect}
->
-<option value="free">Free</option>
-<option value="access">Resume Access</option>
-<option value="premium">Premium</option>
-<option value="pro">Premium Plus / Pro</option>
-</select>
-</div>
-
-<div style={styles.planSummaryCard}>
-<p style={styles.planSummaryTitle}>{planDetails.title}</p>
-<p style={styles.planSummaryText}>{planDetails.text}</p>
-</div>
-</div>
-
-<div style={styles.card}>
-<p style={styles.kicker}>Header</p>
-<h2 style={styles.sectionTitle}>Resume Header</h2>
-
-<div style={styles.twoCol}>
-<Field label="Full Name" value={fullName} onChange={setFullName} placeholder="Full Name" />
-<Field label="Phone Number" value={phone} onChange={setPhone} placeholder="Phone Number" />
-</div>
-
-<div style={styles.twoCol}>
-<Field label="City (optional)" value={city} onChange={setCity} placeholder="City" />
-<Field label="State (optional)" value={stateName} onChange={setStateName} placeholder="State" />
-</div>
-
-<div style={styles.twoCol}>
-<Field label="Email" value={email} onChange={setEmail} placeholder="Email" type="email" />
-<Field label="LinkedIn (optional)" value={linkedinUrl} onChange={setLinkedinUrl} placeholder="LinkedIn URL" />
-</div>
-</div>
-
-<div style={styles.card}>
-<p style={styles.kicker}>Summary</p>
-<h2 style={styles.sectionTitle}>Summary + Skills</h2>
-
-<Field
-label='Summary Heading (optional, can be blank or "Summary")'
-value={summaryHeading}
-onChange={setSummaryHeading}
-placeholder="Summary"
-/>
-
-<TextAreaField
-label="Summary"
-value={summaryText}
-onChange={setSummaryText}
-placeholder="Example: Client-focused workforce development professional with experience in talent acquisition, resume writing, employer engagement, and job readiness coaching."
-/>
-
-<Field
-label="Skills (comma separated, up to 9)"
-value={skillsInput}
-onChange={setSkillsInput}
-placeholder="Recruiting, ATS, Sourcing, Interviewing"
-/>
-</div>
-
-<div style={styles.card}>
-<p style={styles.kicker}>Experience</p>
-<h2 style={styles.sectionTitle}>Work Experience</h2>
-
-{experiences.map((item, index) => (
-<div key={index} style={styles.subCard}>
-<div style={styles.twoCol}>
-<Field
-label="Company"
-value={item.companyName}
-onChange={(value) => updateExperience(index, "companyName", value)}
-placeholder="Company Name"
-/>
-<Field
-label="Role"
-value={item.roleTitle}
-onChange={(value) => updateExperience(index, "roleTitle", value)}
-placeholder="Role Title"
-/>
-</div>
-
-<div style={styles.twoCol}>
-<Field
-label="City"
-value={item.city}
-onChange={(value) => updateExperience(index, "city", value)}
-placeholder="City"
-/>
-<Field
-label="State"
-value={item.state}
-onChange={(value) => updateExperience(index, "state", value)}
-placeholder="State"
-/>
-</div>
-
-<div style={styles.twoCol}>
-<Field
-label="From Month"
-value={item.startMonth}
-onChange={(value) => updateExperience(index, "startMonth", value)}
-placeholder="Jan"
-/>
-<Field
-label="From Year"
-value={item.startYear}
-onChange={(value) => updateExperience(index, "startYear", value)}
-placeholder="2022"
-/>
-</div>
-
-<label style={styles.checkboxRow}>
-<input
-type="checkbox"
-checked={item.isPresent}
-onChange={(e) => updateExperience(index, "isPresent", e.target.checked)}
-/>
-<span>I currently work here</span>
-</label>
-
-{!item.isPresent ? (
-<div style={styles.twoCol}>
-<Field
-label="To Month"
-value={item.endMonth}
-onChange={(value) => updateExperience(index, "endMonth", value)}
-placeholder="Mar"
-/>
-<Field
-label="To Year"
-value={item.endYear}
-onChange={(value) => updateExperience(index, "endYear", value)}
-placeholder="2024"
-/>
-</div>
-) : null}
-
-<p style={styles.helperText}>
-{plan === "free"
-? "Free plan allows up to 4 bullet points for each role."
-: "Paid plans allow up to 6 bullet points for each role."}
-</p>
-
-{item.bullets.map((bullet, bulletIndex) => (
-<Field
-key={bulletIndex}
-label={`Bullet ${bulletIndex + 1}`}
-value={bullet.text}
-onChange={(value) => updateExperienceBullet(index, bulletIndex, value)}
-placeholder="Describe the work you did"
-/>
-))}
-
-{item.bullets.length < bulletLimit ? (
-<button type="button" style={styles.secondaryButton} onClick={() => addExperienceBullet(index)}>
-+ Add Bullet
-</button>
-) : null}
-</div>
-))}
-
-<button type="button" style={styles.secondaryButton} onClick={addExperience}>
-+ Add Work Experience
-</button>
-</div>
-
-<div style={styles.card}>
-<p style={styles.kicker}>Education</p>
-<h2 style={styles.sectionTitle}>Education (optional)</h2>
-
-{educationItems.map((item, index) => (
-<div key={index} style={styles.subCard}>
-<div style={styles.twoCol}>
-<Field
-label="School / College"
-value={item.schoolName}
-onChange={(value) => updateEducation(index, "schoolName", value)}
-placeholder="School / College"
-/>
-<Field
-label="Degree / Course of Study"
-value={item.degree}
-onChange={(value) => updateEducation(index, "degree", value)}
-placeholder="Degree / Course of Study"
-/>
-</div>
-
-<div style={styles.twoCol}>
-<Field
-label="City"
-value={item.city}
-onChange={(value) => updateEducation(index, "city", value)}
-placeholder="City"
-/>
-<Field
-label="State"
-value={item.state}
-onChange={(value) => updateEducation(index, "state", value)}
-placeholder="State"
-/>
-</div>
-
-<div style={styles.twoCol}>
-<Field
-label="From Month"
-value={item.startMonth}
-onChange={(value) => updateEducation(index, "startMonth", value)}
-placeholder="Sep"
-/>
-<Field
-label="From Year"
-value={item.startYear}
-onChange={(value) => updateEducation(index, "startYear", value)}
-placeholder="2019"
-/>
-</div>
-
-<label style={styles.checkboxRow}>
-<input
-type="checkbox"
-checked={item.isPresent}
-onChange={(e) => updateEducation(index, "isPresent", e.target.checked)}
-/>
-<span>I currently attend here</span>
-</label>
-
-{!item.isPresent ? (
-<div style={styles.twoCol}>
-<Field
-label="To Month"
-value={item.endMonth}
-onChange={(value) => updateEducation(index, "endMonth", value)}
-placeholder="May"
-/>
-<Field
-label="To Year"
-value={item.endYear}
-onChange={(value) => updateEducation(index, "endYear", value)}
-placeholder="2023"
-/>
-</div>
-) : null}
-
-<Field label="GPA (optional)" value={item.gpa} onChange={(value) => updateEducation(index, "gpa", value)} placeholder="3.8" />
-</div>
-))}
-
-<button type="button" style={styles.secondaryButton} onClick={addEducation}>
-+ Add Education
-</button>
-</div>
-
-<div style={styles.card}>
-<p style={styles.kicker}>Certificates</p>
-<h2 style={styles.sectionTitle}>Certifications (optional)</h2>
-
-{certificateItems.map((item, index) => (
-<div key={index} style={styles.subCard}>
-<div style={styles.twoCol}>
-<Field
-label="Organization / Program"
-value={item.organizationName}
-onChange={(value) => updateCertificate(index, "organizationName", value)}
-placeholder="Organization / Program"
-/>
-<Field
-label="Certificate / Course Name"
-value={item.certificateName}
-onChange={(value) => updateCertificate(index, "certificateName", value)}
-placeholder="Certificate / Course Name"
-/>
-</div>
-
-<div style={styles.twoCol}>
-<Field
-label="City"
-value={item.city}
-onChange={(value) => updateCertificate(index, "city", value)}
-placeholder="City"
-/>
-<Field
-label="State"
-value={item.state}
-onChange={(value) => updateCertificate(index, "state", value)}
-placeholder="State"
-/>
-</div>
-
-<div style={styles.twoCol}>
-<Field
-label="From Month"
-value={item.startMonth}
-onChange={(value) => updateCertificate(index, "startMonth", value)}
-placeholder="Jan"
-/>
-<Field
-label="From Year"
-value={item.startYear}
-onChange={(value) => updateCertificate(index, "startYear", value)}
-placeholder="2024"
-/>
-</div>
-
-<label style={styles.checkboxRow}>
-<input
-type="checkbox"
-checked={item.isPresent}
-onChange={(e) => updateCertificate(index, "isPresent", e.target.checked)}
-/>
-<span>I am currently completing this certification</span>
-</label>
-
-{!item.isPresent ? (
-<div style={styles.twoCol}>
-<Field
-label="To Month"
-value={item.endMonth}
-onChange={(value) => updateCertificate(index, "endMonth", value)}
-placeholder="Mar"
-/>
-<Field
-label="To Year"
-value={item.endYear}
-onChange={(value) => updateCertificate(index, "endYear", value)}
-placeholder="2024"
-/>
-</div>
-) : null}
-</div>
-))}
-
-<button type="button" style={styles.secondaryButton} onClick={addCertificate}>
-+ Add Certification
-</button>
-</div>
-
-<div style={styles.card}>
-<p style={styles.kicker}>Volunteer</p>
-<h2 style={styles.sectionTitle}>Volunteer Work (optional)</h2>
-
-{volunteerItems.map((item, index) => (
-<div key={index} style={styles.subCard}>
-<div style={styles.twoCol}>
-<Field
-label="Organization"
-value={item.organizationName}
-onChange={(value) => updateVolunteer(index, "organizationName", value)}
-placeholder="Organization Name"
-/>
-<Field
-label="Role"
-value={item.roleTitle}
-onChange={(value) => updateVolunteer(index, "roleTitle", value)}
-placeholder="Role Title"
-/>
-</div>
-
-<div style={styles.twoCol}>
-<Field
-label="City"
-value={item.city}
-onChange={(value) => updateVolunteer(index, "city", value)}
-placeholder="City"
-/>
-<Field
-label="State"
-value={item.state}
-onChange={(value) => updateVolunteer(index, "state", value)}
-placeholder="State"
-/>
-</div>
-
-<div style={styles.twoCol}>
-<Field
-label="From Month"
-value={item.startMonth}
-onChange={(value) => updateVolunteer(index, "startMonth", value)}
-placeholder="Jan"
-/>
-<Field
-label="From Year"
-value={item.startYear}
-onChange={(value) => updateVolunteer(index, "startYear", value)}
-placeholder="2020"
-/>
-</div>
-
-<label style={styles.checkboxRow}>
-<input
-type="checkbox"
-checked={item.isPresent}
-onChange={(e) => updateVolunteer(index, "isPresent", e.target.checked)}
-/>
-<span>I currently volunteer here</span>
-</label>
-
-{!item.isPresent ? (
-<div style={styles.twoCol}>
-<Field
-label="To Month"
-value={item.endMonth}
-onChange={(value) => updateVolunteer(index, "endMonth", value)}
-placeholder="Dec"
-/>
-<Field
-label="To Year"
-value={item.endYear}
-onChange={(value) => updateVolunteer(index, "endYear", value)}
-placeholder="2022"
-/>
-</div>
-) : null}
-
-<p style={styles.helperText}>
-{plan === "free"
-? "Free plan allows up to 4 bullet points for volunteer work."
-: "Paid plans allow up to 6 bullet points for volunteer work."}
-</p>
-
-{item.bullets.map((bullet, bulletIndex) => (
-<Field
-key={bulletIndex}
-label={`Bullet ${bulletIndex + 1}`}
-value={bullet.text}
-onChange={(value) => updateVolunteerBullet(index, bulletIndex, value)}
-placeholder="Describe your volunteer work"
-/>
-))}
-
-{item.bullets.length < bulletLimit ? (
-<button type="button" style={styles.secondaryButton} onClick={() => addVolunteerBullet(index)}>
-+ Add Bullet
-</button>
-) : null}
-</div>
-))}
-
-<button type="button" style={styles.secondaryButton} onClick={addVolunteer}>
-+ Add Volunteer Work
-</button>
-</div>
-
-<div style={styles.card}>
-<p style={styles.kicker}>Accomplishments</p>
-<h2 style={styles.sectionTitle}>Accomplishments (optional)</h2>
-
-<TextAreaField
-label="Accomplishments"
-value={accomplishments}
-onChange={setAccomplishments}
-placeholder="Awards, recognitions, achievements, notable wins"
-/>
-</div>
-
-<div style={styles.card}>
-<p style={styles.kicker}>Order</p>
-<h2 style={styles.sectionTitle}>Move Resume Sections</h2>
-
-{sectionOrder.map((section, index) => (
-<div key={section} style={styles.moveRow}>
-<span style={styles.moveLabel}>{section}</span>
-<div style={styles.moveButtons}>
-<button type="button" style={styles.smallButton} onClick={() => moveSection(index, "up")}>
-Up
-</button>
-<button type="button" style={styles.smallButton} onClick={() => moveSection(index, "down")}>
-Down
-</button>
-</div>
-</div>
-))}
-</div>
-
-<div style={styles.card}>
-<div style={styles.actionRow}>
-<button style={styles.primaryButton} onClick={handleSaveResume} disabled={saving}>
-{saving ? "Saving..." : "Save Resume"}
-</button>
-
-<button style={styles.secondaryPrimaryButton} onClick={handlePrint}>
-Print Resume
-</button>
-</div>
-
-{message ? <p style={styles.message}>{message}</p> : null}
-</div>
-</section>
-
-<aside style={styles.rightPanel}>
-<div style={styles.previewHeader}>
-<p style={styles.kicker}>Live Preview</p>
-<h2 style={styles.sectionTitle}>Resume Preview</h2>
-<p style={styles.previewText}>
-The preview stays visible while you build and expands as you type.
-</p>
-</div>
-
-<div
-className="resumePaper"
-style={{
-  ...styles.resumePaper,
-  fontFamily: fontFamily,
-}}
->
-<div style={styles.resumeHeader} className="resumeHeader">
-<h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
-<p style={styles.resumeContact}>
-{phone || "Phone"}
-{email ? ` • ${email}` : ""}
-{city || stateName ? ` • ${[city, stateName].filter(Boolean).join(", ")}` : ""}
-</p>
-{linkedinUrl ? <p style={styles.resumeContact}>{linkedinUrl}</p> : null}
-</div>
-
-{sectionOrder.map((section) => {
-if (section === "summary" && summaryText) {
-return (
-<ResumeSection key={section} title={summaryHeading || ""} hideTitle={!summaryHeading}>
-<p style={styles.resumeText}>{summaryText}</p>
-</ResumeSection>
-);
-}
-
-if (section === "skills" && skills.length > 0) {
-return (
-<ResumeSection key={section} title="Skills">
-<div
-style={{
-...styles.skillsGrid,
-gridTemplateColumns: `repeat(${skillsColumnCount(skills.length)}, minmax(0, 1fr))`,
-}}
->
-{skills.map((skill, index) => (
-<p key={index} style={styles.skillItem}>
-• {skill}
-</p>
-))}
-</div>
-</ResumeSection>
-);
-}
-
-if (section === "experience" && activeExperiences.length > 0) {
-return (
-<ResumeSection key={section} title="Work Experience">
-{activeExperiences.map((item, index) => (
-<div key={index} style={styles.resumeBlock}>
-<div style={styles.resumeTopLine}>
-<p style={styles.resumeStrong}>
-{[item.companyName, [item.city, item.state].filter(Boolean).join(", ")]
-.filter(Boolean)
-.join(" — ")}
-</p>
-<p style={styles.resumeDate}>
-{formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
-</p>
-</div>
-<p style={styles.resumeRole}>{item.roleTitle}</p>
-{item.bullets
-.filter((bullet) => bullet.text)
-.map((bullet, bulletIndex) => (
-<p key={bulletIndex} style={styles.resumeBullet}>
-• {bullet.text}
-</p>
-))}
-</div>
-))}
-</ResumeSection>
-);
-}
-
-if (section === "education" && activeEducation.length > 0) {
-return (
-<ResumeSection key={section} title="Education">
-{activeEducation.map((item, index) => (
-<div key={index} style={styles.resumeBlock}>
-<div style={styles.resumeTopLine}>
-<p style={styles.resumeStrong}>
-{[item.schoolName, [item.city, item.state].filter(Boolean).join(", ")]
-.filter(Boolean)
-.join(" — ")}
-</p>
-<p style={styles.resumeDate}>
-{formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
-</p>
-</div>
-<p style={styles.resumeText}>
-{item.degree}
-{item.gpa ? ` GPA: ${item.gpa}` : ""}
-</p>
-</div>
-))}
-</ResumeSection>
-);
-}
-
-if (section === "certifications" && activeCertificates.length > 0) {
-return (
-<ResumeSection key={section} title="Certifications">
-{activeCertificates.map((item, index) => (
-<div key={index} style={styles.resumeBlock}>
-<div style={styles.resumeTopLine}>
-<p style={styles.resumeStrong}>
-{[item.organizationName, [item.city, item.state].filter(Boolean).join(", ")]
-.filter(Boolean)
-.join(" — ")}
-</p>
-<p style={styles.resumeDate}>
-{formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
-</p>
-</div>
-<p style={styles.resumeText}>{item.certificateName}</p>
-</div>
-))}
-</ResumeSection>
-);
-}
-
-if (section === "volunteer" && activeVolunteer.length > 0) {
-return (
-<ResumeSection key={section} title="Volunteer Work">
-{activeVolunteer.map((item, index) => (
-<div key={index} style={styles.resumeBlock}>
-<div style={styles.resumeTopLine}>
-<p style={styles.resumeStrong}>
-{[item.organizationName, [item.city, item.state].filter(Boolean).join(", ")]
-.filter(Boolean)
-.join(" — ")}
-</p>
-<p style={styles.resumeDate}>
-{formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
-</p>
-</div>
-<p style={styles.resumeRole}>{item.roleTitle}</p>
-{item.bullets
-.filter((bullet) => bullet.text)
-.map((bullet, bulletIndex) => (
-<p key={bulletIndex} style={styles.resumeBullet}>
-• {bullet.text}
-</p>
-))}
-</div>
-))}
-</ResumeSection>
-);
-}
-
-if (section === "accomplishments" && accomplishments) {
-return (
-<ResumeSection key={section} title="Accomplishments">
-<p style={styles.resumeText}>{accomplishments}</p>
-</ResumeSection>
-);
-}
-
-return null;
-})}
-</div>
-</aside>
-</div>
-</main>
-);
-}
-
-function Field({
-label,
-value,
-onChange,
-placeholder,
-type = "text",
-}: {
-label: string;
-value: string;
-onChange: (value: string) => void;
-placeholder?: string;
-type?: string;
-}) {
-return (
-<div style={styles.fieldWrap}>
-<label style={styles.label}>{label}</label>
-<input
-type={type}
-value={value}
-onChange={(e) => onChange(e.target.value)}
-placeholder={placeholder}
-style={styles.input}
-/>
-</div>
-);
-}
-
-function TextAreaField({
-label,
-value,
-onChange,
-placeholder,
-}: {
-label: string;
-value: string;
-onChange: (value: string) => void;
-placeholder?: string;
-}) {
-return (
-<div style={styles.fieldWrap}>
-<label style={styles.label}>{label}</label>
-<textarea
-value={value}
-onChange={(e) => onChange(e.target.value)}
-placeholder={placeholder}
-style={styles.textarea}
-/>
-</div>
-);
-}
-
-function ResumeSection({
-  title,
-  hideTitle,
-  children,
-}: {
-  title: string;
-  hideTitle?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <section style={styles.resumeSection} className="resumeSection">
-      {!hideTitle ? <h3 style={styles.resumeSectionTitle}>{title}</h3> : null}
-      {children}
-    </section>
-  );
-}
-
-const styles: Record<string, React.CSSProperties> = {
-page: {
-minHeight: "100vh",
-background:
-"radial-gradient(circle at top left, rgba(255,255,255,0.04), transparent 22%), linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
-color: "#e7e7e7",
-paddingBottom: "32px",
-fontFamily:
-'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-},
-centerWrap: {
-maxWidth: "1200px",
-margin: "0 auto",
-padding: "40px 24px",
-},
-lockedCard: {
-maxWidth: "760px",
-margin: "80px auto",
-background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-border: "1px solid #262626",
-borderRadius: "24px",
-padding: "32px",
-textAlign: "center",
-},
-lockedTitle: {
-margin: "0 0 10px",
-fontSize: "34px",
-fontWeight: 500,
-letterSpacing: "-0.03em",
-},
-lockedButtons: {
-display: "flex",
-justifyContent: "center",
-gap: "12px",
-flexWrap: "wrap",
-marginTop: "18px",
-},
-signUpButton: {
-display: "inline-block",
-padding: "14px 18px",
-borderRadius: "16px",
-textDecoration: "none",
-background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
-color: "#09090b",
-fontWeight: 700,
-},
-signUpButtonDark: {
-display: "inline-block",
-padding: "14px 18px",
-borderRadius: "16px",
-textDecoration: "none",
-background: "#111827",
-border: "1px solid #374151",
-color: "#f3f4f6",
-fontWeight: 700,
-},
-fontBar: {
-width: "100%",
-borderBottom: "1px solid #232323",
-background: "rgba(7,7,8,0.94)",
-backdropFilter: "blur(8px)",
-position: "sticky",
-top: 0,
-zIndex: 40,
-},
-fontBarInner: {
-maxWidth: "1480px",
-margin: "0 auto",
-padding: "18px 24px",
-display: "flex",
-justifyContent: "space-between",
-alignItems: "center",
-gap: "20px",
-},
-fontBarKicker: {
-margin: "0 0 6px",
-color: "#9a9a9a",
-fontSize: "12px",
-letterSpacing: "0.18em",
-textTransform: "uppercase",
-},
-fontBarTitle: {
-margin: 0,
-fontSize: "30px",
-fontWeight: 500,
-letterSpacing: "-0.03em",
-color: "#f5f5f5",
-},
-fontControls: {
-display: "flex",
-alignItems: "center",
-gap: "12px",
-},
-fontLabel: {
-color: "#d4d4d8",
-fontSize: "14px",
-fontWeight: 600,
-},
-fontSelect: {
-padding: "10px 12px",
-borderRadius: "12px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "14px",
-},
-shell: {
-maxWidth: "1480px",
-margin: "0 auto",
-padding: "20px 24px 0",
-display: "grid",
-gridTemplateColumns: "1.05fr 0.95fr",
-gap: "18px",
-alignItems: "start",
-},
-leftPanel: {
-display: "grid",
-gap: "16px",
-},
-rightPanel: {
-position: "relative",
-top: "98px",
-alignSelf: "start",
-},
-card: {
-background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-border: "1px solid #262626",
-borderRadius: "24px",
-padding: "22px",
-boxShadow: "0 30px 80px rgba(0,0,0,0.25)",
-},
-compactTopRow: {
-display: "flex",
-justifyContent: "space-between",
-gap: "16px",
-alignItems: "center",
-marginBottom: "12px",
-},
-kicker: {
-margin: "0 0 8px",
-color: "#9a9a9a",
-fontSize: "12px",
-letterSpacing: "0.18em",
-textTransform: "uppercase",
-},
-sectionTitle: {
-margin: 0,
-fontSize: "28px",
-fontWeight: 500,
-letterSpacing: "-0.03em",
-color: "#f5f5f5",
-},
-planSelect: {
-padding: "12px 14px",
-borderRadius: "14px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "14px",
-minWidth: "220px",
-},
-planSummaryCard: {
-background: "#0f172a",
-border: "1px solid #273244",
-borderRadius: "18px",
-padding: "16px",
-},
-planSummaryTitle: {
-margin: "0 0 8px",
-color: "#f5f5f5",
-fontWeight: 700,
-},
-planSummaryText: {
-margin: 0,
-color: "#cbd5e1",
-lineHeight: 1.7,
-fontSize: "14px",
-},
-fieldWrap: {
-marginBottom: "12px",
-},
-label: {
-display: "block",
-marginBottom: "8px",
-color: "#c9c9c9",
-fontSize: "13px",
-fontWeight: 500,
-letterSpacing: "0.02em",
-},
-input: {
-width: "100%",
-padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-outline: "none",
-boxSizing: "border-box",
-},
-textarea: {
-width: "100%",
-minHeight: "110px",
-padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-outline: "none",
-resize: "vertical",
-boxSizing: "border-box",
-},
-twoCol: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "12px",
-},
-subCard: {
-background: "#101010",
-border: "1px solid #262626",
-borderRadius: "18px",
-padding: "16px",
-marginBottom: "12px",
-},
-helperText: {
-margin: "4px 0 12px",
-color: "#9ca3af",
-fontSize: "13px",
-lineHeight: 1.6,
-},
-checkboxRow: {
-display: "flex",
-alignItems: "center",
-gap: "10px",
-color: "#e5e7eb",
-margin: "4px 0 12px",
-},
-secondaryButton: {
-background: "#1f2937",
-color: "#e5e7eb",
-border: "1px solid #374151",
-borderRadius: "12px",
-padding: "10px 14px",
-fontWeight: 700,
-cursor: "pointer",
-},
-moveRow: {
-display: "flex",
-justifyContent: "space-between",
-alignItems: "center",
-padding: "12px 0",
-borderBottom: "1px solid #232323",
-},
-moveLabel: {
-textTransform: "capitalize",
-color: "#e5e7eb",
-fontWeight: 600,
-},
-moveButtons: {
-display: "flex",
-gap: "8px",
-},
-smallButton: {
-background: "#111827",
-color: "#e5e7eb",
-border: "1px solid #374151",
-borderRadius: "10px",
-padding: "8px 10px",
-cursor: "pointer",
-},
-actionRow: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "12px",
-},
-primaryButton: {
-width: "100%",
-padding: "15px 18px",
-borderRadius: "18px",
-border: "1px solid #d1d5db",
-background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
-color: "#09090b",
-fontSize: "15px",
-fontWeight: 700,
-cursor: "pointer",
-},
-secondaryPrimaryButton: {
-width: "100%",
-padding: "15px 18px",
-borderRadius: "18px",
-border: "1px solid #4b5563",
-background: "#111827",
-color: "#f3f4f6",
-fontSize: "15px",
-fontWeight: 700,
-cursor: "pointer",
-},
-message: {
-marginTop: "16px",
-color: "#e5e7eb",
-fontSize: "14px",
-lineHeight: 1.6,
-},
-previewHeader: {
-marginBottom: "14px",
-background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-border: "1px solid #262626",
-borderRadius: "24px",
-padding: "20px",
-},
-previewText: {
-color: "#9ca3af",
-fontSize: "14px",
-lineHeight: 1.7,
-marginTop: "8px",
-},
-resumePaper: {
-  background: "#ffffff",
-  minHeight: "auto",
-  height: "auto",
-  overflow: "visible",
-  padding: "32px",
-  borderRadius: "16px",
-  color: "#0f172a",
-  boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
-},
-resumeHeader: {
-  textAlign: "center",
-  marginBottom: "24px",
-  position: "sticky",
-  top: 0,
-  background: "#fff",
-  zIndex: 10,
-},
-resumeName: {
-margin: 0,
-fontSize: "28px",
-color: "#020617",
-},
-resumeContact: {
-margin: "8px 0 0",
-fontSize: "14px",
-color: "#334155",
-},
-resumeSection: {
-marginBottom: "18px",
-},
-resumeSectionTitle: {
-textAlign: "center",
-fontSize: "15px",
-margin: "0 0 8px",
-textTransform: "uppercase",
-color: "#0f172a",
-},
-resumeText: {
-wordBreak: "break-word",
-whiteSpace: "normal",
-fontSize: "14px",
-lineHeight: 1.55,
-margin: 0,
-color: "#0f172a",
-},
-resumeStrong: {
-margin: 0,
-fontSize: "14px",
-fontWeight: 900,
-color: "#000000",
-},
-resumeRole: {
-margin: "4px 0 8px",
-fontSize: "14px",
-fontWeight: 700,
-color: "#0f172a",
-},
-resumeDate: {
-margin: 0,
-fontSize: "13px",
-color: "#475569",
-whiteSpace: "nowrap",
-},
-resumeBlock: {
-  marginBottom: "12px",
-  wordBreak: "break-word",
-},
-resumeTopLine: {
-display: "flex",
-flexWrap: "wrap",
-justifyContent: "space-between",
-gap: "12px",
-alignItems: "baseline",
-marginBottom: "4px",
-},
-resumeBullet: {
-  fontSize: "14px",
-  lineHeight: 1.5,
-  wordBreak: "break-word",
-  whiteSpace: "normal",
-margin: "0 0 4px",
-color: "#0f172a",
-},
-skillsGrid: {
-display: "grid",
-gap: "8px 18px",
-},
-skillItem: {
-margin: 0,
-fontSize: "14px",
-color: "#0f172a",
-},
+const styles: Record<string, CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)",
+    color: "#f5f5f5",
+    padding: "24px",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  container: {
+    maxWidth: "1380px",
+    margin: "0 auto",
+  },
+  centerWrap: {
+    minHeight: "70vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "18px",
+    color: "#e5e7eb",
+  },
+  topBar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "20px",
+    marginBottom: "20px",
+    flexWrap: "wrap",
+  },
+  topSelectors: {
+    display: "flex",
+    gap: "16px",
+    flexWrap: "wrap",
+  },
+  topSelectGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    minWidth: "180px",
+  },
+  topSelectLabel: {
+    fontSize: "13px",
+    color: "#d1d5db",
+    fontWeight: 600,
+  },
+  kicker: {
+    margin: "0 0 8px",
+    color: "#c4b5fd",
+    fontSize: "12px",
+    letterSpacing: "0.22em",
+    textTransform: "uppercase",
+  },
+  pageTitle: {
+    margin: 0,
+    fontSize: "44px",
+    lineHeight: 1.06,
+    letterSpacing: "-0.04em",
+    fontWeight: 700,
+    color: "#fafafa",
+    maxWidth: "760px",
+  },
+  layout: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) 520px",
+    gap: "24px",
+    alignItems: "start",
+  },
+  leftCol: {
+    minWidth: 0,
+  },
+  rightCol: {
+    position: "sticky",
+    top: "20px",
+    alignSelf: "start",
+  },
+  card: {
+    background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+    border: "1px solid #262626",
+    borderRadius: "28px",
+    padding: "20px",
+    boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+    marginBottom: "18px",
+  },
+  previewCard: {
+    background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+    border: "1px solid #262626",
+    borderRadius: "28px",
+    padding: "20px",
+    boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+    marginBottom: "18px",
+  },
+  cardKicker: {
+    margin: "0 0 8px",
+    color: "#d4d4d8",
+    fontSize: "12px",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+  },
+  cardTitle: {
+    margin: "0 0 10px",
+    fontSize: "28px",
+    lineHeight: 1.1,
+    color: "#fafafa",
+    fontWeight: 700,
+  },
+  previewHelp: {
+    margin: 0,
+    color: "#d4d4d8",
+    fontSize: "15px",
+    lineHeight: 1.5,
+  },
+  rowBetween: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "16px",
+    flexWrap: "wrap",
+  },
+  planSelect: {
+    background: "#0b0f19",
+    color: "#fff",
+    border: "2px solid rgba(255,255,255,0.22)",
+    borderRadius: "18px",
+    padding: "12px 16px",
+    minWidth: "240px",
+    fontSize: "16px",
+  },
+  select: {
+    background: "#0b0f19",
+    color: "#fff",
+    border: "1px solid rgba(255,255,255,0.18)",
+    borderRadius: "16px",
+    padding: "12px 14px",
+    fontSize: "15px",
+  },
+  planInfoBox: {
+    marginTop: "14px",
+    background: "linear-gradient(180deg, #163163 0%, #102548 100%)",
+    border: "1px solid rgba(148,163,184,0.3)",
+    borderRadius: "18px",
+    padding: "16px",
+  },
+  planName: {
+    margin: "0 0 8px",
+    fontSize: "24px",
+    fontWeight: 700,
+    color: "#f8fafc",
+  },
+  planDescription: {
+    margin: 0,
+    color: "#e2e8f0",
+    fontSize: "16px",
+    lineHeight: 1.55,
+  },
+  twoColForm: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "14px 16px",
+  },
+  inputLabel: {
+    display: "block",
+    margin: "0 0 6px",
+    fontSize: "15px",
+    color: "#f5f5f5",
+    fontWeight: 600,
+  },
+  input: {
+    width: "100%",
+    background: "#05070c",
+    color: "#fff",
+    border: "1px solid #2f3541",
+    borderRadius: "18px",
+    padding: "14px 16px",
+    fontSize: "16px",
+    outline: "none",
+    boxSizing: "border-box",
+  },
+  textarea: {
+    width: "100%",
+    minHeight: "110px",
+    resize: "vertical",
+    background: "#05070c",
+    color: "#fff",
+    border: "1px solid #2f3541",
+    borderRadius: "18px",
+    padding: "14px 16px",
+    fontSize: "16px",
+    outline: "none",
+    boxSizing: "border-box",
+    marginBottom: "14px",
+  },
+  helper: {
+    margin: "10px 0 12px",
+    color: "#cbd5e1",
+    fontSize: "14px",
+  },
+  checkboxRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    margin: "12px 0",
+    color: "#f5f5f5",
+    fontSize: "15px",
+  },
+  sectionGroup: {
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "22px",
+    padding: "16px",
+    marginBottom: "14px",
+  },
+  smallButton: {
+    marginTop: "12px",
+    background: "linear-gradient(180deg, #5b84c7 0%, #456aa8 100%)",
+    color: "#fff",
+    border: "1px solid rgba(255,255,255,0.16)",
+    borderRadius: "14px",
+    padding: "10px 14px",
+    fontSize: "15px",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+  orderRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    padding: "12px 0",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+  },
+  orderLabel: {
+    fontSize: "18px",
+    color: "#f8fafc",
+    fontWeight: 600,
+  },
+  orderButtons: {
+    display: "flex",
+    gap: "8px",
+  },
+  orderButton: {
+    background: "#0f244d",
+    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.35)",
+    borderRadius: "12px",
+    padding: "8px 12px",
+    fontSize: "14px",
+    cursor: "pointer",
+  },
+  footerButtons: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+    marginTop: "12px",
+    marginBottom: "32px",
+  },
+  saveButton: {
+    background: "linear-gradient(180deg, #f5f5f5 0%, #d4d4d8 100%)",
+    color: "#09090b",
+    border: "none",
+    borderRadius: "18px",
+    padding: "16px",
+    fontSize: "20px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  printButton: {
+    background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.28)",
+    borderRadius: "18px",
+    padding: "16px",
+    fontSize: "20px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  messageBox: {
+    background: "rgba(59,130,246,0.12)",
+    border: "1px solid rgba(59,130,246,0.28)",
+    color: "#dbeafe",
+    borderRadius: "18px",
+    padding: "14px 16px",
+    marginBottom: "16px",
+    fontSize: "15px",
+  },
+  resumePaper: {
+    width: "100%",
+    minHeight: "1120px",
+    background: "#fff",
+    borderRadius: "18px",
+    border: "1px solid #e5e7eb",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
+    padding: "34px 32px 42px",
+    color: "#111827",
+    boxSizing: "border-box",
+  },
+  resumeHeader: {
+    textAlign: "center",
+    marginBottom: "20px",
+    paddingBottom: "8px",
+  },
+  resumeName: {
+    margin: "0 0 8px",
+    fontSize: "28px",
+    fontWeight: 700,
+    color: "#111827",
+  },
+  resumeContact: {
+    margin: "0 0 6px",
+    fontSize: "14px",
+    lineHeight: 1.5,
+    color: "#374151",
+    wordBreak: "break-word",
+  },
+  resumeLinkedin: {
+    margin: 0,
+    fontSize: "14px",
+    lineHeight: 1.5,
+    color: "#1d4ed8",
+    wordBreak: "break-word",
+  },
+  resumeSectionBlock: {
+    marginBottom: "20px",
+  },
+  resumeSectionTitle: {
+    margin: "0 0 10px",
+    textAlign: "center",
+    fontSize: "22px",
+    fontWeight: 700,
+    color: "#111827",
+  },
+  resumeParagraph: {
+    margin: 0,
+    fontSize: "15px",
+    lineHeight: 1.7,
+    color: "#111827",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+  },
+  skillsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: "10px 24px",
+  },
+  skillColumn: {
+    minWidth: 0,
+  },
+  skillItem: {
+    margin: "0 0 8px",
+    fontSize: "15px",
+    lineHeight: 1.5,
+    color: "#111827",
+    wordBreak: "break-word",
+  },
+  resumeEntry: {
+    marginBottom: "16px",
+  },
+  resumeEntryTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "16px",
+    marginBottom: "6px",
+  },
+  resumeEntryHeading: {
+    margin: 0,
+    fontSize: "16px",
+    fontWeight: 700,
+    color: "#111827",
+  },
+  resumeEntrySubheading: {
+    margin: "4px 0 0",
+    fontSize: "15px",
+    fontWeight: 600,
+    color: "#111827",
+  },
+  resumeEntryDates: {
+    margin: 0,
+    fontSize: "14px",
+    color: "#374151",
+    whiteSpace: "nowrap",
+  },
+  resumeBullet: {
+    margin: "4px 0",
+    fontSize: "15px",
+    lineHeight: 1.65,
+    color: "#111827",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+  },
 };
