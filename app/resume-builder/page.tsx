@@ -466,49 +466,82 @@ setSectionOrder((prev) => moveItem(prev, index, direction));
 }
 
 async function handleSaveResume() {
-setMessage("");
+  setMessage("");
 
-if (!userId) {
-setMessage("You must be signed in before saving.");
-return;
+  if (!userId) {
+    setMessage("You must be signed in before saving.");
+    return;
+  }
+
+  if (plan !== "free") {
+    setMessage("This builder is showing paid plans, but subscription checkout still needs to be wired to Stripe.");
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("candidate_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    const profileId = profileData.id;
+
+    const resumeData = {
+      user_id: userId,
+      profile_id: profileId,
+      full_name: fullName,
+      phone,
+      city,
+      state: stateName,
+      email,
+      linkedin_url: linkedinUrl,
+      summary_heading: summaryHeading,
+      summary_text: summaryText,
+      skills: skills,
+      experiences,
+      education: educationItems,
+      certificates: certificateItems,
+      volunteer: volunteerItems,
+      section_order: sectionOrder,
+      plan,
+      font_family: fontFamily,
+      accomplishments,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: insertedResume, error: resumeError } = await supabase
+      .from("resumes")
+      .insert([resumeData])
+      .select();
+
+    if (resumeError) throw resumeError;
+
+    const resumeId = insertedResume[0].id;
+
+    const { error: updateError } = await supabase
+      .from("candidate_profiles")
+      .update({
+        resume_id: resumeId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", profileId);
+
+    if (updateError) throw updateError;
+
+    setMessage("✓ Resume saved successfully.");
+  } catch (error: any) {
+    console.error("Save error:", error);
+    setMessage(error.message || "Something went wrong while saving.");
+  } finally {
+    setSaving(false);
+  }
 }
-
-if (plan !== "free") {
-setMessage("This builder is showing paid plans, but subscription checkout still needs to be wired to Stripe.");
-return;
-}
-
-try {
-setSaving(true);
-
-const { data: profileData, error: profileError } = await supabase
-.from("candidate_profiles")
-.select("id")
-.eq("user_id", userId)
-.single();
-
-if (profileError) throw profileError;
-
-const profileId = profileData.id;
-const { data: resumeData, error: resumeError } = await supabase
-  .from("resumes")
-  .insert({
-   
-await supabase
-  .from("candidate_profiles")
-  .update({
-    resume_id: resumeData.id,
-  })
-  .eq("id", profileId);
-  
-setMessage("Free resume saved successfully.");
-} catch (error: any) {
-setMessage(error.message || "Something went wrong while saving.");
-} finally {
-setSaving(false);
-}
-}
-
 function handlePrint() {
 if (plan !== "free") {
 setMessage("Printing for paid plans should be unlocked after checkout is connected.");
