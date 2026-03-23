@@ -230,24 +230,24 @@ const planDetails = useMemo(() => {
 if (plan === "free") {
 return {
 title: "Free",
-text: "2 page only. 4 bullets per role. 1 virtual mock interview session for 30 minutes. 1 free resume per month.",
+text: "1 page only. 4 bullets per role. 1 live mock interview for 30 minutes. 1 free resume and 1 refresh after 7 days.",
 };
 }
 if (plan === "access") {
 return {
 title: "Resume Access",
-text: "$19.99/month. Ongoing resume access, 1 employer verification offered once when enrolled, two 30min virtual mock interviews sessions per month with a Career Coach.",
+text: "$19.99/month. Unlimited resume edits, 1 employer verification offered once when enrolled, and ongoing resume access.",
 };
 }
 if (plan === "premium") {
 return {
 title: "Premium",
-text: "$29.99/month. Includes everything in Resume Access plus premium support and 3 employer verifications once when enrolled.",
+text: "$29.99/month. Includes everything in Resume Access plus premium support and included employer verifications.",
 };
 }
 return {
 title: "Premium Plus / Pro",
-text: "$45.99/month. Includes everything in Premium plus CV-level support and 5 employer verifications once when enrolled.",
+text: "$45.99/month. Includes everything in Premium plus CV-level support and more included verification capacity.",
 };
 }, [plan]);
 
@@ -469,58 +469,8 @@ async function handleSaveResume() {
 setMessage("");
 
 if (!userId) {
-  return (
-    <main style={styles.page}>
-      <div style={styles.centerWrap}>
-        <div style={styles.lockedCard}>
-          <p style={styles.kicker}>Resume Builder</p>
-          <h1 style={styles.lockedTitle}>Sign in first to access this page.</h1>
-          <p style={styles.previewText}>
-            Create your Career Passport account first, then sign in and return here to build your resume.
-          </p>
-          <div style={styles.lockedButtons}>
-            <a href="/sign-up" style={styles.signUpButton}>
-              Sign Up
-            </a>
-            <a href="/sign-in" style={styles.signUpButton}>
-              Sign In
-            </a>
-            <a href="/profile" style={styles.signUpButtonDark}>
-              Profile
-            </a>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-return (
-  <main style={styles.page}>
-    <div style={styles.fontBar}>
-      <div style={styles.fontBarInner}>
-        <div>
-          <p style={styles.fontBarKicker}>Resume Builder</p>
-          <h1 style={styles.fontBarTitle}>Choose your resume font before you begin.</h1>
-        </div>
-
-        <div style={styles.fontControls}>
-          <label style={styles.fontLabel}>Resume Font</label>
-          <select
-            value={fontFamily}
-            onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
-            style={styles.fontSelect}
-          >
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Arial">Arial</option>
-            <option value="Calibri">Calibri</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div style={styles.shell}>
-      <section style={styles.leftPanel}>
+setMessage("You must be signed in before saving.");
+return;
 }
 
 if (plan !== "free") {
@@ -540,32 +490,21 @@ const { data: profileData, error: profileError } = await supabase
 if (profileError) throw profileError;
 
 const profileId = profileData.id;
-const { data: resumeData, error: resumeError } = await supabase
-  .from("resumes")
-  .insert({
-    profile_id: profileId,
-    title: "Free Resume",
-    page_limit: 2,
-    summary_heading: summaryHeading,
-    summary_text: summaryText,
-    skills,
-    education: JSON.stringify(activeEducation),
-    accomplishments,
-    volunteer_work: JSON.stringify(activeVolunteer),
-    section_order: sectionOrder,
-  })
-  .select()
-  .single();
+
+const { error: resumeError } = await supabase.from("resumes").insert({
+profile_id: profileId,
+title: "Free Resume",
+page_limit: 1,
+summary_heading: summaryHeading,
+summary_text: summaryText,
+skills,
+education: JSON.stringify(activeEducation),
+accomplishments,
+volunteer_work: JSON.stringify(activeVolunteer),
+section_order: sectionOrder,
+});
 
 if (resumeError) throw resumeError;
-
-// THIS IS WHAT YOU WERE MISSING
-await supabase
-  .from("candidate_profiles")
-  .update({
-    resume_id: resumeData.id,
-  })
-  .eq("id", profileId);
 
 setMessage("Free resume saved successfully.");
 } catch (error: any) {
@@ -586,76 +525,128 @@ window.print();
 if (loadingUser) {
 return (
 <main style={styles.page}>
-<style>
-{`
-@media print {
-
-  body * {
-    visibility: hidden;
-  }
-
-  .resumePaper, .resumePaper * {
-    visibility: visible;
-  }
-
-  .resumePaper {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    box-shadow: none;
-  }
-
-  .resumeHeader {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background: white;
-  }
-
-  .resumeSection {
-    page-break-inside: avoid;
-  }
-
-  /* THIS IS STEP 5 (YOU WERE LOOKING FOR THIS) */
-  .resumeSection:nth-child(4) {
-    page-break-before: always;
-  }
-
-}
-`}
-</style>
 <div style={styles.centerWrap}>Loading...</div>
 </main>
 );
 }
-  
-  return (
-  <main style={styles.page}>
-    <div style={styles.fontBar}>
-      <div style={styles.fontBarInner}>
-        <div>
-          <p style={styles.fontBarKicker}>Resume Builder</p>
-          <h1 style={styles.fontBarTitle}>Choose your resume font before you begin.</h1>
-        </div>
 
-        <div style={styles.fontControls}>
-          <label style={styles.fontLabel}>Resume Font</label>
-          <select
-            value={fontFamily}
-            onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
-            style={styles.fontSelect}
-          >
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Arial">Arial</option>
-            <option value="Calibri">Calibri</option>
-          </select>
-        </div>
-      </div>
-    </div>
+if (!userId) {
+return (
+<main style={styles.page}>
+<div style={styles.centerWrap}>
+<div style={styles.lockedCard}>
+<p style={styles.kicker}>Resume Builder</p>
+<h1 style={styles.lockedTitle}>Sign in first to access this page.</h1>
+<p style={styles.previewText}>
+Create your Career Passport account first, then sign in and return here to build your resume.
+</p>
+<div style={styles.lockedButtons}>
+<a href="/sign-up" style={styles.signUpButton}>
+Sign Up
+</a>
+<a href="/sign-in" style={styles.signUpButton}>
+Sign In
+</a>
+<a href="/profile" style={styles.signUpButtonDark}>
+Profile
+</a>
+</div>
+</div>
+</div>
+</main>
+);
+}
 
-    <div style={styles.shell}>
-      <section style={styles.leftPanel}>
+return (
+<main style={styles.page}>
+<div style={styles.fontBar}>
+<div style={styles.fontBarInner}>
+<div>
+<p style={styles.fontBarKicker}>Resume Builder</p>
+<h1 style={styles.fontBarTitle}>Choose your resume font before you begin.</h1>
+</div>
+
+<div style={styles.fontControls}>
+<label style={styles.fontLabel}>Resume Font</label>
+<select
+value={fontFamily}
+onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
+style={styles.fontSelect}
+>
+<option value="Times New Roman">Times New Roman</option>
+<option value="Arial">Arial</option>
+<option value="Calibri">Calibri</option>
+</select>
+</div>
+</div>
+</div>
+
+<div style={styles.shell}>
+<section style={styles.leftPanel}>
+<div style={styles.card}>
+<div style={styles.compactTopRow}>
+<div>
+<p style={styles.kicker}>Plan</p>
+<h2 style={styles.sectionTitle}>Choose plan</h2>
+</div>
+
+<select
+value={plan}
+onChange={(e) => setPlan(e.target.value as ResumePlan)}
+style={styles.planSelect}
+>
+<option value="free">Free</option>
+<option value="access">Resume Access</option>
+<option value="premium">Premium</option>
+<option value="pro">Premium Plus / Pro</option>
+</select>
+</div>
+
+<div style={styles.planSummaryCard}>
+<p style={styles.planSummaryTitle}>{planDetails.title}</p>
+<p style={styles.planSummaryText}>{planDetails.text}</p>
+</div>
+</div>
+
+<div style={styles.card}>
+<p style={styles.kicker}>Header</p>
+<h2 style={styles.sectionTitle}>Resume Header</h2>
+
+<div style={styles.twoCol}>
+<Field label="Full Name" value={fullName} onChange={setFullName} placeholder="Full Name" />
+<Field label="Phone Number" value={phone} onChange={setPhone} placeholder="Phone Number" />
+</div>
+
+<div style={styles.twoCol}>
+<Field label="City (optional)" value={city} onChange={setCity} placeholder="City" />
+<Field label="State (optional)" value={stateName} onChange={setStateName} placeholder="State" />
+</div>
+
+<div style={styles.twoCol}>
+<Field label="Email" value={email} onChange={setEmail} placeholder="Email" type="email" />
+<Field label="LinkedIn (optional)" value={linkedinUrl} onChange={setLinkedinUrl} placeholder="LinkedIn URL" />
+</div>
+</div>
+
+<div style={styles.card}>
+<p style={styles.kicker}>Summary</p>
+<h2 style={styles.sectionTitle}>Summary + Skills</h2>
+
+<Field
+label='Summary Heading (optional, can be blank or "Summary")'
+value={summaryHeading}
+onChange={setSummaryHeading}
+placeholder="Summary"
+/>
+
+<TextAreaField
+label="Summary"
+value={summaryText}
+onChange={setSummaryText}
+placeholder="Example: Client-focused workforce development professional with experience in talent acquisition, resume writing, employer engagement, and job readiness coaching."
+/>
+
+<Field
 label="Skills (comma separated, up to 9)"
 value={skillsInput}
 onChange={setSkillsInput}
@@ -1101,13 +1092,12 @@ The preview stays visible while you build and expands as you type.
 </div>
 
 <div
-className="resumePaper"
 style={{
-  ...styles.resumePaper,
-  fontFamily: fontFamily,
+...styles.resumePaper,
+fontFamily: fontFamily,
 }}
 >
-<div style={styles.resumeHeader} className="resumeHeader">
+<div style={styles.resumeHeader}>
 <h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
 <p style={styles.resumeContact}>
 {phone || "Phone"}
@@ -1455,7 +1445,7 @@ display: "grid",
 gap: "16px",
 },
 rightPanel: {
-position: "relative",
+position: "sticky",
 top: "98px",
 alignSelf: "start",
 },
@@ -1653,22 +1643,18 @@ lineHeight: 1.7,
 marginTop: "8px",
 },
 resumePaper: {
-  background: "#ffffff",
-  minHeight: "auto",
-  height: "auto",
-  overflow: "visible",
-  padding: "32px",
-  borderRadius: "16px",
-  color: "#0f172a",
-  boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
+background: "#ffffff",
+minHeight: "820px",
+maxHeight: "calc(100vh - 220px)",
+overflowY: "auto",
+padding: "32px",
+borderRadius: "16px",
+color: "#0f172a",
+boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
 },
 resumeHeader: {
-  textAlign: "center",
-  marginBottom: "24px",
-  position: "sticky",
-  top: 0,
-  background: "#fff",
-  zIndex: 10,
+textAlign: "center",
+marginBottom: "24px",
 },
 resumeName: {
 margin: 0,
@@ -1691,8 +1677,6 @@ textTransform: "uppercase",
 color: "#0f172a",
 },
 resumeText: {
-wordBreak: "break-word",
-whiteSpace: "normal",
 fontSize: "14px",
 lineHeight: 1.55,
 margin: 0,
@@ -1717,22 +1701,18 @@ color: "#475569",
 whiteSpace: "nowrap",
 },
 resumeBlock: {
-  marginBottom: "12px",
-  wordBreak: "break-word",
+marginBottom: "12px",
 },
 resumeTopLine: {
 display: "flex",
-flexWrap: "wrap",
 justifyContent: "space-between",
 gap: "12px",
 alignItems: "baseline",
 marginBottom: "4px",
 },
 resumeBullet: {
-  fontSize: "14px",
-  lineHeight: 1.5,
-  wordBreak: "break-word",
-  whiteSpace: "normal",
+fontSize: "14px",
+lineHeight: 1.5,
 margin: "0 0 4px",
 color: "#0f172a",
 },
