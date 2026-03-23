@@ -517,7 +517,7 @@ async function handleSaveResume() {
 
     const { data: insertedResume, error: resumeError } = await supabase
       .from("resumes")
-      .insert([resumeData])
+       .insert([resumeData])
       .select();
 
     if (resumeError) throw resumeError;
@@ -542,22 +542,62 @@ async function handleSaveResume() {
     setSaving(false);
   }
 }
+
 function handlePrint() {
-if (plan !== "free") {
-setMessage("Printing for paid plans should be unlocked after checkout is connected.");
-return;
-}
-window.print();
+  if (plan !== "free") {
+    setMessage("Printing for paid plans should be unlocked after checkout is connected.");
+    return;
+  }
+  window.print();
 }
 
 if (loadingUser) {
-return (
-  <main style={styles.page}>
-    <style>
-      {`
-        @media print {
-          body * {
-            visibility: hidden;
+  return (
+    <main style={styles.page}>
+      <style>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+
+            .resumePaper, .resumePaper * {
+              visibility: visible;
+            }
+
+            .resumePaper {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              box-shadow: none;
+            }
+
+            .resumeHeader {
+              position: static;
+              width: 100%;
+              background: white;
+            }
+
+            .resumeSection {
+              page-break-inside: avoid;
+            }
+
+            .resumeSection:nth-child(4) {
+              page-break-before: always;
+            }
+
+            @page {
+              margin: 0.5in;
+            }
+          }
+        `}
+      </style>
+
+      <div style={styles.centerWrap}>Loading...</div>
+    </main>
+  );
+}
           }
 
           .resumePaper, .resumePaper * {
