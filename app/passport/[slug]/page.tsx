@@ -64,7 +64,22 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
     "This candidate has not added a public bio yet. Their Career Passport will display profile information, readiness indicators, verification, and resume details for employers.";
   const photoUrl = profile?.photo_url || "";
   const introVideoUrl = profile?.intro_video_url || "";
-  const resumeUrl = profile?.resume_url || "";
+  const { data: latestResume } = profile?.id
+  ? await supabase
+      .from("resumes")
+      .select("*")
+      .eq("profile_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+  : { data: null };
+
+const resumeUrl = profile?.resume_url || "";
+const hasResume = Boolean(resumeUrl || latestResume);
+const resumeSummary = latestResume?.summary_text || "";
+const resumeHeading = latestResume?.summary_heading || "Resume Summary";
+const resumeSkills = Array.isArray(latestResume?.skills) ? latestResume.skills : [];
+const resumeAccomplishments = latestResume?.accomplishments || "";
   const linkedinUrl = profile?.linkedin_url || "";
 
   // Placeholder / starter values until verification + scorecard tables are wired
@@ -120,13 +135,13 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
                 </a>
               ) : null}
 
-              {resumeUrl ? (
-                <a href={resumeUrl} style={styles.primaryButton}>
-                  View Resume
-                </a>
-              ) : (
-                <span style={styles.disabledButton}>Resume Not Uploaded</span>
-              )}
+           {hasResume ? (
+  <a href="#saved-resume" style={styles.primaryButton}>
+    View Resume
+  </a>
+) : (
+  <span style={styles.disabledButton}>Resume Not Uploaded</span>
+)}
 
               {introVideoUrl ? (
                 <a href={introVideoUrl} style={styles.secondaryButton}>
@@ -151,6 +166,43 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
               <h2 style={styles.sectionTitle}>Professional Summary</h2>
               <p style={styles.bodyText}>{bio}</p>
             </div>
+            {hasResume ? (
+  <div id="saved-resume" style={styles.card}>
+    <p style={styles.sectionKicker}>Resume</p>
+    <h2 style={styles.sectionTitle}>Saved Resume Snapshot</h2>
+
+    {resumeSummary ? (
+      <>
+        <p style={styles.helperText}>{resumeHeading}</p>
+        <p style={styles.bodyText}>{resumeSummary}</p>
+      </>
+    ) : null}
+
+    {resumeSkills.length ? (
+      <>
+        <p style={styles.helperText}>Skills</p>
+        <div style={styles.list}>
+          {resumeSkills.map((skill: string, index: number) => (
+            <li key={index}>{skill}</li>
+          ))}
+        </div>
+      </>
+    ) : null}
+
+    {resumeAccomplishments ? (
+      <>
+        <p style={styles.helperText}>Accomplishments</p>
+        <p style={styles.bodyText}>{resumeAccomplishments}</p>
+      </>
+    ) : null}
+
+    {resumeUrl ? (
+      <a href={resumeUrl} style={styles.primaryButton}>
+        Open Uploaded Resume
+      </a>
+    ) : null}
+  </div>
+) : null}
 
             <div style={styles.card}>
               <p style={styles.sectionKicker}>Verification</p>
@@ -233,7 +285,7 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
 
               <div style={styles.sideItem}>
                 <span style={styles.sideLabel}>Resume</span>
-                <span style={styles.sideValue}>{resumeUrl ? "Uploaded" : "Not uploaded"}</span>
+                <span style={styles.sideValue}>{hasResume ? "Available" : "Not uploaded"}</span>
               </div>
 
               <div style={styles.sideItem}>
