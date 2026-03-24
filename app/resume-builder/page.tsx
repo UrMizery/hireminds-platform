@@ -1660,14 +1660,17 @@ const profileId = profileData.id;
               </div>
             ) : null}
 
-            <div className="siteButtons" style={styles.footerButtons}>
-              <button type="button" onClick={handleSaveResume} disabled={saving} style={styles.saveButton}>
-                {saving ? "Saving..." : ui.saveResume}
-              </button>
-              <button type="button" onClick={handlePrint} style={styles.printButton}>
-                {ui.printResume}
-              </button>
-            </div>
+          <div className="siteButtons" style={styles.footerButtons}>
+  <button type="button" onClick={handleSaveResume} disabled={saving} style={styles.saveButton}>
+    {saving ? "Saving..." : ui.saveResume}
+  </button>
+  <button type="button" onClick={handlePrint} style={styles.printButton}>
+    {ui.printResume}
+  </button>
+  <a href="/profile" style={styles.backButton}>
+    Back to Profile
+  </a>
+</div>
           </div>
 
           <div className="resumePrintWrap" style={styles.rightCol}>
@@ -1956,12 +1959,12 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
   },
   footerButtons: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-    marginTop: "12px",
-    marginBottom: "32px",
-  },
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr",
+  gap: "12px",
+  marginTop: "12px",
+  marginBottom: "32px",
+},
   saveButton: {
     background: "linear-gradient(180deg, #f5f5f5 0%, #d4d4d8 100%)",
     color: "#09090b",
@@ -1973,6 +1976,20 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
   },
   printButton: {
+    backButton: {
+  background: "transparent",
+  color: "#fff",
+  border: "1px solid rgba(148,163,184,0.28)",
+  borderRadius: "18px",
+  padding: "16px",
+  fontSize: "20px",
+  fontWeight: 700,
+  textAlign: "center",
+  textDecoration: "none",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+},
     background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
     color: "#fff",
     border: "1px solid rgba(148,163,184,0.28)",
