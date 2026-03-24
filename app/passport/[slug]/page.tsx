@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase";
 
 type PassportPageProps = {
@@ -55,6 +56,16 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
     .eq("passport_slug", params.slug)
     .maybeSingle();
 
+  const { data: latestResume } = profile?.id
+    ? await supabase
+        .from("resumes")
+        .select("*")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+
   const fullName = profile?.full_name || "Candidate Name";
   const headline = profile?.headline || "Professional Headline";
   const cityState =
@@ -64,25 +75,15 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
     "This candidate has not added a public bio yet. Their Career Passport will display profile information, readiness indicators, verification, and resume details for employers.";
   const photoUrl = profile?.photo_url || "";
   const introVideoUrl = profile?.intro_video_url || "";
-  const { data: latestResume } = profile?.id
-  ? await supabase
-      .from("resumes")
-      .select("*")
-      .eq("profile_id", profile.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-  : { data: null };
-
-const resumeUrl = profile?.resume_url || "";
-const hasResume = Boolean(resumeUrl || latestResume);
-const resumeSummary = latestResume?.summary_text || "";
-const resumeHeading = latestResume?.summary_heading || "Resume Summary";
-const resumeSkills = Array.isArray(latestResume?.skills) ? latestResume.skills : [];
-const resumeAccomplishments = latestResume?.accomplishments || "";
+  const resumeUrl = profile?.resume_url || "";
   const linkedinUrl = profile?.linkedin_url || "";
 
-  // Placeholder / starter values until verification + scorecard tables are wired
+  const hasResume = Boolean(resumeUrl || latestResume);
+  const resumeSummary = latestResume?.summary_text || "";
+  const resumeHeading = latestResume?.summary_heading || "Resume Summary";
+  const resumeSkills = Array.isArray(latestResume?.skills) ? latestResume.skills : [];
+  const resumeAccomplishments = latestResume?.accomplishments || "";
+
   const verificationItems: Array<{
     company: string;
     role: string;
@@ -113,6 +114,12 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
   return (
     <main style={styles.page}>
       <div style={styles.wrapper}>
+        <div style={styles.topNav}>
+          <a href="/profile" style={styles.topLink}>
+            Back to Profile
+          </a>
+        </div>
+
         <section style={styles.hero}>
           <div style={styles.heroLeft}>
             {photoUrl ? (
@@ -135,13 +142,13 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
                 </a>
               ) : null}
 
-           {hasResume ? (
-  <a href="#saved-resume" style={styles.primaryButton}>
-    View Resume
-  </a>
-) : (
-  <span style={styles.disabledButton}>Resume Not Uploaded</span>
-)}
+              {hasResume ? (
+                <a href="#saved-resume" style={styles.primaryButton}>
+                  View Resume
+                </a>
+              ) : (
+                <span style={styles.disabledButton}>Resume Not Uploaded</span>
+              )}
 
               {introVideoUrl ? (
                 <a href={introVideoUrl} style={styles.secondaryButton}>
@@ -153,55 +160,57 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
             </div>
 
             <div style={styles.notice}>
-              This public Career Passport is designed for employers and partners to
-              review candidate readiness, profile details, and verification status.
+              This public Career Passport is designed for employers and partners to review
+              candidate readiness, profile details, and verification status.
             </div>
           </div>
         </section>
 
-        <div style={styles.card}>
-<div style={styles.card}>
-  <p style={styles.sectionKicker}>About</p>
-  <h2 style={styles.sectionTitle}>Professional Summary</h2>
-  <p style={styles.bodyText}>{bio}</p>
-</div>
+        <div style={styles.layout}>
+          <section style={styles.mainCol}>
+            <div style={styles.card}>
+              <p style={styles.sectionKicker}>About</p>
+              <h2 style={styles.sectionTitle}>Profile Bio</h2>
+              <p style={styles.bodyText}>{bio}</p>
+            </div>
+
             {hasResume ? (
-  <div id="saved-resume" style={styles.card}>
-    <p style={styles.sectionKicker}>Resume</p>
-    <h2 style={styles.sectionTitle}>Saved Resume Snapshot</h2>
+              <div id="saved-resume" style={styles.card}>
+                <p style={styles.sectionKicker}>Resume</p>
+                <h2 style={styles.sectionTitle}>Saved Resume Snapshot</h2>
 
-    {resumeSummary ? (
-      <>
-        <p style={styles.helperText}>{resumeHeading}</p>
-        <p style={styles.bodyText}>{resumeSummary}</p>
-      </>
-    ) : null}
+                {resumeSummary ? (
+                  <>
+                    <p style={styles.helperText}>{resumeHeading}</p>
+                    <p style={styles.bodyText}>{resumeSummary}</p>
+                  </>
+                ) : null}
 
-    {resumeSkills.length ? (
-      <>
-        <p style={styles.helperText}>Skills</p>
-        <div style={styles.list}>
-          {resumeSkills.map((skill: string, index: number) => (
-            <li key={index}>{skill}</li>
-          ))}
-        </div>
-      </>
-    ) : null}
+                {resumeSkills.length ? (
+                  <>
+                    <p style={styles.helperText}>Skills</p>
+                    <ul style={styles.list}>
+                      {resumeSkills.map((skill: string, index: number) => (
+                        <li key={index}>{skill}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
 
-    {resumeAccomplishments ? (
-      <>
-        <p style={styles.helperText}>Accomplishments</p>
-        <p style={styles.bodyText}>{resumeAccomplishments}</p>
-      </>
-    ) : null}
+                {resumeAccomplishments ? (
+                  <>
+                    <p style={styles.helperText}>Accomplishments</p>
+                    <p style={styles.bodyText}>{resumeAccomplishments}</p>
+                  </>
+                ) : null}
 
-    {resumeUrl ? (
-      <a href={resumeUrl} style={styles.primaryButton}>
-        Open Uploaded Resume
-      </a>
-    ) : null}
-  </div>
-) : null}
+                {resumeUrl ? (
+                  <a href={resumeUrl} style={styles.primaryButton}>
+                    Open Uploaded Resume
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
 
             <div style={styles.card}>
               <p style={styles.sectionKicker}>Verification</p>
@@ -244,9 +253,9 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
               <p style={styles.sectionKicker}>Scorecards</p>
               <h2 style={styles.sectionTitle}>Candidate Readiness Scores</h2>
               <p style={styles.helperText}>
-                These are placeholder scorecards for now. Later they should be powered
-                by real profile completion, resume quality, interview data, and
-                verification results.
+                These are placeholder scorecards for now. Later they should be powered by
+                real profile completion, resume quality, interview data, and verification
+                results.
               </p>
 
               <div style={styles.scoreGrid}>
@@ -289,7 +298,9 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
 
               <div style={styles.sideItem}>
                 <span style={styles.sideLabel}>Intro Video</span>
-                <span style={styles.sideValue}>{introVideoUrl ? "Available" : "Not available"}</span>
+                <span style={styles.sideValue}>
+                  {introVideoUrl ? "Available" : "Not available"}
+                </span>
               </div>
 
               <div style={styles.sideItem}>
@@ -306,7 +317,7 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
                 <li>Readiness scorecards</li>
                 <li>Resume access</li>
                 <li>Intro video</li>
-                <li>Professional summary</li>
+                <li>Saved resume snapshot</li>
               </ul>
             </div>
           </aside>
@@ -316,7 +327,7 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
@@ -329,6 +340,19 @@ const styles: Record<string, React.CSSProperties> = {
   wrapper: {
     maxWidth: "1440px",
     margin: "0 auto",
+  },
+  topNav: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginBottom: "16px",
+  },
+  topLink: {
+    color: "#e5e7eb",
+    textDecoration: "none",
+    border: "1px solid rgba(255,255,255,0.18)",
+    borderRadius: "14px",
+    padding: "10px 14px",
+    background: "rgba(255,255,255,0.04)",
   },
   hero: {
     display: "grid",
@@ -381,198 +405,206 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 0 10px",
     color: "#e5e7eb",
     fontSize: "20px",
-    lineHeight: 1.5,
+    lineHeight: 1.4,
   },
   meta: {
     margin: "0 0 18px",
-    color: "#c4c4c4",
+    color: "#a1a1aa",
     fontSize: "15px",
   },
   linkRow: {
     display: "flex",
     gap: "12px",
     flexWrap: "wrap",
-    marginBottom: "18px",
+    marginBottom: "16px",
   },
   primaryButton: {
-    display: "inline-block",
-    padding: "14px 18px",
-    borderRadius: "16px",
-    textDecoration: "none",
-    background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+    background: "linear-gradient(180deg, #f5f5f5 0%, #d4d4d8 100%)",
     color: "#09090b",
-    fontWeight: 700,
-  },
-  secondaryButton: {
-    display: "inline-block",
-    padding: "14px 18px",
+    border: "none",
     borderRadius: "16px",
-    textDecoration: "none",
-    background: "#111827",
-    border: "1px solid #374151",
-    color: "#f3f4f6",
+    padding: "12px 16px",
+    fontSize: "15px",
     fontWeight: 700,
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   primaryGhost: {
-    display: "inline-block",
-    padding: "14px 18px",
+    background: "transparent",
+    color: "#fff",
+    border: "1px solid rgba(255,255,255,0.18)",
     borderRadius: "16px",
-    textDecoration: "none",
-    background: "#151515",
-    border: "1px solid #2f2f2f",
-    color: "#f3f4f6",
+    padding: "12px 16px",
+    fontSize: "15px",
     fontWeight: 700,
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryButton: {
+    background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.28)",
+    borderRadius: "16px",
+    padding: "12px 16px",
+    fontSize: "15px",
+    fontWeight: 700,
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   disabledButton: {
-    display: "inline-block",
-    padding: "14px 18px",
+    background: "rgba(255,255,255,0.04)",
+    color: "#a1a1aa",
+    border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: "16px",
-    background: "#171717",
-    border: "1px solid #2b2b2b",
-    color: "#7c7c85",
+    padding: "12px 16px",
+    fontSize: "15px",
     fontWeight: 700,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   notice: {
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "18px",
     padding: "14px 16px",
-    borderRadius: "16px",
-    background: "#101010",
-    border: "1px solid #2a2a2a",
-    color: "#cbd5e1",
-    lineHeight: 1.7,
-    fontSize: "14px",
+    color: "#d4d4d8",
+    fontSize: "15px",
+    lineHeight: 1.6,
   },
   layout: {
     display: "grid",
-    gridTemplateColumns: "1.1fr 0.9fr",
+    gridTemplateColumns: "minmax(0, 1fr) 360px",
     gap: "24px",
     alignItems: "start",
   },
-  mainCol: {
-    display: "grid",
-    gap: "20px",
-  },
-  sideCol: {
-    display: "grid",
-    gap: "20px",
-    position: "sticky",
-    top: "100px",
-  },
+  mainCol: {},
+  sideCol: {},
   card: {
-    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-    border: "1px solid #262626",
-    borderRadius: "24px",
+    background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+    border: "1px solid #232323",
+    borderRadius: "28px",
     padding: "24px",
     boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
+    marginBottom: "20px",
   },
   sideCard: {
-    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-    border: "1px solid #262626",
-    borderRadius: "24px",
+    background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+    border: "1px solid #232323",
+    borderRadius: "28px",
     padding: "24px",
     boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
+    marginBottom: "20px",
+    position: "sticky",
+    top: "24px",
   },
   sectionKicker: {
-    margin: "0 0 8px",
-    color: "#9a9a9a",
+    margin: "0 0 10px",
+    color: "#a3a3a3",
     fontSize: "12px",
-    letterSpacing: "0.18em",
+    letterSpacing: "0.22em",
     textTransform: "uppercase",
   },
   sectionTitle: {
-    margin: "0 0 14px",
-    color: "#f5f5f5",
+    margin: "0 0 12px",
+    color: "#fafafa",
     fontSize: "28px",
-    fontWeight: 500,
-    letterSpacing: "-0.03em",
+    lineHeight: 1.1,
+    fontWeight: 700,
   },
   bodyText: {
     margin: 0,
-    color: "#d1d5db",
-    lineHeight: 1.8,
-    fontSize: "15px",
+    color: "#e5e7eb",
+    fontSize: "16px",
+    lineHeight: 1.7,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
   },
   helperText: {
-    margin: "0 0 16px",
-    color: "#9ca3af",
-    lineHeight: 1.7,
-    fontSize: "14px",
+    margin: "0 0 12px",
+    color: "#d4d4d8",
+    fontSize: "15px",
+    lineHeight: 1.6,
   },
   verificationList: {
     display: "grid",
-    gap: "14px",
+    gap: "12px",
   },
   verificationCard: {
-    background: "#0f172a",
-    border: "1px solid #273244",
-    borderRadius: "20px",
-    padding: "18px",
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "18px",
+    padding: "16px",
   },
   verificationTop: {
     display: "flex",
     justifyContent: "space-between",
-    gap: "12px",
-    alignItems: "start",
+    gap: "16px",
+    alignItems: "flex-start",
   },
   verificationCompany: {
-    margin: "0 0 6px",
-    color: "#f3f4f6",
+    margin: "0 0 4px",
+    color: "#fafafa",
+    fontSize: "17px",
     fontWeight: 700,
-    fontSize: "16px",
   },
   verificationRole: {
-    margin: "0 0 6px",
-    color: "#dbeafe",
-    fontSize: "14px",
+    margin: "0 0 4px",
+    color: "#e5e7eb",
+    fontSize: "15px",
   },
   verificationDates: {
     margin: 0,
-    color: "#cbd5e1",
+    color: "#a1a1aa",
     fontSize: "14px",
   },
   statusBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: "92px",
-    padding: "8px 12px",
     borderRadius: "999px",
+    padding: "8px 12px",
     fontSize: "13px",
     fontWeight: 700,
+    whiteSpace: "nowrap",
   },
   scoreGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "14px",
+    gap: "12px",
   },
   scoreCard: {
-    background: "#101010",
-    border: "1px solid #2a2a2a",
-    borderRadius: "20px",
-    padding: "18px",
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "18px",
+    padding: "16px",
   },
   scoreLabel: {
-    margin: "0 0 10px",
-    color: "#cbd5e1",
+    margin: "0 0 8px",
+    color: "#d4d4d8",
     fontSize: "14px",
   },
   scoreValue: {
     margin: 0,
-    fontSize: "36px",
+    fontSize: "32px",
     fontWeight: 700,
   },
   sideItem: {
     display: "flex",
     justifyContent: "space-between",
     gap: "12px",
-    padding: "10px 0",
-    borderBottom: "1px solid #232323",
+    padding: "12px 0",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
   },
   sideLabel: {
-    color: "#9ca3af",
+    color: "#a1a1aa",
     fontSize: "14px",
   },
   sideValue: {
-    color: "#f5f5f5",
+    color: "#fafafa",
     fontSize: "14px",
     fontWeight: 600,
     textAlign: "right",
@@ -580,7 +612,7 @@ const styles: Record<string, React.CSSProperties> = {
   list: {
     margin: 0,
     paddingLeft: "18px",
-    color: "#d1d5db",
-    lineHeight: 1.9,
+    color: "#e5e7eb",
+    lineHeight: 1.8,
   },
 };
