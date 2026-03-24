@@ -160,8 +160,9 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
         </section>
 
         <div style={styles.card}>
+<div style={styles.card}>
   <p style={styles.sectionKicker}>About</p>
-  <h2 style={styles.sectionTitle}>Profile Bio</h2>
+  <h2 style={styles.sectionTitle}>Professional Summary</h2>
   <p style={styles.bodyText}>{bio}</p>
 </div>
             {hasResume ? (
