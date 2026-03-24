@@ -1001,92 +1001,67 @@ export default function ResumeBuilderPage() {
 
   return (
     <main style={styles.page}>
-      <style>{`
-       @media print {
-  @page {
-    size: auto;
-    margin: 0.5in;
+   <style>{`
+  @media print {
+    @page {
+      margin: 0.5in;
+    }
+
+    html,
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white !important;
+    }
+
+    body * {
+      visibility: hidden !important;
+    }
+
+    .resumePrintWrap,
+    .resumePrintWrap * {
+      visibility: visible !important;
+    }
+
+    .resumePrintWrap {
+      position: static !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white !important;
+    }
+
+    .resumePaper {
+      width: 100% !important;
+      max-width: none !important;
+      min-height: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      background: white !important;
+      overflow: visible !important;
+    }
+
+    .resumeHeader {
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+    }
+
+    .resumeSection {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+    }
+
+    .builderLeft,
+    .builderTopRow,
+    .siteButtons,
+    .flashMessage {
+      display: none !important;
+    }
   }
-
-  html,
-  body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: white !important;
-  }
-
-  body * {
-    display: none !important;
-  }
-
- .resumePrintWrap,
-.resumePrintWrap * {
-  visibility: visible !important;
-}
-
-  .resumePrintWrap {
-    position: static !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: white !important;
-  }
-
-  .resumePaper {
-    width: 100% !important;
-    max-width: none !important;
-    min-height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    background: white !important;
-    overflow: visible !important;
-  }
-
-  .resumeHeader {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  .resumeSection {
-    break-inside: auto !important;
-    page-break-inside: auto !important;
-  }
-
-  .builderShell,
-  .builderLeft,
-  .builderTopRow,
-  .siteButtons,
-  .flashMessage {
-    display: none !important;
-  }
-}
-
-          .resumeHeader {
-            position: static !important;
-            top: auto !important;
-            background: white !important;
-          }
-
-          .resumeSection {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .builderShell {
-            display: block !important;
-          }
-
-          .builderLeft,
-          .builderTopRow,
-          .siteButtons,
-          .flashMessage {
-            display: none !important;
-          }
-        }
-      `}</style>
+`}</style>
 
       <div style={styles.container}>
         <div style={styles.topBar}>
