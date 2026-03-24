@@ -1022,14 +1022,6 @@ export default function ResumeBuilderPage() {
     .resumePrintWrap * {
       visibility: visible !important;
     }
-
-    .resumePrintWrap {
-      position: static !important;
-      width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      background: white !important;
-    }
 .resumePrintWrap {
   position: static !important;
   width: 100% !important;
@@ -1038,6 +1030,15 @@ export default function ResumeBuilderPage() {
   background: white !important;
 }
 
+.topBar {
+  display: none !important;
+}
+
+.container {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
 .builderShell {
   display: block !important;
 }
