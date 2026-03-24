@@ -1002,43 +1002,68 @@ export default function ResumeBuilderPage() {
   return (
     <main style={styles.page}>
       <style>{`
-        @media print {
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-          }
+       @media print {
+  @page {
+    size: auto;
+    margin: 0.5in;
+  }
 
-          body * {
-            visibility: hidden;
-          }
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
 
-          .resumePrintWrap,
-          .resumePrintWrap * {
-            visibility: visible;
-          }
+  body * {
+    display: none !important;
+  }
 
-          .resumePrintWrap {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            background: white !important;
-          }
+  .resumePrintWrap,
+  .resumePrintWrap * {
+    display: block !important;
+    visibility: visible !important;
+  }
 
-          .resumePaper {
-            width: 100% !important;
-            max-width: none !important;
-            box-shadow: none !important;
-            border: none !important;
-            min-height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border-radius: 0 !important;
-          }
+  .resumePrintWrap {
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .resumePaper {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+
+  .resumeHeader {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .resumeSection {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .builderShell,
+  .builderLeft,
+  .builderTopRow,
+  .siteButtons,
+  .flashMessage {
+    display: none !important;
+  }
+}
 
           .resumeHeader {
             position: static !important;
