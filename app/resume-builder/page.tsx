@@ -89,7 +89,10 @@ const MONTHS = [
   "Dec",
 ];
 
-const PLAN_COPY: Record<ResumePlan, { label: string; description: string; pageLimit: number }> = {
+const PLAN_COPY: Record<
+  ResumePlan,
+  { label: string; description: string; pageLimit: number }
+> = {
   free: {
     label: "Free",
     description:
@@ -141,6 +144,8 @@ const TRANSLATIONS: Record<
     currentlyAttendHere: string;
     currentlyCompletingCert: string;
     currentlyVolunteerHere: string;
+    backToProfile: string;
+    viewPublicProfile: string;
   }
 > = {
   English: {
@@ -150,7 +155,8 @@ const TRANSLATIONS: Record<
     font: "Resume Font",
     language: "Language",
     livePreview: "Resume Preview",
-    previewHelp: "The preview stays visible while you build and expands as you type.",
+    previewHelp:
+      "The preview stays visible while you build and expands as you type.",
     header: "Resume Header",
     summary: "Summary",
     summaryAndSkills: "Summary + Skills",
@@ -166,6 +172,8 @@ const TRANSLATIONS: Record<
     currentlyAttendHere: "I currently attend here",
     currentlyCompletingCert: "I am currently completing this certification",
     currentlyVolunteerHere: "I currently volunteer here",
+    backToProfile: "Back to Profile",
+    viewPublicProfile: "View Public Profile",
   },
   Spanish: {
     pageKicker: "CREADOR DE CURRÍCULUM",
@@ -174,7 +182,8 @@ const TRANSLATIONS: Record<
     font: "Fuente del currículum",
     language: "Idioma",
     livePreview: "Vista previa del currículum",
-    previewHelp: "La vista previa permanece visible mientras escribes y se expande a medida que agregas contenido.",
+    previewHelp:
+      "La vista previa permanece visible mientras escribes y se expande a medida que agregas contenido.",
     header: "Encabezado del currículum",
     summary: "Resumen",
     summaryAndSkills: "Resumen + Habilidades",
@@ -188,8 +197,11 @@ const TRANSLATIONS: Record<
     moveSections: "Mover secciones del currículum",
     currentlyWorkHere: "Actualmente trabajo aquí",
     currentlyAttendHere: "Actualmente estudio aquí",
-    currentlyCompletingCert: "Actualmente estoy completando esta certificación",
+    currentlyCompletingCert:
+      "Actualmente estoy completando esta certificación",
     currentlyVolunteerHere: "Actualmente hago voluntariado aquí",
+    backToProfile: "Volver al perfil",
+    viewPublicProfile: "Ver perfil público",
   },
   Hindi: {
     pageKicker: "रिज़्यूमे बिल्डर",
@@ -198,7 +210,8 @@ const TRANSLATIONS: Record<
     font: "रिज़्यूमे फ़ॉन्ट",
     language: "भाषा",
     livePreview: "रिज़्यूमे पूर्वावलोकन",
-    previewHelp: "जब आप बनाते हैं तो पूर्वावलोकन दिखाई देता रहता है और टाइप करते समय बढ़ता जाता है।",
+    previewHelp:
+      "जब आप बनाते हैं तो पूर्वावलोकन दिखाई देता रहता है और टाइप करते समय बढ़ता जाता है।",
     header: "रिज़्यूमे हेडर",
     summary: "सारांश",
     summaryAndSkills: "सारांश + कौशल",
@@ -212,8 +225,11 @@ const TRANSLATIONS: Record<
     moveSections: "रिज़्यूमे सेक्शन बदलें",
     currentlyWorkHere: "मैं वर्तमान में यहाँ काम करता/करती हूँ",
     currentlyAttendHere: "मैं वर्तमान में यहाँ पढ़ता/पढ़ती हूँ",
-    currentlyCompletingCert: "मैं वर्तमान में यह प्रमाणपत्र पूरा कर रहा/रही हूँ",
+    currentlyCompletingCert:
+      "मैं वर्तमान में यह प्रमाणपत्र पूरा कर रहा/रही हूँ",
     currentlyVolunteerHere: "मैं वर्तमान में यहाँ स्वयंसेवा करता/करती हूँ",
+    backToProfile: "प्रोफ़ाइल पर वापस जाएँ",
+    viewPublicProfile: "सार्वजनिक प्रोफ़ाइल देखें",
   },
   Polish: {
     pageKicker: "KREATOR CV",
@@ -222,7 +238,8 @@ const TRANSLATIONS: Record<
     font: "Czcionka CV",
     language: "Język",
     livePreview: "Podgląd CV",
-    previewHelp: "Podgląd pozostaje widoczny podczas tworzenia i rozszerza się w miarę pisania.",
+    previewHelp:
+      "Podgląd pozostaje widoczny podczas tworzenia i rozszerza się w miarę pisania.",
     header: "Nagłówek CV",
     summary: "Podsumowanie",
     summaryAndSkills: "Podsumowanie + Umiejętności",
@@ -238,6 +255,8 @@ const TRANSLATIONS: Record<
     currentlyAttendHere: "Obecnie tu się uczę",
     currentlyCompletingCert: "Obecnie kończę ten certyfikat",
     currentlyVolunteerHere: "Obecnie jestem tu wolontariuszem",
+    backToProfile: "Wróć do profilu",
+    viewPublicProfile: "Zobacz profil publiczny",
   },
 };
 
@@ -434,15 +453,16 @@ export default function ResumeBuilderPage() {
       const currentUserId = data.user.id;
       setUserId(currentUserId);
 
-    const { data: profile } = await supabase
-  .from("candidate_profiles")
-  .select("full_name, phone, city, state, email, linkedin_url, passport_slug")
-  .eq("user_id", currentUserId)
-  .maybeSingle();
+      const { data: profile } = await supabase
+        .from("candidate_profiles")
+        .select(
+          "full_name, phone, city, state, email, linkedin_url, passport_slug"
+        )
+        .eq("user_id", currentUserId)
+        .maybeSingle();
 
       if (profile) {
         setPassportSlug(profile.passport_slug || "");
-        console.log("resume builder passport slug:", profile.passport_slug);
         setFullName(profile.full_name || "");
         setPhone(profile.phone || "");
         setCity(profile.city || "");
@@ -511,13 +531,21 @@ export default function ResumeBuilderPage() {
     ]);
   }
 
-  function updateExperience(index: number, field: keyof ExperienceItem, value: string | boolean) {
+  function updateExperience(
+    index: number,
+    field: keyof ExperienceItem,
+    value: string | boolean
+  ) {
     setExperiences((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
   }
 
-  function updateExperienceBullet(index: number, bulletIndex: number, value: string) {
+  function updateExperienceBullet(
+    index: number,
+    bulletIndex: number,
+    value: string
+  ) {
     setExperiences((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
@@ -557,7 +585,11 @@ export default function ResumeBuilderPage() {
     ]);
   }
 
-  function updateEducation(index: number, field: keyof EducationItem, value: string | boolean) {
+  function updateEducation(
+    index: number,
+    field: keyof EducationItem,
+    value: string | boolean
+  ) {
     setEducationItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
@@ -608,13 +640,21 @@ export default function ResumeBuilderPage() {
     ]);
   }
 
-  function updateVolunteer(index: number, field: keyof VolunteerItem, value: string | boolean) {
+  function updateVolunteer(
+    index: number,
+    field: keyof VolunteerItem,
+    value: string | boolean
+  ) {
     setVolunteerItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
   }
 
-  function updateVolunteerBullet(index: number, bulletIndex: number, value: string) {
+  function updateVolunteerBullet(
+    index: number,
+    bulletIndex: number,
+    value: string
+  ) {
     setVolunteerItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
@@ -651,21 +691,20 @@ export default function ResumeBuilderPage() {
     try {
       setSaving(true);
 
-    const { data: profileData, error: profileError } = await supabase
-  .from("candidate_profiles")
-  .select("id, created_at")
-  .eq("user_id", userId)
-  .order("created_at", { ascending: false })
-  .limit(1)
-  .maybeSingle();
+      const { data: profileData, error: profileError } = await supabase
+        .from("candidate_profiles")
+        .select("id, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-if (profileError) throw profileError;
+      if (profileError) throw profileError;
+      if (!profileData?.id) {
+        throw new Error("No candidate profile found for this user.");
+      }
 
-if (!profileData?.id) {
-  throw new Error("No candidate profile found for this user.");
-}
-
-const profileId = profileData.id;
+      const profileId = profileData.id;
 
       await supabase
         .from("candidate_profiles")
@@ -724,7 +763,9 @@ const profileId = profileData.id;
 
         if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase.from("resumes").insert(payload);
+        const { error: insertError } = await supabase
+          .from("resumes")
+          .insert(payload);
         if (insertError) throw insertError;
       }
 
@@ -737,7 +778,9 @@ const profileId = profileData.id;
   }
 
   function handlePrint() {
-    setMessage("Review the preview, then use your browser print window to save as PDF or print.");
+    setMessage(
+      "Review the preview, then use your browser print window to save as PDF or print."
+    );
     window.print();
   }
 
@@ -747,8 +790,12 @@ const profileId = profileData.id;
         if (!summaryText && !summaryHeading) return null;
         return (
           <section className="resumeSection" style={styles.resumeSectionBlock}>
-            <h3 style={styles.resumeSectionTitle}>{summaryHeading || ui.summary}</h3>
-            <p style={styles.resumeParagraph}>{summaryText || "Add your professional summary here."}</p>
+            <h3 style={styles.resumeSectionTitle}>
+              {summaryHeading || ui.summary}
+            </h3>
+            <p style={styles.resumeParagraph}>
+              {summaryText || "Add your professional summary here."}
+            </p>
           </section>
         );
 
@@ -782,9 +829,15 @@ const profileId = profileData.id;
                   <div>
                     <p style={styles.resumeEntryHeading}>
                       {item.companyName || "Company"}{" "}
-                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
+                      {item.city || item.state
+                        ? `— ${[item.city, item.state]
+                            .filter(Boolean)
+                            .join(", ")}`
+                        : ""}
                     </p>
-                    <p style={styles.resumeEntrySubheading}>{item.roleTitle || "Role Title"}</p>
+                    <p style={styles.resumeEntrySubheading}>
+                      {item.roleTitle || "Role Title"}
+                    </p>
                   </div>
                   <p style={styles.resumeEntryDates}>
                     {formatDateRange(
@@ -796,11 +849,13 @@ const profileId = profileData.id;
                     )}
                   </p>
                 </div>
-                {item.bullets.filter((b) => b.text.trim()).map((bullet, bulletIndex) => (
-                  <p key={bulletIndex} style={styles.resumeBullet}>
-                    • {bullet.text}
-                  </p>
-                ))}
+                {item.bullets
+                  .filter((b) => b.text.trim())
+                  .map((bullet, bulletIndex) => (
+                    <p key={bulletIndex} style={styles.resumeBullet}>
+                      • {bullet.text}
+                    </p>
+                  ))}
               </div>
             ))}
           </section>
@@ -817,7 +872,11 @@ const profileId = profileData.id;
                   <div>
                     <p style={styles.resumeEntryHeading}>
                       {item.schoolName || "School"}{" "}
-                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
+                      {item.city || item.state
+                        ? `— ${[item.city, item.state]
+                            .filter(Boolean)
+                            .join(", ")}`
+                        : ""}
                     </p>
                     <p style={styles.resumeEntrySubheading}>
                       {item.degree || "Degree"}
@@ -850,7 +909,11 @@ const profileId = profileData.id;
                   <div>
                     <p style={styles.resumeEntryHeading}>
                       {item.organizationName || "Organization"}{" "}
-                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
+                      {item.city || item.state
+                        ? `— ${[item.city, item.state]
+                            .filter(Boolean)
+                            .join(", ")}`
+                        : ""}
                     </p>
                     <p style={styles.resumeEntrySubheading}>
                       {item.certificateName || "Certificate / Course Name"}
@@ -882,9 +945,15 @@ const profileId = profileData.id;
                   <div>
                     <p style={styles.resumeEntryHeading}>
                       {item.organizationName || "Organization"}{" "}
-                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
+                      {item.city || item.state
+                        ? `— ${[item.city, item.state]
+                            .filter(Boolean)
+                            .join(", ")}`
+                        : ""}
                     </p>
-                    <p style={styles.resumeEntrySubheading}>{item.roleTitle || "Role Title"}</p>
+                    <p style={styles.resumeEntrySubheading}>
+                      {item.roleTitle || "Role Title"}
+                    </p>
                   </div>
                   <p style={styles.resumeEntryDates}>
                     {formatDateRange(
@@ -896,11 +965,13 @@ const profileId = profileData.id;
                     )}
                   </p>
                 </div>
-                {item.bullets.filter((b) => b.text.trim()).map((bullet, bulletIndex) => (
-                  <p key={bulletIndex} style={styles.resumeBullet}>
-                    • {bullet.text}
-                  </p>
-                ))}
+                {item.bullets
+                  .filter((b) => b.text.trim())
+                  .map((bullet, bulletIndex) => (
+                    <p key={bulletIndex} style={styles.resumeBullet}>
+                      • {bullet.text}
+                    </p>
+                  ))}
               </div>
             ))}
           </section>
@@ -932,7 +1003,9 @@ const profileId = profileData.id;
     <main style={styles.page}>
       <style>{`
         @media print {
-          body {
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
             background: white !important;
           }
 
@@ -945,31 +1018,32 @@ const profileId = profileData.id;
             visibility: visible;
           }
 
-.resumePrintWrap {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  background: white !important;
-}
+          .resumePrintWrap {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+          }
 
-       .resumePaper {
-  width: 100% !important;
-  max-width: none !important;
-  box-shadow: none !important;
-  border: none !important;
-  min-height: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
+          .resumePaper {
+            width: 100% !important;
+            max-width: none !important;
+            box-shadow: none !important;
+            border: none !important;
+            min-height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+          }
 
           .resumeHeader {
-            position: sticky;
-            top: 0;
-            background: white;
+            position: static !important;
+            top: auto !important;
+            background: white !important;
           }
 
           .resumeSection {
@@ -1057,23 +1131,48 @@ const profileId = profileData.id;
               <div style={styles.twoColForm}>
                 <div>
                   <label style={styles.inputLabel}>Full Name</label>
-                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} style={styles.input} placeholder="Full Name" />
+                  <input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    style={styles.input}
+                    placeholder="Full Name"
+                  />
                 </div>
                 <div>
                   <label style={styles.inputLabel}>Phone Number</label>
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)} style={styles.input} placeholder="Phone Number" />
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    style={styles.input}
+                    placeholder="Phone Number"
+                  />
                 </div>
                 <div>
                   <label style={styles.inputLabel}>City (optional)</label>
-                  <input value={city} onChange={(e) => setCity(e.target.value)} style={styles.input} placeholder="City" />
+                  <input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    style={styles.input}
+                    placeholder="City"
+                  />
                 </div>
                 <div>
                   <label style={styles.inputLabel}>State (optional)</label>
-                  <input value={stateName} onChange={(e) => setStateName(e.target.value)} style={styles.input} placeholder="State" />
+                  <input
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    style={styles.input}
+                    placeholder="State"
+                  />
                 </div>
                 <div>
                   <label style={styles.inputLabel}>Email</label>
-                  <input value={email} onChange={(e) => setEmail(e.target.value)} style={styles.input} placeholder="Email" />
+                  <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={styles.input}
+                    placeholder="Email"
+                  />
                 </div>
                 <div>
                   <label style={styles.inputLabel}>LinkedIn (optional)</label>
@@ -1091,7 +1190,9 @@ const profileId = profileData.id;
               <p style={styles.cardKicker}>SUMMARY</p>
               <h2 style={styles.cardTitle}>{ui.summaryAndSkills}</h2>
 
-              <label style={styles.inputLabel}>Summary Heading (optional, can be blank or "Summary")</label>
+              <label style={styles.inputLabel}>
+                Summary Heading (optional, can be blank or "Summary")
+              </label>
               <input
                 value={summaryHeading}
                 onChange={(e) => setSummaryHeading(e.target.value)}
@@ -1107,7 +1208,9 @@ const profileId = profileData.id;
                 placeholder="Example: Client-focused workforce development professional with experience in talent acquisition, resume writing, employer engagement, and job readiness coaching."
               />
 
-              <label style={styles.inputLabel}>Skills (comma separated, up to 9)</label>
+              <label style={styles.inputLabel}>
+                Skills (comma separated, up to 9)
+              </label>
               <input
                 value={skillsInput}
                 onChange={(e) => setSkillsInput(e.target.value)}
@@ -1127,7 +1230,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>Company</label>
                       <input
                         value={item.companyName}
-                        onChange={(e) => updateExperience(index, "companyName", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(index, "companyName", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="Company Name"
                       />
@@ -1136,7 +1241,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>Role</label>
                       <input
                         value={item.roleTitle}
-                        onChange={(e) => updateExperience(index, "roleTitle", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(index, "roleTitle", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="Role Title"
                       />
@@ -1145,7 +1252,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>City</label>
                       <input
                         value={item.city}
-                        onChange={(e) => updateExperience(index, "city", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(index, "city", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="City"
                       />
@@ -1154,7 +1263,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>State</label>
                       <input
                         value={item.state}
-                        onChange={(e) => updateExperience(index, "state", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(index, "state", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="State"
                       />
@@ -1163,7 +1274,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>From Month</label>
                       <select
                         value={item.startMonth}
-                        onChange={(e) => updateExperience(index, "startMonth", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(index, "startMonth", e.target.value)
+                        }
                         style={styles.input}
                       >
                         {MONTHS.map((month) => (
@@ -1177,7 +1290,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>From Year</label>
                       <input
                         value={item.startYear}
-                        onChange={(e) => updateExperience(index, "startYear", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(index, "startYear", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="2022"
                       />
@@ -1188,7 +1303,9 @@ const profileId = profileData.id;
                     <input
                       type="checkbox"
                       checked={item.isPresent}
-                      onChange={(e) => updateExperience(index, "isPresent", e.target.checked)}
+                      onChange={(e) =>
+                        updateExperience(index, "isPresent", e.target.checked)
+                      }
                     />
                     <span>{ui.currentlyWorkHere}</span>
                   </label>
@@ -1199,7 +1316,9 @@ const profileId = profileData.id;
                         <label style={styles.inputLabel}>To Month</label>
                         <select
                           value={item.endMonth}
-                          onChange={(e) => updateExperience(index, "endMonth", e.target.value)}
+                          onChange={(e) =>
+                            updateExperience(index, "endMonth", e.target.value)
+                          }
                           style={styles.input}
                         >
                           {MONTHS.map((month) => (
@@ -1213,7 +1332,9 @@ const profileId = profileData.id;
                         <label style={styles.inputLabel}>To Year</label>
                         <input
                           value={item.endYear}
-                          onChange={(e) => updateExperience(index, "endYear", e.target.value)}
+                          onChange={(e) =>
+                            updateExperience(index, "endYear", e.target.value)
+                          }
                           style={styles.input}
                           placeholder="2024"
                         />
@@ -1229,23 +1350,39 @@ const profileId = profileData.id;
 
                   {item.bullets.map((bullet, bulletIndex) => (
                     <div key={bulletIndex}>
-                      <label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
+                      <label style={styles.inputLabel}>
+                        Bullet {bulletIndex + 1}
+                      </label>
                       <input
                         value={bullet.text}
-                        onChange={(e) => updateExperienceBullet(index, bulletIndex, e.target.value)}
+                        onChange={(e) =>
+                          updateExperienceBullet(
+                            index,
+                            bulletIndex,
+                            e.target.value
+                          )
+                        }
                         style={styles.input}
                         placeholder="Describe the work you did"
                       />
                     </div>
                   ))}
 
-                  <button type="button" onClick={() => addExperienceBullet(index)} style={styles.smallButton}>
+                  <button
+                    type="button"
+                    onClick={() => addExperienceBullet(index)}
+                    style={styles.smallButton}
+                  >
                     + Add Bullet
                   </button>
                 </div>
               ))}
 
-              <button type="button" onClick={addExperience} style={styles.smallButton}>
+              <button
+                type="button"
+                onClick={addExperience}
+                style={styles.smallButton}
+              >
                 + Add Work Experience
               </button>
             </section>
@@ -1261,16 +1398,22 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>School / College</label>
                       <input
                         value={item.schoolName}
-                        onChange={(e) => updateEducation(index, "schoolName", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(index, "schoolName", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="School / College"
                       />
                     </div>
                     <div>
-                      <label style={styles.inputLabel}>Degree / Course of Study</label>
+                      <label style={styles.inputLabel}>
+                        Degree / Course of Study
+                      </label>
                       <input
                         value={item.degree}
-                        onChange={(e) => updateEducation(index, "degree", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(index, "degree", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="Degree / Course of Study"
                       />
@@ -1279,7 +1422,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>City</label>
                       <input
                         value={item.city}
-                        onChange={(e) => updateEducation(index, "city", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(index, "city", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="City"
                       />
@@ -1288,7 +1433,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>State</label>
                       <input
                         value={item.state}
-                        onChange={(e) => updateEducation(index, "state", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(index, "state", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="State"
                       />
@@ -1297,7 +1444,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>From Month</label>
                       <select
                         value={item.startMonth}
-                        onChange={(e) => updateEducation(index, "startMonth", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(index, "startMonth", e.target.value)
+                        }
                         style={styles.input}
                       >
                         {MONTHS.map((month) => (
@@ -1311,7 +1460,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>From Year</label>
                       <input
                         value={item.startYear}
-                        onChange={(e) => updateEducation(index, "startYear", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(index, "startYear", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="2019"
                       />
@@ -1322,7 +1473,9 @@ const profileId = profileData.id;
                     <input
                       type="checkbox"
                       checked={item.isPresent}
-                      onChange={(e) => updateEducation(index, "isPresent", e.target.checked)}
+                      onChange={(e) =>
+                        updateEducation(index, "isPresent", e.target.checked)
+                      }
                     />
                     <span>{ui.currentlyAttendHere}</span>
                   </label>
@@ -1333,7 +1486,9 @@ const profileId = profileData.id;
                         <label style={styles.inputLabel}>To Month</label>
                         <select
                           value={item.endMonth}
-                          onChange={(e) => updateEducation(index, "endMonth", e.target.value)}
+                          onChange={(e) =>
+                            updateEducation(index, "endMonth", e.target.value)
+                          }
                           style={styles.input}
                         >
                           {MONTHS.map((month) => (
@@ -1347,7 +1502,9 @@ const profileId = profileData.id;
                         <label style={styles.inputLabel}>To Year</label>
                         <input
                           value={item.endYear}
-                          onChange={(e) => updateEducation(index, "endYear", e.target.value)}
+                          onChange={(e) =>
+                            updateEducation(index, "endYear", e.target.value)
+                          }
                           style={styles.input}
                           placeholder="2023"
                         />
@@ -1358,14 +1515,20 @@ const profileId = profileData.id;
                   <label style={styles.inputLabel}>GPA (optional)</label>
                   <input
                     value={item.gpa}
-                    onChange={(e) => updateEducation(index, "gpa", e.target.value)}
+                    onChange={(e) =>
+                      updateEducation(index, "gpa", e.target.value)
+                    }
                     style={styles.input}
                     placeholder="3.8"
                   />
                 </div>
               ))}
 
-              <button type="button" onClick={addEducation} style={styles.smallButton}>
+              <button
+                type="button"
+                onClick={addEducation}
+                style={styles.smallButton}
+              >
                 + Add Education
               </button>
             </section>
@@ -1378,19 +1541,35 @@ const profileId = profileData.id;
                 <div key={index} style={styles.sectionGroup}>
                   <div style={styles.twoColForm}>
                     <div>
-                      <label style={styles.inputLabel}>Organization / Program</label>
+                      <label style={styles.inputLabel}>
+                        Organization / Program
+                      </label>
                       <input
                         value={item.organizationName}
-                        onChange={(e) => updateCertificate(index, "organizationName", e.target.value)}
+                        onChange={(e) =>
+                          updateCertificate(
+                            index,
+                            "organizationName",
+                            e.target.value
+                          )
+                        }
                         style={styles.input}
                         placeholder="Organization / Program"
                       />
                     </div>
                     <div>
-                      <label style={styles.inputLabel}>Certificate / Course Name</label>
+                      <label style={styles.inputLabel}>
+                        Certificate / Course Name
+                      </label>
                       <input
                         value={item.certificateName}
-                        onChange={(e) => updateCertificate(index, "certificateName", e.target.value)}
+                        onChange={(e) =>
+                          updateCertificate(
+                            index,
+                            "certificateName",
+                            e.target.value
+                          )
+                        }
                         style={styles.input}
                         placeholder="Certificate / Course Name"
                       />
@@ -1399,7 +1578,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>City</label>
                       <input
                         value={item.city}
-                        onChange={(e) => updateCertificate(index, "city", e.target.value)}
+                        onChange={(e) =>
+                          updateCertificate(index, "city", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="City"
                       />
@@ -1408,7 +1589,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>State</label>
                       <input
                         value={item.state}
-                        onChange={(e) => updateCertificate(index, "state", e.target.value)}
+                        onChange={(e) =>
+                          updateCertificate(index, "state", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="State"
                       />
@@ -1417,7 +1600,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>From Month</label>
                       <select
                         value={item.startMonth}
-                        onChange={(e) => updateCertificate(index, "startMonth", e.target.value)}
+                        onChange={(e) =>
+                          updateCertificate(index, "startMonth", e.target.value)
+                        }
                         style={styles.input}
                       >
                         {MONTHS.map((month) => (
@@ -1431,7 +1616,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>From Year</label>
                       <input
                         value={item.startYear}
-                        onChange={(e) => updateCertificate(index, "startYear", e.target.value)}
+                        onChange={(e) =>
+                          updateCertificate(index, "startYear", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="2024"
                       />
@@ -1442,7 +1629,9 @@ const profileId = profileData.id;
                     <input
                       type="checkbox"
                       checked={item.isPresent}
-                      onChange={(e) => updateCertificate(index, "isPresent", e.target.checked)}
+                      onChange={(e) =>
+                        updateCertificate(index, "isPresent", e.target.checked)
+                      }
                     />
                     <span>{ui.currentlyCompletingCert}</span>
                   </label>
@@ -1453,7 +1642,9 @@ const profileId = profileData.id;
                         <label style={styles.inputLabel}>To Month</label>
                         <select
                           value={item.endMonth}
-                          onChange={(e) => updateCertificate(index, "endMonth", e.target.value)}
+                          onChange={(e) =>
+                            updateCertificate(index, "endMonth", e.target.value)
+                          }
                           style={styles.input}
                         >
                           {MONTHS.map((month) => (
@@ -1467,7 +1658,9 @@ const profileId = profileData.id;
                         <label style={styles.inputLabel}>To Year</label>
                         <input
                           value={item.endYear}
-                          onChange={(e) => updateCertificate(index, "endYear", e.target.value)}
+                          onChange={(e) =>
+                            updateCertificate(index, "endYear", e.target.value)
+                          }
                           style={styles.input}
                           placeholder="2024"
                         />
@@ -1477,7 +1670,11 @@ const profileId = profileData.id;
                 </div>
               ))}
 
-              <button type="button" onClick={addCertificate} style={styles.smallButton}>
+              <button
+                type="button"
+                onClick={addCertificate}
+                style={styles.smallButton}
+              >
                 + Add Certification
               </button>
             </section>
@@ -1493,7 +1690,13 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>Organization</label>
                       <input
                         value={item.organizationName}
-                        onChange={(e) => updateVolunteer(index, "organizationName", e.target.value)}
+                        onChange={(e) =>
+                          updateVolunteer(
+                            index,
+                            "organizationName",
+                            e.target.value
+                          )
+                        }
                         style={styles.input}
                         placeholder="Organization Name"
                       />
@@ -1502,7 +1705,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>Role</label>
                       <input
                         value={item.roleTitle}
-                        onChange={(e) => updateVolunteer(index, "roleTitle", e.target.value)}
+                        onChange={(e) =>
+                          updateVolunteer(index, "roleTitle", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="Role Title"
                       />
@@ -1511,7 +1716,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>City</label>
                       <input
                         value={item.city}
-                        onChange={(e) => updateVolunteer(index, "city", e.target.value)}
+                        onChange={(e) =>
+                          updateVolunteer(index, "city", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="City"
                       />
@@ -1520,7 +1727,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>State</label>
                       <input
                         value={item.state}
-                        onChange={(e) => updateVolunteer(index, "state", e.target.value)}
+                        onChange={(e) =>
+                          updateVolunteer(index, "state", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="State"
                       />
@@ -1529,7 +1738,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>From Month</label>
                       <select
                         value={item.startMonth}
-                        onChange={(e) => updateVolunteer(index, "startMonth", e.target.value)}
+                        onChange={(e) =>
+                          updateVolunteer(index, "startMonth", e.target.value)
+                        }
                         style={styles.input}
                       >
                         {MONTHS.map((month) => (
@@ -1543,7 +1754,9 @@ const profileId = profileData.id;
                       <label style={styles.inputLabel}>From Year</label>
                       <input
                         value={item.startYear}
-                        onChange={(e) => updateVolunteer(index, "startYear", e.target.value)}
+                        onChange={(e) =>
+                          updateVolunteer(index, "startYear", e.target.value)
+                        }
                         style={styles.input}
                         placeholder="2020"
                       />
@@ -1554,7 +1767,9 @@ const profileId = profileData.id;
                     <input
                       type="checkbox"
                       checked={item.isPresent}
-                      onChange={(e) => updateVolunteer(index, "isPresent", e.target.checked)}
+                      onChange={(e) =>
+                        updateVolunteer(index, "isPresent", e.target.checked)
+                      }
                     />
                     <span>{ui.currentlyVolunteerHere}</span>
                   </label>
@@ -1565,7 +1780,9 @@ const profileId = profileData.id;
                         <label style={styles.inputLabel}>To Month</label>
                         <select
                           value={item.endMonth}
-                          onChange={(e) => updateVolunteer(index, "endMonth", e.target.value)}
+                          onChange={(e) =>
+                            updateVolunteer(index, "endMonth", e.target.value)
+                          }
                           style={styles.input}
                         >
                           {MONTHS.map((month) => (
@@ -1579,7 +1796,9 @@ const profileId = profileData.id;
                         <label style={styles.inputLabel}>To Year</label>
                         <input
                           value={item.endYear}
-                          onChange={(e) => updateVolunteer(index, "endYear", e.target.value)}
+                          onChange={(e) =>
+                            updateVolunteer(index, "endYear", e.target.value)
+                          }
                           style={styles.input}
                           placeholder="2022"
                         />
@@ -1595,23 +1814,39 @@ const profileId = profileData.id;
 
                   {item.bullets.map((bullet, bulletIndex) => (
                     <div key={bulletIndex}>
-                      <label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
+                      <label style={styles.inputLabel}>
+                        Bullet {bulletIndex + 1}
+                      </label>
                       <input
                         value={bullet.text}
-                        onChange={(e) => updateVolunteerBullet(index, bulletIndex, e.target.value)}
+                        onChange={(e) =>
+                          updateVolunteerBullet(
+                            index,
+                            bulletIndex,
+                            e.target.value
+                          )
+                        }
                         style={styles.input}
                         placeholder="Describe your volunteer work"
                       />
                     </div>
                   ))}
 
-                  <button type="button" onClick={() => addVolunteerBullet(index)} style={styles.smallButton}>
+                  <button
+                    type="button"
+                    onClick={() => addVolunteerBullet(index)}
+                    style={styles.smallButton}
+                  >
                     + Add Bullet
                   </button>
                 </div>
               ))}
 
-              <button type="button" onClick={addVolunteer} style={styles.smallButton}>
+              <button
+                type="button"
+                onClick={addVolunteer}
+                style={styles.smallButton}
+              >
                 + Add Volunteer Work
               </button>
             </section>
@@ -1650,10 +1885,18 @@ const profileId = profileData.id;
                       : "Accomplishments"}
                   </span>
                   <div style={styles.orderButtons}>
-                    <button type="button" onClick={() => moveSection(index, "up")} style={styles.orderButton}>
+                    <button
+                      type="button"
+                      onClick={() => moveSection(index, "up")}
+                      style={styles.orderButton}
+                    >
                       Up
                     </button>
-                    <button type="button" onClick={() => moveSection(index, "down")} style={styles.orderButton}>
+                    <button
+                      type="button"
+                      onClick={() => moveSection(index, "down")}
+                      style={styles.orderButton}
+                    >
                       Down
                     </button>
                   </div>
@@ -1667,23 +1910,34 @@ const profileId = profileData.id;
               </div>
             ) : null}
 
- <div className="siteButtons" style={styles.footerButtons}>
-  <button type="button" onClick={handleSaveResume} disabled={saving} style={styles.saveButton}>
-    {saving ? "Saving..." : ui.saveResume}
-  </button>
-  <button type="button" onClick={handlePrint} style={styles.printButton}>
-    {ui.printResume}
-  </button>
-  <a href="/profile" style={styles.backButton}>
-    Back to Profile
-  </a>
-
-{passportSlug ? (
-  <a href={`/passport/${passportSlug}`} style={styles.backButton}>
-    View Public Profile
-  </a>
-) : null}
-</div>
+            <div className="siteButtons" style={styles.footerButtons}>
+              <button
+                type="button"
+                onClick={handleSaveResume}
+                disabled={saving}
+                style={styles.saveButton}
+              >
+                {saving ? "Saving..." : ui.saveResume}
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                style={styles.printButton}
+              >
+                {ui.printResume}
+              </button>
+              <a href="/profile" style={styles.backButton}>
+                {ui.backToProfile}
+              </a>
+              {passportSlug ? (
+                <a
+                  href={`/passport/${passportSlug}`}
+                  style={styles.backButton}
+                >
+                  {ui.viewPublicProfile}
+                </a>
+              ) : null}
+            </div>
           </div>
 
           <div className="resumePrintWrap" style={styles.rightCol}>
@@ -1693,14 +1947,13 @@ const profileId = profileData.id;
               <p style={styles.previewHelp}>{ui.previewHelp}</p>
             </div>
 
-        <div
-  className="resumePaper"
-  style={{
-    ...styles.resumePaper,
-    fontFamily,
-  }}
->
-      </div>
+            <div
+              className="resumePaper"
+              style={{
+                ...styles.resumePaper,
+                fontFamily,
+              }}
+            >
               <div className="resumeHeader" style={styles.resumeHeader}>
                 <h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
                 <p style={styles.resumeContact}>
@@ -1972,13 +2225,13 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "14px",
     cursor: "pointer",
   },
-footerButtons: {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr 1fr 1fr",
-  gap: "12px",
-  marginTop: "12px",
-  marginBottom: "32px",
-},
+  footerButtons: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+    gap: "12px",
+    marginTop: "12px",
+    marginBottom: "32px",
+  },
   saveButton: {
     background: "linear-gradient(180deg, #f5f5f5 0%, #d4d4d8 100%)",
     color: "#09090b",
@@ -1999,20 +2252,20 @@ footerButtons: {
     fontWeight: 700,
     cursor: "pointer",
   },
-      backButton: {
-  background: "transparent",
-  color: "#fff",
-  border: "1px solid rgba(148,163,184,0.28)",
-  borderRadius: "18px",
-  padding: "16px",
-  fontSize: "20px",
-  fontWeight: 700,
-  textAlign: "center",
-  textDecoration: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-},
+  backButton: {
+    background: "transparent",
+    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.28)",
+    borderRadius: "18px",
+    padding: "16px",
+    fontSize: "20px",
+    fontWeight: 700,
+    textAlign: "center",
+    textDecoration: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   messageBox: {
     background: "rgba(59,130,246,0.12)",
     border: "1px solid rgba(59,130,246,0.28)",
@@ -2022,20 +2275,19 @@ footerButtons: {
     marginBottom: "16px",
     fontSize: "15px",
   },
-  
-resumePaper: {
-  width: "100%",
-  minHeight: "1120px",
-  height: "auto",
-  overflow: "visible",
-  background: "#fff",
-  borderRadius: "18px",
-  border: "1px solid #e5e7eb",
-  boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
-  padding: "34px 32px 42px",
-  color: "#111827",
-  boxSizing: "border-box",
-},
+  resumePaper: {
+    width: "100%",
+    minHeight: "1120px",
+    height: "auto",
+    overflow: "visible",
+    background: "#fff",
+    borderRadius: "18px",
+    border: "1px solid #e5e7eb",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
+    padding: "34px 32px 42px",
+    color: "#111827",
+    boxSizing: "border-box",
+  },
   resumeHeader: {
     textAlign: "center",
     marginBottom: "20px",
