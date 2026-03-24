@@ -1030,7 +1030,36 @@ export default function ResumeBuilderPage() {
       padding: 0 !important;
       background: white !important;
     }
+.resumePrintWrap {
+  position: static !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: white !important;
+}
 
+.builderShell {
+  display: block !important;
+}
+
+.builderLeft {
+  display: none !important;
+}
+
+.resumePrintWrap {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  top: auto !important;
+  align-self: auto !important;
+}
+
+.resumePaper {
+  width: 100% !important;
+  ...
+}
     .resumePaper {
       width: 100% !important;
       max-width: none !important;
