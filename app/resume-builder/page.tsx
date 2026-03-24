@@ -1976,7 +1976,16 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
   },
   printButton: {
-    backButton: {
+    background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.28)",
+    borderRadius: "18px",
+    padding: "16px",
+    fontSize: "20px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+      backButton: {
   background: "transparent",
   color: "#fff",
   border: "1px solid rgba(148,163,184,0.28)",
@@ -1990,15 +1999,6 @@ const styles: Record<string, CSSProperties> = {
   alignItems: "center",
   justifyContent: "center",
 },
-    background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
-    color: "#fff",
-    border: "1px solid rgba(148,163,184,0.28)",
-    borderRadius: "18px",
-    padding: "16px",
-    fontSize: "20px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
   messageBox: {
     background: "rgba(59,130,246,0.12)",
     border: "1px solid rgba(59,130,246,0.28)",
