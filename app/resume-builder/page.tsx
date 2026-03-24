@@ -1039,6 +1039,27 @@ export default function ResumeBuilderPage() {
   margin: 0 !important;
   padding: 0 !important;
 }
+main {
+  min-height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.layout {
+  display: block !important;
+}
+
+.rightCol {
+  position: static !important;
+  top: 0 !important;
+  align-self: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.previewCard {
+  display: none !important;
+}
 .builderShell {
   display: block !important;
 }
