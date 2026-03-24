@@ -1673,11 +1673,15 @@ const profileId = profileData.id;
   <a href="/profile" style={styles.backButton}>
     Back to Profile
   </a>
-  {passportSlug ? (
-    <a href={`/passport/${passportSlug}`} style={styles.backButton}>
-      View Public Profile
-    </a>
-  ) : null}
+<div style={{ color: "#fff", marginTop: "8px", fontSize: "14px" }}>
+  passport slug: {passportSlug || "EMPTY"}
+</div>
+
+{passportSlug ? (
+  <a href={`/passport/${passportSlug}`} style={styles.backButton}>
+    View Public Profile
+  </a>
+) : null}
 </div>
           </div>
 
