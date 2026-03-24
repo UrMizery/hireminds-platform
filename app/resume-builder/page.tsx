@@ -1019,11 +1019,10 @@ export default function ResumeBuilderPage() {
     display: none !important;
   }
 
-  .resumePrintWrap,
-  .resumePrintWrap * {
-    display: block !important;
-    visibility: visible !important;
-  }
+ .resumePrintWrap,
+.resumePrintWrap * {
+  visibility: visible !important;
+}
 
   .resumePrintWrap {
     position: static !important;
