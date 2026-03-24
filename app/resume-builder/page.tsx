@@ -945,11 +945,14 @@ const profileId = profileData.id;
             visibility: visible;
           }
 
-       .resumePrintWrap {
-  position: static;
-  width: 100%;
-  padding: 0;
-  margin: 0;
+.resumePrintWrap {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
   background: white !important;
 }
 
