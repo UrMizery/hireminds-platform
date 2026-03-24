@@ -442,6 +442,7 @@ export default function ResumeBuilderPage() {
 
       if (profile) {
         setPassportSlug(profile.passport_slug || "");
+        console.log("resume builder passport slug:", profile.passport_slug);
         setFullName(profile.full_name || "");
         setPhone(profile.phone || "");
         setCity(profile.city || "");
