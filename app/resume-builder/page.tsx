@@ -953,13 +953,15 @@ const profileId = profileData.id;
   background: white !important;
 }
 
-          .resumePaper {
-            width: 100% !important;
-            max-width: none !important;
-            box-shadow: none !important;
-            border: none !important;
-            min-height: auto !important;
-          }
+       .resumePaper {
+  width: 100% !important;
+  max-width: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  min-height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
 
           .resumeHeader {
             position: sticky;
