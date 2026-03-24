@@ -1693,13 +1693,16 @@ const profileId = profileData.id;
               <p style={styles.previewHelp}>{ui.previewHelp}</p>
             </div>
 
-            <div
-              className="resumePaper"
-              style={{
-                ...styles.resumePaper,
-                fontFamily,
-              }}
-            >
+         <div style={styles.resumePagesWrap}>
+  <div
+    className="resumePaper"
+    style={{
+      ...styles.resumePaper,
+      fontFamily,
+    }}
+  >
+      </div>
+</div>
               <div className="resumeHeader" style={styles.resumeHeader}>
                 <h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
                 <p style={styles.resumeContact}>
@@ -2021,6 +2024,12 @@ footerButtons: {
     marginBottom: "16px",
     fontSize: "15px",
   },
+  resumePagesWrap: {
+  display: "flex",
+  flexDirection: "column",
+  gap: "18px",
+},
+  
 resumePaper: {
   width: "100%",
   minHeight: "1120px",
