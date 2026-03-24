@@ -333,6 +333,7 @@ function hasVolunteerContent(item: VolunteerItem) {
 export default function ResumeBuilderPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [userId, setUserId] = useState("");
+  const [passportSlug, setPassportSlug] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -433,13 +434,14 @@ export default function ResumeBuilderPage() {
       const currentUserId = data.user.id;
       setUserId(currentUserId);
 
-      const { data: profile } = await supabase
-        .from("candidate_profiles")
-        .select("full_name, phone, city, state, email, linkedin_url")
-        .eq("user_id", currentUserId)
-        .maybeSingle();
+    const { data: profile } = await supabase
+  .from("candidate_profiles")
+  .select("full_name, phone, city, state, email, linkedin_url, passport_slug")
+  .eq("user_id", currentUserId)
+  .maybeSingle();
 
       if (profile) {
+        setPassportSlug(profile.passport_slug || "");
         setFullName(profile.full_name || "");
         setPhone(profile.phone || "");
         setCity(profile.city || "");
@@ -1660,7 +1662,7 @@ const profileId = profileData.id;
               </div>
             ) : null}
 
-          <div className="siteButtons" style={styles.footerButtons}>
+ <div className="siteButtons" style={styles.footerButtons}>
   <button type="button" onClick={handleSaveResume} disabled={saving} style={styles.saveButton}>
     {saving ? "Saving..." : ui.saveResume}
   </button>
@@ -1670,6 +1672,11 @@ const profileId = profileData.id;
   <a href="/profile" style={styles.backButton}>
     Back to Profile
   </a>
+  {passportSlug ? (
+    <a href={`/passport/${passportSlug}`} style={styles.backButton}>
+      View Public Profile
+    </a>
+  ) : null}
 </div>
           </div>
 
@@ -1958,9 +1965,9 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "14px",
     cursor: "pointer",
   },
-  footerButtons: {
+footerButtons: {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr 1fr",
+  gridTemplateColumns: "1fr 1fr 1fr 1fr",
   gap: "12px",
   marginTop: "12px",
   marginBottom: "32px",
