@@ -945,14 +945,13 @@ const profileId = profileData.id;
             visibility: visible;
           }
 
-          .resumePrintWrap {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 24px;
-            background: white !important;
-          }
+       .resumePrintWrap {
+  position: static;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: white !important;
+}
 
           .resumePaper {
             width: 100% !important;
