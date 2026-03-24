@@ -159,13 +159,11 @@ const resumeAccomplishments = latestResume?.accomplishments || "";
           </div>
         </section>
 
-        <div style={styles.layout}>
-          <section style={styles.mainCol}>
-            <div style={styles.card}>
-              <p style={styles.sectionKicker}>About</p>
-              <h2 style={styles.sectionTitle}>Professional Summary</h2>
-              <p style={styles.bodyText}>{bio}</p>
-            </div>
+        <div style={styles.card}>
+  <p style={styles.sectionKicker}>About</p>
+  <h2 style={styles.sectionTitle}>Profile Bio</h2>
+  <p style={styles.bodyText}>{bio}</p>
+</div>
             {hasResume ? (
   <div id="saved-resume" style={styles.card}>
     <p style={styles.sectionKicker}>Resume</p>
