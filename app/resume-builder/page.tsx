@@ -648,15 +648,21 @@ export default function ResumeBuilderPage() {
     try {
       setSaving(true);
 
-      const { data: profileData, error: profileError } = await supabase
-        .from("candidate_profiles")
-        .select("id")
-        .eq("user_id", userId)
-        .single();
+    const { data: profileData, error: profileError } = await supabase
+  .from("candidate_profiles")
+  .select("id, created_at")
+  .eq("user_id", userId)
+  .order("created_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
 
-      if (profileError) throw profileError;
+if (profileError) throw profileError;
 
-      const profileId = profileData.id;
+if (!profileData?.id) {
+  throw new Error("No candidate profile found for this user.");
+}
+
+const profileId = profileData.id;
 
       await supabase
         .from("candidate_profiles")
