@@ -301,14 +301,18 @@ export default function ProfilePage() {
             </label>
 
             <div style={styles.actionRow}>
-              <button onClick={handleSaveProfile} disabled={saving} style={styles.primaryButton}>
-                {saving ? "Saving..." : "Save Profile"}
-              </button>
+  <button onClick={handleSaveProfile} disabled={saving} style={styles.primaryButton}>
+    {saving ? "Saving..." : "Save Profile"}
+  </button>
 
-              <a href="/resume-builder" style={styles.linkButton}>
-                Go to Resume Builder
-              </a>
-            </div>
+  <a href="/resume-builder" style={styles.linkButton}>
+    Go to Resume Builder
+  </a>
+
+  <a href="/career-nav-resources" style={styles.linkButton}>
+    Career Nav Resources
+  </a>
+</div>
 
             {message ? <p style={styles.message}>{message}</p> : null}
           </div>
@@ -529,12 +533,12 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#e5e7eb",
     margin: "8px 0 16px",
   },
-  actionRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-    marginTop: "8px",
-  },
+actionRow: {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr",
+  gap: "12px",
+  marginTop: "8px",
+},
   primaryButton: {
     width: "100%",
     padding: "15px 18px",
