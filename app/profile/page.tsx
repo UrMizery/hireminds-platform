@@ -309,7 +309,7 @@ export default function ProfilePage() {
     Go to Resume Builder
   </a>
 
- <a href="/career-nav-resources" style={styles.linkButton}>
+<a href="/career-toolkit" style={styles.linkButton}>
   Career ToolKit
 </a>
 </div>
