@@ -81,7 +81,7 @@ export default function CoverLetterGeneratorPage() {
             </div>
 
             <div style={styles.twoCol}>
-              <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="475-777-8835" />
+              <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="475-777-7777" />
               <Field label="Email" value={email} onChange={setEmail} placeholder="you@email.com" />
             </div>
 
