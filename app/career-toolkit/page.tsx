@@ -12,6 +12,16 @@ export default function CareertoolKit() {
           </p>
         </section>
 
+        <div style={styles.item}>
+  <h3 style={styles.itemTitle}>Blackboard / Billboard</h3>
+  <p style={styles.itemText}>
+    A live board for tips, tricks, opportunities, workshops, classes, and updates from HireMinds.
+  </p>
+  <a href="/career-toolkit/board" style={styles.linkButton}>
+    Open Blackboard / Billboard
+  </a>
+</div>
+
         <section style={styles.grid}>
           <div style={styles.card}>
             <p style={styles.kicker}>Free Resources</p>
