@@ -1,11 +1,11 @@
 "use client";
 
-export default function CareerNavResourcesPage() {
+export default function CareertoolKit() {
   return (
     <main style={styles.page}>
       <div style={styles.shell}>
         <section style={styles.card}>
-          <p style={styles.kicker}>Career Nav Resources</p>
+          <p style={styles.kicker}>Career ToolKit</p>
           <h1 style={styles.title}>Resources + Services</h1>
           <p style={styles.subtitle}>
             This space includes free career tools, guidance, and premium services that will be expanding over time.
