@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
+import { supabase } from "../lib/supabase";
 
 export default function SiteHeader() {
   const { t, lang } = useLanguage();
@@ -11,7 +12,30 @@ export default function SiteHeader() {
 
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [loadingLogout, setLoadingLogout] = useState(false);
+  
+  useEffect(() => {
+  async function checkAuth() {
+    const { data } = await supabase.auth.getSession();
+    setIsLoggedIn(Boolean(data.session));
+    setCheckingAuth(false);
+  }
 
+  checkAuth();
+}, []);
+
+  async function handleLogout() {
+  try {
+    setLoadingLogout(true);
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  } finally {
+    setLoadingLogout(false);
+  }
+}
+  
   const hideFloatingCart =
     pathname === "/resume-builder" ||
     pathname === "/profile" ||
@@ -36,9 +60,11 @@ export default function SiteHeader() {
               {t.home}
             </a>
 
-            <a href="/sign-in" style={styles.link}>
-              {t.signIn}
-            </a>
+           {!checkingAuth && !isLoggedIn ? (
+  <a href="/sign-in" style={styles.link}>
+    {t.signIn}
+  </a>
+) : null}
 
             <a href="/services" style={styles.link}>
               {t.services}
@@ -103,10 +129,26 @@ export default function SiteHeader() {
             </a>
           </div>
 
-          <div style={styles.rightNav}>
-            <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
-            <span style={styles.lockedLink}>{t.employerPartnerSignIn} 🔒</span>
-          </div>
+         <div style={styles.rightNav}>
+  {isLoggedIn ? (
+    <>
+      <a href="/profile" style={styles.link}>
+        My Profile
+      </a>
+      <button
+        type="button"
+        onClick={handleLogout}
+        style={styles.logoutButton}
+        disabled={loadingLogout}
+      >
+        {loadingLogout ? "Logging Off..." : "Log Off"}
+      </button>
+    </>
+  ) : null}
+
+  <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
+  <span style={styles.lockedLink}>{t.employerPartnerSignIn} 🔒</span>
+</div>
         </div>
       </header>
 
@@ -176,6 +218,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
     whiteSpace: "nowrap",
   },
+  logoutButton: {
+  background: "transparent",
+  border: "1px solid #3f3f46",
+  color: "#d4d4d8",
+  fontSize: "14px",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+  borderRadius: "10px",
+  padding: "8px 12px",
+},
   dropdown: {
     position: "relative",
   },
