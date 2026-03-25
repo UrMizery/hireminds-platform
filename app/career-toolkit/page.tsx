@@ -44,11 +44,14 @@ export default function CareertoolKit() {
   </p>
 </div>
 
-            <div style={styles.item}>
+<div style={styles.item}>
   <h3 style={styles.itemTitle}>Industry Core Skills</h3>
   <p style={styles.itemText}>
     Explore core skills by industry, including administrative, customer service, warehouse, manufacturing, healthcare support, recruiting, retail, and hospitality.
   </p>
+  <a href="/career-toolkit/industry-core-skills" style={styles.linkButton}>
+    Open Industry Core Skills
+  </a>
 </div>
 
             <div style={styles.item}>
