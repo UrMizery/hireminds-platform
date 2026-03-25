@@ -45,6 +45,34 @@ export default function CareertoolKit() {
 </div>
 
             <div style={styles.item}>
+  <h3 style={styles.itemTitle}>Soft Skills</h3>
+  <p style={styles.itemText}>
+    Review common soft skills employers look for, including communication, teamwork, adaptability, time management, and problem solving.
+  </p>
+</div>
+
+            <div style={styles.item}>
+  <h3 style={styles.itemTitle}>Industry Core Skills</h3>
+  <p style={styles.itemText}>
+    Explore core skills by industry, including administrative, customer service, warehouse, manufacturing, healthcare support, recruiting, retail, and hospitality.
+  </p>
+</div>
+
+            <div style={styles.item}>
+  <h3 style={styles.itemTitle}>Resume Type Helper</h3>
+  <p style={styles.itemText}>
+    Learn the difference between chronological, functional, combination, and hybrid resumes, and answer a few questions to help decide which format fits you best.
+  </p>
+</div>
+
+            <div style={styles.item}>
+  <h3 style={styles.itemTitle}>Interview Questions</h3>
+  <p style={styles.itemText}>
+    Review common interview questions, learn how to answer them, and get tips on why researching the company helps you stand out.
+  </p>
+</div>
+
+            <div style={styles.item}>
               <h3 style={styles.itemTitle}>Resume Builder</h3>
               <p style={styles.itemText}>
                 Build and save your HireMinds resume directly to your profile and public Career Passport.
