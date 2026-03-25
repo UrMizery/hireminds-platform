@@ -66,10 +66,6 @@ export default function SiteHeader() {
   </a>
 ) : null}
 
-            <a href="/services" style={styles.link}>
-              {t.services}
-            </a>
-
             <div
               style={styles.dropdown}
               onMouseEnter={() => setScheduleOpen(true)}
