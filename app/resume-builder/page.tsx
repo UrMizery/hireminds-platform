@@ -821,17 +821,22 @@ export default function ResumeBuilderPage() {
           }
 
           .print-resume {
-            width: 100%;
-            max-width: 100%;
-            margin: 0 auto;
-            color: #111827;
-          }
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding-top: 90px;
+  color: #111827;
+}
 
           .resumeHeader {
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 8px;
-          }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  text-align: center;
+  padding: 0 0 8px;
+}
 
           .resumeName {
             margin: 0 0 8px;
