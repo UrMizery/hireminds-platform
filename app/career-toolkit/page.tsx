@@ -37,11 +37,14 @@ export default function CareertoolKit() {
   </a>
 </div>
 
-            <div style={styles.item}>
+ <div style={styles.item}>
   <h3 style={styles.itemTitle}>Soft Skills</h3>
   <p style={styles.itemText}>
     Review common soft skills employers look for, including communication, teamwork, adaptability, time management, and problem solving.
   </p>
+  <a href="/career-toolkit/soft-skills" style={styles.linkButton}>
+    Open Soft Skills
+  </a>
 </div>
 
 <div style={styles.item}>
@@ -54,18 +57,24 @@ export default function CareertoolKit() {
   </a>
 </div>
 
-            <div style={styles.item}>
+<div style={styles.item}>
   <h3 style={styles.itemTitle}>Resume Type Helper</h3>
   <p style={styles.itemText}>
     Learn the difference between chronological, functional, combination, and hybrid resumes, and answer a few questions to help decide which format fits you best.
   </p>
+  <a href="/career-toolkit/resume-type-helper" style={styles.linkButton}>
+    Open Resume Type Helper
+  </a>
 </div>
 
-            <div style={styles.item}>
+<div style={styles.item}>
   <h3 style={styles.itemTitle}>Interview Questions</h3>
   <p style={styles.itemText}>
     Review common interview questions, learn how to answer them, and get tips on why researching the company helps you stand out.
   </p>
+  <a href="/career-toolkit/interview-questions" style={styles.linkButton}>
+    Open Interview Questions
+  </a>
 </div>
 
             <div style={styles.item}>
