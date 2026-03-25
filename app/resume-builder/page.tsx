@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
 type ResumePlan = "free" | "access" | "premium" | "pro";
@@ -355,6 +355,7 @@ export default function ResumeBuilderPage() {
   const [passportSlug, setPassportSlug] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const resumePrintRef = useRef<HTMLDivElement>(null);
 
   const [plan, setPlan] = useState<ResumePlan>("free");
   const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
@@ -777,12 +778,183 @@ export default function ResumeBuilderPage() {
     }
   }
 
-  function handlePrint() {
-    setMessage(
-      "Review the preview, then use your browser print window to save as PDF or print."
-    );
-    window.print();
+ function handlePrint() {
+  const resumeNode = resumePrintRef.current;
+
+  if (!resumeNode) {
+    setMessage("Resume preview is not ready to print yet.");
+    return;
   }
+
+  const printWindow = window.open("", "_blank", "width=900,height=1200");
+
+  if (!printWindow) {
+    setMessage("Pop-up blocked. Please allow pop-ups and try again.");
+    return;
+  }
+
+  const resumeHtml = resumeNode.innerHTML;
+
+  printWindow.document.open();
+  printWindow.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <title>Resume Preview</title>
+        <style>
+          @page {
+            size: letter;
+            margin: 0.5in;
+          }
+
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: #111827;
+            font-family: ${fontFamily}, serif;
+          }
+
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .print-resume {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            color: #111827;
+          }
+
+          .resumeHeader {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+          }
+
+          .resumeName {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+          }
+
+          .resumeContact {
+            margin: 0 0 6px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #374151;
+            word-break: break-word;
+          }
+
+          .resumeLinkedin {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #1d4ed8;
+            word-break: break-word;
+          }
+
+          .resumeSection {
+            margin-bottom: 20px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .resumeSectionTitle {
+            margin: 0 0 10px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+          }
+
+          .resumeParagraph {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #111827;
+            white-space: pre-wrap;
+            word-break: break-word;
+          }
+
+          .skillsGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px 24px;
+          }
+
+          .skillColumn {
+            min-width: 0;
+          }
+
+          .skillItem {
+            margin: 0 0 8px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #111827;
+            word-break: break-word;
+          }
+
+          .resumeEntry {
+            margin-bottom: 16px;
+          }
+
+          .resumeEntryTop {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 6px;
+          }
+
+          .resumeEntryHeading {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+          }
+
+          .resumeEntrySubheading {
+            margin: 4px 0 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #111827;
+          }
+
+          .resumeEntryDates {
+            margin: 0;
+            font-size: 14px;
+            color: #374151;
+            white-space: nowrap;
+          }
+
+          .resumeBullet {
+            margin: 4px 0;
+            font-size: 15px;
+            line-height: 1.65;
+            color: #111827;
+            white-space: pre-wrap;
+            word-break: break-word;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-resume">
+          ${resumeHtml}
+        </div>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+
+  printWindow.focus();
+
+  setTimeout(() => {
+    printWindow.print();
+  }, 300);
+}
 
   function renderResumeSection(section: ResumeSectionKey) {
     switch (section) {
@@ -1997,13 +2169,14 @@ main {
               <p style={styles.previewHelp}>{ui.previewHelp}</p>
             </div>
 
-            <div
-              className="resumePaper"
-              style={{
-                ...styles.resumePaper,
-                fontFamily,
-              }}
-            >
+          <div
+  ref={resumePrintRef}
+  className="resumePaper"
+  style={{
+    ...styles.resumePaper,
+    fontFamily,
+  }}
+>
               <div className="resumeHeader" style={styles.resumeHeader}>
                 <h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
                 <p style={styles.resumeContact}>
