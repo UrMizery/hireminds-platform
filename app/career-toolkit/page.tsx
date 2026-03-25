@@ -27,13 +27,6 @@ export default function CareertoolKit() {
             <p style={styles.kicker}>Free Resources</p>
             <h2 style={styles.sectionTitle}>Available Now</h2>
 
-             <div style={styles.item}>
-      <h3 style={styles.itemTitle}>Sample Generic Cover Letter</h3>
-      <p style={styles.itemText}>
-        View a short, professional sample cover letter you can use as a reference when applying to employers.
-      </p>
-    </div>
-
            <div style={styles.item}>
   <h3 style={styles.itemTitle}>Cover Letter Generator</h3>
   <p style={styles.itemText}>
