@@ -10,58 +10,66 @@ export default function ResumeTypeHelperPage() {
   const [employmentGaps, setEmploymentGaps] = useState("");
   const [highlightSkillsFirst, setHighlightSkillsFirst] = useState("");
 
-  const recommendation = useMemo(() => {
-    const yesCount = [steadyWorkHistory, careerChange, employmentGaps, highlightSkillsFirst].filter(
-      (value) => value === "yes"
-    ).length;
+const recommendation = useMemo(() => {
+  if (
+    steadyWorkHistory === "yes" &&
+    highlightSkillsFirst === "yes" &&
+    careerChange !== "yes" &&
+    employmentGaps !== "yes"
+  ) {
+    return {
+      type: "Hybrid" as ResumeType,
+      reason:
+        "A hybrid resume is a strong fit when you have steady work history but also want your strongest skills and qualifications highlighted near the top.",
+    };
+  }
 
-    if (steadyWorkHistory === "yes" && careerChange !== "yes" && employmentGaps !== "yes") {
-      return {
-        type: "Chronological" as ResumeType,
-        reason:
-          "A chronological resume is best when you have a solid work history, recent relevant experience, and want employers to clearly see your timeline.",
-      };
-    }
+  if (careerChange === "yes" && highlightSkillsFirst === "yes") {
+    return {
+      type: "Combination" as ResumeType,
+      reason:
+        "A combination resume works well when you are changing careers and want to highlight transferable skills while still showing your work history.",
+    };
+  }
 
-    if (careerChange === "yes" || employmentGaps === "yes") {
-      if (highlightSkillsFirst === "yes") {
-        return {
-          type: "Functional" as ResumeType,
-          reason:
-            "A functional resume is helpful when you want to focus more on transferable skills than on a traditional work timeline.",
-        };
-      }
+  if (employmentGaps === "yes" && highlightSkillsFirst === "yes") {
+    return {
+      type: "Functional" as ResumeType,
+      reason:
+        "A functional resume can help when you want to focus more on skills than on gaps in your timeline.",
+    };
+  }
 
-      return {
-        type: "Combination" as ResumeType,
-        reason:
-          "A combination resume works well when you want to show both your skills and your work history, especially during a career shift or after employment gaps.",
-      };
-    }
-
-    if (highlightSkillsFirst === "yes" && yesCount >= 2) {
-      return {
-        type: "Hybrid" as ResumeType,
-        reason:
-          "A hybrid resume can help when you want a more flexible structure that highlights both strengths and experience in a modern format.",
-      };
-    }
-
-    if (highlightSkillsFirst === "yes") {
-      return {
-        type: "Combination" as ResumeType,
-        reason:
-          "A combination resume is often the best fit when you want your strongest skills near the top but still want to keep a clear job history.",
-      };
-    }
-
+  if (
+    steadyWorkHistory === "yes" &&
+    careerChange !== "yes" &&
+    employmentGaps !== "yes"
+  ) {
     return {
       type: "Chronological" as ResumeType,
       reason:
-        "A chronological resume is the most common and employer-friendly option for many job seekers because it is simple and easy to follow.",
+        "A chronological resume is best when you have a solid work history, recent relevant experience, and want employers to clearly see your timeline.",
     };
-  }, [steadyWorkHistory, careerChange, employmentGaps, highlightSkillsFirst]);
+  }
 
+  if (
+    careerChange === "yes" ||
+    employmentGaps === "yes" ||
+    highlightSkillsFirst === "yes"
+  ) {
+    return {
+      type: "Combination" as ResumeType,
+      reason:
+        "A combination resume is often a good fit when you want to balance your strongest skills with your work history.",
+    };
+  }
+
+  return {
+    type: "Chronological" as ResumeType,
+    reason:
+      "A chronological resume is the most common and employer-friendly option because it is simple and easy to follow.",
+  };
+}, [steadyWorkHistory, careerChange, employmentGaps, highlightSkillsFirst]);
   return (
     <main style={styles.page}>
       <div style={styles.shell}>
