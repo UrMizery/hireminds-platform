@@ -148,18 +148,6 @@ export default function SiteHeader() {
         </div>
       </header>
 
-      {!hideFloatingCart ? (
-        <a
-          href="/cart"
-          style={{
-            ...styles.floatingCart,
-            right: isRTL ? "auto" : "24px",
-            left: isRTL ? "24px" : "auto",
-          }}
-        >
-          🛒
-        </a>
-      ) : null}
     </>
   );
 }
