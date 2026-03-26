@@ -1,9 +1,40 @@
 "use client";
 
-const categories = ["All", "Announcements", "Opportunities", "Tips", "Questions", "Advice"];
+import { useMemo, useState } from "react";
 
-const samplePosts = [
+type Category = "All" | "Announcements" | "Opportunities" | "Tips" | "Questions" | "Advice";
+
+type Comment = {
+  id: number;
+  author: string;
+  text: string;
+};
+
+type Post = {
+  id: number;
+  author: string;
+  role: string;
+  type: Exclude<Category, "All">;
+  title: string;
+  text: string;
+  time: string;
+  likes: number;
+  saved: boolean;
+  comments: Comment[];
+};
+
+const categories: Category[] = [
+  "All",
+  "Announcements",
+  "Opportunities",
+  "Tips",
+  "Questions",
+  "Advice",
+];
+
+const initialPosts: Post[] = [
   {
+    id: 1,
     author: "HireMinds Admin",
     role: "Moderator",
     type: "Announcements",
@@ -12,18 +43,22 @@ const samplePosts = [
       "We’re seeing active openings in healthcare support, warehouse, customer service, and admin. Check back often because new leads will be posted here.",
     time: "Posted today",
     likes: 18,
+    saved: false,
     comments: [
       {
+        id: 101,
         author: "Community Member",
         text: "Thank you for sharing this. Please keep posting healthcare leads too.",
       },
       {
+        id: 102,
         author: "HireMinds Admin",
         text: "Absolutely. We’ll continue posting healthcare and support roles.",
       },
     ],
   },
   {
+    id: 2,
     author: "Community Member",
     role: "Job Seeker",
     type: "Questions",
@@ -32,18 +67,22 @@ const samplePosts = [
       "What helps you stay calm before an interview? I know my stuff, but I still get nervous right before I walk in.",
     time: "2 hours ago",
     likes: 9,
+    saved: false,
     comments: [
       {
+        id: 201,
         author: "Career Coach",
         text: "Practice your first answer out loud before you go in. Once the first answer is strong, the rest usually flows better.",
       },
       {
+        id: 202,
         author: "Community Member",
         text: "I also take 3 deep breaths in the car before going inside.",
       },
     ],
   },
   {
+    id: 3,
     author: "HireMinds Admin",
     role: "Moderator",
     type: "Tips",
@@ -52,14 +91,17 @@ const samplePosts = [
       "Use stronger action words and list results when possible. Instead of saying 'helped customers,' try 'resolved customer issues and maintained high service standards.'",
     time: "Yesterday",
     likes: 24,
+    saved: false,
     comments: [
       {
+        id: 301,
         author: "Community Member",
         text: "This is helpful. Action words really do make resumes sound better.",
       },
     ],
   },
   {
+    id: 4,
     author: "Community Member",
     role: "Job Seeker",
     type: "Advice",
@@ -68,14 +110,17 @@ const samplePosts = [
       "I kept my answer short, honest, and focused on what I’m ready to do now. That worked better than overexplaining.",
     time: "Yesterday",
     likes: 15,
+    saved: false,
     comments: [
       {
+        id: 401,
         author: "Community Member",
         text: "Yes, short and confident is usually the best approach.",
       },
     ],
   },
   {
+    id: 5,
     author: "HireMinds Admin",
     role: "Moderator",
     type: "Opportunities",
@@ -84,11 +129,115 @@ const samplePosts = [
       "A local partner is hosting a free job readiness workshop next week. We’ll post the date, location, and signup details here once finalized.",
     time: "This week",
     likes: 12,
+    saved: false,
     comments: [],
   },
 ];
 
-export default function CareerToolkitBoardPage() {
+export default function CommunityFeedPage() {
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [activeCategory, setActiveCategory] = useState<Category>("All");
+  const [search, setSearch] = useState("");
+
+  const [newCategory, setNewCategory] = useState<Exclude<Category, "All">>("Announcements");
+  const [newTitle, setNewTitle] = useState("");
+  const [newText, setNewText] = useState("");
+  const [message, setMessage] = useState("");
+
+  const [commentDrafts, setCommentDrafts] = useState<Record<number, string>>({});
+
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      const matchesCategory =
+        activeCategory === "All" ? true : post.type === activeCategory;
+
+      const q = search.trim().toLowerCase();
+      const matchesSearch = q
+        ? [post.title, post.text, post.author, post.type]
+            .join(" ")
+            .toLowerCase()
+            .includes(q)
+        : true;
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [posts, activeCategory, search]);
+
+  function handleCreatePost() {
+    setMessage("");
+
+    if (!newTitle.trim() || !newText.trim()) {
+      setMessage("Please add both a title and a message before posting.");
+      return;
+    }
+
+    const nextPost: Post = {
+      id: Date.now(),
+      author: "Community Member",
+      role: "Job Seeker",
+      type: newCategory,
+      title: newTitle.trim(),
+      text: newText.trim(),
+      time: "Posted just now",
+      likes: 0,
+      saved: false,
+      comments: [],
+    };
+
+    setPosts((prev) => [nextPost, ...prev]);
+    setNewTitle("");
+    setNewText("");
+    setNewCategory("Announcements");
+    setMessage("Post added to the community feed.");
+  }
+
+  function handleLike(postId: number) {
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId ? { ...post, likes: post.likes + 1 } : post
+      )
+    );
+  }
+
+  function handleSave(postId: number) {
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId ? { ...post, saved: !post.saved } : post
+      )
+    );
+  }
+
+  function updateCommentDraft(postId: number, value: string) {
+    setCommentDrafts((prev) => ({
+      ...prev,
+      [postId]: value,
+    }));
+  }
+
+  function handleAddComment(postId: number) {
+    const draft = (commentDrafts[postId] || "").trim();
+    if (!draft) return;
+
+    const nextComment: Comment = {
+      id: Date.now(),
+      author: "Community Member",
+      text: draft,
+    };
+
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId
+          ? { ...post, comments: [...post.comments, nextComment] }
+          : post
+      )
+    );
+
+    setCommentDrafts((prev) => ({
+      ...prev,
+      [postId]: "",
+    }));
+  }
+
   return (
     <main style={styles.page}>
       <div style={styles.shell}>
@@ -96,8 +245,8 @@ export default function CareerToolkitBoardPage() {
           <p style={styles.kicker}>Career ToolKit</p>
           <h1 style={styles.title}>HireMinds Community Feed</h1>
           <p style={styles.subtitle}>
-            A shared community space for announcements, opportunities, questions, helpful advice,
-            and positive support for job seekers.
+            A shared community space for announcements, opportunities, questions,
+            helpful advice, and positive support for job seekers.
           </p>
 
           <div style={styles.heroButtons}>
@@ -117,30 +266,58 @@ export default function CareerToolkitBoardPage() {
           </div>
 
           <div style={styles.categoryRow}>
-            {categories.map((category) => (
-              <span key={category} style={styles.categoryChip}>
-                {category}
-              </span>
-            ))}
+            {categories
+              .filter((c) => c !== "All")
+              .map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setNewCategory(category as Exclude<Category, "All">)}
+                  style={{
+                    ...styles.categoryChipButton,
+                    ...(newCategory === category ? styles.categoryChipButtonActive : {}),
+                  }}
+                >
+                  {category}
+                </button>
+              ))}
           </div>
 
           <div style={styles.composerBox}>
-            <div style={styles.composerInputFake}>What would you like to share with the community?</div>
+            <input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Post title"
+              style={styles.titleInput}
+            />
+
+            <textarea
+              value={newText}
+              onChange={(e) => setNewText(e.target.value)}
+              placeholder="What would you like to share with the community?"
+              style={styles.composerTextarea}
+            />
 
             <div style={styles.composerActions}>
-              <button type="button" style={styles.primaryButton}>
+              <button type="button" onClick={handleCreatePost} style={styles.primaryButton}>
                 Create Post
               </button>
-              <button type="button" style={styles.secondaryButton}>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewCategory("Questions");
+                  setNewTitle("");
+                  setNewText("");
+                  setMessage("Selected question mode. Add your title and question.");
+                }}
+                style={styles.secondaryButton}
+              >
                 Ask a Question
               </button>
             </div>
           </div>
 
-          <p style={styles.helperText}>
-            Keep posts helpful, respectful, and positive. This space is meant for community support,
-            job leads, advice, and useful updates.
-          </p>
+          {message ? <p style={styles.helperText}>{message}</p> : null}
         </section>
 
         <section style={styles.feedHeaderCard}>
@@ -150,19 +327,34 @@ export default function CareerToolkitBoardPage() {
               <h2 style={styles.sectionTitle}>Latest Posts</h2>
             </div>
 
-            <div style={styles.feedFilters}>
-              {categories.map((category) => (
-                <span key={category} style={styles.filterChip}>
-                  {category}
-                </span>
-              ))}
-            </div>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search posts"
+              style={styles.searchInput}
+            />
+          </div>
+
+          <div style={styles.feedFilters}>
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setActiveCategory(category)}
+                style={{
+                  ...styles.filterChipButton,
+                  ...(activeCategory === category ? styles.filterChipButtonActive : {}),
+                }}
+              >
+                {category}
+              </button>
+            ))}
           </div>
         </section>
 
         <section style={styles.feedWrap}>
-          {samplePosts.map((post, index) => (
-            <article key={`${post.title}-${index}`} style={styles.postCard}>
+          {filteredPosts.map((post) => (
+            <article key={post.id} style={styles.postCard}>
               <div style={styles.postHeader}>
                 <div>
                   <div style={styles.authorRow}>
@@ -179,28 +371,37 @@ export default function CareerToolkitBoardPage() {
               <p style={styles.postText}>{post.text}</p>
 
               <div style={styles.postActions}>
-                <button type="button" style={styles.reactionButton}>
+                <button type="button" onClick={() => handleLike(post.id)} style={styles.reactionButton}>
                   👍 Helpful ({post.likes})
                 </button>
                 <button type="button" style={styles.reactionButton}>
-                  💬 Comment
+                  💬 {post.comments.length} Comments
                 </button>
-                <button type="button" style={styles.reactionButton}>
-                  📌 Save
+                <button type="button" onClick={() => handleSave(post.id)} style={styles.reactionButton}>
+                  {post.saved ? "📌 Saved" : "📌 Save"}
                 </button>
               </div>
 
               <div style={styles.commentComposer}>
-                <div style={styles.commentInputFake}>Write a positive comment, question, or helpful tip...</div>
-                <button type="button" style={styles.commentButton}>
+                <input
+                  value={commentDrafts[post.id] || ""}
+                  onChange={(e) => updateCommentDraft(post.id, e.target.value)}
+                  placeholder="Write a positive comment, question, or helpful tip..."
+                  style={styles.commentInput}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddComment(post.id)}
+                  style={styles.commentButton}
+                >
                   Post
                 </button>
               </div>
 
               {post.comments.length ? (
                 <div style={styles.commentsWrap}>
-                  {post.comments.map((comment, commentIndex) => (
-                    <div key={`${comment.author}-${commentIndex}`} style={styles.commentCard}>
+                  {post.comments.map((comment) => (
+                    <div key={comment.id} style={styles.commentCard}>
                       <p style={styles.commentAuthor}>{comment.author}</p>
                       <p style={styles.commentText}>{comment.text}</p>
                     </div>
@@ -332,7 +533,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap",
     marginBottom: "16px",
   },
-  categoryChip: {
+  categoryChipButton: {
     display: "inline-flex",
     alignItems: "center",
     padding: "10px 14px",
@@ -342,6 +543,12 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#f3f4f6",
     fontSize: "14px",
     fontWeight: 600,
+    cursor: "pointer",
+  },
+  categoryChipButtonActive: {
+    background: "#d4d4d8",
+    color: "#09090b",
+    border: "1px solid #d4d4d8",
   },
   composerBox: {
     background: "#101010",
@@ -349,16 +556,28 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "20px",
     padding: "16px",
   },
-  composerInputFake: {
-    minHeight: "72px",
+  titleInput: {
+    width: "100%",
+    padding: "14px 16px",
+    borderRadius: "14px",
+    border: "1px solid #2f2f2f",
+    background: "#0b0b0c",
+    color: "#f5f5f5",
+    fontSize: "15px",
+    boxSizing: "border-box",
+    marginBottom: "12px",
+  },
+  composerTextarea: {
+    width: "100%",
+    minHeight: "110px",
     borderRadius: "16px",
     border: "1px solid #2f2f2f",
     background: "#0b0b0c",
-    color: "#8f8f98",
+    color: "#f5f5f5",
     padding: "16px",
     fontSize: "15px",
-    display: "flex",
-    alignItems: "flex-start",
+    boxSizing: "border-box",
+    resize: "vertical",
   },
   composerActions: {
     display: "flex",
@@ -396,13 +615,25 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "16px",
     alignItems: "flex-start",
     flexWrap: "wrap",
+    marginBottom: "14px",
+  },
+  searchInput: {
+    width: "280px",
+    maxWidth: "100%",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    border: "1px solid #2f2f2f",
+    background: "#0b0b0c",
+    color: "#f5f5f5",
+    fontSize: "14px",
+    boxSizing: "border-box",
   },
   feedFilters: {
     display: "flex",
     gap: "10px",
     flexWrap: "wrap",
   },
-  filterChip: {
+  filterChipButton: {
     display: "inline-flex",
     alignItems: "center",
     padding: "10px 14px",
@@ -412,6 +643,12 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#f3f4f6",
     fontSize: "14px",
     fontWeight: 600,
+    cursor: "pointer",
+  },
+  filterChipButtonActive: {
+    background: "#d4d4d8",
+    color: "#09090b",
+    border: "1px solid #d4d4d8",
   },
   postHeader: {
     display: "flex",
@@ -485,13 +722,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "10px",
     marginBottom: "14px",
   },
-  commentInputFake: {
+  commentInput: {
     borderRadius: "14px",
     border: "1px solid #2f2f2f",
     background: "#0b0b0c",
-    color: "#8f8f98",
+    color: "#f5f5f5",
     padding: "14px 16px",
     fontSize: "14px",
+    boxSizing: "border-box",
   },
   commentButton: {
     padding: "12px 16px",
