@@ -74,6 +74,10 @@ export default function SignInPage() {
             {loading ? "Signing In..." : "Sign In"}
           </button>
 
+          <a href="/reset-password" style={{ color: "#f5f5f5", textDecoration: "underline", fontSize: "14px" }}>
+  Forgot Password?
+</a>
+
           {message ? <p style={styles.message}>{message}</p> : null}
 
           <p style={styles.footerText}>
