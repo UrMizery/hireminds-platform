@@ -35,7 +35,7 @@ export default function ServicesPage() {
             <div style={styles.popularTag}>Most Popular</div>
 
             <div style={styles.planTop}>
-              <p style={styles.planLabel}>Premium Resume</p>
+              <p style={styles.planLabel}>Resume Access </p>
               <p style={styles.planPrice}>Starting at $19.99</p>
             </div>
 
@@ -56,11 +56,11 @@ export default function ServicesPage() {
           <div style={styles.planCard}>
             <div style={styles.planTop}>
               <p style={styles.planLabel}>Premium Plus / Pro</p>
-              <p style={styles.planPrice}>Starting at $39.99</p>
+              <p style={styles.planPrice}>Starting at $29.99</p>
             </div>
 
             <p style={styles.planSummary}>
-              Best for candidates who want stronger visibility, AI tools, and more included support.
+              Best for candidates who want stronger visibility and more included support.
             </p>
 
             <ul style={styles.list}>
@@ -86,56 +86,6 @@ export default function ServicesPage() {
               </p>
             </div>
 
-            <div style={styles.serviceGrid}>
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>AI Mock Interview</p>
-                <p style={styles.servicePrice}>$14.99</p>
-                <p style={styles.serviceText}>
-                  Practice interview questions with AI-guided feedback.
-                </p>
-              </div>
-
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>Live Mock Interview</p>
-                <p style={styles.servicePrice}>$29.99 / 45 min</p>
-                <p style={styles.serviceText}>
-                  Real-time practice session with guided coaching and feedback.
-                </p>
-              </div>
-
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>AI Resume Revision</p>
-                <p style={styles.servicePrice}>$14.99</p>
-                <p style={styles.serviceText}>
-                  Improve wording, clarity, structure, and bullet strength.
-                </p>
-              </div>
-
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>Live Resume Revision</p>
-                <p style={styles.servicePrice}>$29.99</p>
-                <p style={styles.serviceText}>
-                  Work directly with a live reviewer to improve your resume.
-                </p>
-              </div>
-
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>Live CV Revision</p>
-                <p style={styles.servicePrice}>$39.99</p>
-                <p style={styles.serviceText}>
-                  Expand and revise your CV with Live-assisted content refinement.
-                </p>
-              </div>
-
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>Live Career Strategy Session</p>
-                <p style={styles.servicePrice}>$39.99 / 45 min</p>
-                <p style={styles.serviceText}>
-                  Discuss resume direction, job search strategy, and next steps.
-                </p>
-              </div>
-            </div>
-          </div>
         </section>
 
         <section style={styles.sectionWrap}>
@@ -168,15 +118,6 @@ export default function ServicesPage() {
                 </p>
               </div>
 
-              <div style={styles.verificationCard}>
-                <p style={styles.serviceName}>Priority Verification Review</p>
-                <p style={styles.servicePrice}>$14.99</p>
-                <p style={styles.serviceText}>
-                  Prioritized review and follow-up for faster processing.
-                </p>
-              </div>
-            </div>
-          </div>
         </section>
 
         <section style={styles.sectionWrap}>
@@ -191,22 +132,6 @@ export default function ServicesPage() {
               </p>
             </div>
 
-            <div style={styles.serviceGrid}>
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>Career Passport Profile Refresh</p>
-                <p style={styles.servicePrice}>$19.99</p>
-                <p style={styles.serviceText}>
-                  Improve your profile bio, layout, and overall presentation.
-                </p>
-              </div>
-
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>Intro Video Review</p>
-                <p style={styles.servicePrice}>$14.99</p>
-                <p style={styles.serviceText}>
-                  Feedback on clarity, confidence, structure, and messaging.
-                </p>
-              </div>
 
               <div style={styles.serviceCard}>
                 <p style={styles.serviceName}>LinkedIn Profile Guidance</p>
@@ -216,15 +141,6 @@ export default function ServicesPage() {
                 </p>
               </div>
 
-              <div style={styles.serviceCard}>
-                <p style={styles.serviceName}>Job Search Strategy Mini Session</p>
-                <p style={styles.servicePrice}>$19.99</p>
-                <p style={styles.serviceText}>
-                  Focused support on next moves, positioning, and job targeting.
-                </p>
-              </div>
-            </div>
-          </div>
         </section>
 
         <section style={styles.noticeWrap}>
