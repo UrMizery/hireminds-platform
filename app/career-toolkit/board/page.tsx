@@ -1,9 +1,10 @@
 "use client";
 
 export default function CareerToolkitBoardPage() {
+  const categories = ["All", "Opportunity", "Tips", "Announcements"];
   const samplePosts = [
     {
-      type: "Workshop",
+      type: "Announcement",
       title: "Resume Review Workshop",
       text: "Join our upcoming workshop for resume tips, formatting help, and ways to improve employer readiness.",
       date: "Posted this week",
@@ -15,13 +16,13 @@ export default function CareerToolkitBoardPage() {
       date: "Posted recently",
     },
     {
-      type: "Tip",
+      type: "Tips",
       title: "Research the Company First",
       text: "Before an interview, review the company website, services, mission, and recent updates so your answers feel more informed.",
-      date: "Career Tip",
+      date: "Career Tips",
     },
     {
-      type: "Class",
+      type: "Announcement",
       title: "Interview Basics Class",
       text: "A short class on how to answer common interview questions, present yourself professionally, and prepare strong examples.",
       date: "Coming soon",
@@ -34,10 +35,11 @@ export default function CareerToolkitBoardPage() {
         <section style={styles.heroCard}>
           <p style={styles.kicker}>Career ToolKit</p>
           <h1 style={styles.title}>Blackboard / Billboard</h1>
-          <p style={styles.subtitle}>
-            A live board for tips, tricks, opportunities, workshops, classes,
-            and updates from HireMinds.
-          </p>
+        <p style={styles.subtitle}>
+  A live board for announcements, opportunities, and helpful tips from HireMinds.
+  This space can be used to share community updates, hiring leads, workshops,
+  and important information for job seekers.
+</p>
 
           <div style={styles.heroButtons}>
             <a href="/career-toolkit" style={styles.linkButton}>
@@ -46,6 +48,17 @@ export default function CareerToolkitBoardPage() {
           </div>
         </section>
 
+       <section style={styles.filterCard}>
+  <p style={styles.kicker}>Board Categories</p>
+  <div style={styles.filterRow}>
+    {categories.map((category) => (
+      <span key={category} style={styles.filterChip}>
+        {category}
+      </span>
+    ))}
+  </div>
+</section>
+        
         <section style={styles.feedWrap}>
           {samplePosts.map((post, index) => (
             <article key={index} style={styles.postCard}>
@@ -58,13 +71,16 @@ export default function CareerToolkitBoardPage() {
               <p style={styles.postText}>{post.text}</p>
 
               <div style={styles.actionRow}>
-                <button type="button" style={styles.reactionButton}>
-                  👍 Helpful
-                </button>
-                <button type="button" style={styles.reactionButton}>
-                  💬 Question
-                </button>
-              </div>
+  <button type="button" style={styles.reactionButton}>
+    👍 Helpful
+  </button>
+  <button type="button" style={styles.reactionButton}>
+    💬 Ask a Question
+  </button>
+  <button type="button" style={styles.reactionButton}>
+    📌 Save
+  </button>
+</div>
             </article>
           ))}
         </section>
@@ -130,6 +146,30 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#f5f5f5",
     fontWeight: 700,
   },
+ filterCard: {
+  background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
+  border: "1px solid #262626",
+  borderRadius: "24px",
+  padding: "24px",
+},
+
+filterRow: {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap",
+},
+
+filterChip: {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "10px 14px",
+  borderRadius: "999px",
+  background: "#111827",
+  border: "1px solid #374151",
+  color: "#f3f4f6",
+  fontSize: "14px",
+  fontWeight: 600,
+},
   feedWrap: {
     display: "grid",
     gap: "18px",
