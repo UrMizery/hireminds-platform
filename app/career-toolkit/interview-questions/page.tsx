@@ -46,7 +46,7 @@ const prepTips = [
   "Dress appropriately and keep your appearance neat and professional.",
   "Arrive 10 to 15 minutes early.",
   "Bring copies of your resume.",
-  "Prepare 2 to 3 questions to ask the employer.",
+  "Prepare 3 to 5 questions to ask the employer.",
   "Speak clearly, stay calm, and take a moment before answering if needed.",
 ];
 
