@@ -10,7 +10,6 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const isRTL = lang === "ar";
 
-  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loadingLogout, setLoadingLogout] = useState(false);
