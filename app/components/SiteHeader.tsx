@@ -35,11 +35,6 @@ export default function SiteHeader() {
     setLoadingLogout(false);
   }
 }
-  
-  const hideFloatingCart =
-    pathname === "/resume-builder" ||
-    pathname === "/profile" ||
-    pathname === "/cart";
 
   return (
     <>
