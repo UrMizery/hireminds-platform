@@ -10,25 +10,54 @@ export default function PartnerWithHireMindsPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setStatusMessage("");
 
     if (!companyName.trim() || !fullName.trim() || !email.trim() || !message.trim()) {
       setStatusMessage("Please complete the required fields before submitting.");
       return;
     }
 
-    setStatusMessage(
-      "Form submitted. This is the front-end version for now. Next we can connect it to Supabase so inquiries are saved for real."
-    );
+    try {
+      setSubmitting(true);
 
-    setCompanyName("");
-    setFullName("");
-    setTitle("");
-    setPhone("");
-    setEmail("");
-    setMessage("");
+      const response = await fetch("/api/partner-inquiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          companyName,
+          fullName,
+          title,
+          phone,
+          email,
+          message,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to submit inquiry.");
+      }
+
+      setStatusMessage("Inquiry sent successfully. We’ll be in touch soon.");
+
+      setCompanyName("");
+      setFullName("");
+      setTitle("");
+      setPhone("");
+      setEmail("");
+      setMessage("");
+    } catch (error: any) {
+      setStatusMessage(error?.message || "Unable to submit inquiry.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -100,8 +129,8 @@ export default function PartnerWithHireMindsPage() {
             />
 
             <div style={styles.actionRow}>
-              <button type="submit" style={styles.primaryButton}>
-                Submit Inquiry
+              <button type="submit" style={styles.primaryButton} disabled={submitting}>
+                {submitting ? "Submitting..." : "Submit Inquiry"}
               </button>
             </div>
 
