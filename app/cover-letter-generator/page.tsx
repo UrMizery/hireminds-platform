@@ -57,7 +57,7 @@ export default function CoverLetterGeneratorPage() {
         <section style={styles.leftCol}>
           <div style={styles.card}>
             <p style={styles.kicker}>Cover Letter Generator</p>
-            <h1 style={styles.title}>Create a short generic cover letter</h1>
+            <h1 style={styles.title}>Create a cover letter</h1>
             <p style={styles.subtitle}>
               Use the guided fields below. Keep it short, clear, and professional.
             </p>
