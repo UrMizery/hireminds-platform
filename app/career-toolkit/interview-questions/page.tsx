@@ -46,7 +46,7 @@ const prepTips = [
   "Dress appropriately and keep your appearance neat and professional.",
   "Arrive 10 to 15 minutes early.",
   "Bring copies of your resume.",
-  "Prepare 3 to 5 questions to ask the employer.",
+  "Prepare 2 to 3 questions to ask the employer.",
   "Speak clearly, stay calm, and take a moment before answering if needed.",
 ];
 
@@ -98,14 +98,16 @@ export default function InterviewQuestionsPage() {
         <section style={styles.card}>
           <p style={styles.sectionKicker}>Section 1</p>
           <h2 style={styles.sectionTitle}>5 Main Interview Questions Employers Ask</h2>
+          <p style={styles.subtitleText}>
+            These are some of the most common questions employers ask during interviews.
+            Practice answering them clearly, professionally, and with confidence.
+          </p>
 
-          <div style={styles.questionList}>
+          <div style={styles.questionListSimple}>
             {questions.map((item, index) => (
-              <div key={item.question} style={styles.questionCard}>
-                <div style={styles.questionNumber}>{index + 1}</div>
-                <div>
-                  <h3 style={styles.questionTitle}>{item.question}</h3>
-                </div>
+              <div key={item.question} style={styles.questionRow}>
+                <span style={styles.questionRowNumber}>{index + 1}.</span>
+                <span style={styles.questionRowText}>{item.question}</span>
               </div>
             ))}
           </div>
@@ -272,39 +274,37 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: "#f5f5f5",
   },
-  questionList: {
-    display: "grid",
-    gap: "12px",
+  subtitleText: {
+    margin: "0 0 16px",
+    color: "#c8c8c8",
+    fontSize: "15px",
+    lineHeight: 1.7,
   },
-  questionCard: {
+  questionListSimple: {
     display: "grid",
-    gridTemplateColumns: "56px 1fr",
-    gap: "14px",
-    alignItems: "center",
+    gap: "10px",
+  },
+  questionRow: {
+    display: "grid",
+    gridTemplateColumns: "36px 1fr",
+    gap: "10px",
+    alignItems: "start",
+    padding: "14px 16px",
     background: "#101010",
     border: "1px solid #2d2d2d",
-    borderRadius: "18px",
-    padding: "16px",
+    borderRadius: "16px",
   },
-  questionNumber: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "999px",
-    background: "#111827",
-    border: "1px solid #374151",
-    color: "#f3f4f6",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+  questionRowNumber: {
+    color: "#9ca3af",
+    fontSize: "18px",
     fontWeight: 700,
-    fontSize: "16px",
-  },
-  questionTitle: {
-    margin: 0,
-    fontSize: "20px",
-    fontWeight: 600,
-    color: "#f5f5f5",
     lineHeight: 1.5,
+  },
+  questionRowText: {
+    color: "#f5f5f5",
+    fontSize: "18px",
+    fontWeight: 600,
+    lineHeight: 1.6,
   },
   answerWrap: {
     display: "grid",
@@ -336,12 +336,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#c8c8c8",
     fontSize: "15px",
     lineHeight: 1.75,
-  },
-  subtitleText: {
-    margin: "0 0 16px",
-    color: "#c8c8c8",
-    fontSize: "15px",
-    lineHeight: 1.7,
   },
   tipGrid: {
     display: "grid",
