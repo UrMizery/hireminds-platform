@@ -100,7 +100,7 @@ export default function CareertoolKit() {
 
           <div style={styles.card}>
             <p style={styles.kicker}>Premium Services</p>
-            <h2 style={styles.sectionTitle}>Coming / Locked</h2>
+            <h2 style={styles.sectionTitle}>Coming Soon / Locked</h2>
 
             <div style={styles.item}>
               <h3 style={styles.itemTitle}>Schedule 1:1 🔒</h3>
