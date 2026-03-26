@@ -59,31 +59,6 @@ export default function SiteHeader() {
             </a>
           ) : null}
 
-          <div
-            style={styles.dropdown}
-            onMouseEnter={() => setScheduleOpen(true)}
-            onMouseLeave={() => setScheduleOpen(false)}
-          >
-            <span style={styles.link}>{t.schedule} ▾</span>
-
-            {scheduleOpen && (
-              <div
-                style={{
-                  ...styles.menu,
-                  left: isRTL ? "auto" : 0,
-                  right: isRTL ? 0 : "auto",
-                  textAlign: isRTL ? "right" : "left",
-                }}
-              >
-                <span style={styles.lockedMenuItem}>{t.careerCoach} 🔒</span>
-                <span style={styles.lockedMenuItem}>{t.liveMockInterview} 🔒</span>
-                <span style={styles.lockedMenuItem}>{t.liveResumeRevision} 🔒</span>
-                <span style={styles.lockedMenuItem}>{t.consultation} 🔒</span>
-                <span style={styles.lockedMenuItem}>{t.other} 🔒</span>
-              </div>
-            )}
-          </div>
-
           <a href="/partner-with-hireminds" style={styles.link}>
             Partner With HireMinds
           </a>
