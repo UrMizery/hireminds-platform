@@ -105,7 +105,7 @@ export default function CareertoolKit() {
             <div style={styles.item}>
               <h3 style={styles.itemTitle}>Schedule 1:1 🔒</h3>
               <p style={styles.itemText}>
-                Career coaching, interview prep, live resume revision, and personalized support.
+                Career coaching, interview prep and personalized support.
               </p>
             </div>
 
