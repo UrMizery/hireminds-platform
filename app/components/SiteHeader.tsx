@@ -10,140 +10,111 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const isRTL = lang === "ar";
 
-  const [partnerOpen, setPartnerOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loadingLogout, setLoadingLogout] = useState(false);
-  
-  useEffect(() => {
-  async function checkAuth() {
-    const { data } = await supabase.auth.getSession();
-    setIsLoggedIn(Boolean(data.session));
-    setCheckingAuth(false);
-  }
 
-  checkAuth();
-}, []);
+  useEffect(() => {
+    async function checkAuth() {
+      const { data } = await supabase.auth.getSession();
+      setIsLoggedIn(Boolean(data.session));
+      setCheckingAuth(false);
+    }
+
+    checkAuth();
+  }, []);
 
   async function handleLogout() {
-  try {
-    setLoadingLogout(true);
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  } finally {
-    setLoadingLogout(false);
+    try {
+      setLoadingLogout(true);
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    } finally {
+      setLoadingLogout(false);
+    }
   }
-}
 
   return (
-    <>
-      <header style={styles.header}>
-        <div
-          style={{
-            ...styles.inner,
-            direction: isRTL ? "rtl" : "ltr",
-            gridTemplateColumns: isRTL ? "auto 1fr 180px" : "180px 1fr auto",
-          }}
-        >
-          <a href="/" style={styles.logo}>
-            HireMinds
+    <header style={styles.header}>
+      <div
+        style={{
+          ...styles.inner,
+          direction: isRTL ? "rtl" : "ltr",
+          gridTemplateColumns: isRTL ? "auto 1fr 220px" : "220px 1fr auto",
+        }}
+      >
+        <a href="/" style={styles.logo}>
+          HireMinds
+        </a>
+
+        <div style={styles.centerNav}>
+          <a href="/" style={styles.link}>
+            {t.home}
           </a>
 
-          <div style={styles.centerNav}>
-            <a href="/" style={styles.link}>
-              {t.home}
+          {!checkingAuth && !isLoggedIn ? (
+            <a href="/sign-in" style={styles.link}>
+              {t.signIn}
             </a>
+          ) : null}
 
-           {!checkingAuth && !isLoggedIn ? (
-  <a href="/sign-in" style={styles.link}>
-    {t.signIn}
-  </a>
-) : null}
+          <div
+            style={styles.dropdown}
+            onMouseEnter={() => setScheduleOpen(true)}
+            onMouseLeave={() => setScheduleOpen(false)}
+          >
+            <span style={styles.link}>{t.schedule} ▾</span>
 
-            <div
-              style={styles.dropdown}
-              onMouseEnter={() => setScheduleOpen(true)}
-              onMouseLeave={() => setScheduleOpen(false)}
-            >
-              <span style={styles.link}>{t.schedule} ▾</span>
-
-              {scheduleOpen && (
-                <div
-                  style={{
-                    ...styles.menu,
-                    left: isRTL ? "auto" : 0,
-                    right: isRTL ? 0 : "auto",
-                    textAlign: isRTL ? "right" : "left",
-                  }}
-                >
-                  <span style={styles.lockedMenuItem}>{t.careerCoach} 🔒</span>
-                  <span style={styles.lockedMenuItem}>{t.liveMockInterview} 🔒</span>
-                  <span style={styles.lockedMenuItem}>{t.liveResumeRevision} 🔒</span>
-                  <span style={styles.lockedMenuItem}>{t.consultation} 🔒</span>
-                  <span style={styles.lockedMenuItem}>{t.other} 🔒</span>
-                </div>
-              )}
-            </div>
-
-            <div
-              style={styles.dropdown}
-              onMouseEnter={() => setPartnerOpen(true)}
-              onMouseLeave={() => setPartnerOpen(false)}
-            >
-              <span style={styles.link}>{t.partner} ▾</span>
-
-              {partnerOpen && (
-                <div
-                  style={{
-                    ...styles.menu,
-                    left: isRTL ? "auto" : 0,
-                    right: isRTL ? 0 : "auto",
-                    textAlign: isRTL ? "right" : "left",
-                  }}
-                >
-                  <a href="/partner/employers" style={styles.menuItem}>
-                    {t.employers}
-                  </a>
-                  <a href="/partner/nonprofits" style={styles.menuItem}>
-                    {t.nonprofits}
-                  </a>
-                  <a href="/partner/other" style={styles.menuItem}>
-                    {t.other}
-                  </a>
-                </div>
-              )}
-            </div>
-
-            <a href="/contact" style={styles.link}>
-              {t.contact}
-            </a>
+            {scheduleOpen && (
+              <div
+                style={{
+                  ...styles.menu,
+                  left: isRTL ? "auto" : 0,
+                  right: isRTL ? 0 : "auto",
+                  textAlign: isRTL ? "right" : "left",
+                }}
+              >
+                <span style={styles.lockedMenuItem}>{t.careerCoach} 🔒</span>
+                <span style={styles.lockedMenuItem}>{t.liveMockInterview} 🔒</span>
+                <span style={styles.lockedMenuItem}>{t.liveResumeRevision} 🔒</span>
+                <span style={styles.lockedMenuItem}>{t.consultation} 🔒</span>
+                <span style={styles.lockedMenuItem}>{t.other} 🔒</span>
+              </div>
+            )}
           </div>
 
-         <div style={styles.rightNav}>
-  {isLoggedIn ? (
-    <>
-      <a href="/profile" style={styles.link}>
-        My Profile
-      </a>
-      <button
-        type="button"
-        onClick={handleLogout}
-        style={styles.logoutButton}
-        disabled={loadingLogout}
-      >
-        {loadingLogout ? "Logging Off..." : "Log Off"}
-      </button>
-    </>
-  ) : null}
+          <a href="/partner-with-hireminds" style={styles.link}>
+            Partner With HireMinds
+          </a>
 
-  <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
-  <span style={styles.lockedLink}>{t.employerPartnerSignIn} 🔒</span>
-</div>
+          <a href="/contact" style={styles.link}>
+            {t.contact}
+          </a>
         </div>
-      </header>
 
-    </>
+        <div style={styles.rightNav}>
+          {isLoggedIn ? (
+            <>
+              <a href="/profile" style={styles.link}>
+                My Profile
+              </a>
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={styles.logoutButton}
+                disabled={loadingLogout}
+              >
+                {loadingLogout ? "Logging Off..." : "Log Off"}
+              </button>
+            </>
+          ) : null}
+
+          <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
+          <span style={styles.lockedLink}>{t.employerPartnerSignIn} 🔒</span>
+        </div>
+      </div>
+    </header>
   );
 }
 
@@ -197,16 +168,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
     whiteSpace: "nowrap",
   },
-  logoutButton: {
-  background: "transparent",
-  border: "1px solid #3f3f46",
-  color: "#d4d4d8",
-  fontSize: "14px",
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-  borderRadius: "10px",
-  padding: "8px 12px",
-},
   dropdown: {
     position: "relative",
   },
@@ -220,19 +181,21 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 220,
     boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
   },
-  menuItem: {
-    display: "block",
-    padding: "10px 12px",
-    color: "#f4f4f5",
-    textDecoration: "none",
-    fontSize: 14,
-    borderRadius: 8,
-  },
   lockedMenuItem: {
     display: "block",
     padding: "10px 12px",
     color: "#7c7c85",
     fontSize: 14,
     borderRadius: 8,
+  },
+  logoutButton: {
+    background: "transparent",
+    border: "1px solid #3f3f46",
+    color: "#d4d4d8",
+    fontSize: "14px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    borderRadius: "10px",
+    padding: "8px 12px",
   },
 };
