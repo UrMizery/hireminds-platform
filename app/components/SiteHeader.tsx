@@ -142,26 +142,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
     whiteSpace: "nowrap",
   },
-  dropdown: {
-    position: "relative",
-  },
-  menu: {
-    position: "absolute",
-    top: 28,
-    background: "#111",
-    border: "1px solid #333",
-    borderRadius: 12,
-    padding: 8,
-    minWidth: 220,
-    boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
-  },
-  lockedMenuItem: {
-    display: "block",
-    padding: "10px 12px",
-    color: "#7c7c85",
-    fontSize: 14,
-    borderRadius: 8,
-  },
   logoutButton: {
     background: "transparent",
     border: "1px solid #3f3f46",
