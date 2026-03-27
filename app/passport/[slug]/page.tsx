@@ -334,14 +334,16 @@ hero: {
   },
   mainCol: {},
   sideCol: {},
-  card: {
-    background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
-    border: "1px solid #232323",
-    borderRadius: "28px",
-    padding: "24px",
-    boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
-    marginBottom: "20px",
-  },
+ card: {
+  background:
+    "linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(12,12,14,0.98) 100%)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: "30px",
+  padding: "28px",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.28)",
+  marginBottom: "22px",
+  backdropFilter: "blur(8px)",
+},
   sideCard: {
     background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
     border: "1px solid #232323",
