@@ -114,6 +114,8 @@ Open Resume Format Guide
 <h3 style={styles.featureTitle}>Job Log Generator</h3>
 <span style={styles.liveTag}>New</span>
 </div>
+  
+  
 <p style={styles.featureText}>
 Track where you applied, dates, contacts, interview updates, and follow-up activity
 in one organized place.
@@ -122,6 +124,18 @@ in one organized place.
 Open Job Log Generator
 </a>
 </div>
+</div>
+  <div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Career Path Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Explore career paths based on the work you enjoy, the environment you prefer, and how quickly you want to get started.
+</p>
+<a href="/career-toolkit/career-path-generator" style={styles.linkButton}>
+Open Career Path Generator
+</a>
 </div>
 </section>
 
