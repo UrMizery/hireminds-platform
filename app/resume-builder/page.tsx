@@ -68,32 +68,16 @@ type ResumeSectionKey =
   | "volunteer"
   | "accomplishments";
 
-const FREE_BULLET_LIMIT = 4;
-const PAID_BULLET_LIMIT = 6;
+const BULLET_LIMIT = 5;
 const SKILL_LIMIT = 9;
 
-const MONTHS = [
-  "",
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+const MONTHS = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const TRANSLATIONS: Record<
   ResumeLanguage,
   {
     pageKicker: string;
     pageTitle: string;
-    plan: string;
     font: string;
     language: string;
     livePreview: string;
@@ -118,13 +102,12 @@ const TRANSLATIONS: Record<
   }
 > = {
   English: {
-    pageKicker: "RESUME BUILDER",
-    pageTitle: "Choose your resume font before you begin.",
+    pageKicker: "RESUME GENERATOR",
+    pageTitle: "Create and save your resume.",
     font: "Resume Font",
     language: "Language",
     livePreview: "Resume Preview",
-    previewHelp:
-      "The preview stays visible while you build and expands as you type.",
+    previewHelp: "The preview stays visible while you build and expands as you type.",
     header: "Resume Header",
     summary: "Summary",
     summaryAndSkills: "Summary + Skills",
@@ -144,13 +127,12 @@ const TRANSLATIONS: Record<
     viewPublicProfile: "View Public Profile",
   },
   Spanish: {
-    pageKicker: "CREADOR DE CURRÍCULUM",
-    pageTitle: "Elige la fuente de tu currículum antes de comenzar.",
+    pageKicker: "GENERADOR DE CURRÍCULUM",
+    pageTitle: "Crea y guarda tu currículum.",
     font: "Fuente del currículum",
     language: "Idioma",
     livePreview: "Vista previa del currículum",
-    previewHelp:
-      "La vista previa permanece visible mientras escribes y se expande a medida que agregas contenido.",
+    previewHelp: "La vista previa permanece visible mientras escribes y se expande a medida que agregas contenido.",
     header: "Encabezado del currículum",
     summary: "Resumen",
     summaryAndSkills: "Resumen + Habilidades",
@@ -164,20 +146,18 @@ const TRANSLATIONS: Record<
     moveSections: "Mover secciones del currículum",
     currentlyWorkHere: "Actualmente trabajo aquí",
     currentlyAttendHere: "Actualmente estudio aquí",
-    currentlyCompletingCert:
-      "Actualmente estoy completando esta certificación",
+    currentlyCompletingCert: "Actualmente estoy completando esta certificación",
     currentlyVolunteerHere: "Actualmente hago voluntariado aquí",
     backToProfile: "Volver al perfil",
     viewPublicProfile: "Ver perfil público",
   },
   Hindi: {
-    pageKicker: "रिज़्यूमे बिल्डर",
-    pageTitle: "शुरू करने से पहले अपने रिज़्यूमे का फ़ॉन्ट चुनें।",
+    pageKicker: "रिज़्यूमे जनरेटर",
+    pageTitle: "अपना रिज़्यूमे बनाएं और सेव करें।",
     font: "रिज़्यूमे फ़ॉन्ट",
     language: "भाषा",
     livePreview: "रिज़्यूमे पूर्वावलोकन",
-    previewHelp:
-      "जब आप बनाते हैं तो पूर्वावलोकन दिखाई देता रहता है और टाइप करते समय बढ़ता जाता है।",
+    previewHelp: "जैसे-जैसे आप टाइप करते हैं, पूर्वावलोकन दिखाई देता रहता है और बढ़ता जाता है।",
     header: "रिज़्यूमे हेडर",
     summary: "सारांश",
     summaryAndSkills: "सारांश + कौशल",
@@ -186,25 +166,23 @@ const TRANSLATIONS: Record<
     certifications: "प्रमाणपत्र (वैकल्पिक)",
     volunteer: "स्वयंसेवी कार्य (वैकल्पिक)",
     accomplishments: "उपलब्धियाँ (वैकल्पिक)",
-    saveResume: "रिज़्यूमे सहेजें",
+    saveResume: "रिज़्यूमे सेव करें",
     printResume: "रिज़्यूमे प्रिंट करें",
     moveSections: "रिज़्यूमे सेक्शन बदलें",
     currentlyWorkHere: "मैं वर्तमान में यहाँ काम करता/करती हूँ",
-    currentlyAttendHere: "मैं वर्तमान में यहाँ पढ़ता/पढ़ती हूँ",
-    currentlyCompletingCert:
-      "मैं वर्तमान में यह प्रमाणपत्र पूरा कर रहा/रही हूँ",
+    currentlyAttendHere: "मैं वर्तमान में यहाँ पढ़ रहा/रही हूँ",
+    currentlyCompletingCert: "मैं वर्तमान में यह प्रमाणपत्र पूरा कर रहा/रही हूँ",
     currentlyVolunteerHere: "मैं वर्तमान में यहाँ स्वयंसेवा करता/करती हूँ",
     backToProfile: "प्रोफ़ाइल पर वापस जाएँ",
     viewPublicProfile: "सार्वजनिक प्रोफ़ाइल देखें",
   },
   Polish: {
-    pageKicker: "KREATOR CV",
-    pageTitle: "Wybierz czcionkę CV przed rozpoczęciem.",
+    pageKicker: "GENERATOR CV",
+    pageTitle: "Utwórz i zapisz swoje CV.",
     font: "Czcionka CV",
     language: "Język",
     livePreview: "Podgląd CV",
-    previewHelp:
-      "Podgląd pozostaje widoczny podczas tworzenia i rozszerza się w miarę pisania.",
+    previewHelp: "Podgląd pozostaje widoczny podczas tworzenia i rozszerza się wraz z treścią.",
     header: "Nagłówek CV",
     summary: "Podsumowanie",
     summaryAndSkills: "Podsumowanie + Umiejętności",
@@ -217,33 +195,81 @@ const TRANSLATIONS: Record<
     printResume: "Drukuj CV",
     moveSections: "Przenieś sekcje CV",
     currentlyWorkHere: "Obecnie tu pracuję",
-    currentlyAttendHere: "Obecnie tu się uczę",
+    currentlyAttendHere: "Obecnie tu uczęszczam",
     currentlyCompletingCert: "Obecnie kończę ten certyfikat",
-    currentlyVolunteerHere: "Obecnie jestem tu wolontariuszem",
-    backToProfile: "Wróć do profilu",
+    currentlyVolunteerHere: "Obecnie tu jestem wolontariuszem",
+    backToProfile: "Powrót do profilu",
     viewPublicProfile: "Zobacz profil publiczny",
   },
 };
 
-function moveItem<T>(arr: T[], index: number, direction: "up" | "down") {
-  const updated = [...arr];
-  const nextIndex = direction === "up" ? index - 1 : index + 1;
-  if (nextIndex < 0 || nextIndex >= arr.length) return arr;
-  [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
-  return updated;
+function createEmptyExperience(): ExperienceItem {
+  return {
+    companyName: "",
+    city: "",
+    state: "",
+    roleTitle: "",
+    startMonth: "",
+    startYear: "",
+    endMonth: "",
+    endYear: "",
+    isPresent: false,
+    bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+  };
 }
 
-function formatDateRange(
-  startMonth: string,
-  startYear: string,
-  endMonth: string,
-  endYear: string,
-  isPresent: boolean
-) {
-  const from = [startMonth, startYear].filter(Boolean).join(" ");
-  const to = isPresent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ");
-  if (!from && !to) return "";
-  return `${from || "Start"} - ${to || "End"}`;
+function createEmptyVolunteer(): VolunteerItem {
+  return {
+    organizationName: "",
+    city: "",
+    state: "",
+    roleTitle: "",
+    startMonth: "",
+    startYear: "",
+    endMonth: "",
+    endYear: "",
+    isPresent: false,
+    bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+  };
+}
+
+function createEmptyEducation(): EducationItem {
+  return {
+    schoolName: "",
+    city: "",
+    state: "",
+    degree: "",
+    gpa: "",
+    startMonth: "",
+    startYear: "",
+    endMonth: "",
+    endYear: "",
+    isPresent: false,
+  };
+}
+
+function createEmptyCertificate(): CertificateItem {
+  return {
+    organizationName: "",
+    city: "",
+    state: "",
+    certificateName: "",
+    startMonth: "",
+    startYear: "",
+    endMonth: "",
+    endYear: "",
+    isPresent: false,
+  };
+}
+
+function moveItem<T>(items: T[], index: number, direction: "up" | "down") {
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= items.length) return items;
+  const clone = [...items];
+  const current = clone[index];
+  clone[index] = clone[targetIndex];
+  clone[targetIndex] = current;
+  return clone;
 }
 
 function splitSkillsIntoColumns(skills: string[]) {
@@ -314,6 +340,19 @@ function hasVolunteerContent(item: VolunteerItem) {
   );
 }
 
+function formatDateRange(
+  startMonth: string,
+  startYear: string,
+  endMonth: string,
+  endYear: string,
+  isPresent: boolean
+) {
+  const from = [startMonth, startYear].filter(Boolean).join(" ");
+  const to = isPresent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ");
+  if (!from && !to) return "";
+  return `${from || "Start"} - ${to || "End"}`;
+}
+
 export default function ResumeBuilderPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [userId, setUserId] = useState("");
@@ -337,64 +376,10 @@ export default function ResumeBuilderPage() {
   const [skillsInput, setSkillsInput] = useState("");
   const [accomplishments, setAccomplishments] = useState("");
 
-  const [experiences, setExperiences] = useState<ExperienceItem[]>([
-    {
-      companyName: "",
-      city: "",
-      state: "",
-      roleTitle: "",
-      startMonth: "",
-      startYear: "",
-      endMonth: "",
-      endYear: "",
-      isPresent: false,
-      bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-    },
-  ]);
-
-  const [educationItems, setEducationItems] = useState<EducationItem[]>([
-    {
-      schoolName: "",
-      city: "",
-      state: "",
-      degree: "",
-      gpa: "",
-      startMonth: "",
-      startYear: "",
-      endMonth: "",
-      endYear: "",
-      isPresent: false,
-    },
-  ]);
-
-  const [certificateItems, setCertificateItems] = useState<CertificateItem[]>([
-    {
-      organizationName: "",
-      city: "",
-      state: "",
-      certificateName: "",
-      startMonth: "",
-      startYear: "",
-      endMonth: "",
-      endYear: "",
-      isPresent: false,
-    },
-  ]);
-
-  const [volunteerItems, setVolunteerItems] = useState<VolunteerItem[]>([
-    {
-      organizationName: "",
-      city: "",
-      state: "",
-      roleTitle: "",
-      startMonth: "",
-      startYear: "",
-      endMonth: "",
-      endYear: "",
-      isPresent: false,
-      bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-    },
-  ]);
+  const [experiences, setExperiences] = useState<ExperienceItem[]>([createEmptyExperience()]);
+  const [educationItems, setEducationItems] = useState<EducationItem[]>([createEmptyEducation()]);
+  const [certificateItems, setCertificateItems] = useState<CertificateItem[]>([createEmptyCertificate()]);
+  const [volunteerItems, setVolunteerItems] = useState<VolunteerItem[]>([createEmptyVolunteer()]);
 
   const [sectionOrder, setSectionOrder] = useState<ResumeSectionKey[]>([
     "summary",
@@ -420,9 +405,7 @@ export default function ResumeBuilderPage() {
 
       const { data: profile } = await supabase
         .from("candidate_profiles")
-        .select(
-          "full_name, phone, city, state, email, linkedin_url, passport_slug"
-        )
+        .select("full_name, phone, city, state, email, linkedin_url, passport_slug")
         .eq("user_id", currentUserId)
         .maybeSingle();
 
@@ -455,66 +438,27 @@ export default function ResumeBuilderPage() {
   }, [skillsInput]);
 
   const skillColumns = useMemo(() => splitSkillsIntoColumns(skills), [skills]);
-
-  const activeExperiences = useMemo(
-    () => experiences.filter((item) => hasExperienceContent(item)),
-    [experiences]
-  );
-
-  const activeEducation = useMemo(
-    () => educationItems.filter((item) => hasEducationContent(item)),
-    [educationItems]
-  );
-
+  const activeExperiences = useMemo(() => experiences.filter((item) => hasExperienceContent(item)), [experiences]);
+  const activeEducation = useMemo(() => educationItems.filter((item) => hasEducationContent(item)), [educationItems]);
   const activeCertificates = useMemo(
     () => certificateItems.filter((item) => hasCertificateContent(item)),
     [certificateItems]
   );
-
-  const activeVolunteer = useMemo(
-    () => volunteerItems.filter((item) => hasVolunteerContent(item)),
-    [volunteerItems]
-  );
+  const activeVolunteer = useMemo(() => volunteerItems.filter((item) => hasVolunteerContent(item)), [volunteerItems]);
 
   function addExperience() {
-    setExperiences((prev) => [
-      ...prev,
-      {
-        companyName: "",
-        city: "",
-        state: "",
-        roleTitle: "",
-        startMonth: "",
-        startYear: "",
-        endMonth: "",
-        endYear: "",
-        isPresent: false,
-        bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-      },
-    ]);
+    setExperiences((prev) => [...prev, createEmptyExperience()]);
   }
 
-  function updateExperience(
-    index: number,
-    field: keyof ExperienceItem,
-    value: string | boolean
-  ) {
-    setExperiences((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
+  function updateExperience(index: number, field: keyof ExperienceItem, value: string | boolean) {
+    setExperiences((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
-  function updateExperienceBullet(
-    index: number,
-    bulletIndex: number,
-    value: string
-  ) {
+  function updateExperienceBullet(index: number, bulletIndex: number, value: string) {
     setExperiences((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
-        const bullets = item.bullets.map((bullet, j) =>
-          j === bulletIndex ? { text: value } : bullet
-        );
+        const bullets = item.bullets.map((bullet, j) => (j === bulletIndex ? { text: value } : bullet));
         return { ...item, bullets };
       })
     );
@@ -524,106 +468,41 @@ export default function ResumeBuilderPage() {
     setExperiences((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
-        if (item.bullets.length >= bulletLimit) return item;
+        if (item.bullets.length >= BULLET_LIMIT) return item;
         return { ...item, bullets: [...item.bullets, { text: "" }] };
       })
     );
   }
 
   function addEducation() {
-    setEducationItems((prev) => [
-      ...prev,
-      {
-        schoolName: "",
-        city: "",
-        state: "",
-        degree: "",
-        gpa: "",
-        startMonth: "",
-        startYear: "",
-        endMonth: "",
-        endYear: "",
-        isPresent: false,
-      },
-    ]);
+    setEducationItems((prev) => [...prev, createEmptyEducation()]);
   }
 
-  function updateEducation(
-    index: number,
-    field: keyof EducationItem,
-    value: string | boolean
-  ) {
-    setEducationItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
+  function updateEducation(index: number, field: keyof EducationItem, value: string | boolean) {
+    setEducationItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
   function addCertificate() {
-    setCertificateItems((prev) => [
-      ...prev,
-      {
-        organizationName: "",
-        city: "",
-        state: "",
-        certificateName: "",
-        startMonth: "",
-        startYear: "",
-        endMonth: "",
-        endYear: "",
-        isPresent: false,
-      },
-    ]);
+    setCertificateItems((prev) => [...prev, createEmptyCertificate()]);
   }
 
-  function updateCertificate(
-    index: number,
-    field: keyof CertificateItem,
-    value: string | boolean
-  ) {
-    setCertificateItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
+  function updateCertificate(index: number, field: keyof CertificateItem, value: string | boolean) {
+    setCertificateItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
   function addVolunteer() {
-    setVolunteerItems((prev) => [
-      ...prev,
-      {
-        organizationName: "",
-        city: "",
-        state: "",
-        roleTitle: "",
-        startMonth: "",
-        startYear: "",
-        endMonth: "",
-        endYear: "",
-        isPresent: false,
-        bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-      },
-    ]);
+    setVolunteerItems((prev) => [...prev, createEmptyVolunteer()]);
   }
 
-  function updateVolunteer(
-    index: number,
-    field: keyof VolunteerItem,
-    value: string | boolean
-  ) {
-    setVolunteerItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
+  function updateVolunteer(index: number, field: keyof VolunteerItem, value: string | boolean) {
+    setVolunteerItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
-  function updateVolunteerBullet(
-    index: number,
-    bulletIndex: number,
-    value: string
-  ) {
+  function updateVolunteerBullet(index: number, bulletIndex: number, value: string) {
     setVolunteerItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
-        const bullets = item.bullets.map((bullet, j) =>
-          j === bulletIndex ? { text: value } : bullet
-        );
+        const bullets = item.bullets.map((bullet, j) => (j === bulletIndex ? { text: value } : bullet));
         return { ...item, bullets };
       })
     );
@@ -633,7 +512,7 @@ export default function ResumeBuilderPage() {
     setVolunteerItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
-        if (item.bullets.length >= bulletLimit) return item;
+        if (item.bullets.length >= BULLET_LIMIT) return item;
         return { ...item, bullets: [...item.bullets, { text: "" }] };
       })
     );
@@ -656,33 +535,18 @@ export default function ResumeBuilderPage() {
 
       const { data: profileData, error: profileError } = await supabase
         .from("candidate_profiles")
-        .select("id, created_at")
+        .select("id")
         .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .single();
 
       if (profileError) throw profileError;
-      if (!profileData?.id) {
-        throw new Error("No candidate profile found for this user.");
-      }
 
       const profileId = profileData.id;
 
-      await supabase
-        .from("candidate_profiles")
-        .update({
-          full_name: fullName,
-          phone,
-          city,
-          state: stateName,
-          email,
-          linkedin_url: linkedinUrl,
-        })
-        .eq("id", profileId);
-
       const payload = {
         profile_id: profileId,
+        title: "Primary Resume",
+        page_limit: 2,
         summary_heading: summaryHeading || ui.summary,
         summary_text: summaryText,
         skills,
@@ -715,16 +579,10 @@ export default function ResumeBuilderPage() {
         .maybeSingle();
 
       if (existingResume?.id) {
-        const { error: updateError } = await supabase
-          .from("resumes")
-          .update(payload)
-          .eq("id", existingResume.id);
-
+        const { error: updateError } = await supabase.from("resumes").update(payload).eq("id", existingResume.id);
         if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase
-          .from("resumes")
-          .insert(payload);
+        const { error: insertError } = await supabase.from("resumes").insert(payload);
         if (insertError) throw insertError;
       }
 
@@ -736,188 +594,10 @@ export default function ResumeBuilderPage() {
     }
   }
 
- function handlePrint() {
-  const resumeNode = resumePrintRef.current;
-
-  if (!resumeNode) {
-    setMessage("Resume preview is not ready to print yet.");
-    return;
+  function handlePrint() {
+    setMessage("Review the preview, then use your browser print window to save as PDF or print.");
+    window.print();
   }
-
-  const printWindow = window.open("", "_blank", "width=900,height=1200");
-
-  if (!printWindow) {
-    setMessage("Pop-up blocked. Please allow pop-ups and try again.");
-    return;
-  }
-
-  const resumeHtml = resumeNode.innerHTML;
-
-  printWindow.document.open();
-  printWindow.document.write(`
-    <!doctype html>
-    <html>
-      <head>
-        <title>Resume Preview</title>
-        <style>
-          @page {
-            size: letter;
-            margin: 0.5in;
-          }
-
-          html, body {
-            margin: 0;
-            padding: 0;
-            background: white;
-            color: #111827;
-            font-family: ${fontFamily}, serif;
-          }
-
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-
-          .print-resume {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  padding-top: 90px;
-  color: #111827;
-}
-
-          .resumeHeader {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  text-align: center;
-  padding: 0 0 8px;
-}
-
-          .resumeName {
-            margin: 0 0 8px;
-            font-size: 28px;
-            font-weight: 700;
-            color: #111827;
-          }
-
-          .resumeContact {
-            margin: 0 0 6px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #374151;
-            word-break: break-word;
-          }
-
-          .resumeLinkedin {
-            margin: 0;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #1d4ed8;
-            word-break: break-word;
-          }
-
-          .resumeSection {
-            margin-bottom: 20px;
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .resumeSectionTitle {
-            margin: 0 0 10px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: 700;
-            color: #111827;
-          }
-
-          .resumeParagraph {
-            margin: 0;
-            font-size: 15px;
-            line-height: 1.7;
-            color: #111827;
-            white-space: pre-wrap;
-            word-break: break-word;
-          }
-
-          .skillsGrid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px 24px;
-          }
-
-          .skillColumn {
-            min-width: 0;
-          }
-
-          .skillItem {
-            margin: 0 0 8px;
-            font-size: 15px;
-            line-height: 1.5;
-            color: #111827;
-            word-break: break-word;
-          }
-
-          .resumeEntry {
-            margin-bottom: 16px;
-          }
-
-          .resumeEntryTop {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 6px;
-          }
-
-          .resumeEntryHeading {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 700;
-            color: #111827;
-          }
-
-          .resumeEntrySubheading {
-            margin: 4px 0 0;
-            font-size: 15px;
-            font-weight: 600;
-            color: #111827;
-          }
-
-          .resumeEntryDates {
-            margin: 0;
-            font-size: 14px;
-            color: #374151;
-            white-space: nowrap;
-          }
-
-          .resumeBullet {
-            margin: 4px 0;
-            font-size: 15px;
-            line-height: 1.65;
-            color: #111827;
-            white-space: pre-wrap;
-            word-break: break-word;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-resume">
-          ${resumeHtml}
-        </div>
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
-
-  printWindow.focus();
-
-  setTimeout(() => {
-    printWindow.print();
-  }, 300);
-}
 
   function renderResumeSection(section: ResumeSectionKey) {
     switch (section) {
@@ -925,12 +605,8 @@ export default function ResumeBuilderPage() {
         if (!summaryText && !summaryHeading) return null;
         return (
           <section className="resumeSection" style={styles.resumeSectionBlock}>
-            <h3 style={styles.resumeSectionTitle}>
-              {summaryHeading || ui.summary}
-            </h3>
-            <p style={styles.resumeParagraph}>
-              {summaryText || "Add your professional summary here."}
-            </p>
+            <h3 style={styles.resumeSectionTitle}>{summaryHeading || ui.summary}</h3>
+            <p style={styles.resumeParagraph}>{summaryText || "Add your professional summary here."}</p>
           </section>
         );
 
@@ -964,33 +640,19 @@ export default function ResumeBuilderPage() {
                   <div>
                     <p style={styles.resumeEntryHeading}>
                       {item.companyName || "Company"}{" "}
-                      {item.city || item.state
-                        ? `— ${[item.city, item.state]
-                            .filter(Boolean)
-                            .join(", ")}`
-                        : ""}
+                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
                     </p>
-                    <p style={styles.resumeEntrySubheading}>
-                      {item.roleTitle || "Role Title"}
-                    </p>
+                    <p style={styles.resumeEntrySubheading}>{item.roleTitle || "Role Title"}</p>
                   </div>
                   <p style={styles.resumeEntryDates}>
-                    {formatDateRange(
-                      item.startMonth,
-                      item.startYear,
-                      item.endMonth,
-                      item.endYear,
-                      item.isPresent
-                    )}
+                    {formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
                   </p>
                 </div>
-                {item.bullets
-                  .filter((b) => b.text.trim())
-                  .map((bullet, bulletIndex) => (
-                    <p key={bulletIndex} style={styles.resumeBullet}>
-                      • {bullet.text}
-                    </p>
-                  ))}
+                {item.bullets.filter((b) => b.text.trim()).map((bullet, bulletIndex) => (
+                  <p key={bulletIndex} style={styles.resumeBullet}>
+                    • {bullet.text}
+                  </p>
+                ))}
               </div>
             ))}
           </section>
@@ -1007,11 +669,7 @@ export default function ResumeBuilderPage() {
                   <div>
                     <p style={styles.resumeEntryHeading}>
                       {item.schoolName || "School"}{" "}
-                      {item.city || item.state
-                        ? `— ${[item.city, item.state]
-                            .filter(Boolean)
-                            .join(", ")}`
-                        : ""}
+                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
                     </p>
                     <p style={styles.resumeEntrySubheading}>
                       {item.degree || "Degree"}
@@ -1019,13 +677,7 @@ export default function ResumeBuilderPage() {
                     </p>
                   </div>
                   <p style={styles.resumeEntryDates}>
-                    {formatDateRange(
-                      item.startMonth,
-                      item.startYear,
-                      item.endMonth,
-                      item.endYear,
-                      item.isPresent
-                    )}
+                    {formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
                   </p>
                 </div>
               </div>
@@ -1044,24 +696,14 @@ export default function ResumeBuilderPage() {
                   <div>
                     <p style={styles.resumeEntryHeading}>
                       {item.organizationName || "Organization"}{" "}
-                      {item.city || item.state
-                        ? `— ${[item.city, item.state]
-                            .filter(Boolean)
-                            .join(", ")}`
-                        : ""}
+                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
                     </p>
                     <p style={styles.resumeEntrySubheading}>
                       {item.certificateName || "Certificate / Course Name"}
                     </p>
                   </div>
                   <p style={styles.resumeEntryDates}>
-                    {formatDateRange(
-                      item.startMonth,
-                      item.startYear,
-                      item.endMonth,
-                      item.endYear,
-                      item.isPresent
-                    )}
+                    {formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
                   </p>
                 </div>
               </div>
@@ -1080,33 +722,19 @@ export default function ResumeBuilderPage() {
                   <div>
                     <p style={styles.resumeEntryHeading}>
                       {item.organizationName || "Organization"}{" "}
-                      {item.city || item.state
-                        ? `— ${[item.city, item.state]
-                            .filter(Boolean)
-                            .join(", ")}`
-                        : ""}
+                      {item.city || item.state ? `— ${[item.city, item.state].filter(Boolean).join(", ")}` : ""}
                     </p>
-                    <p style={styles.resumeEntrySubheading}>
-                      {item.roleTitle || "Role Title"}
-                    </p>
+                    <p style={styles.resumeEntrySubheading}>{item.roleTitle || "Role Title"}</p>
                   </div>
                   <p style={styles.resumeEntryDates}>
-                    {formatDateRange(
-                      item.startMonth,
-                      item.startYear,
-                      item.endMonth,
-                      item.endYear,
-                      item.isPresent
-                    )}
+                    {formatDateRange(item.startMonth, item.startYear, item.endMonth, item.endYear, item.isPresent)}
                   </p>
                 </div>
-                {item.bullets
-                  .filter((b) => b.text.trim())
-                  .map((bullet, bulletIndex) => (
-                    <p key={bulletIndex} style={styles.resumeBullet}>
-                      • {bullet.text}
-                    </p>
-                  ))}
+                {item.bullets.filter((b) => b.text.trim()).map((bullet, bulletIndex) => (
+                  <p key={bulletIndex} style={styles.resumeBullet}>
+                    • {bullet.text}
+                  </p>
+                ))}
               </div>
             ))}
           </section>
@@ -1134,129 +762,92 @@ export default function ResumeBuilderPage() {
     );
   }
 
+  if (!userId) {
+    return (
+      <main style={styles.page}>
+        <div style={styles.centerWrap}>
+          <div style={styles.lockedCard}>
+            <p style={styles.kicker}>Resume Generator</p>
+            <h1 style={styles.lockedTitle}>Sign in first to access this page.</h1>
+            <p style={styles.previewText}>
+              Create your Career Passport account first, then sign in and return here to build your resume.
+            </p>
+            <div style={styles.lockedButtons}>
+              <a href="/sign-up" style={styles.signUpButton}>
+                Sign Up
+              </a>
+              <a href="/sign-in" style={styles.signUpButton}>
+                Sign In
+              </a>
+              <a href="/profile" style={styles.signUpButtonDark}>
+                Profile
+              </a>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main style={styles.page}>
-   <style>{`
-  @media print {
-    @page {
-      margin: 0.5in;
-    }
+      <style>{`
+        @media print {
+          body {
+            background: white !important;
+          }
 
-    html,
-    body {
-      margin: 0 !important;
-      padding: 0 !important;
-      background: white !important;
-    }
+          body * {
+            visibility: hidden !important;
+          }
 
-    body * {
-      visibility: hidden !important;
-    }
+          .resumePrintWrap,
+          .resumePrintWrap * {
+            visibility: visible !important;
+          }
 
-    .resumePrintWrap,
-    .resumePrintWrap * {
-      visibility: visible !important;
-    }
-.resumePrintWrap {
-  position: static !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: white !important;
-}
+          .resumePrintWrap {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
 
-.topBar {
-  display: none !important;
-}
+          .resumePaper {
+            width: 100% !important;
+            min-height: auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 42px 38px 42px !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
 
-.container {
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-main {
-  min-height: auto !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
+          .resumeSection {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
 
-.layout {
-  display: block !important;
-}
+          .builderShell,
+          .fontBar {
+            display: none !important;
+          }
+        }
+      `}</style>
 
-.rightCol {
-  position: static !important;
-  top: 0 !important;
-  align-self: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.previewCard {
-  display: none !important;
-}
-.builderShell {
-  display: block !important;
-}
-
-.builderLeft {
-  display: none !important;
-}
-
-.resumePrintWrap {
-  display: block !important;
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  top: auto !important;
-  align-self: auto !important;
-}
-
-.resumePaper {
-  width: 100% !important;
-  ...
-}
-    .resumePaper {
-      width: 100% !important;
-      max-width: none !important;
-      min-height: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      border: none !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      background: white !important;
-      overflow: visible !important;
-    }
-
-    .resumeHeader {
-      break-inside: avoid !important;
-      page-break-inside: avoid !important;
-    }
-
-    .resumeSection {
-      break-inside: auto !important;
-      page-break-inside: auto !important;
-    }
-
-    .builderLeft,
-    .builderTopRow,
-    .siteButtons,
-    .flashMessage {
-      display: none !important;
-    }
-  }
-`}</style>
-
-      <div style={styles.container}>
-        <div style={styles.topBar}>
+      <div style={styles.fontBar}>
+        <div style={styles.fontBarInner}>
           <div>
-            <p style={styles.kicker}>{ui.pageKicker}</p>
-            <h1 style={styles.pageTitle}>{ui.pageTitle}</h1>
+            <p style={styles.fontBarKicker}>{ui.pageKicker}</p>
+            <h1 style={styles.fontBarTitle}>{ui.pageTitle}</h1>
+            <p style={styles.previewText}>2-page generator • up to 9 skills • up to 5 bullets per experience entry.</p>
           </div>
 
-          <div style={styles.topSelectors}>
+          <div style={styles.fontControls}>
             <div style={styles.topSelectGroup}>
               <label style={styles.topSelectLabel}>{ui.language}</label>
               <select
@@ -1285,876 +876,665 @@ main {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="builderShell" style={styles.layout}>
-          <div className="builderLeft" style={styles.leftCol}>
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>PLAN</p>
-              <div style={styles.rowBetween}>
-                <h2 style={styles.cardTitle}>{ui.plan}</h2>
-                <select
-                  value={plan}
-                  onChange={(e) => setPlan(e.target.value as ResumePlan)}
-                  style={styles.planSelect}
-                >
-                  <option value="free">Free</option>
-                  <option value="access">Resume Access</option>
-                  <option value="premium">Premium</option>
-                  <option value="pro">Premium Plus / Pro</option>
-                </select>
+      <div className="builderShell" style={styles.layout}>
+        <div style={styles.leftCol}>
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>RESUME GENERATOR</p>
+            <h2 style={styles.cardTitle}>Create your resume</h2>
+            <p style={styles.previewText}>
+              HireMinds Resume Generator is currently open to all users. Build your resume, save it to your profile,
+              and print or export it when ready.
+            </p>
+          </section>
+
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>HEADER</p>
+            <h2 style={styles.cardTitle}>{ui.header}</h2>
+
+            <div style={styles.twoColForm}>
+              <div>
+                <label style={styles.inputLabel}>Full Name</label>
+                <input value={fullName} onChange={(e) => setFullName(e.target.value)} style={styles.input} placeholder="Full Name" />
               </div>
-              <div style={styles.planInfoBox}>
-                <p style={styles.planName}>{planInfo.label}</p>
-                <p style={styles.planDescription}>{planInfo.description}</p>
+              <div>
+                <label style={styles.inputLabel}>Phone Number</label>
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} style={styles.input} placeholder="Phone Number" />
               </div>
-            </section>
-
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>HEADER</p>
-              <h2 style={styles.cardTitle}>{ui.header}</h2>
-
-              <div style={styles.twoColForm}>
-                <div>
-                  <label style={styles.inputLabel}>Full Name</label>
-                  <input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    style={styles.input}
-                    placeholder="Full Name"
-                  />
-                </div>
-                <div>
-                  <label style={styles.inputLabel}>Phone Number</label>
-                  <input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    style={styles.input}
-                    placeholder="Phone Number"
-                  />
-                </div>
-                <div>
-                  <label style={styles.inputLabel}>City (optional)</label>
-                  <input
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    style={styles.input}
-                    placeholder="City"
-                  />
-                </div>
-                <div>
-                  <label style={styles.inputLabel}>State (optional)</label>
-                  <input
-                    value={stateName}
-                    onChange={(e) => setStateName(e.target.value)}
-                    style={styles.input}
-                    placeholder="State"
-                  />
-                </div>
-                <div>
-                  <label style={styles.inputLabel}>Email</label>
-                  <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={styles.input}
-                    placeholder="Email"
-                  />
-                </div>
-                <div>
-                  <label style={styles.inputLabel}>LinkedIn (optional)</label>
-                  <input
-                    value={linkedinUrl}
-                    onChange={(e) => setLinkedinUrl(e.target.value)}
-                    style={styles.input}
-                    placeholder="LinkedIn URL"
-                  />
-                </div>
+              <div>
+                <label style={styles.inputLabel}>City (optional)</label>
+                <input value={city} onChange={(e) => setCity(e.target.value)} style={styles.input} placeholder="City" />
               </div>
-            </section>
+              <div>
+                <label style={styles.inputLabel}>State (optional)</label>
+                <input value={stateName} onChange={(e) => setStateName(e.target.value)} style={styles.input} placeholder="State" />
+              </div>
+              <div>
+                <label style={styles.inputLabel}>Email</label>
+                <input value={email} onChange={(e) => setEmail(e.target.value)} style={styles.input} placeholder="Email" />
+              </div>
+              <div>
+                <label style={styles.inputLabel}>LinkedIn (optional)</label>
+                <input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} style={styles.input} placeholder="LinkedIn URL" />
+              </div>
+            </div>
+          </section>
 
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>SUMMARY</p>
-              <h2 style={styles.cardTitle}>{ui.summaryAndSkills}</h2>
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>SUMMARY</p>
+            <h2 style={styles.cardTitle}>{ui.summaryAndSkills}</h2>
 
-              <label style={styles.inputLabel}>
-                Summary Heading (optional, can be blank or "Summary")
-              </label>
+            <div style={styles.fieldBlock}>
+              <label style={styles.inputLabel}>Summary Heading</label>
               <input
                 value={summaryHeading}
                 onChange={(e) => setSummaryHeading(e.target.value)}
                 style={styles.input}
                 placeholder="Summary"
               />
+            </div>
 
-              <label style={styles.inputLabel}>Summary</label>
+            <div style={styles.fieldBlock}>
+              <label style={styles.inputLabel}>Professional Summary</label>
               <textarea
                 value={summaryText}
                 onChange={(e) => setSummaryText(e.target.value)}
                 style={styles.textarea}
-                placeholder="Example: Client-focused workforce development professional with experience in talent acquisition, resume writing, employer engagement, and job readiness coaching."
+                placeholder="Write a short professional summary."
               />
+            </div>
 
-              <label style={styles.inputLabel}>
-                Skills (comma separated, up to 9)
-              </label>
-              <input
+            <div style={styles.fieldBlock}>
+              <label style={styles.inputLabel}>Skills (comma separated, up to 9)</label>
+              <textarea
                 value={skillsInput}
                 onChange={(e) => setSkillsInput(e.target.value)}
-                style={styles.input}
-                placeholder="Recruiting, ATS, Sourcing, Interviewing"
+                style={styles.textareaSmall}
+                placeholder="Communication, Teamwork, Customer Service"
               />
-            </section>
+            </div>
+          </section>
 
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>EXPERIENCE</p>
-              <h2 style={styles.cardTitle}>{ui.experience}</h2>
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>EXPERIENCE</p>
+            <h2 style={styles.cardTitle}>{ui.experience}</h2>
 
-              {experiences.map((item, index) => (
-                <div key={index} style={styles.sectionGroup}>
-                  <div style={styles.twoColForm}>
-                    <div>
-                      <label style={styles.inputLabel}>Company</label>
-                      <input
-                        value={item.companyName}
-                        onChange={(e) =>
-                          updateExperience(index, "companyName", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="Company Name"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>Role</label>
-                      <input
-                        value={item.roleTitle}
-                        onChange={(e) =>
-                          updateExperience(index, "roleTitle", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="Role Title"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>City</label>
-                      <input
-                        value={item.city}
-                        onChange={(e) =>
-                          updateExperience(index, "city", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="City"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>State</label>
-                      <input
-                        value={item.state}
-                        onChange={(e) =>
-                          updateExperience(index, "state", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="State"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>From Month</label>
-                      <select
-                        value={item.startMonth}
-                        onChange={(e) =>
-                          updateExperience(index, "startMonth", e.target.value)
-                        }
-                        style={styles.input}
-                      >
-                        {MONTHS.map((month) => (
-                          <option key={month} value={month}>
-                            {month || "Select"}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>From Year</label>
-                      <input
-                        value={item.startYear}
-                        onChange={(e) =>
-                          updateExperience(index, "startYear", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="2022"
-                      />
-                    </div>
-                  </div>
-
-                  <label style={styles.checkboxRow}>
-                    <input
-                      type="checkbox"
-                      checked={item.isPresent}
-                      onChange={(e) =>
-                        updateExperience(index, "isPresent", e.target.checked)
-                      }
-                    />
-                    <span>{ui.currentlyWorkHere}</span>
-                  </label>
-
-                  {!item.isPresent && (
-                    <div style={styles.twoColForm}>
-                      <div>
-                        <label style={styles.inputLabel}>To Month</label>
-                        <select
-                          value={item.endMonth}
-                          onChange={(e) =>
-                            updateExperience(index, "endMonth", e.target.value)
-                          }
-                          style={styles.input}
-                        >
-                          {MONTHS.map((month) => (
-                            <option key={month} value={month}>
-                              {month || "Select"}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label style={styles.inputLabel}>To Year</label>
-                        <input
-                          value={item.endYear}
-                          onChange={(e) =>
-                            updateExperience(index, "endYear", e.target.value)
-                          }
-                          style={styles.input}
-                          placeholder="2024"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <p style={styles.helper}>
-                    {plan === "free"
-                      ? "Free plan allows up to 4 bullet points per role."
-                      : "Paid plans allow up to 6 bullet points per role."}
-                  </p>
-
-                  {item.bullets.map((bullet, bulletIndex) => (
-                    <div key={bulletIndex}>
-                      <label style={styles.inputLabel}>
-                        Bullet {bulletIndex + 1}
-                      </label>
-                      <input
-                        value={bullet.text}
-                        onChange={(e) =>
-                          updateExperienceBullet(
-                            index,
-                            bulletIndex,
-                            e.target.value
-                          )
-                        }
-                        style={styles.input}
-                        placeholder="Describe the work you did"
-                      />
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() => addExperienceBullet(index)}
-                    style={styles.smallButton}
-                  >
-                    + Add Bullet
+            {experiences.map((item, index) => (
+              <div key={index} style={styles.entryCard}>
+                <div style={styles.rowBetween}>
+                  <h3 style={styles.entryTitle}>Experience {index + 1}</h3>
+                  <button type="button" onClick={() => addExperience()} style={styles.smallButton}>
+                    Add Experience
                   </button>
                 </div>
-              ))}
 
-              <button
-                type="button"
-                onClick={addExperience}
-                style={styles.smallButton}
-              >
-                + Add Work Experience
-              </button>
-            </section>
-
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>EDUCATION</p>
-              <h2 style={styles.cardTitle}>{ui.education}</h2>
-
-              {educationItems.map((item, index) => (
-                <div key={index} style={styles.sectionGroup}>
-                  <div style={styles.twoColForm}>
-                    <div>
-                      <label style={styles.inputLabel}>School / College</label>
-                      <input
-                        value={item.schoolName}
-                        onChange={(e) =>
-                          updateEducation(index, "schoolName", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="School / College"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>
-                        Degree / Course of Study
-                      </label>
-                      <input
-                        value={item.degree}
-                        onChange={(e) =>
-                          updateEducation(index, "degree", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="Degree / Course of Study"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>City</label>
-                      <input
-                        value={item.city}
-                        onChange={(e) =>
-                          updateEducation(index, "city", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="City"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>State</label>
-                      <input
-                        value={item.state}
-                        onChange={(e) =>
-                          updateEducation(index, "state", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="State"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>From Month</label>
-                      <select
-                        value={item.startMonth}
-                        onChange={(e) =>
-                          updateEducation(index, "startMonth", e.target.value)
-                        }
-                        style={styles.input}
-                      >
-                        {MONTHS.map((month) => (
-                          <option key={month} value={month}>
-                            {month || "Select"}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>From Year</label>
-                      <input
-                        value={item.startYear}
-                        onChange={(e) =>
-                          updateEducation(index, "startYear", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="2019"
-                      />
-                    </div>
-                  </div>
-
-                  <label style={styles.checkboxRow}>
+                <div style={styles.twoColForm}>
+                  <div>
+                    <label style={styles.inputLabel}>Company</label>
                     <input
-                      type="checkbox"
-                      checked={item.isPresent}
-                      onChange={(e) =>
-                        updateEducation(index, "isPresent", e.target.checked)
-                      }
+                      value={item.companyName}
+                      onChange={(e) => updateExperience(index, "companyName", e.target.value)}
+                      style={styles.input}
+                      placeholder="Company"
                     />
-                    <span>{ui.currentlyAttendHere}</span>
-                  </label>
-
-                  {!item.isPresent && (
-                    <div style={styles.twoColForm}>
-                      <div>
-                        <label style={styles.inputLabel}>To Month</label>
-                        <select
-                          value={item.endMonth}
-                          onChange={(e) =>
-                            updateEducation(index, "endMonth", e.target.value)
-                          }
-                          style={styles.input}
-                        >
-                          {MONTHS.map((month) => (
-                            <option key={month} value={month}>
-                              {month || "Select"}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label style={styles.inputLabel}>To Year</label>
-                        <input
-                          value={item.endYear}
-                          onChange={(e) =>
-                            updateEducation(index, "endYear", e.target.value)
-                          }
-                          style={styles.input}
-                          placeholder="2023"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <label style={styles.inputLabel}>GPA (optional)</label>
-                  <input
-                    value={item.gpa}
-                    onChange={(e) =>
-                      updateEducation(index, "gpa", e.target.value)
-                    }
-                    style={styles.input}
-                    placeholder="3.8"
-                  />
-                </div>
-              ))}
-
-              <button
-                type="button"
-                onClick={addEducation}
-                style={styles.smallButton}
-              >
-                + Add Education
-              </button>
-            </section>
-
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>CERTIFICATES</p>
-              <h2 style={styles.cardTitle}>{ui.certifications}</h2>
-
-              {certificateItems.map((item, index) => (
-                <div key={index} style={styles.sectionGroup}>
-                  <div style={styles.twoColForm}>
-                    <div>
-                      <label style={styles.inputLabel}>
-                        Organization / Program
-                      </label>
-                      <input
-                        value={item.organizationName}
-                        onChange={(e) =>
-                          updateCertificate(
-                            index,
-                            "organizationName",
-                            e.target.value
-                          )
-                        }
-                        style={styles.input}
-                        placeholder="Organization / Program"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>
-                        Certificate / Course Name
-                      </label>
-                      <input
-                        value={item.certificateName}
-                        onChange={(e) =>
-                          updateCertificate(
-                            index,
-                            "certificateName",
-                            e.target.value
-                          )
-                        }
-                        style={styles.input}
-                        placeholder="Certificate / Course Name"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>City</label>
-                      <input
-                        value={item.city}
-                        onChange={(e) =>
-                          updateCertificate(index, "city", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="City"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>State</label>
-                      <input
-                        value={item.state}
-                        onChange={(e) =>
-                          updateCertificate(index, "state", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="State"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>From Month</label>
-                      <select
-                        value={item.startMonth}
-                        onChange={(e) =>
-                          updateCertificate(index, "startMonth", e.target.value)
-                        }
-                        style={styles.input}
-                      >
-                        {MONTHS.map((month) => (
-                          <option key={month} value={month}>
-                            {month || "Select"}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>From Year</label>
-                      <input
-                        value={item.startYear}
-                        onChange={(e) =>
-                          updateCertificate(index, "startYear", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="2024"
-                      />
-                    </div>
                   </div>
-
-                  <label style={styles.checkboxRow}>
+                  <div>
+                    <label style={styles.inputLabel}>Role Title</label>
                     <input
-                      type="checkbox"
-                      checked={item.isPresent}
-                      onChange={(e) =>
-                        updateCertificate(index, "isPresent", e.target.checked)
-                      }
+                      value={item.roleTitle}
+                      onChange={(e) => updateExperience(index, "roleTitle", e.target.value)}
+                      style={styles.input}
+                      placeholder="Role Title"
                     />
-                    <span>{ui.currentlyCompletingCert}</span>
-                  </label>
-
-                  {!item.isPresent && (
-                    <div style={styles.twoColForm}>
-                      <div>
-                        <label style={styles.inputLabel}>To Month</label>
-                        <select
-                          value={item.endMonth}
-                          onChange={(e) =>
-                            updateCertificate(index, "endMonth", e.target.value)
-                          }
-                          style={styles.input}
-                        >
-                          {MONTHS.map((month) => (
-                            <option key={month} value={month}>
-                              {month || "Select"}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label style={styles.inputLabel}>To Year</label>
-                        <input
-                          value={item.endYear}
-                          onChange={(e) =>
-                            updateCertificate(index, "endYear", e.target.value)
-                          }
-                          style={styles.input}
-                          placeholder="2024"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              <button
-                type="button"
-                onClick={addCertificate}
-                style={styles.smallButton}
-              >
-                + Add Certification
-              </button>
-            </section>
-
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>VOLUNTEER</p>
-              <h2 style={styles.cardTitle}>{ui.volunteer}</h2>
-
-              {volunteerItems.map((item, index) => (
-                <div key={index} style={styles.sectionGroup}>
-                  <div style={styles.twoColForm}>
-                    <div>
-                      <label style={styles.inputLabel}>Organization</label>
-                      <input
-                        value={item.organizationName}
-                        onChange={(e) =>
-                          updateVolunteer(
-                            index,
-                            "organizationName",
-                            e.target.value
-                          )
-                        }
-                        style={styles.input}
-                        placeholder="Organization Name"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>Role</label>
-                      <input
-                        value={item.roleTitle}
-                        onChange={(e) =>
-                          updateVolunteer(index, "roleTitle", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="Role Title"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>City</label>
-                      <input
-                        value={item.city}
-                        onChange={(e) =>
-                          updateVolunteer(index, "city", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="City"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>State</label>
-                      <input
-                        value={item.state}
-                        onChange={(e) =>
-                          updateVolunteer(index, "state", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="State"
-                      />
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>From Month</label>
-                      <select
-                        value={item.startMonth}
-                        onChange={(e) =>
-                          updateVolunteer(index, "startMonth", e.target.value)
-                        }
-                        style={styles.input}
-                      >
-                        {MONTHS.map((month) => (
-                          <option key={month} value={month}>
-                            {month || "Select"}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={styles.inputLabel}>From Year</label>
-                      <input
-                        value={item.startYear}
-                        onChange={(e) =>
-                          updateVolunteer(index, "startYear", e.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="2020"
-                      />
-                    </div>
                   </div>
-
-                  <label style={styles.checkboxRow}>
+                  <div>
+                    <label style={styles.inputLabel}>City</label>
                     <input
-                      type="checkbox"
-                      checked={item.isPresent}
-                      onChange={(e) =>
-                        updateVolunteer(index, "isPresent", e.target.checked)
-                      }
+                      value={item.city}
+                      onChange={(e) => updateExperience(index, "city", e.target.value)}
+                      style={styles.input}
+                      placeholder="City"
                     />
-                    <span>{ui.currentlyVolunteerHere}</span>
-                  </label>
-
-                  {!item.isPresent && (
-                    <div style={styles.twoColForm}>
-                      <div>
-                        <label style={styles.inputLabel}>To Month</label>
-                        <select
-                          value={item.endMonth}
-                          onChange={(e) =>
-                            updateVolunteer(index, "endMonth", e.target.value)
-                          }
-                          style={styles.input}
-                        >
-                          {MONTHS.map((month) => (
-                            <option key={month} value={month}>
-                              {month || "Select"}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label style={styles.inputLabel}>To Year</label>
-                        <input
-                          value={item.endYear}
-                          onChange={(e) =>
-                            updateVolunteer(index, "endYear", e.target.value)
-                          }
-                          style={styles.input}
-                          placeholder="2022"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <p style={styles.helper}>
-                    {plan === "free"
-                      ? "Free plan allows up to 4 bullet points for volunteer work."
-                      : "Paid plans allow up to 6 bullet points for volunteer work."}
-                  </p>
-
-                  {item.bullets.map((bullet, bulletIndex) => (
-                    <div key={bulletIndex}>
-                      <label style={styles.inputLabel}>
-                        Bullet {bulletIndex + 1}
-                      </label>
-                      <input
-                        value={bullet.text}
-                        onChange={(e) =>
-                          updateVolunteerBullet(
-                            index,
-                            bulletIndex,
-                            e.target.value
-                          )
-                        }
-                        style={styles.input}
-                        placeholder="Describe your volunteer work"
-                      />
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() => addVolunteerBullet(index)}
-                    style={styles.smallButton}
-                  >
-                    + Add Bullet
-                  </button>
-                </div>
-              ))}
-
-              <button
-                type="button"
-                onClick={addVolunteer}
-                style={styles.smallButton}
-              >
-                + Add Volunteer Work
-              </button>
-            </section>
-
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>ACCOMPLISHMENTS</p>
-              <h2 style={styles.cardTitle}>{ui.accomplishments}</h2>
-              <label style={styles.inputLabel}>Accomplishments</label>
-              <textarea
-                value={accomplishments}
-                onChange={(e) => setAccomplishments(e.target.value)}
-                style={styles.textarea}
-                placeholder="Awards, recognitions, achievements, notable wins"
-              />
-            </section>
-
-            <section style={styles.card}>
-              <p style={styles.cardKicker}>ORDER</p>
-              <h2 style={styles.cardTitle}>{ui.moveSections}</h2>
-
-              {sectionOrder.map((section, index) => (
-                <div key={section} style={styles.orderRow}>
-                  <span style={styles.orderLabel}>
-                    {section === "summary"
-                      ? "Summary"
-                      : section === "skills"
-                      ? "Skills"
-                      : section === "experience"
-                      ? "Experience"
-                      : section === "education"
-                      ? "Education"
-                      : section === "certifications"
-                      ? "Certifications"
-                      : section === "volunteer"
-                      ? "Volunteer"
-                      : "Accomplishments"}
-                  </span>
-                  <div style={styles.orderButtons}>
-                    <button
-                      type="button"
-                      onClick={() => moveSection(index, "up")}
-                      style={styles.orderButton}
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>State</label>
+                    <input
+                      value={item.state}
+                      onChange={(e) => updateExperience(index, "state", e.target.value)}
+                      style={styles.input}
+                      placeholder="State"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Start Month</label>
+                    <select
+                      value={item.startMonth}
+                      onChange={(e) => updateExperience(index, "startMonth", e.target.value)}
+                      style={styles.select}
                     >
+                      {MONTHS.map((month) => (
+                        <option key={`start-${month}`} value={month}>
+                          {month || "Month"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Start Year</label>
+                    <input
+                      value={item.startYear}
+                      onChange={(e) => updateExperience(index, "startYear", e.target.value)}
+                      style={styles.input}
+                      placeholder="2024"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>End Month</label>
+                    <select
+                      value={item.endMonth}
+                      onChange={(e) => updateExperience(index, "endMonth", e.target.value)}
+                      style={styles.select}
+                      disabled={item.isPresent}
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={`end-${month}`} value={month}>
+                          {month || "Month"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>End Year</label>
+                    <input
+                      value={item.endYear}
+                      onChange={(e) => updateExperience(index, "endYear", e.target.value)}
+                      style={styles.input}
+                      placeholder="2025"
+                      disabled={item.isPresent}
+                    />
+                  </div>
+                </div>
+
+                <label style={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={item.isPresent}
+                    onChange={(e) => updateExperience(index, "isPresent", e.target.checked)}
+                  />
+                  <span>{ui.currentlyWorkHere}</span>
+                </label>
+
+                <div style={styles.bulletWrap}>
+                  {item.bullets.map((bullet, bulletIndex) => (
+                    <div key={bulletIndex}>
+                      <label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
+                      <textarea
+                        value={bullet.text}
+                        onChange={(e) => updateExperienceBullet(index, bulletIndex, e.target.value)}
+                        style={styles.textareaSmall}
+                        placeholder="Describe your work, impact, or responsibilities."
+                      />
+                    </div>
+                  ))}
+                  {item.bullets.length < BULLET_LIMIT ? (
+                    <button type="button" onClick={() => addExperienceBullet(index)} style={styles.smallButton}>
+                      Add Bullet
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>EDUCATION</p>
+            <h2 style={styles.cardTitle}>{ui.education}</h2>
+
+            {educationItems.map((item, index) => (
+              <div key={index} style={styles.entryCard}>
+                <div style={styles.rowBetween}>
+                  <h3 style={styles.entryTitle}>Education {index + 1}</h3>
+                  <button type="button" onClick={() => addEducation()} style={styles.smallButton}>
+                    Add Education
+                  </button>
+                </div>
+
+                <div style={styles.twoColForm}>
+                  <div>
+                    <label style={styles.inputLabel}>School</label>
+                    <input
+                      value={item.schoolName}
+                      onChange={(e) => updateEducation(index, "schoolName", e.target.value)}
+                      style={styles.input}
+                      placeholder="School"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Degree</label>
+                    <input
+                      value={item.degree}
+                      onChange={(e) => updateEducation(index, "degree", e.target.value)}
+                      style={styles.input}
+                      placeholder="Degree / Program"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>City</label>
+                    <input
+                      value={item.city}
+                      onChange={(e) => updateEducation(index, "city", e.target.value)}
+                      style={styles.input}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>State</label>
+                    <input
+                      value={item.state}
+                      onChange={(e) => updateEducation(index, "state", e.target.value)}
+                      style={styles.input}
+                      placeholder="State"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>GPA (optional)</label>
+                    <input
+                      value={item.gpa}
+                      onChange={(e) => updateEducation(index, "gpa", e.target.value)}
+                      style={styles.input}
+                      placeholder="GPA"
+                    />
+                  </div>
+                  <div />
+                  <div>
+                    <label style={styles.inputLabel}>Start Month</label>
+                    <select
+                      value={item.startMonth}
+                      onChange={(e) => updateEducation(index, "startMonth", e.target.value)}
+                      style={styles.select}
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={`edu-start-${month}`} value={month}>
+                          {month || "Month"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Start Year</label>
+                    <input
+                      value={item.startYear}
+                      onChange={(e) => updateEducation(index, "startYear", e.target.value)}
+                      style={styles.input}
+                      placeholder="2022"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>End Month</label>
+                    <select
+                      value={item.endMonth}
+                      onChange={(e) => updateEducation(index, "endMonth", e.target.value)}
+                      style={styles.select}
+                      disabled={item.isPresent}
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={`edu-end-${month}`} value={month}>
+                          {month || "Month"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>End Year</label>
+                    <input
+                      value={item.endYear}
+                      onChange={(e) => updateEducation(index, "endYear", e.target.value)}
+                      style={styles.input}
+                      placeholder="2026"
+                      disabled={item.isPresent}
+                    />
+                  </div>
+                </div>
+
+                <label style={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={item.isPresent}
+                    onChange={(e) => updateEducation(index, "isPresent", e.target.checked)}
+                  />
+                  <span>{ui.currentlyAttendHere}</span>
+                </label>
+              </div>
+            ))}
+          </section>
+
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>CERTIFICATIONS</p>
+            <h2 style={styles.cardTitle}>{ui.certifications}</h2>
+
+            {certificateItems.map((item, index) => (
+              <div key={index} style={styles.entryCard}>
+                <div style={styles.rowBetween}>
+                  <h3 style={styles.entryTitle}>Certification {index + 1}</h3>
+                  <button type="button" onClick={() => addCertificate()} style={styles.smallButton}>
+                    Add Certification
+                  </button>
+                </div>
+
+                <div style={styles.twoColForm}>
+                  <div>
+                    <label style={styles.inputLabel}>Organization</label>
+                    <input
+                      value={item.organizationName}
+                      onChange={(e) => updateCertificate(index, "organizationName", e.target.value)}
+                      style={styles.input}
+                      placeholder="Organization"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Certificate Name</label>
+                    <input
+                      value={item.certificateName}
+                      onChange={(e) => updateCertificate(index, "certificateName", e.target.value)}
+                      style={styles.input}
+                      placeholder="Certificate / Course Name"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>City</label>
+                    <input
+                      value={item.city}
+                      onChange={(e) => updateCertificate(index, "city", e.target.value)}
+                      style={styles.input}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>State</label>
+                    <input
+                      value={item.state}
+                      onChange={(e) => updateCertificate(index, "state", e.target.value)}
+                      style={styles.input}
+                      placeholder="State"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Start Month</label>
+                    <select
+                      value={item.startMonth}
+                      onChange={(e) => updateCertificate(index, "startMonth", e.target.value)}
+                      style={styles.select}
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={`cert-start-${month}`} value={month}>
+                          {month || "Month"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Start Year</label>
+                    <input
+                      value={item.startYear}
+                      onChange={(e) => updateCertificate(index, "startYear", e.target.value)}
+                      style={styles.input}
+                      placeholder="2025"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>End Month</label>
+                    <select
+                      value={item.endMonth}
+                      onChange={(e) => updateCertificate(index, "endMonth", e.target.value)}
+                      style={styles.select}
+                      disabled={item.isPresent}
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={`cert-end-${month}`} value={month}>
+                          {month || "Month"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>End Year</label>
+                    <input
+                      value={item.endYear}
+                      onChange={(e) => updateCertificate(index, "endYear", e.target.value)}
+                      style={styles.input}
+                      placeholder="2025"
+                      disabled={item.isPresent}
+                    />
+                  </div>
+                </div>
+
+                <label style={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={item.isPresent}
+                    onChange={(e) => updateCertificate(index, "isPresent", e.target.checked)}
+                  />
+                  <span>{ui.currentlyCompletingCert}</span>
+                </label>
+              </div>
+            ))}
+          </section>
+
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>VOLUNTEER</p>
+            <h2 style={styles.cardTitle}>{ui.volunteer}</h2>
+
+            {volunteerItems.map((item, index) => (
+              <div key={index} style={styles.entryCard}>
+                <div style={styles.rowBetween}>
+                  <h3 style={styles.entryTitle}>Volunteer {index + 1}</h3>
+                  <button type="button" onClick={() => addVolunteer()} style={styles.smallButton}>
+                    Add Volunteer
+                  </button>
+                </div>
+
+                <div style={styles.twoColForm}>
+                  <div>
+                    <label style={styles.inputLabel}>Organization</label>
+                    <input
+                      value={item.organizationName}
+                      onChange={(e) => updateVolunteer(index, "organizationName", e.target.value)}
+                      style={styles.input}
+                      placeholder="Organization"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Role Title</label>
+                    <input
+                      value={item.roleTitle}
+                      onChange={(e) => updateVolunteer(index, "roleTitle", e.target.value)}
+                      style={styles.input}
+                      placeholder="Role Title"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>City</label>
+                    <input
+                      value={item.city}
+                      onChange={(e) => updateVolunteer(index, "city", e.target.value)}
+                      style={styles.input}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>State</label>
+                    <input
+                      value={item.state}
+                      onChange={(e) => updateVolunteer(index, "state", e.target.value)}
+                      style={styles.input}
+                      placeholder="State"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Start Month</label>
+                    <select
+                      value={item.startMonth}
+                      onChange={(e) => updateVolunteer(index, "startMonth", e.target.value)}
+                      style={styles.select}
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={`vol-start-${month}`} value={month}>
+                          {month || "Month"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>Start Year</label>
+                    <input
+                      value={item.startYear}
+                      onChange={(e) => updateVolunteer(index, "startYear", e.target.value)}
+                      style={styles.input}
+                      placeholder="2024"
+                    />
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>End Month</label>
+                    <select
+                      value={item.endMonth}
+                      onChange={(e) => updateVolunteer(index, "endMonth", e.target.value)}
+                      style={styles.select}
+                      disabled={item.isPresent}
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={`vol-end-${month}`} value={month}>
+                          {month || "Month"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.inputLabel}>End Year</label>
+                    <input
+                      value={item.endYear}
+                      onChange={(e) => updateVolunteer(index, "endYear", e.target.value)}
+                      style={styles.input}
+                      placeholder="2025"
+                      disabled={item.isPresent}
+                    />
+                  </div>
+                </div>
+
+                <label style={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={item.isPresent}
+                    onChange={(e) => updateVolunteer(index, "isPresent", e.target.checked)}
+                  />
+                  <span>{ui.currentlyVolunteerHere}</span>
+                </label>
+
+                <div style={styles.bulletWrap}>
+                  {item.bullets.map((bullet, bulletIndex) => (
+                    <div key={bulletIndex}>
+                      <label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
+                      <textarea
+                        value={bullet.text}
+                        onChange={(e) => updateVolunteerBullet(index, bulletIndex, e.target.value)}
+                        style={styles.textareaSmall}
+                        placeholder="Describe your volunteer work or impact."
+                      />
+                    </div>
+                  ))}
+                  {item.bullets.length < BULLET_LIMIT ? (
+                    <button type="button" onClick={() => addVolunteerBullet(index)} style={styles.smallButton}>
+                      Add Bullet
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>ACCOMPLISHMENTS</p>
+            <h2 style={styles.cardTitle}>{ui.accomplishments}</h2>
+            <textarea
+              value={accomplishments}
+              onChange={(e) => setAccomplishments(e.target.value)}
+              style={styles.textarea}
+              placeholder="List awards, achievements, major results, or accomplishments."
+            />
+          </section>
+
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>LAYOUT</p>
+            <h2 style={styles.cardTitle}>{ui.moveSections}</h2>
+
+            <div style={styles.sectionMoveWrap}>
+              {sectionOrder.map((section, index) => (
+                <div key={section} style={styles.sectionMoveRow}>
+                  <span style={styles.sectionMoveLabel}>{section.toUpperCase()}</span>
+                  <div style={styles.sectionMoveButtons}>
+                    <button type="button" onClick={() => moveSection(index, "up")} style={styles.smallButton}>
                       Up
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => moveSection(index, "down")}
-                      style={styles.orderButton}
-                    >
+                    <button type="button" onClick={() => moveSection(index, "down")} style={styles.smallButton}>
                       Down
                     </button>
                   </div>
                 </div>
               ))}
-            </section>
+            </div>
+          </section>
 
-            {message ? (
-              <div className="flashMessage" style={styles.messageBox}>
-                {message}
-              </div>
-            ) : null}
+          <section style={styles.card}>
+            <p style={styles.cardKicker}>ACTIONS</p>
+            <h2 style={styles.cardTitle}>Save and Export</h2>
 
-            <div className="siteButtons" style={styles.footerButtons}>
-              <button
-                type="button"
-                onClick={handleSaveResume}
-                disabled={saving}
-                style={styles.saveButton}
-              >
+            <div style={styles.actionButtons}>
+              <button onClick={handleSaveResume} disabled={saving} style={styles.primaryActionButton}>
                 {saving ? "Saving..." : ui.saveResume}
               </button>
-              <button
-                type="button"
-                onClick={handlePrint}
-                style={styles.printButton}
-              >
+
+              <button onClick={handlePrint} style={styles.secondaryActionButton}>
                 {ui.printResume}
               </button>
+            </div>
+
+            {message ? <p style={styles.messageBox}>{message}</p> : null}
+
+            <div style={styles.actionLinks}>
               <a href="/profile" style={styles.backButton}>
                 {ui.backToProfile}
               </a>
               {passportSlug ? (
-                <a
-                  href={`/passport/${passportSlug}`}
-                  style={styles.backButton}
-                >
+                <a href={`/passport/${passportSlug}`} style={styles.backButton}>
                   {ui.viewPublicProfile}
                 </a>
               ) : null}
             </div>
-          </div>
+          </section>
+        </div>
 
-          <div className="resumePrintWrap" style={styles.rightCol}>
-            <div className="builderTopRow" style={styles.previewCard}>
-              <p style={styles.cardKicker}>LIVE PREVIEW</p>
-              <h2 style={styles.cardTitle}>{ui.livePreview}</h2>
-              <p style={styles.previewHelp}>{ui.previewHelp}</p>
-            </div>
+        <div style={styles.rightCol}>
+          <div style={styles.previewCard}>
+            <p style={styles.cardKicker}>{ui.livePreview}</p>
+            <p style={styles.previewText}>{ui.previewHelp}</p>
 
-          <div
-  ref={resumePrintRef}
-  className="resumePaper"
-  style={{
-    ...styles.resumePaper,
-    fontFamily,
-  }}
->
-              <div className="resumeHeader" style={styles.resumeHeader}>
-                <h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
-                <p style={styles.resumeContact}>
-                  {[phone, email, [city, stateName].filter(Boolean).join(", ")]
-                    .filter(Boolean)
-                    .join(" • ")}
-                </p>
-                {linkedinUrl ? (
-                  <p style={styles.resumeLinkedin}>{linkedinUrl}</p>
-                ) : null}
+            <div className="resumePrintWrap" ref={resumePrintRef}>
+              <div className="resumePaper" style={{ ...styles.resumePaper, fontFamily }}>
+                <div className="resumeHeader" style={styles.resumeHeader}>
+                  <h1 style={styles.resumeName}>{fullName || "Your Name"}</h1>
+                  <p style={styles.resumeContact}>
+                    {[phone, email, [city, stateName].filter(Boolean).join(", ")].filter(Boolean).join(" • ") ||
+                      "Phone • Email • City, State"}
+                  </p>
+                  {linkedinUrl ? <p style={styles.resumeLinkedin}>{linkedinUrl}</p> : null}
+                </div>
+
+                <div style={styles.resumePagesWrap}>
+                  {sectionOrder.map((section) => (
+                    <div key={section}>{renderResumeSection(section)}</div>
+                  ))}
+                </div>
               </div>
-
-              {sectionOrder.map((section) => (
-                <div key={section}>{renderResumeSection(section)}</div>
-              ))}
             </div>
           </div>
         </div>
@@ -2166,289 +1546,317 @@ main {
 const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)",
-    color: "#f5f5f5",
-    padding: "24px",
-    fontFamily:
-      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  },
-  container: {
-    maxWidth: "1380px",
-    margin: "0 auto",
+    background: "linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
+    color: "#e7e7e7",
+    fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   centerWrap: {
-    minHeight: "70vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "18px",
-    color: "#e5e7eb",
+    maxWidth: "1200px",
+    margin: "0 auto",
+    padding: "48px 24px",
   },
-  topBar: {
+  lockedCard: {
+    maxWidth: "760px",
+    margin: "0 auto",
+    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
+    border: "1px solid #262626",
+    borderRadius: "28px",
+    padding: "32px",
+    textAlign: "center",
+  },
+  lockedTitle: {
+    margin: "0 0 14px",
+    fontSize: "36px",
+    fontWeight: 600,
+    color: "#f5f5f5",
+  },
+  lockedButtons: {
+    display: "flex",
+    gap: "12px",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    marginTop: "18px",
+  },
+  signUpButton: {
+    background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+    color: "#09090b",
+    border: "none",
+    borderRadius: "16px",
+    padding: "14px 18px",
+    fontSize: "15px",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
+  signUpButtonDark: {
+    background: "#111111",
+    color: "#f5f5f5",
+    border: "1px solid #3a3a3a",
+    borderRadius: "16px",
+    padding: "14px 18px",
+    fontSize: "15px",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
+  fontBar: {
+    position: "sticky",
+    top: 0,
+    zIndex: 20,
+    backdropFilter: "blur(10px)",
+    background: "rgba(6,6,7,0.92)",
+    borderBottom: "1px solid #1f1f1f",
+  },
+  fontBarInner: {
+    maxWidth: "1440px",
+    margin: "0 auto",
+    padding: "18px 24px",
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "20px",
-    marginBottom: "20px",
+    gap: "18px",
+    alignItems: "center",
     flexWrap: "wrap",
   },
-  topSelectors: {
+  fontBarKicker: {
+    margin: "0 0 6px",
+    color: "#9a9a9a",
+    fontSize: "12px",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+  },
+  fontBarTitle: {
+    margin: 0,
+    fontSize: "28px",
+    fontWeight: 600,
+    color: "#f5f5f5",
+  },
+  fontControls: {
     display: "flex",
-    gap: "16px",
+    gap: "14px",
     flexWrap: "wrap",
   },
   topSelectGroup: {
-    display: "flex",
-    flexDirection: "column",
+    display: "grid",
     gap: "8px",
-    minWidth: "180px",
   },
   topSelectLabel: {
+    color: "#d4d4d8",
     fontSize: "13px",
-    color: "#d1d5db",
     fontWeight: 600,
   },
-  kicker: {
-    margin: "0 0 8px",
-    color: "#c4b5fd",
-    fontSize: "12px",
-    letterSpacing: "0.22em",
-    textTransform: "uppercase",
-  },
-  pageTitle: {
-    margin: 0,
-    fontSize: "44px",
-    lineHeight: 1.06,
-    letterSpacing: "-0.04em",
-    fontWeight: 700,
-    color: "#fafafa",
-    maxWidth: "760px",
-  },
   layout: {
+    maxWidth: "1440px",
+    margin: "0 auto",
+    padding: "24px",
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) 520px",
+    gridTemplateColumns: "minmax(0, 1fr) 640px",
     gap: "24px",
     alignItems: "start",
   },
   leftCol: {
-    minWidth: 0,
+    display: "grid",
+    gap: "18px",
   },
   rightCol: {
     position: "sticky",
-    top: "20px",
-    alignSelf: "start",
+    top: "110px",
   },
   card: {
-    background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
     border: "1px solid #262626",
-    borderRadius: "28px",
-    padding: "20px",
-    boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
-    marginBottom: "18px",
+    borderRadius: "24px",
+    padding: "24px",
   },
   previewCard: {
-    background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
     border: "1px solid #262626",
-    borderRadius: "28px",
-    padding: "20px",
-    boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
-    marginBottom: "18px",
+    borderRadius: "24px",
+    padding: "24px",
   },
   cardKicker: {
     margin: "0 0 8px",
-    color: "#d4d4d8",
+    color: "#9a9a9a",
     fontSize: "12px",
     letterSpacing: "0.18em",
     textTransform: "uppercase",
   },
   cardTitle: {
-    margin: "0 0 10px",
-    fontSize: "28px",
-    lineHeight: 1.1,
-    color: "#fafafa",
-    fontWeight: 700,
+    margin: "0 0 16px",
+    fontSize: "26px",
+    fontWeight: 600,
+    color: "#f5f5f5",
   },
-  previewHelp: {
+  previewText: {
     margin: 0,
-    color: "#d4d4d8",
+    color: "#c8c8c8",
     fontSize: "15px",
-    lineHeight: 1.5,
+    lineHeight: 1.7,
   },
   rowBetween: {
     display: "flex",
     justifyContent: "space-between",
+    gap: "12px",
     alignItems: "center",
-    gap: "16px",
     flexWrap: "wrap",
-  },
-  planSelect: {
-    background: "#0b0f19",
-    color: "#fff",
-    border: "2px solid rgba(255,255,255,0.22)",
-    borderRadius: "18px",
-    padding: "12px 16px",
-    minWidth: "240px",
-    fontSize: "16px",
-  },
-  select: {
-    background: "#0b0f19",
-    color: "#fff",
-    border: "1px solid rgba(255,255,255,0.18)",
-    borderRadius: "16px",
-    padding: "12px 14px",
-    fontSize: "15px",
-  },
-  planInfoBox: {
-    marginTop: "14px",
-    background: "linear-gradient(180deg, #163163 0%, #102548 100%)",
-    border: "1px solid rgba(148,163,184,0.3)",
-    borderRadius: "18px",
-    padding: "16px",
-  },
-  planName: {
-    margin: "0 0 8px",
-    fontSize: "24px",
-    fontWeight: 700,
-    color: "#f8fafc",
-  },
-  planDescription: {
-    margin: 0,
-    color: "#e2e8f0",
-    fontSize: "16px",
-    lineHeight: 1.55,
   },
   twoColForm: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "14px 16px",
+    gap: "12px",
   },
   inputLabel: {
     display: "block",
-    margin: "0 0 6px",
-    fontSize: "15px",
-    color: "#f5f5f5",
-    fontWeight: 600,
+    marginBottom: "8px",
+    color: "#c9c9c9",
+    fontSize: "13px",
+    fontWeight: 500,
   },
   input: {
     width: "100%",
-    background: "#05070c",
-    color: "#fff",
-    border: "1px solid #2f3541",
-    borderRadius: "18px",
     padding: "14px 16px",
-    fontSize: "16px",
-    outline: "none",
+    borderRadius: "16px",
+    border: "1px solid #313131",
+    background: "#0f0f10",
+    color: "#f4f4f5",
+    fontSize: "15px",
+    boxSizing: "border-box",
+  },
+  select: {
+    width: "100%",
+    padding: "14px 16px",
+    borderRadius: "16px",
+    border: "1px solid #313131",
+    background: "#0f0f10",
+    color: "#f4f4f5",
+    fontSize: "15px",
     boxSizing: "border-box",
   },
   textarea: {
     width: "100%",
-    minHeight: "110px",
-    resize: "vertical",
-    background: "#05070c",
-    color: "#fff",
-    border: "1px solid #2f3541",
-    borderRadius: "18px",
+    minHeight: "130px",
     padding: "14px 16px",
-    fontSize: "16px",
-    outline: "none",
+    borderRadius: "16px",
+    border: "1px solid #313131",
+    background: "#0f0f10",
+    color: "#f4f4f5",
+    fontSize: "15px",
+    resize: "vertical",
     boxSizing: "border-box",
+  },
+  textareaSmall: {
+    width: "100%",
+    minHeight: "80px",
+    padding: "14px 16px",
+    borderRadius: "16px",
+    border: "1px solid #313131",
+    background: "#0f0f10",
+    color: "#f4f4f5",
+    fontSize: "15px",
+    resize: "vertical",
+    boxSizing: "border-box",
+  },
+  fieldBlock: {
+    marginBottom: "12px",
+  },
+  entryCard: {
+    background: "#101010",
+    border: "1px solid #2d2d2d",
+    borderRadius: "20px",
+    padding: "18px",
     marginBottom: "14px",
   },
-  helper: {
-    margin: "10px 0 12px",
-    color: "#cbd5e1",
-    fontSize: "14px",
+  entryTitle: {
+    margin: 0,
+    fontSize: "18px",
+    color: "#f5f5f5",
   },
   checkboxRow: {
     display: "flex",
-    alignItems: "center",
     gap: "10px",
-    margin: "12px 0",
-    color: "#f5f5f5",
-    fontSize: "15px",
+    alignItems: "center",
+    color: "#e5e7eb",
+    margin: "12px 0 0",
   },
-  sectionGroup: {
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "22px",
-    padding: "16px",
-    marginBottom: "14px",
+  bulletWrap: {
+    display: "grid",
+    gap: "10px",
+    marginTop: "14px",
   },
   smallButton: {
-    marginTop: "12px",
-    background: "linear-gradient(180deg, #5b84c7 0%, #456aa8 100%)",
-    color: "#fff",
-    border: "1px solid rgba(255,255,255,0.16)",
+    background: "#111111",
+    color: "#f5f5f5",
+    border: "1px solid #3a3a3a",
     borderRadius: "14px",
     padding: "10px 14px",
-    fontSize: "15px",
-    fontWeight: 600,
+    fontSize: "14px",
+    fontWeight: 700,
     cursor: "pointer",
   },
-  orderRow: {
+  sectionMoveWrap: {
+    display: "grid",
+    gap: "10px",
+  },
+  sectionMoveRow: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
     gap: "12px",
-    padding: "12px 0",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    alignItems: "center",
+    background: "#101010",
+    border: "1px solid #2d2d2d",
+    borderRadius: "18px",
+    padding: "14px 16px",
   },
-  orderLabel: {
-    fontSize: "18px",
-    color: "#f8fafc",
+  sectionMoveLabel: {
+    color: "#f5f5f5",
     fontWeight: 600,
+    fontSize: "14px",
   },
-  orderButtons: {
+  sectionMoveButtons: {
     display: "flex",
     gap: "8px",
   },
-  orderButton: {
-    background: "#0f244d",
-    color: "#fff",
-    border: "1px solid rgba(148,163,184,0.35)",
-    borderRadius: "12px",
-    padding: "8px 12px",
-    fontSize: "14px",
-    cursor: "pointer",
-  },
-  footerButtons: {
+  actionButtons: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+    gridTemplateColumns: "1fr 1fr",
     gap: "12px",
-    marginTop: "12px",
-    marginBottom: "32px",
+    marginBottom: "16px",
   },
-  saveButton: {
-    background: "linear-gradient(180deg, #f5f5f5 0%, #d4d4d8 100%)",
+  primaryActionButton: {
+    width: "100%",
+    padding: "15px 18px",
+    borderRadius: "18px",
+    border: "1px solid #d1d5db",
+    background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
     color: "#09090b",
-    border: "none",
-    borderRadius: "18px",
-    padding: "16px",
-    fontSize: "20px",
+    fontSize: "15px",
     fontWeight: 700,
     cursor: "pointer",
   },
-  printButton: {
-    background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
-    color: "#fff",
-    border: "1px solid rgba(148,163,184,0.28)",
+  secondaryActionButton: {
+    width: "100%",
+    padding: "15px 18px",
     borderRadius: "18px",
-    padding: "16px",
-    fontSize: "20px",
+    border: "1px solid #3a3a3a",
+    background: "#111111",
+    color: "#f5f5f5",
+    fontSize: "15px",
     fontWeight: 700,
     cursor: "pointer",
+  },
+  actionLinks: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
   },
   backButton: {
     background: "transparent",
     color: "#fff",
     border: "1px solid rgba(148,163,184,0.28)",
     borderRadius: "18px",
-    padding: "16px",
-    fontSize: "20px",
+    padding: "12px 16px",
+    fontSize: "14px",
     fontWeight: 700,
     textAlign: "center",
     textDecoration: "none",
-    display: "flex",
+    display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2460,6 +1868,11 @@ const styles: Record<string, CSSProperties> = {
     padding: "14px 16px",
     marginBottom: "16px",
     fontSize: "15px",
+  },
+  resumePagesWrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "18px",
   },
   resumePaper: {
     width: "100%",
