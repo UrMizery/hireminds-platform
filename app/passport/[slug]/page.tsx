@@ -7,48 +7,6 @@ type PassportPageProps = {
   };
 };
 
-type VerificationStatus = "pending" | "verified" | "declined" | "expired";
-
-function getStatusStyles(status: VerificationStatus) {
-  switch (status) {
-    case "verified":
-      return {
-        background: "rgba(34,197,94,0.12)",
-        border: "1px solid rgba(34,197,94,0.35)",
-        color: "#86efac",
-        label: "Verified",
-      };
-    case "pending":
-      return {
-        background: "rgba(250,204,21,0.12)",
-        border: "1px solid rgba(250,204,21,0.35)",
-        color: "#fde68a",
-        label: "Pending",
-      };
-    case "declined":
-      return {
-        background: "rgba(239,68,68,0.12)",
-        border: "1px solid rgba(239,68,68,0.35)",
-        color: "#fca5a5",
-        label: "Declined",
-      };
-    case "expired":
-    default:
-      return {
-        background: "rgba(148,163,184,0.12)",
-        border: "1px solid rgba(148,163,184,0.35)",
-        color: "#cbd5e1",
-        label: "Expired",
-      };
-  }
-}
-
-function scoreTone(score: number) {
-  if (score >= 85) return "#86efac";
-  if (score >= 70) return "#fde68a";
-  return "#fca5a5";
-}
-
 export default async function PassportPublicPage({ params }: PassportPageProps) {
   const { data: profile } = await supabase
     .from("candidate_profiles")
@@ -70,56 +28,28 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
   const headline = profile?.headline || "Professional Headline";
   const cityState =
     [profile?.city, profile?.state].filter(Boolean).join(", ") || "Location not provided";
+
   const bio =
     profile?.bio ||
-    "This candidate has not added a public bio yet. Their Career Passport will display profile information, readiness indicators, verification, and resume details for employers.";
+    "This candidate has not added a public bio yet.";
+
   const photoUrl = profile?.photo_url || "";
   const introVideoUrl = profile?.intro_video_url || "";
   const resumeUrl = profile?.resume_url || "";
   const linkedinUrl = profile?.linkedin_url || "";
 
-  const hasResume = Boolean(resumeUrl || latestResume);
   const resumeSummary = latestResume?.summary_text || "";
-  const resumeHeading = latestResume?.summary_heading || "Resume Summary";
+  const resumeHeading = latestResume?.summary_heading || "Professional Summary";
   const resumeSkills = Array.isArray(latestResume?.skills) ? latestResume.skills : [];
   const resumeAccomplishments = latestResume?.accomplishments || "";
 
-  const verificationItems: Array<{
-    company: string;
-    role: string;
-    dates: string;
-    status: VerificationStatus;
-  }> = [
-    {
-      company: "Most recent employer",
-      role: "Pending verification",
-      dates: "Dates to be confirmed",
-      status: "pending",
-    },
-    {
-      company: "Previous employer",
-      role: "Awaiting response",
-      dates: "Dates to be confirmed",
-      status: "pending",
-    },
-  ];
-
-  const scorecards = [
-    { label: "Profile Completion", score: 84 },
-    { label: "Resume Readiness", score: 81 },
-    { label: "Interview Readiness", score: 76 },
-    { label: "Verification Progress", score: 52 },
-  ];
+  const hasResumeContent = Boolean(
+    resumeUrl || resumeSummary || resumeSkills.length || resumeAccomplishments
+  );
 
   return (
     <main style={styles.page}>
       <div style={styles.wrapper}>
-        <div style={styles.topNav}>
-          <a href="/profile" style={styles.topLink}>
-            Back to Profile
-          </a>
-        </div>
-
         <section style={styles.hero}>
           <div style={styles.heroLeft}>
             {photoUrl ? (
@@ -137,17 +67,17 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
 
             <div style={styles.linkRow}>
               {linkedinUrl ? (
-                <a href={linkedinUrl} style={styles.primaryGhost}>
+                <a href={linkedinUrl} style={styles.ghostButton}>
                   LinkedIn
                 </a>
               ) : null}
 
-              {hasResume ? (
-                <a href="#saved-resume" style={styles.primaryButton}>
+              {hasResumeContent ? (
+                <a href="#resume-section" style={styles.primaryButton}>
                   View Resume
                 </a>
               ) : (
-                <span style={styles.disabledButton}>Resume Not Uploaded</span>
+                <span style={styles.disabledButton}>Resume Not Available</span>
               )}
 
               {introVideoUrl ? (
@@ -160,8 +90,8 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
             </div>
 
             <div style={styles.notice}>
-              This public Career Passport is designed for employers and partners to review
-              candidate readiness, profile details, and verification status.
+              This public Career Passport is designed to give employers a clean snapshot of
+              the candidate’s profile, skills, and resume information.
             </div>
           </div>
         </section>
@@ -174,32 +104,34 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
               <p style={styles.bodyText}>{bio}</p>
             </div>
 
-            {hasResume ? (
-              <div id="saved-resume" style={styles.card}>
+            {hasResumeContent ? (
+              <div id="resume-section" style={styles.card}>
                 <p style={styles.sectionKicker}>Resume</p>
-                <h2 style={styles.sectionTitle}>Saved Resume Snapshot</h2>
+                <h2 style={styles.sectionTitle}>Resume Snapshot</h2>
 
                 {resumeSummary ? (
                   <>
-                    <p style={styles.helperText}>{resumeHeading}</p>
+                    <p style={styles.helperHeading}>{resumeHeading}</p>
                     <p style={styles.bodyText}>{resumeSummary}</p>
                   </>
                 ) : null}
 
                 {resumeSkills.length ? (
                   <>
-                    <p style={styles.helperText}>Skills</p>
-                    <ul style={styles.list}>
+                    <p style={styles.helperHeading}>Skills</p>
+                    <div style={styles.skillWrap}>
                       {resumeSkills.map((skill: string, index: number) => (
-                        <li key={index}>{skill}</li>
+                        <span key={`${skill}-${index}`} style={styles.skillPill}>
+                          {skill}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   </>
                 ) : null}
 
                 {resumeAccomplishments ? (
                   <>
-                    <p style={styles.helperText}>Accomplishments</p>
+                    <p style={styles.helperHeading}>Accomplishments</p>
                     <p style={styles.bodyText}>{resumeAccomplishments}</p>
                   </>
                 ) : null}
@@ -211,75 +143,12 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
                 ) : null}
               </div>
             ) : null}
-
-            <div style={styles.card}>
-              <p style={styles.sectionKicker}>Verification</p>
-              <h2 style={styles.sectionTitle}>Employment Verification</h2>
-              <p style={styles.helperText}>
-                Verified experience should eventually display here with employer-confirmed
-                title, dates, and verification badges.
-              </p>
-
-              <div style={styles.verificationList}>
-                {verificationItems.map((item, index) => {
-                  const badge = getStatusStyles(item.status);
-                  return (
-                    <div key={index} style={styles.verificationCard}>
-                      <div style={styles.verificationTop}>
-                        <div>
-                          <p style={styles.verificationCompany}>{item.company}</p>
-                          <p style={styles.verificationRole}>{item.role}</p>
-                          <p style={styles.verificationDates}>{item.dates}</p>
-                        </div>
-
-                        <span
-                          style={{
-                            ...styles.statusBadge,
-                            background: badge.background,
-                            border: badge.border,
-                            color: badge.color,
-                          }}
-                        >
-                          {badge.label}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div style={styles.card}>
-              <p style={styles.sectionKicker}>Scorecards</p>
-              <h2 style={styles.sectionTitle}>Candidate Readiness Scores</h2>
-              <p style={styles.helperText}>
-                These are placeholder scorecards for now. Later they should be powered by
-                real profile completion, resume quality, interview data, and verification
-                results.
-              </p>
-
-              <div style={styles.scoreGrid}>
-                {scorecards.map((item) => (
-                  <div key={item.label} style={styles.scoreCard}>
-                    <p style={styles.scoreLabel}>{item.label}</p>
-                    <p
-                      style={{
-                        ...styles.scoreValue,
-                        color: scoreTone(item.score),
-                      }}
-                    >
-                      {item.score}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </section>
 
           <aside style={styles.sideCol}>
             <div style={styles.sideCard}>
-              <p style={styles.sectionKicker}>Snapshot</p>
-              <h2 style={styles.sectionTitle}>Employer View</h2>
+              <p style={styles.sectionKicker}>Employer Snapshot</p>
+              <h2 style={styles.sectionTitle}>Quick View</h2>
 
               <div style={styles.sideItem}>
                 <span style={styles.sideLabel}>Candidate</span>
@@ -292,8 +161,15 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
               </div>
 
               <div style={styles.sideItem}>
+                <span style={styles.sideLabel}>Headline</span>
+                <span style={styles.sideValue}>{headline}</span>
+              </div>
+
+              <div style={styles.sideItem}>
                 <span style={styles.sideLabel}>Resume</span>
-                <span style={styles.sideValue}>{hasResume ? "Available" : "Not uploaded"}</span>
+                <span style={styles.sideValue}>
+                  {hasResumeContent ? "Available" : "Not available"}
+                </span>
               </div>
 
               <div style={styles.sideItem}>
@@ -302,23 +178,6 @@ export default async function PassportPublicPage({ params }: PassportPageProps) 
                   {introVideoUrl ? "Available" : "Not available"}
                 </span>
               </div>
-
-              <div style={styles.sideItem}>
-                <span style={styles.sideLabel}>Verification</span>
-                <span style={styles.sideValue}>In progress</span>
-              </div>
-            </div>
-
-            <div style={styles.sideCard}>
-              <p style={styles.sectionKicker}>Trust Signals</p>
-              <h2 style={styles.sectionTitle}>What Employers Should See</h2>
-              <ul style={styles.list}>
-                <li>Verified work history badges</li>
-                <li>Readiness scorecards</li>
-                <li>Resume access</li>
-                <li>Intro video</li>
-                <li>Saved resume snapshot</li>
-              </ul>
             </div>
           </aside>
         </div>
@@ -340,19 +199,6 @@ const styles: Record<string, CSSProperties> = {
   wrapper: {
     maxWidth: "1440px",
     margin: "0 auto",
-  },
-  topNav: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginBottom: "16px",
-  },
-  topLink: {
-    color: "#e5e7eb",
-    textDecoration: "none",
-    border: "1px solid rgba(255,255,255,0.18)",
-    borderRadius: "14px",
-    padding: "10px 14px",
-    background: "rgba(255,255,255,0.04)",
   },
   hero: {
     display: "grid",
@@ -431,7 +277,7 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
   },
-  primaryGhost: {
+  ghostButton: {
     background: "transparent",
     color: "#fff",
     border: "1px solid rgba(255,255,255,0.18)",
@@ -500,7 +346,6 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: "28px",
     padding: "24px",
     boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
-    marginBottom: "20px",
     position: "sticky",
     top: "24px",
   },
@@ -518,79 +363,34 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.1,
     fontWeight: 700,
   },
+  helperHeading: {
+    margin: "0 0 12px",
+    color: "#d4d4d8",
+    fontSize: "15px",
+    fontWeight: 700,
+  },
   bodyText: {
-    margin: 0,
+    margin: "0 0 16px",
     color: "#e5e7eb",
     fontSize: "16px",
     lineHeight: 1.7,
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
   },
-  helperText: {
-    margin: "0 0 12px",
-    color: "#d4d4d8",
-    fontSize: "15px",
-    lineHeight: 1.6,
-  },
-  verificationList: {
-    display: "grid",
-    gap: "12px",
-  },
-  verificationCard: {
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "18px",
-    padding: "16px",
-  },
-  verificationTop: {
+  skillWrap: {
     display: "flex",
-    justifyContent: "space-between",
-    gap: "16px",
-    alignItems: "flex-start",
+    flexWrap: "wrap",
+    gap: "10px",
+    marginBottom: "18px",
   },
-  verificationCompany: {
-    margin: "0 0 4px",
-    color: "#fafafa",
-    fontSize: "17px",
-    fontWeight: 700,
-  },
-  verificationRole: {
-    margin: "0 0 4px",
-    color: "#e5e7eb",
-    fontSize: "15px",
-  },
-  verificationDates: {
-    margin: 0,
-    color: "#a1a1aa",
-    fontSize: "14px",
-  },
-  statusBadge: {
+  skillPill: {
+    padding: "10px 12px",
     borderRadius: "999px",
-    padding: "8px 12px",
-    fontSize: "13px",
-    fontWeight: 700,
-    whiteSpace: "nowrap",
-  },
-  scoreGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "12px",
-  },
-  scoreCard: {
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "18px",
-    padding: "16px",
-  },
-  scoreLabel: {
-    margin: "0 0 8px",
-    color: "#d4d4d8",
+    background: "#111827",
+    border: "1px solid #374151",
+    color: "#f3f4f6",
     fontSize: "14px",
-  },
-  scoreValue: {
-    margin: 0,
-    fontSize: "32px",
-    fontWeight: 700,
+    lineHeight: 1.4,
   },
   sideItem: {
     display: "flex",
@@ -608,11 +408,5 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "14px",
     fontWeight: 600,
     textAlign: "right",
-  },
-  list: {
-    margin: 0,
-    paddingLeft: "18px",
-    color: "#e5e7eb",
-    lineHeight: 1.8,
   },
 };
