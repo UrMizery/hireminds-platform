@@ -120,7 +120,6 @@ const TRANSLATIONS: Record<
   English: {
     pageKicker: "RESUME BUILDER",
     pageTitle: "Choose your resume font before you begin.",
-    plan: "Choose plan",
     font: "Resume Font",
     language: "Language",
     livePreview: "Resume Preview",
@@ -147,7 +146,6 @@ const TRANSLATIONS: Record<
   Spanish: {
     pageKicker: "CREADOR DE CURRÍCULUM",
     pageTitle: "Elige la fuente de tu currículum antes de comenzar.",
-    plan: "Elegir plan",
     font: "Fuente del currículum",
     language: "Idioma",
     livePreview: "Vista previa del currículum",
@@ -175,7 +173,6 @@ const TRANSLATIONS: Record<
   Hindi: {
     pageKicker: "रिज़्यूमे बिल्डर",
     pageTitle: "शुरू करने से पहले अपने रिज़्यूमे का फ़ॉन्ट चुनें।",
-    plan: "प्लान चुनें",
     font: "रिज़्यूमे फ़ॉन्ट",
     language: "भाषा",
     livePreview: "रिज़्यूमे पूर्वावलोकन",
@@ -203,7 +200,6 @@ const TRANSLATIONS: Record<
   Polish: {
     pageKicker: "KREATOR CV",
     pageTitle: "Wybierz czcionkę CV przed rozpoczęciem.",
-    plan: "Wybierz plan",
     font: "Czcionka CV",
     language: "Język",
     livePreview: "Podgląd CV",
@@ -326,7 +322,6 @@ export default function ResumeBuilderPage() {
   const [saving, setSaving] = useState(false);
   const resumePrintRef = useRef<HTMLDivElement>(null);
 
-  const [plan, setPlan] = useState<ResumePlan>("free");
   const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
   const [language, setLanguage] = useState<ResumeLanguage>("English");
 
@@ -450,8 +445,6 @@ export default function ResumeBuilderPage() {
   }, []);
 
   const ui = TRANSLATIONS[language];
-  const planInfo = PLAN_COPY[plan];
-  const bulletLimit = plan === "free" ? FREE_BULLET_LIMIT : PAID_BULLET_LIMIT;
 
   const skills = useMemo(() => {
     return skillsInput
@@ -690,8 +683,6 @@ export default function ResumeBuilderPage() {
 
       const payload = {
         profile_id: profileId,
-        title: plan === "free" ? "Free Resume" : "Primary Resume",
-        page_limit: planInfo.pageLimit,
         summary_heading: summaryHeading || ui.summary,
         summary_text: summaryText,
         skills,
@@ -705,8 +696,6 @@ export default function ResumeBuilderPage() {
         city,
         state: stateName,
         linkedin_url: linkedinUrl,
-        plan_type: plan,
-        plan_description: planInfo.description,
         font_family: fontFamily,
         language,
         work_experience: activeExperiences,
