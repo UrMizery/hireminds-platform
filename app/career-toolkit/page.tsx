@@ -44,8 +44,8 @@ Open Cover Letter Generator
 
 <section style={styles.section}>
 <div style={styles.sectionHeader}>
-<p style={styles.sectionKicker}>Resume + Letters</p>
-<h2 style={styles.sectionTitle}>Create polished materials</h2>
+<p style={styles.sectionKicker}>Generators</p>
+<h2 style={styles.sectionTitle}>Build, match, and prepare</h2>
 </div>
 
 <div style={styles.grid}>
@@ -60,6 +60,32 @@ clean professional layout.
 </p>
 <a href="/resume-builder" style={styles.linkButton}>
 Open Resume Generator
+</a>
+</div>
+
+  <div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Interview Question Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Generate general and industry-focused interview questions to help you prepare more confidently.
+</p>
+<a href="/career-toolkit/interview-question-generator" style={styles.linkButton}>
+Open Interview Question Generator
+</a>
+</div>
+
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Resume Format Guide</h3>
+<span style={styles.liveTag}>Live</span>
+</div>
+<p style={styles.featureText}>
+Learn the difference between chronological, functional, combination, and hybrid resumes and find the format that fits you best.
+</p>
+<a href="/career-toolkit/resume-type-helper" style={styles.linkButton}>
+Open Resume Format Guide
 </a>
 </div>
 
@@ -95,8 +121,8 @@ Open Follow-Up Generator
 
 <section style={styles.section}>
 <div style={styles.sectionHeader}>
-<p style={styles.sectionKicker}>Interview + Guidance</p>
-<h2 style={styles.sectionTitle}>Prepare with more confidence</h2>
+<p style={styles.sectionKicker}>Career Support</p>
+<h2 style={styles.sectionTitle}>Guidance, community, and preparation</h2>
 </div>
 
 <div style={styles.grid}>
@@ -106,27 +132,11 @@ Open Follow-Up Generator
 <span style={styles.liveTag}>Live</span>
 </div>
 <p style={styles.featureText}>
-Review common employer questions, strong sample answers, prep tips, and smart
-questions to ask at the end of an interview.
+Review common employer questions, strong sample answers, prep tips, and smart questions to ask during and after an interview.
 </p>
 <a href="/career-toolkit/interview-questions" style={styles.linkButton}>
 Open Interview Questions
 </a>
-</div>
-
-<div style={styles.featureCard}>
-<div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Resume Type Helper</h3>
-<span style={styles.liveTag}>Live</span>
-</div>
-<p style={styles.featureText}>
-Learn the difference between chronological, functional, combination, and hybrid
-resumes and figure out which format fits best.
-</p>
-<a href="/career-toolkit/resume-type-helper" style={styles.linkButton}>
-Open Resume Type Helper
-</a>
-</div>
 
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
