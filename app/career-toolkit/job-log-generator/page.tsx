@@ -42,7 +42,9 @@ export default function JobLogGeneratorPage() {
 const [applicantName, setApplicantName] = useState("");
 const [weekStart, setWeekStart] = useState("");
 const [weekEnd, setWeekEnd] = useState("");
-const [entries, setEntries] = useState<JobLogItem[]>(Array.from({ length: 8 }, () => createEmptyLog()));
+const [entries, setEntries] = useState<JobLogItem[]>(
+Array.from({ length: 8 }, () => createEmptyLog())
+);
 const [message, setMessage] = useState("");
 const printRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +97,7 @@ printWindow.document.write(`
 <style>
 @page {
 size: letter landscape;
-margin: 0.45in;
+margin: 0.35in;
 }
 
 html, body {
@@ -106,94 +108,71 @@ color: #111827;
 font-family: Arial, Helvetica, sans-serif;
 }
 
-body {
--webkit-print-color-adjust: exact;
-print-color-adjust: exact;
-}
-
-.printWrap {
+.sheet {
 width: 100%;
 }
 
-.printHeader {
-margin-bottom: 14px;
-padding-bottom: 10px;
-border-bottom: 2px solid #d1d5db;
+.sheetHeader {
+margin-bottom: 10px;
+text-align: center;
 }
 
-.printTitle {
-margin: 0 0 4px;
+.sheetTitle {
+margin: 0 0 6px;
 font-size: 26px;
 font-weight: 700;
-color: #111827;
+color: #0f172a;
+letter-spacing: 0.02em;
 }
 
-.printSub {
-margin: 0;
-font-size: 13px;
-color: #4b5563;
-line-height: 1.55;
+.sheetMeta {
+display: flex;
+justify-content: space-between;
+gap: 16px;
+margin-bottom: 10px;
+font-size: 12px;
+color: #334155;
 }
 
-.printGrid {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 12px;
+.metaBox {
+border: 1px solid #64748b;
+padding: 6px 8px;
+flex: 1;
 }
 
-.printEntry {
-border: 1px solid #d1d5db;
-border-radius: 12px;
-padding: 12px;
-break-inside: avoid;
-page-break-inside: avoid;
+table {
+width: 100%;
+border-collapse: collapse;
+table-layout: fixed;
 }
 
-.printEntryTop {
-margin-bottom: 8px;
-}
-
-.printRole {
-margin: 0 0 3px;
-font-size: 17px;
-font-weight: 700;
-color: #111827;
-}
-
-.printCompany {
-margin: 0;
-font-size: 14px;
-color: #374151;
-}
-
-.printMeta {
-margin: 0 0 4px;
-font-size: 12.5px;
-line-height: 1.55;
-color: #111827;
-word-break: break-word;
-}
-
-.printLabel {
-margin: 8px 0 4px;
+th, td {
+border: 1px solid #64748b;
+padding: 6px 6px;
+vertical-align: top;
 font-size: 11px;
-font-weight: 700;
-letter-spacing: 0.08em;
-text-transform: uppercase;
-color: #6b7280;
+line-height: 1.35;
+word-wrap: break-word;
 }
 
-.printNote {
-margin: 0;
-font-size: 12.5px;
-line-height: 1.6;
+th {
+background: #f3f4f6;
 color: #111827;
-white-space: pre-wrap;
+font-weight: 700;
+text-align: left;
+}
+
+td {
+min-height: 48px;
+}
+
+.small {
+font-size: 10px;
 }
 </style>
 </head>
 <body>
-<div class="printWrap">
+<div class="sheet">
 ${content}
 </div>
 </body>
@@ -216,8 +195,8 @@ return (
 <p style={styles.kicker}>Career ToolKit</p>
 <h1 style={styles.title}>Job Log Generator</h1>
 <p style={styles.subtitle}>
-Track company, position, website or address, contact person, phone number,
-disposition, outcome, and your quick research note in one clean weekly log.
+Track your weekly applications using a printable worksheet-style log with
+company, position, disposition, contact details, outcome, and research notes.
 </p>
 </div>
 
@@ -279,63 +258,60 @@ updateEntry={updateEntry}
 <section style={styles.previewSection}>
 <div style={styles.sectionHeader}>
 <p style={styles.sectionKicker}>Live Preview</p>
-<h2 style={styles.sectionTitle}>Weekly job log</h2>
+<h2 style={styles.sectionTitle}>Job application record</h2>
 </div>
 
 <div style={styles.previewCard}>
-{filledEntries.length ? (
-<div style={styles.previewWrap}>
-<div style={styles.previewHeader}>
-<h2 style={styles.previewMainTitle}>
-{applicantName || "Applicant Name"} - Weekly Job Log
-</h2>
-<p style={styles.previewSubTitle}>
-Week Beginning: {weekStart || "—"} | Week Ending: {weekEnd || "—"}
-</p>
+<div style={styles.sheetWrap}>
+<div style={styles.sheetHeader}>
+<h2 style={styles.sheetTitle}>JOB APPLICATION RECORD</h2>
 </div>
 
-<div style={styles.previewGrid}>
-{filledEntries.map((entry, index) => (
-<div key={index} style={styles.previewEntry}>
-<div style={styles.previewEntryTop}>
-<h3 style={styles.previewRole}>
-{entry.company || "Company"} - {entry.jobTitle || "Position"}
-</h3>
+<div style={styles.sheetMetaRow}>
+<div style={styles.sheetMetaBox}>
+<strong>Applicant Name:</strong> {applicantName || "—"}
+</div>
+<div style={styles.sheetMetaBox}>
+<strong>Week Beginning:</strong> {weekStart || "—"}
+</div>
+<div style={styles.sheetMetaBox}>
+<strong>Week Ending:</strong> {weekEnd || "—"}
+</div>
 </div>
 
-<p style={styles.metaItem}>
-<strong>Disposition:</strong> {entry.disposition || "—"}
-</p>
-<p style={styles.metaItem}>
-<strong>Website / Address:</strong> {entry.websiteOrAddress || "—"}
-</p>
-<p style={styles.metaItem}>
-<strong>Contact Person:</strong> {entry.contactName || "—"}
-</p>
-<p style={styles.metaItem}>
-<strong>Phone:</strong> {entry.contactPhone || "—"}
-</p>
-<p style={styles.metaItem}>
-<strong>Outcome:</strong> {entry.outcome || "—"}
-</p>
-
-{entry.quickNote ? (
-<div style={styles.notesBox}>
-<p style={styles.notesLabel}>
-Quick note: why this job / what you researched
-</p>
-<p style={styles.notesText}>{entry.quickNote}</p>
-</div>
-) : null}
-</div>
+<div style={styles.tableWrap}>
+<table style={styles.table}>
+<thead>
+<tr>
+<th style={{ ...styles.th, width: "13%" }}>Company</th>
+<th style={{ ...styles.th, width: "12%" }}>Position</th>
+<th style={{ ...styles.th, width: "14%" }}>Website / Address</th>
+<th style={{ ...styles.th, width: "12%" }}>Contact Person</th>
+<th style={{ ...styles.th, width: "10%" }}>Phone Number</th>
+<th style={{ ...styles.th, width: "12%" }}>Disposition</th>
+<th style={{ ...styles.th, width: "10%" }}>Outcome</th>
+<th style={{ ...styles.th, width: "17%" }}>
+Quick Note: Why This Job / What You Researched
+</th>
+</tr>
+</thead>
+<tbody>
+{(filledEntries.length ? filledEntries : entries).map((entry, index) => (
+<tr key={index}>
+<td style={styles.td}>{entry.company || ""}</td>
+<td style={styles.td}>{entry.jobTitle || ""}</td>
+<td style={styles.td}>{entry.websiteOrAddress || ""}</td>
+<td style={styles.td}>{entry.contactName || ""}</td>
+<td style={styles.td}>{entry.contactPhone || ""}</td>
+<td style={styles.td}>{entry.disposition !== "No response yet" ? entry.disposition : ""}</td>
+<td style={styles.td}>{entry.outcome || ""}</td>
+<td style={styles.td}>{entry.quickNote || ""}</td>
+</tr>
 ))}
+</tbody>
+</table>
 </div>
 </div>
-) : (
-<div style={styles.emptyState}>
-Start filling in your applications above and your live weekly log will appear here.
-</div>
-)}
 </div>
 </section>
 
@@ -361,55 +337,44 @@ updateEntry={updateEntry}
 </section>
 
 <div ref={printRef} style={styles.hiddenPrintWrap}>
-<div className="printHeader">
-<h1 className="printTitle">
-{applicantName || "Applicant Name"} - Weekly Job Log
-</h1>
-<p className="printSub">
-Week Beginning: {weekStart || "—"} | Week Ending: {weekEnd || "—"}
-</p>
+<div className="sheetHeader">
+<h1 className="sheetTitle">JOB APPLICATION RECORD</h1>
 </div>
 
-{filledEntries.length ? (
-<div className="printGrid">
-{filledEntries.map((entry, index) => (
-<div key={index} className="printEntry">
-<div className="printEntryTop">
-<h2 className="printRole">
-{entry.company || "Company"} - {entry.jobTitle || "Position"}
-</h2>
-<p className="printCompany">
-{entry.disposition || "No response yet"}
-</p>
+<div className="sheetMeta">
+<div className="metaBox"><strong>Applicant Name:</strong> {applicantName || "—"}</div>
+<div className="metaBox"><strong>Week Beginning:</strong> {weekStart || "—"}</div>
+<div className="metaBox"><strong>Week Ending:</strong> {weekEnd || "—"}</div>
 </div>
 
-<p className="printMeta">
-<strong>Website / Address:</strong> {entry.websiteOrAddress || "—"}
-</p>
-<p className="printMeta">
-<strong>Contact Person:</strong> {entry.contactName || "—"}
-</p>
-<p className="printMeta">
-<strong>Phone:</strong> {entry.contactPhone || "—"}
-</p>
-<p className="printMeta">
-<strong>Outcome:</strong> {entry.outcome || "—"}
-</p>
-
-{entry.quickNote ? (
-<>
-<p className="printLabel">Quick note: why this job / what you researched</p>
-<p className="printNote">{entry.quickNote}</p>
-</>
-) : null}
-</div>
+<table>
+<thead>
+<tr>
+<th>Company</th>
+<th>Position</th>
+<th>Website / Address</th>
+<th>Contact Person</th>
+<th>Phone Number</th>
+<th>Disposition</th>
+<th>Outcome</th>
+<th>Quick Note: Why This Job / What You Researched</th>
+</tr>
+</thead>
+<tbody>
+{(filledEntries.length ? filledEntries : entries).map((entry, index) => (
+<tr key={index}>
+<td>{entry.company || ""}</td>
+<td>{entry.jobTitle || ""}</td>
+<td>{entry.websiteOrAddress || ""}</td>
+<td>{entry.contactName || ""}</td>
+<td>{entry.contactPhone || ""}</td>
+<td>{entry.disposition !== "No response yet" ? entry.disposition : ""}</td>
+<td>{entry.outcome || ""}</td>
+<td>{entry.quickNote || ""}</td>
+</tr>
 ))}
-</div>
-) : (
-<div className="printEntry">
-<p className="printMeta">No job log entries added yet.</p>
-</div>
-)}
+</tbody>
+</table>
 </div>
 </div>
 </main>
@@ -717,92 +682,68 @@ boxSizing: "border-box",
 outline: "none",
 },
 previewCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "28px",
-padding: "24px",
-boxShadow: "0 22px 60px rgba(0,0,0,0.28)",
-},
-previewWrap: {
-display: "grid",
-gap: "16px",
-},
-previewHeader: {
-paddingBottom: "14px",
-borderBottom: "1px solid rgba(255,255,255,0.08)",
-},
-previewMainTitle: {
-margin: "0 0 6px",
-fontSize: "28px",
-lineHeight: 1.1,
-fontWeight: 700,
-color: "#f5f5f5",
-},
-previewSubTitle: {
-margin: 0,
-color: "#d4d4d8",
-fontSize: "15px",
-lineHeight: 1.7,
-},
-previewGrid: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "16px",
-},
-previewEntry: {
-background: "#101010",
-border: "1px solid #2d2d2d",
+background: "#f8fafc",
+border: "1px solid #cbd5e1",
 borderRadius: "18px",
-padding: "16px",
-display: "grid",
-gap: "8px",
+padding: "22px",
+boxShadow: "0 16px 50px rgba(0,0,0,0.18)",
 },
-previewEntryTop: {
-marginBottom: "4px",
+sheetWrap: {
+color: "#111827",
 },
-previewRole: {
+sheetHeader: {
+textAlign: "center",
+marginBottom: "12px",
+},
+sheetTitle: {
 margin: 0,
-fontSize: "19px",
-lineHeight: 1.2,
+fontSize: "28px",
 fontWeight: 700,
-color: "#f5f5f5",
+letterSpacing: "0.03em",
+color: "#0f172a",
 },
-metaItem: {
-margin: 0,
-color: "#d4d4d8",
-fontSize: "14px",
-lineHeight: 1.65,
+sheetMetaRow: {
+display: "grid",
+gridTemplateColumns: "1.2fr 1fr 1fr",
+gap: "8px",
+marginBottom: "12px",
 },
-notesBox: {
-marginTop: "6px",
-background: "rgba(255,255,255,0.03)",
-border: "1px solid rgba(255,255,255,0.06)",
-borderRadius: "14px",
-padding: "12px",
+sheetMetaBox: {
+border: "1px solid #64748b",
+padding: "8px 10px",
+fontSize: "12px",
+lineHeight: 1.45,
+background: "#ffffff",
 },
-notesLabel: {
-margin: "0 0 8px",
-color: "#9ca3af",
+tableWrap: {
+overflowX: "auto",
+},
+table: {
+width: "100%",
+borderCollapse: "collapse",
+tableLayout: "fixed",
+background: "#ffffff",
+},
+th: {
+border: "1px solid #64748b",
+padding: "8px 6px",
 fontSize: "11px",
-letterSpacing: "0.12em",
-textTransform: "uppercase",
+fontWeight: 700,
+textAlign: "left",
+background: "#f3f4f6",
+color: "#111827",
+lineHeight: 1.35,
+verticalAlign: "top",
 },
-notesText: {
-margin: 0,
-color: "#e5e7eb",
-fontSize: "14px",
-lineHeight: 1.7,
-whiteSpace: "pre-wrap",
-},
-emptyState: {
-background: "#101010",
-border: "1px solid #2d2d2d",
-borderRadius: "20px",
-padding: "20px",
-color: "#d4d4d8",
-fontSize: "15px",
-lineHeight: 1.7,
+td: {
+border: "1px solid #94a3b8",
+padding: "8px 6px",
+fontSize: "11px",
+lineHeight: 1.45,
+color: "#111827",
+verticalAlign: "top",
+height: "56px",
+wordBreak: "break-word",
 },
 hiddenPrintWrap: {
 position: "absolute",
