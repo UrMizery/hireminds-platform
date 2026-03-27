@@ -12,15 +12,6 @@ return (
 Create resumes and letters, explore interview guidance, strengthen your skills,
 and access practical tools designed to support job seekers in one clean space.
 </p>
-
-<div style={styles.heroActions}>
-<a href="/resume-builder" style={styles.primaryButton}>
-Open Resume Generator
-</a>
-<a href="/career-toolkit/cover-letter-generator" style={styles.secondaryButton}>
-Open Cover Letter Generator
-</a>
-</div>
 </div>
 
 <div style={styles.heroPanel}>
@@ -117,40 +108,18 @@ resumes and find the format that fits you best.
 Open Resume Format Guide
 </a>
 </div>
-</div>
-</section>
-
-<section style={styles.section}>
-<div style={styles.sectionHeader}>
-<p style={styles.sectionKicker}>Career Support</p>
-<h2 style={styles.sectionTitle}>Guidance, community, and preparation</h2>
-</div>
-
-<div style={styles.grid}>
-<div style={styles.featureCard}>
-<div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Interview Questions</h3>
-<span style={styles.liveTag}>Live</span>
-</div>
-<p style={styles.featureText}>
-Review common employer questions, strong sample answers, prep tips, and smart questions to ask during and after an interview.
-</p>
-<a href="/career-toolkit/interview-questions" style={styles.linkButton}>
-Open Interview Questions
-</a>
-</div>
 
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>HireMinds Community Feed</h3>
-<span style={styles.liveTag}>Live</span>
+<h3 style={styles.featureTitle}>Job Log Generator</h3>
+<span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-Browse announcements, questions, opportunities, and community support in one
-shared space.
+Track where you applied, dates, contacts, interview updates, and follow-up activity
+in one organized place.
 </p>
-<a href="/career-toolkit/community-feed" style={styles.linkButton}>
-Open Community Feed
+<a href="/career-toolkit/job-log-generator" style={styles.linkButton}>
+Open Job Log Generator
 </a>
 </div>
 </div>
@@ -190,6 +159,48 @@ manufacturing, hospitality, admin, retail, logistics, IT, trades, and more.
 Open Industry Core Skills
 </a>
 </div>
+</div>
+</section>
+
+<section style={styles.supportSection}>
+<div style={styles.sectionHeader}>
+<p style={styles.sectionKicker}>Career Support</p>
+<h2 style={styles.sectionTitle}>Guidance, community, and preparation</h2>
+</div>
+
+<div style={styles.supportList}>
+<a href="/career-toolkit/interview-questions" style={styles.supportRow}>
+<div>
+<h3 style={styles.supportTitle}>Interview Questions</h3>
+<p style={styles.supportText}>
+Review common employer questions, strong sample answers, prep tips, and smart
+questions to ask during and after an interview.
+</p>
+</div>
+<span style={styles.supportArrow}>↗</span>
+</a>
+
+<a href="/career-toolkit/community-feed" style={styles.supportRow}>
+<div>
+<h3 style={styles.supportTitle}>HireMinds Community Feed</h3>
+<p style={styles.supportText}>
+Browse announcements, questions, opportunities, and community support in one
+shared space.
+</p>
+</div>
+<span style={styles.supportArrow}>↗</span>
+</a>
+
+<a href="/career-toolkit/job-search-tips" style={styles.supportRow}>
+<div>
+<h3 style={styles.supportTitle}>Job Search Tips</h3>
+<p style={styles.supportText}>
+Learn how to read a job description, pull the right skills from it, and use those
+details in your resume and cover letter more effectively.
+</p>
+</div>
+<span style={styles.supportArrow}>↗</span>
+</a>
 </div>
 </section>
 
@@ -295,42 +306,11 @@ color: "#f5f5f5",
 maxWidth: "760px",
 },
 subtitle: {
-margin: "0 0 22px",
+margin: 0,
 color: "#d4d4d8",
 fontSize: "16px",
 lineHeight: 1.8,
 maxWidth: "760px",
-},
-heroActions: {
-display: "flex",
-gap: "12px",
-flexWrap: "wrap",
-},
-primaryButton: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-textDecoration: "none",
-padding: "14px 18px",
-borderRadius: "18px",
-border: "1px solid #d1d5db",
-background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
-color: "#09090b",
-fontWeight: 700,
-fontSize: "15px",
-},
-secondaryButton: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-textDecoration: "none",
-padding: "14px 18px",
-borderRadius: "18px",
-border: "1px solid rgba(255,255,255,0.14)",
-background: "rgba(255,255,255,0.04)",
-color: "#f5f5f5",
-fontWeight: 700,
-fontSize: "15px",
 },
 heroPanelKicker: {
 margin: "0 0 18px",
@@ -362,6 +342,10 @@ fontWeight: 700,
 textAlign: "right",
 },
 section: {
+display: "grid",
+gap: "16px",
+},
+supportSection: {
 display: "grid",
 gap: "16px",
 },
@@ -459,6 +443,43 @@ background: "#111111",
 color: "#f5f5f5",
 fontWeight: 700,
 fontSize: "14px",
+},
+supportList: {
+display: "grid",
+gap: "12px",
+},
+supportRow: {
+display: "flex",
+justifyContent: "space-between",
+gap: "18px",
+alignItems: "center",
+textDecoration: "none",
+background:
+"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
+border: "1px solid rgba(255,255,255,0.07)",
+borderRadius: "24px",
+padding: "22px 24px",
+boxShadow: "0 18px 50px rgba(0,0,0,0.24)",
+},
+supportTitle: {
+margin: "0 0 8px",
+fontSize: "22px",
+lineHeight: 1.15,
+fontWeight: 700,
+color: "#f5f5f5",
+},
+supportText: {
+margin: 0,
+color: "#d4d4d8",
+fontSize: "15px",
+lineHeight: 1.75,
+maxWidth: "900px",
+},
+supportArrow: {
+color: "#f5f5f5",
+fontSize: "24px",
+lineHeight: 1,
+flexShrink: 0,
 },
 lockedGrid: {
 display: "grid",
