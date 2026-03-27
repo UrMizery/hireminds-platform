@@ -63,32 +63,6 @@ Open Resume Generator
 </a>
 </div>
 
-  <div style={styles.featureCard}>
-<div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Interview Question Generator</h3>
-<span style={styles.liveTag}>New</span>
-</div>
-<p style={styles.featureText}>
-Generate general and industry-focused interview questions to help you prepare more confidently.
-</p>
-<a href="/career-toolkit/interview-question-generator" style={styles.linkButton}>
-Open Interview Question Generator
-</a>
-</div>
-
-<div style={styles.featureCard}>
-<div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Resume Format Guide</h3>
-<span style={styles.liveTag}>Live</span>
-</div>
-<p style={styles.featureText}>
-Learn the difference between chronological, functional, combination, and hybrid resumes and find the format that fits you best.
-</p>
-<a href="/career-toolkit/resume-type-helper" style={styles.linkButton}>
-Open Resume Format Guide
-</a>
-</div>
-
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Cover Letter Generator</h3>
@@ -110,10 +84,37 @@ Open Cover Letter Generator
 </div>
 <p style={styles.featureText}>
 Create a thank-you email after an interview or a polite follow-up email to
-check on application status.
+check on your application status.
 </p>
 <a href="/career-toolkit/employer-follow-up-generator" style={styles.linkButton}>
 Open Follow-Up Generator
+</a>
+</div>
+
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Interview Question Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Generate general and industry-focused interview questions to help you prepare more confidently.
+</p>
+<a href="/career-toolkit/interview-question-generator" style={styles.linkButton}>
+Open Interview Question Generator
+</a>
+</div>
+
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Resume Format Guide</h3>
+<span style={styles.liveTag}>Live</span>
+</div>
+<p style={styles.featureText}>
+Learn the difference between chronological, functional, combination, and hybrid
+resumes and find the format that fits you best.
+</p>
+<a href="/career-toolkit/resume-type-helper" style={styles.linkButton}>
+Open Resume Format Guide
 </a>
 </div>
 </div>
@@ -137,6 +138,7 @@ Review common employer questions, strong sample answers, prep tips, and smart qu
 <a href="/career-toolkit/interview-questions" style={styles.linkButton}>
 Open Interview Questions
 </a>
+</div>
 
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
