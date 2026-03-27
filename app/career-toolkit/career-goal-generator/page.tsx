@@ -16,7 +16,7 @@ const [startTimeline, setStartTimeline] = useState("");
 const [extraNotes, setExtraNotes] = useState("");
 
 const generatedEssay = useMemo(() => {
-const name = fullName || "I";
+const name = fullName || "Your Name";
 const goal = careerGoal || "this career path";
 const chosen = whyChosen || "it aligns with my goals, interests, and long-term future";
 const research =
