@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
-type ResumePlan = "free" | "access" | "premium" | "pro";
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
 type ResumeLanguage = "English" | "Spanish" | "Hindi" | "Polish";
 
@@ -88,36 +87,6 @@ const MONTHS = [
   "Nov",
   "Dec",
 ];
-
-const PLAN_COPY: Record<
-  ResumePlan,
-  { label: string; description: string; pageLimit: number }
-> = {
-  free: {
-    label: "Free",
-    description:
-      "2 page only. 4 bullets per role. 1 virtual mock interview session for 30 minutes. 1 free resume per month.",
-    pageLimit: 2,
-  },
-  access: {
-    label: "Resume Access",
-    description:
-      "$19.99/month. Ongoing resume access. 1 employer verification offered once when enrolled. Two 30 minute virtual mock interview sessions per month with a Career Coach.",
-    pageLimit: 2,
-  },
-  premium: {
-    label: "Premium",
-    description:
-      "$29.99/month. Includes everything in Resume Access plus premium support and 3 employer verifications once when enrolled.",
-    pageLimit: 3,
-  },
-  pro: {
-    label: "Premium Plus / Pro",
-    description:
-      "$45.99/month. Includes everything in Premium plus CV-level support and 5 employer verifications once when enrolled.",
-    pageLimit: 4,
-  },
-};
 
 const TRANSLATIONS: Record<
   ResumeLanguage,
