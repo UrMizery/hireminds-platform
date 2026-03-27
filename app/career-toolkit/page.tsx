@@ -137,6 +137,18 @@ Explore career paths based on the work you enjoy, the environment you prefer, an
 Open Career Path Generator
 </a>
 </div>
+  <div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Budget Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Build a simple monthly budget to understand your income, expenses, and what may be left over each month.
+</p>
+<a href="/career-toolkit/budget-generator" style={styles.linkButton}>
+Open Budget Generator
+</a>
+</div>
 </section>
 
 <section style={styles.section}>
