@@ -149,6 +149,18 @@ Build a simple monthly budget to understand your income, expenses, and what may 
 Open Budget Generator
 </a>
 </div>
+  <div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Career Goal Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Create a clear written statement about your career goal, your research, your expected outcome, and your next steps.
+</p>
+<a href="/career-toolkit/career-goal-generator" style={styles.linkButton}>
+Open Career Goal Generator
+</a>
+</div>
 </section>
 
 <section style={styles.section}>
