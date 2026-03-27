@@ -101,9 +101,7 @@ const { error: uploadError } = await supabase.storage
 .from(bucket)
 .upload(filePath, file, { upsert: true });
 
-if (uploadError) {
-throw uploadError;
-}
+if (uploadError) throw uploadError;
 
 const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
 return data.publicUrl;
@@ -201,41 +199,32 @@ return (
 return (
 <main style={styles.page}>
 <div style={styles.shell}>
-<section style={styles.mainColumn}>
-<div style={styles.heroCard}>
-<div style={styles.heroTop}>
-<div>
+<section style={styles.hero}>
+<div style={styles.heroLeft}>
 <p style={styles.kicker}>Career Passport</p>
 <h1 style={styles.title}>Your private profile editor</h1>
 <p style={styles.subtitle}>
-Update your public-facing Career Passport details, manage your profile assets,
-and control how your information appears to employers.
+Update your public-facing profile, adjust your personal details, and manage your
+Career Passport assets in one cleaner space.
 </p>
 </div>
 
+<div style={styles.heroRight}>
 <button onClick={handleSignOut} style={styles.secondaryButton}>
 Sign Out
 </button>
 </div>
+</section>
 
-<div style={styles.noticeBox}>
-<p style={styles.noticeTitle}>Privacy Notice</p>
-<p style={styles.noticeText}>
-Your information is stored securely and is not sold or shared for marketing purposes.
-</p>
-</div>
-</div>
-
-<div style={styles.profileLayout}>
-<section style={styles.profileCard}>
-<div style={styles.profileMediaColumn}>
+<section style={styles.profileStrip}>
+<div style={styles.profileStripLeft}>
 {photoUrl ? (
 <img src={photoUrl} alt="Profile" style={styles.avatar} />
 ) : (
 <div style={styles.avatarPlaceholder}>No Photo</div>
 )}
 
-<div style={styles.uploadBlock}>
+<div style={styles.photoUploadWrap}>
 <label style={styles.label}>Profile Photo</label>
 <input
 type="file"
@@ -246,34 +235,47 @@ style={styles.input}
 </div>
 </div>
 
-<div style={styles.profileInfoColumn}>
-<div style={styles.sectionHeader}>
+<div style={styles.profileStripRight}>
+<h2 style={styles.namePreview}>{fullName || "Your Name"}</h2>
+<p style={styles.headlinePreview}>{headline || "Professional Headline"}</p>
+<p style={styles.metaPreview}>
+{[city, stateName].filter(Boolean).join(", ") || "City, State"}
+</p>
+<p style={styles.metaPreview}>{email || "email@example.com"}</p>
+
+{publicPassportUrl ? (
+<a href={publicPassportUrl} style={styles.publicLink}>
+View public passport
+</a>
+) : null}
+</div>
+</section>
+
+<section style={styles.formFlow}>
+<div style={styles.flowIntro}>
 <p style={styles.sectionKicker}>Profile Details</p>
 <h2 style={styles.sectionTitle}>Basic Information</h2>
 </div>
 
-<div style={styles.twoCol}>
+<div style={styles.formGrid}>
 <Field label="Full Name" value={fullName} onChange={setFullName} />
 <Field label="Phone" value={phone} onChange={setPhone} />
-</div>
-
-<div style={styles.twoCol}>
 <Field label="Email" value={email} onChange={setEmail} type="email" />
 <Field label="LinkedIn" value={linkedinUrl} onChange={setLinkedinUrl} />
-</div>
-
-<div style={styles.twoCol}>
 <Field label="City" value={city} onChange={setCity} />
 <Field label="State" value={stateName} onChange={setStateName} />
 </div>
 
+<div style={styles.singleField}>
 <Field
 label="Professional Headline"
 value={headline}
 onChange={setHeadline}
 placeholder="Example: Recruiter | Workforce Development | Employer Relations"
 />
+</div>
 
+<div style={styles.singleField}>
 <TextAreaField
 label="Short Bio"
 value={bio}
@@ -283,18 +285,19 @@ placeholder="Write a short professional bio."
 </div>
 </section>
 
-<section style={styles.assetCard}>
-<div style={styles.sectionHeader}>
-<p style={styles.sectionKicker}>Uploads</p>
-<h2 style={styles.sectionTitle}>Media + Resume</h2>
+<section style={styles.assetFlow}>
+<div style={styles.flowIntro}>
+<p style={styles.sectionKicker}>Media + Resume</p>
+<h2 style={styles.sectionTitle}>Uploads</h2>
+<p style={styles.flowText}>
+These areas are still being finalized. You can keep them visible here, but intro video
+and resume display may not always update perfectly yet.
+</p>
 </div>
 
-<div style={styles.assetGrid}>
-<div style={styles.assetPanel}>
+<div style={styles.assetRow}>
+<div style={styles.assetFloat}>
 <p style={styles.assetTitle}>Intro Video</p>
-<p style={styles.assetText}>
-Upload your intro video here. This feature is still being finalized, so display behavior may not be fully consistent yet.
-</p>
 <input
 type="file"
 accept="video/*"
@@ -310,11 +313,8 @@ View current video
 )}
 </div>
 
-<div style={styles.assetPanel}>
+<div style={styles.assetFloat}>
 <p style={styles.assetTitle}>Resume Upload</p>
-<p style={styles.assetText}>
-Upload your resume here. This feature is also still being finalized, so public display may not always update as expected yet.
-</p>
 <input
 type="file"
 accept=".pdf,.doc,.docx"
@@ -339,8 +339,16 @@ onChange={(e) => setRequestVerification(e.target.checked)}
 />
 <span>Request employer verification</span>
 </label>
+</section>
 
-<div style={styles.bottomActions}>
+<section style={styles.noticeFloat}>
+<p style={styles.noticeTitle}>Privacy Notice</p>
+<p style={styles.noticeText}>
+Your information is stored securely and is not sold or shared for marketing purposes.
+</p>
+</section>
+
+<section style={styles.bottomDock}>
 <button onClick={handleSaveProfile} disabled={saving} style={styles.primaryButton}>
 {saving ? "Saving..." : "Save Profile"}
 </button>
@@ -348,54 +356,9 @@ onChange={(e) => setRequestVerification(e.target.checked)}
 <a href="/career-toolkit" style={styles.linkButton}>
 Career ToolKit
 </a>
-</div>
+</section>
 
 {message ? <p style={styles.message}>{message}</p> : null}
-</section>
-</div>
-</section>
-
-<aside style={styles.sideColumn}>
-<div style={styles.previewCard}>
-<p style={styles.kicker}>Profile Preview</p>
-<h2 style={styles.sectionTitle}>Career Passport Snapshot</h2>
-
-<div style={styles.previewTopBlock}>
-<h3 style={styles.previewName}>{fullName || "Your Name"}</h3>
-<p style={styles.previewLine}>{headline || "Professional Headline"}</p>
-<p style={styles.previewLine}>
-{[city, stateName].filter(Boolean).join(", ") || "City, State"}
-</p>
-<p style={styles.previewLine}>{email || "email@example.com"}</p>
-</div>
-
-{publicPassportUrl ? (
-<a href={publicPassportUrl} style={styles.publicLink}>
-View public passport
-</a>
-) : null}
-</div>
-
-<div style={styles.sideInfoCard}>
-<p style={styles.sectionKicker}>Status</p>
-<h3 style={styles.sideInfoTitle}>Current Uploads</h3>
-
-<div style={styles.sideInfoRow}>
-<span style={styles.sideInfoLabel}>Photo</span>
-<span style={styles.sideInfoValue}>{photoUrl ? "Uploaded" : "Not uploaded"}</span>
-</div>
-
-<div style={styles.sideInfoRow}>
-<span style={styles.sideInfoLabel}>Intro Video</span>
-<span style={styles.sideInfoValue}>{videoUrl ? "Uploaded" : "Not uploaded"}</span>
-</div>
-
-<div style={styles.sideInfoRow}>
-<span style={styles.sideInfoLabel}>Resume</span>
-<span style={styles.sideInfoValue}>{resumeUrl ? "Uploaded" : "Not uploaded"}</span>
-</div>
-</div>
-</aside>
 </div>
 </main>
 );
@@ -452,13 +415,20 @@ style={styles.textarea}
 );
 }
 
+const glass = {
+background: "rgba(255,255,255,0.035)",
+border: "1px solid rgba(255,255,255,0.06)",
+boxShadow: "0 18px 60px rgba(0,0,0,0.22)",
+backdropFilter: "blur(14px)",
+} as React.CSSProperties;
+
 const styles: Record<string, React.CSSProperties> = {
 page: {
 minHeight: "100vh",
 background:
-"radial-gradient(circle at top, rgba(59,130,246,0.1) 0%, rgba(5,5,5,1) 36%, rgba(13,13,15,1) 100%)",
+"radial-gradient(circle at top left, rgba(59,130,246,0.12) 0%, transparent 20%), radial-gradient(circle at top right, rgba(255,255,255,0.05) 0%, transparent 18%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)",
 color: "#e7e7e7",
-padding: "32px 24px 56px",
+padding: "34px 24px 64px",
 fontFamily:
 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 },
@@ -468,37 +438,24 @@ margin: "0 auto",
 padding: "40px 24px",
 },
 shell: {
-maxWidth: "1440px",
+maxWidth: "1320px",
 margin: "0 auto",
 display: "grid",
-gridTemplateColumns: "1.2fr 0.75fr",
 gap: "24px",
-alignItems: "start",
 },
-mainColumn: {
-display: "grid",
-gap: "20px",
-},
-sideColumn: {
-display: "grid",
-gap: "20px",
-position: "sticky",
-top: "24px",
-},
-heroCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "30px",
-padding: "28px",
-boxShadow: "0 28px 80px rgba(0,0,0,0.28)",
-},
-heroTop: {
+hero: {
 display: "flex",
 justifyContent: "space-between",
-gap: "18px",
+gap: "24px",
 alignItems: "flex-start",
 flexWrap: "wrap",
+},
+heroLeft: {
+maxWidth: "860px",
+},
+heroRight: {
+display: "flex",
+alignItems: "flex-start",
 },
 kicker: {
 margin: "0 0 8px",
@@ -508,10 +465,10 @@ letterSpacing: "0.18em",
 textTransform: "uppercase",
 },
 title: {
-margin: "0 0 10px",
-fontSize: "40px",
+margin: "0 0 12px",
+fontSize: "46px",
 fontWeight: 700,
-lineHeight: 1.04,
+lineHeight: 1.02,
 letterSpacing: "-0.04em",
 color: "#f5f5f5",
 },
@@ -519,13 +476,90 @@ subtitle: {
 margin: 0,
 color: "#d4d4d8",
 fontSize: "16px",
-lineHeight: 1.75,
-maxWidth: "820px",
+lineHeight: 1.85,
+maxWidth: "780px",
 },
-sectionHeader: {
+profileStrip: {
+...glass,
+borderRadius: "34px",
+padding: "26px",
+display: "grid",
+gridTemplateColumns: "220px 1fr",
+gap: "26px",
+alignItems: "center",
+},
+profileStripLeft: {
+display: "grid",
+gap: "14px",
+},
+profileStripRight: {
+minWidth: 0,
+},
+avatar: {
+width: "200px",
+height: "200px",
+borderRadius: "26px",
+objectFit: "cover",
+border: "1px solid rgba(255,255,255,0.08)",
+},
+avatarPlaceholder: {
+width: "200px",
+height: "200px",
+borderRadius: "26px",
+display: "flex",
+alignItems: "center",
+justifyContent: "center",
+background: "rgba(255,255,255,0.04)",
+color: "#cbd5e1",
+border: "1px solid rgba(255,255,255,0.08)",
+},
+photoUploadWrap: {
+display: "grid",
+gap: "8px",
+},
+namePreview: {
+margin: "0 0 10px",
+fontSize: "34px",
+lineHeight: 1.08,
+fontWeight: 700,
+color: "#f5f5f5",
+},
+headlinePreview: {
+margin: "0 0 8px",
+fontSize: "18px",
+lineHeight: 1.6,
+color: "#e5e7eb",
+},
+metaPreview: {
+margin: "0 0 6px",
+color: "#bdbdbd",
+lineHeight: 1.6,
+fontSize: "15px",
+},
+publicLink: {
+display: "inline-block",
+marginTop: "12px",
+color: "#f5f5f5",
+textDecoration: "underline",
+},
+formFlow: {
+display: "grid",
+gap: "16px",
+},
+assetFlow: {
+display: "grid",
+gap: "16px",
+},
+flowIntro: {
 display: "grid",
 gap: "6px",
-marginBottom: "16px",
+},
+flowText: {
+margin: 0,
+color: "#a1a1aa",
+fontSize: "15px",
+lineHeight: 1.75,
+maxWidth: "920px",
 },
 sectionKicker: {
 margin: 0,
@@ -536,17 +570,93 @@ textTransform: "uppercase",
 },
 sectionTitle: {
 margin: 0,
-fontSize: "28px",
+fontSize: "30px",
 fontWeight: 700,
-lineHeight: 1.1,
+lineHeight: 1.08,
 color: "#f5f5f5",
 },
-noticeBox: {
-marginTop: "20px",
-padding: "16px 18px",
+formGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr 1fr",
+gap: "14px",
+},
+singleField: {
+maxWidth: "100%",
+},
+assetRow: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "16px",
+},
+assetFloat: {
+...glass,
+borderRadius: "26px",
+padding: "20px",
+},
+assetTitle: {
+margin: "0 0 10px",
+fontSize: "20px",
+fontWeight: 700,
+color: "#f5f5f5",
+},
+assetLink: {
+display: "inline-block",
+marginTop: "8px",
+color: "#f5f5f5",
+textDecoration: "underline",
+fontSize: "14px",
+},
+assetMuted: {
+margin: "8px 0 0",
+color: "#9ca3af",
+fontSize: "14px",
+},
+fieldWrap: {
+display: "grid",
+gap: "8px",
+},
+label: {
+color: "#d4d4d8",
+fontSize: "13px",
+fontWeight: 600,
+},
+input: {
+width: "100%",
+padding: "14px 16px",
 borderRadius: "18px",
 border: "1px solid rgba(255,255,255,0.08)",
-background: "rgba(255,255,255,0.03)",
+background: "rgba(255,255,255,0.035)",
+color: "#f4f4f5",
+fontSize: "15px",
+boxSizing: "border-box",
+outline: "none",
+backdropFilter: "blur(10px)",
+},
+textarea: {
+width: "100%",
+minHeight: "130px",
+padding: "14px 16px",
+borderRadius: "20px",
+border: "1px solid rgba(255,255,255,0.08)",
+background: "rgba(255,255,255,0.035)",
+color: "#f4f4f5",
+fontSize: "15px",
+resize: "vertical",
+boxSizing: "border-box",
+outline: "none",
+backdropFilter: "blur(10px)",
+},
+checkboxRow: {
+display: "flex",
+alignItems: "center",
+gap: "10px",
+color: "#e5e7eb",
+marginTop: "2px",
+},
+noticeFloat: {
+...glass,
+borderRadius: "24px",
+padding: "18px 20px",
 },
 noticeTitle: {
 margin: "0 0 8px",
@@ -560,128 +670,12 @@ color: "#b8b8b8",
 fontSize: "14px",
 lineHeight: 1.7,
 },
-profileLayout: {
-display: "grid",
-gap: "20px",
-},
-profileCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "30px",
-padding: "24px",
-boxShadow: "0 24px 70px rgba(0,0,0,0.24)",
-display: "grid",
-gridTemplateColumns: "220px 1fr",
-gap: "24px",
-alignItems: "start",
-},
-profileMediaColumn: {
-display: "grid",
-gap: "14px",
-},
-profileInfoColumn: {
-minWidth: 0,
-},
-assetCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "30px",
-padding: "24px",
-boxShadow: "0 24px 70px rgba(0,0,0,0.24)",
-},
-assetGrid: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "16px",
-},
-assetPanel: {
-background: "rgba(255,255,255,0.03)",
-border: "1px solid rgba(255,255,255,0.06)",
-borderRadius: "22px",
-padding: "18px",
-},
-assetTitle: {
-margin: "0 0 8px",
-fontSize: "18px",
-fontWeight: 700,
-color: "#f5f5f5",
-},
-assetText: {
-margin: "0 0 14px",
-color: "#cfcfcf",
-fontSize: "14px",
-lineHeight: 1.7,
-},
-assetLink: {
-display: "inline-block",
-marginTop: "8px",
-color: "#f5f5f5",
-textDecoration: "underline",
-fontSize: "14px",
-},
-assetMuted: {
-margin: "8px 0 0",
-color: "#a1a1aa",
-fontSize: "14px",
-lineHeight: 1.6,
-},
-twoCol: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "14px",
-},
-fieldWrap: {
-marginBottom: "12px",
-},
-label: {
-display: "block",
-marginBottom: "8px",
-color: "#d4d4d8",
-fontSize: "13px",
-fontWeight: 600,
-},
-input: {
-width: "100%",
-padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-boxSizing: "border-box",
-outline: "none",
-},
-textarea: {
-width: "100%",
-minHeight: "120px",
-padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-resize: "vertical",
-boxSizing: "border-box",
-outline: "none",
-},
-uploadBlock: {
-display: "grid",
-gap: "8px",
-},
-checkboxRow: {
-display: "flex",
-alignItems: "center",
-gap: "10px",
-color: "#e5e7eb",
-margin: "18px 0 16px",
-},
-bottomActions: {
+bottomDock: {
 display: "grid",
 gridTemplateColumns: "1fr 1fr",
 gap: "12px",
-marginTop: "8px",
+maxWidth: "520px",
+marginTop: "4px",
 },
 primaryButton: {
 width: "100%",
@@ -696,12 +690,13 @@ cursor: "pointer",
 },
 secondaryButton: {
 padding: "12px 16px",
-borderRadius: "14px",
-border: "1px solid rgba(255,255,255,0.14)",
-background: "#111111",
+borderRadius: "16px",
+border: "1px solid rgba(255,255,255,0.12)",
+background: "rgba(255,255,255,0.04)",
 color: "#f5f5f5",
 fontWeight: 700,
 cursor: "pointer",
+backdropFilter: "blur(10px)",
 },
 linkButton: {
 display: "inline-flex",
@@ -710,95 +705,16 @@ justifyContent: "center",
 textDecoration: "none",
 padding: "15px 18px",
 borderRadius: "18px",
-border: "1px solid rgba(255,255,255,0.14)",
-background: "#111111",
+border: "1px solid rgba(255,255,255,0.12)",
+background: "rgba(255,255,255,0.04)",
 color: "#f5f5f5",
 fontWeight: 700,
+backdropFilter: "blur(10px)",
 },
 message: {
-marginTop: "16px",
+marginTop: "2px",
 color: "#e5e5e5",
 fontSize: "14px",
 lineHeight: 1.6,
-},
-avatar: {
-width: "200px",
-height: "200px",
-borderRadius: "22px",
-objectFit: "cover",
-border: "1px solid #2e2e2e",
-},
-avatarPlaceholder: {
-width: "200px",
-height: "200px",
-borderRadius: "22px",
-display: "flex",
-alignItems: "center",
-justifyContent: "center",
-background: "#111827",
-color: "#cbd5e1",
-border: "1px solid #2e2e2e",
-},
-previewCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "30px",
-padding: "24px",
-boxShadow: "0 24px 70px rgba(0,0,0,0.24)",
-},
-previewTopBlock: {
-marginBottom: "18px",
-},
-previewName: {
-margin: "0 0 8px",
-fontSize: "28px",
-fontWeight: 700,
-color: "#f5f5f5",
-lineHeight: 1.12,
-},
-previewLine: {
-margin: "0 0 8px",
-color: "#c8c8c8",
-lineHeight: 1.6,
-fontSize: "15px",
-},
-publicLink: {
-display: "inline-block",
-marginTop: "8px",
-color: "#f5f5f5",
-textDecoration: "underline",
-},
-sideInfoCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "30px",
-padding: "24px",
-boxShadow: "0 24px 70px rgba(0,0,0,0.24)",
-},
-sideInfoTitle: {
-margin: "0 0 14px",
-fontSize: "22px",
-fontWeight: 700,
-color: "#f5f5f5",
-},
-sideInfoRow: {
-display: "flex",
-justifyContent: "space-between",
-gap: "12px",
-alignItems: "center",
-padding: "12px 0",
-borderBottom: "1px solid rgba(255,255,255,0.08)",
-},
-sideInfoLabel: {
-color: "#a1a1aa",
-fontSize: "14px",
-},
-sideInfoValue: {
-color: "#f5f5f5",
-fontSize: "14px",
-fontWeight: 700,
-textAlign: "right",
 },
 };
