@@ -16,7 +16,23 @@ type Choice =
 | "office_environment"
 | "warehouse_environment"
 | "public_service_interest"
-| "numbers_and_records";
+| "numbers_and_records"
+| "driving"
+| "community_outreach"
+| "bilingual_languages"
+| "hybrid_remote"
+| "mechanical_aptitude"
+| "cash_handling"
+| "writing"
+| "office_computers"
+| "working_outside"
+| "contract_1099"
+| "independent_work"
+| "team_environment"
+| "sales_interest"
+| "creative_problem_solving"
+| "leadership_interest"
+| "teaching_training";
 
 type EducationPreference =
 | "quick-start"
@@ -57,8 +73,8 @@ fitTags: [
 "fast_paced",
 "healthcare_interest",
 "structured_tasks",
+"team_environment",
 ],
-avoidTags: ["working_with_computers"],
 whatYouNeed: [
 "Complete a state-approved CNA training program",
 "Pass any required exam or certification process in your state",
@@ -84,6 +100,7 @@ fitTags: [
 "structured_tasks",
 "detail_oriented",
 "office_environment",
+"office_computers",
 ],
 whatYouNeed: [
 "Look into a medical assistant certificate or diploma program",
@@ -109,6 +126,8 @@ fitTags: [
 "structured_tasks",
 "detail_oriented",
 "office_environment",
+"office_computers",
+"writing",
 ],
 whatYouNeed: [
 "Build strong scheduling, communication, and document handling skills",
@@ -133,6 +152,8 @@ fitTags: [
 "customer_facing",
 "fast_paced",
 "structured_tasks",
+"team_environment",
+"office_computers",
 ],
 whatYouNeed: [
 "Build communication and problem-solving examples on your resume",
@@ -157,6 +178,8 @@ fitTags: [
 "fast_paced",
 "warehouse_environment",
 "structured_tasks",
+"team_environment",
+"mechanical_aptitude",
 ],
 whatYouNeed: [
 "Highlight reliability, speed, accuracy, and physical work tolerance",
@@ -182,6 +205,9 @@ fitTags: [
 "detail_oriented",
 "structured_tasks",
 "office_environment",
+"office_computers",
+"hybrid_remote",
+"creative_problem_solving",
 ],
 whatYouNeed: [
 "Build basic troubleshooting and customer support skills",
@@ -207,6 +233,7 @@ fitTags: [
 "structured_tasks",
 "detail_oriented",
 "public_service_interest",
+"office_computers",
 ],
 whatYouNeed: [
 "Build strong communication, listening, and multi-tasking examples",
@@ -232,6 +259,8 @@ fitTags: [
 "structured_tasks",
 "organizing_information",
 "office_environment",
+"office_computers",
+"cash_handling",
 ],
 whatYouNeed: [
 "Build comfort with spreadsheets, accuracy, and recordkeeping",
@@ -241,6 +270,134 @@ whatYouNeed: [
 whyItFits: [
 "Strong fit for users who like accuracy, records, and organized desk work",
 "A good path for people who prefer less customer-facing work",
+],
+},
+{
+id: "delivery-driver",
+title: "Delivery Driver / Route Driver",
+medianPayLabel: "$39,950 median annual pay",
+salaryRank: 2,
+educationLevel: "quick-start",
+summary:
+"Drivers manage routes, schedules, deliveries, and customer interaction while staying safe on the road.",
+fitTags: [
+"driving",
+"independent_work",
+"fast_paced",
+"customer_facing",
+"contract_1099",
+],
+whatYouNeed: [
+"Keep a clean driving record where possible",
+"Check license and insurance requirements for the employer or platform",
+"Highlight punctuality, route familiarity, and customer service",
+],
+whyItFits: [
+"Good fit for users who like being on the road more than sitting at a desk",
+"Can fit both employee and contract-style work preferences",
+],
+},
+{
+id: "community-health-worker",
+title: "Community Health Worker / Outreach Worker",
+medianPayLabel: "$48,200 median annual pay",
+salaryRank: 2,
+educationLevel: "certificate-ok",
+summary:
+"Outreach workers connect communities to services, education, resources, and support.",
+fitTags: [
+"helping_people",
+"community_outreach",
+"talking_to_people",
+"public_service_interest",
+"bilingual_languages",
+"writing",
+],
+whatYouNeed: [
+"Build outreach, case support, advocacy, or community service experience",
+"Look into local nonprofit, healthcare, or municipal roles",
+"Highlight trust-building, communication, and resource coordination",
+],
+whyItFits: [
+"Great fit for people who enjoy community-facing work and relationship building",
+"Strong option for bilingual candidates and service-minded users",
+],
+},
+{
+id: "sales-rep",
+title: "Sales Representative / Account Representative",
+medianPayLabel: "$63,050 median annual pay",
+salaryRank: 3,
+educationLevel: "quick-start",
+summary:
+"Sales reps build relationships, explain products or services, and drive business growth.",
+fitTags: [
+"talking_to_people",
+"customer_facing",
+"sales_interest",
+"leadership_interest",
+"hybrid_remote",
+"independent_work",
+],
+whatYouNeed: [
+"Build confidence in communication, follow-up, and relationship management",
+"Highlight client-facing, outreach, recruiting, or service experience",
+"Learn how the employer measures goals, quotas, or account growth",
+],
+whyItFits: [
+"Good fit for persuasive communicators who enjoy people and momentum",
+"Often offers stronger earning potential than many entry-level roles",
+],
+},
+{
+id: "mechanic-helper",
+title: "Mechanical Helper / Service Technician Trainee",
+medianPayLabel: "$43,000 median annual pay",
+salaryRank: 2,
+educationLevel: "short-training",
+summary:
+"Mechanical support roles involve tools, troubleshooting, equipment, and physical problem-solving.",
+fitTags: [
+"hands_on_work",
+"mechanical_aptitude",
+"working_outside",
+"structured_tasks",
+"creative_problem_solving",
+],
+whatYouNeed: [
+"Look into trade school, on-the-job training, or employer-sponsored training",
+"Build comfort with tools, equipment safety, and maintenance basics",
+"Highlight reliability, hands-on experience, and troubleshooting skills",
+],
+whyItFits: [
+"Strong fit for people who like fixing, maintaining, and working with equipment",
+"Good path for users who prefer practical work over desk work",
+],
+},
+{
+id: "remote-support-coordinator",
+title: "Remote Support Coordinator / Virtual Operations Support",
+medianPayLabel: "$48,000 median annual pay",
+salaryRank: 2,
+educationLevel: "quick-start",
+summary:
+"Remote support roles often involve scheduling, customer communication, follow-up, and digital coordination.",
+fitTags: [
+"hybrid_remote",
+"office_computers",
+"writing",
+"organizing_information",
+"structured_tasks",
+"talking_to_people",
+],
+whatYouNeed: [
+"Build email, scheduling, communication, and virtual office skills",
+"Highlight remote tools, calendar support, documentation, and follow-up work",
+"Search remote support, coordinator, admin, and client-success roles",
+],
+whyItFits: [
+"Great fit for users who want office-style work with more flexibility",
+"Good path for strong communicators who are comfortable online",
 ],
 },
 ];
@@ -257,9 +414,25 @@ detail_oriented: "Detail-oriented work",
 customer_facing: "Customer-facing work",
 healthcare_interest: "Healthcare settings",
 office_environment: "Office environment",
-warehouse_environment: "Warehouse / logistics environment",
+warehouse_environment: "Warehouse / logistics",
 public_service_interest: "Public service work",
 numbers_and_records: "Numbers and records",
+driving: "Driving",
+community_outreach: "Community work / outreach",
+bilingual_languages: "Bilingual / languages",
+hybrid_remote: "Hybrid / remote",
+mechanical_aptitude: "Mechanical aptitude",
+cash_handling: "Cash handling",
+writing: "Writing",
+office_computers: "Office / computers",
+working_outside: "Working outside",
+contract_1099: "1099 / contract",
+independent_work: "Independent work",
+team_environment: "Team environment",
+sales_interest: "Sales / persuasion",
+creative_problem_solving: "Problem-solving",
+leadership_interest: "Leadership interest",
+teaching_training: "Teaching / training others",
 };
 
 function getEducationScore(
@@ -273,7 +446,7 @@ const rank = {
 "degree-ok": 4,
 };
 
-return careerEducation <= preference
+return rank[careerEducation] <= rank[preference]
 ? 2
 : rank[careerEducation] - rank[preference] === 1
 ? 1
@@ -301,7 +474,7 @@ prev.includes(choice) ? prev.filter((item) => item !== choice) : [...prev, choic
 }
 
 const matches = useMemo(() => {
-const ranked = careerData
+return careerData
 .map((career) => {
 let score = 0;
 
@@ -318,21 +491,29 @@ score += getSalaryScore(salaryPreference, career.salaryRank);
 
 return { ...career, score };
 })
-.sort((a, b) => b.score - a.score);
-
-return ranked.slice(0, 4);
+.sort((a, b) => b.score - a.score)
+.slice(0, 6);
 }, [selectedChoices, educationPreference, salaryPreference]);
 
 return (
 <main style={styles.page}>
 <div style={styles.shell}>
+<section style={styles.disclaimerBanner}>
+<p style={styles.disclaimerTitle}>Important disclaimer</p>
+<p style={styles.disclaimerText}>
+This tool is for career exploration only. Salary can vary by state, industry,
+employer, schedule, experience, and credentials. HireMinds does not guarantee pay,
+job placement, admission into any program, certification, or employment. If a role
+suggests training or school, that does not mean completion will guarantee a job.
+</p>
+</section>
+
 <section style={styles.heroCard}>
 <p style={styles.kicker}>Career ToolKit</p>
 <h1 style={styles.title}>Career Path Generator</h1>
 <p style={styles.subtitle}>
-Pick what you like, how you prefer to work, and how quickly you want to get
-started. HireMinds will suggest career paths to explore, estimated pay, and
-next steps.
+Choose what fits your interests, work style, and pay goals. Then explore career
+paths that may align with what you like and how you prefer to work.
 </p>
 
 <div style={styles.heroButtons}>
@@ -342,30 +523,10 @@ Back to Career ToolKit
 </div>
 </section>
 
-<div style={styles.layout}>
-<section style={styles.formCard}>
+<section style={styles.topChooser}>
 <div style={styles.sectionHeader}>
-<p style={styles.sectionKicker}>Your Preferences</p>
-<h2 style={styles.sectionTitle}>Choose what fits you</h2>
-</div>
-
-<div style={styles.choiceGrid}>
-{(Object.keys(choiceLabels) as Choice[]).map((choice) => {
-const selected = selectedChoices.includes(choice);
-return (
-<button
-key={choice}
-type="button"
-onClick={() => toggleChoice(choice)}
-style={{
-...styles.choiceButton,
-...(selected ? styles.choiceButtonActive : {}),
-}}
->
-{choiceLabels[choice]}
-</button>
-);
-})}
+<p style={styles.sectionKicker}>Choose What Fits You</p>
+<h2 style={styles.sectionTitle}>Interests, skills, and work preferences</h2>
 </div>
 
 <div style={styles.prefGrid}>
@@ -401,21 +562,30 @@ style={styles.input}
 </div>
 </div>
 
-<div style={styles.disclaimerBox}>
-<p style={styles.disclaimerTitle}>Important disclaimer</p>
-<p style={styles.disclaimerText}>
-These results are for career exploration only. Salary can vary by state,
-employer, experience, schedule, and credentials. HireMinds does not guarantee
-pay, school admission, certification, or job placement. Suggested education or
-training paths do not guarantee employment.
-</p>
+<div style={styles.horizontalChoiceWrap}>
+{(Object.keys(choiceLabels) as Choice[]).map((choice) => {
+const selected = selectedChoices.includes(choice);
+return (
+<button
+key={choice}
+type="button"
+onClick={() => toggleChoice(choice)}
+style={{
+...styles.choiceButton,
+...(selected ? styles.choiceButtonActive : {}),
+}}
+>
+{choiceLabels[choice]}
+</button>
+);
+})}
 </div>
 </section>
 
-<section style={styles.resultsCard}>
+<section style={styles.resultsSection}>
 <div style={styles.sectionHeader}>
-<p style={styles.sectionKicker}>Career Matches</p>
-<h2 style={styles.sectionTitle}>Paths to explore</h2>
+<p style={styles.sectionKicker}>Paths to Explore</p>
+<h2 style={styles.sectionTitle}>Career matches based on your choices</h2>
 </div>
 
 <div style={styles.resultList}>
@@ -453,7 +623,6 @@ training paths do not guarantee employment.
 </div>
 </section>
 </div>
-</div>
 </main>
 );
 }
@@ -469,18 +638,36 @@ fontFamily:
 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 },
 shell: {
-maxWidth: "1360px",
+maxWidth: "1380px",
 margin: "0 auto",
 display: "grid",
-gap: "24px",
+gap: "20px",
+},
+disclaimerBanner: {
+background: "rgba(255,255,255,0.04)",
+border: "1px solid rgba(255,255,255,0.08)",
+borderRadius: "22px",
+padding: "18px 20px",
+},
+disclaimerTitle: {
+margin: "0 0 8px",
+fontSize: "14px",
+fontWeight: 700,
+color: "#f5f5f5",
+},
+disclaimerText: {
+margin: 0,
+color: "#d4d4d8",
+fontSize: "14px",
+lineHeight: 1.75,
 },
 heroCard: {
 background:
 "linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
 border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "32px",
-padding: "32px",
-boxShadow: "0 30px 80px rgba(0,0,0,0.32)",
+borderRadius: "28px",
+padding: "28px",
+boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
 },
 kicker: {
 margin: "0 0 8px",
@@ -502,7 +689,7 @@ margin: 0,
 color: "#d4d4d8",
 fontSize: "16px",
 lineHeight: 1.75,
-maxWidth: "900px",
+maxWidth: "920px",
 },
 heroButtons: {
 display: "flex",
@@ -523,32 +710,19 @@ color: "#f5f5f5",
 fontWeight: 700,
 fontSize: "14px",
 },
-layout: {
+topChooser: {
+background:
+"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
+border: "1px solid rgba(255,255,255,0.07)",
+borderRadius: "28px",
+padding: "24px",
+boxShadow: "0 22px 60px rgba(0,0,0,0.28)",
 display: "grid",
-gridTemplateColumns: "0.95fr 1.05fr",
-gap: "20px",
-alignItems: "start",
-},
-formCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "28px",
-padding: "24px",
-boxShadow: "0 22px 60px rgba(0,0,0,0.28)",
-},
-resultsCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "28px",
-padding: "24px",
-boxShadow: "0 22px 60px rgba(0,0,0,0.28)",
+gap: "18px",
 },
 sectionHeader: {
 display: "grid",
 gap: "6px",
-marginBottom: "18px",
 },
 sectionKicker: {
 margin: 0,
@@ -563,28 +737,6 @@ fontSize: "30px",
 lineHeight: 1.1,
 fontWeight: 700,
 color: "#f5f5f5",
-},
-choiceGrid: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "12px",
-marginBottom: "18px",
-},
-choiceButton: {
-padding: "14px 14px",
-borderRadius: "16px",
-border: "1px solid rgba(255,255,255,0.12)",
-background: "rgba(255,255,255,0.04)",
-color: "#f5f5f5",
-fontWeight: 700,
-fontSize: "14px",
-cursor: "pointer",
-textAlign: "left",
-},
-choiceButtonActive: {
-background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
-color: "#09090b",
-border: "1px solid #d1d5db",
 },
 prefGrid: {
 display: "grid",
@@ -611,36 +763,45 @@ fontSize: "15px",
 boxSizing: "border-box",
 outline: "none",
 },
-disclaimerBox: {
-marginTop: "18px",
-background: "rgba(255,255,255,0.03)",
-border: "1px solid rgba(255,255,255,0.08)",
-borderRadius: "18px",
-padding: "16px",
+horizontalChoiceWrap: {
+display: "flex",
+gap: "10px",
+flexWrap: "wrap",
+alignItems: "center",
 },
-disclaimerTitle: {
-margin: "0 0 8px",
-fontSize: "14px",
-fontWeight: 700,
+choiceButton: {
+padding: "12px 14px",
+borderRadius: "999px",
+border: "1px solid rgba(255,255,255,0.12)",
+background: "rgba(255,255,255,0.04)",
 color: "#f5f5f5",
-},
-disclaimerText: {
-margin: 0,
-color: "#d4d4d8",
+fontWeight: 700,
 fontSize: "14px",
-lineHeight: 1.7,
+cursor: "pointer",
+whiteSpace: "nowrap",
+},
+choiceButtonActive: {
+background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+color: "#09090b",
+border: "1px solid #d1d5db",
+},
+resultsSection: {
+display: "grid",
+gap: "18px",
 },
 resultList: {
 display: "grid",
 gap: "16px",
 },
 resultCard: {
-background: "#101010",
-border: "1px solid #2d2d2d",
-borderRadius: "20px",
-padding: "18px",
+background:
+"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
+border: "1px solid rgba(255,255,255,0.07)",
+borderRadius: "22px",
+padding: "20px",
 display: "grid",
 gap: "12px",
+boxShadow: "0 22px 60px rgba(0,0,0,0.24)",
 },
 resultTop: {
 display: "flex",
@@ -650,7 +811,7 @@ alignItems: "flex-start",
 },
 resultTitle: {
 margin: "0 0 4px",
-fontSize: "22px",
+fontSize: "24px",
 lineHeight: 1.15,
 fontWeight: 700,
 color: "#f5f5f5",
