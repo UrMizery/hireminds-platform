@@ -83,18 +83,17 @@ Open Cover Letter Generator
 
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Employer Follow-Up Generator</h3>
+<h3 style={styles.featureTitle}>The House of Letters</h3>
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-Create a thank-you email after an interview or a polite follow-up email
-to check on your application status.
+From thank-you notes to resignation letters, create the words that move your career forward.
 </p>
 <a
 href="/career-toolkit/employer-follow-up-generator"
 style={styles.linkButton}
 >
-Open Follow-Up Generator
+Open The House of Letters
 </a>
 </div>
 
