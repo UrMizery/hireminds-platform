@@ -31,14 +31,10 @@ const [linkedinUrl, setLinkedinUrl] = useState("");
 const [passportSlug, setPassportSlug] = useState("");
 
 const [photoFile, setPhotoFile] = useState<File | null>(null);
-const [videoFile, setVideoFile] = useState<File | null>(null);
 const [resumeFile, setResumeFile] = useState<File | null>(null);
 
 const [photoUrl, setPhotoUrl] = useState("");
-const [videoUrl, setVideoUrl] = useState("");
 const [resumeUrl, setResumeUrl] = useState("");
-
-const [requestVerification, setRequestVerification] = useState(false);
 
 const publicPassportUrl = useMemo(() => {
 return passportSlug ? `/passport/${passportSlug}` : "";
@@ -85,7 +81,6 @@ setHeadline(profile.headline || "");
 setLinkedinUrl(profile.linkedin_url || "");
 setPassportSlug(profile.passport_slug || "");
 setResumeUrl(profile.resume_url || "");
-setVideoUrl(profile.intro_video_url || "");
 setPhotoUrl(profile.photo_url || "");
 setLoading(false);
 }
@@ -121,15 +116,10 @@ setSaving(true);
 const finalSlug = passportSlug || slugify(fullName || "career-passport");
 
 let nextPhotoUrl = photoUrl;
-let nextVideoUrl = videoUrl;
 let nextResumeUrl = resumeUrl;
 
 if (photoFile) {
 nextPhotoUrl = await uploadFile("profile-photos", photoFile, `${userId}/photo`);
-}
-
-if (videoFile) {
-nextVideoUrl = await uploadFile("profile-videos", videoFile, `${userId}/video`);
 }
 
 if (resumeFile) {
@@ -148,7 +138,6 @@ headline,
 linkedin_url: linkedinUrl,
 passport_slug: finalSlug,
 resume_url: nextResumeUrl || null,
-intro_video_url: nextVideoUrl || null,
 photo_url: nextPhotoUrl || null,
 };
 
@@ -171,7 +160,6 @@ setProfileId(data.id);
 }
 
 setPhotoUrl(nextPhotoUrl);
-setVideoUrl(nextVideoUrl);
 setResumeUrl(nextResumeUrl);
 setPassportSlug(finalSlug);
 
@@ -204,8 +192,8 @@ return (
 <p style={styles.kicker}>Career Passport</p>
 <h1 style={styles.title}>Your private profile editor</h1>
 <p style={styles.subtitle}>
-Update your public-facing profile, adjust your personal details, and manage your
-Career Passport assets in one cleaner space.
+Update the details that appear on your Career Passport, upload your resume,
+and keep your saved profile information current.
 </p>
 </div>
 
@@ -287,32 +275,15 @@ placeholder="Write a short professional bio."
 
 <section style={styles.assetFlow}>
 <div style={styles.flowIntro}>
-<p style={styles.sectionKicker}>Media + Resume</p>
-<h2 style={styles.sectionTitle}>Uploads</h2>
+<p style={styles.sectionKicker}>Resume</p>
+<h2 style={styles.sectionTitle}>Uploaded Resume</h2>
 <p style={styles.flowText}>
-These areas are still being finalized. You can keep them visible here, but intro video
-and resume display may not always update perfectly yet.
+Your uploaded resume is the file that will appear on your public Career Passport
+for approved partners and employers.
 </p>
 </div>
 
-<div style={styles.assetRow}>
-<div style={styles.assetFloat}>
-<p style={styles.assetTitle}>Intro Video</p>
-<input
-type="file"
-accept="video/*"
-onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-style={styles.input}
-/>
-{videoUrl ? (
-<a href={videoUrl} target="_blank" rel="noreferrer" style={styles.assetLink}>
-View current video
-</a>
-) : (
-<p style={styles.assetMuted}>No video uploaded yet.</p>
-)}
-</div>
-
+<div style={styles.assetSingle}>
 <div style={styles.assetFloat}>
 <p style={styles.assetTitle}>Resume Upload</p>
 <input
@@ -330,21 +301,21 @@ View current resume
 )}
 </div>
 </div>
+</section>
 
-<label style={styles.checkboxRow}>
-<input
-type="checkbox"
-checked={requestVerification}
-onChange={(e) => setRequestVerification(e.target.checked)}
-/>
-<span>Request employer verification</span>
-</label>
+<section style={styles.noticeFloat}>
+<p style={styles.noticeTitle}>Public Profile Note</p>
+<p style={styles.noticeText}>
+Your photo, headline, location, LinkedIn, uploaded resume, and other saved
+profile details can appear on your Career Passport once saved.
+</p>
 </section>
 
 <section style={styles.noticeFloat}>
 <p style={styles.noticeTitle}>Privacy Notice</p>
 <p style={styles.noticeText}>
-Your information is stored securely and is not sold or shared for marketing purposes.
+Your information is stored securely and is not sold or shared for marketing
+purposes.
 </p>
 </section>
 
@@ -583,9 +554,9 @@ gap: "14px",
 singleField: {
 maxWidth: "100%",
 },
-assetRow: {
+assetSingle: {
 display: "grid",
-gridTemplateColumns: "1fr 1fr",
+gridTemplateColumns: "1fr",
 gap: "16px",
 },
 assetFloat: {
@@ -645,13 +616,6 @@ resize: "vertical",
 boxSizing: "border-box",
 outline: "none",
 backdropFilter: "blur(10px)",
-},
-checkboxRow: {
-display: "flex",
-alignItems: "center",
-gap: "10px",
-color: "#e5e7eb",
-marginTop: "2px",
 },
 noticeFloat: {
 ...glass,
