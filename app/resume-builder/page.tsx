@@ -70,6 +70,7 @@ type ResumeSectionKey =
 
 const BULLET_LIMIT = 5;
 const SKILL_LIMIT = 9;
+const RESUME_DRAFT_STORAGE_KEY = "hireminds-resume-draft-v1";
 
 const MONTHS = [
 "",
@@ -104,7 +105,7 @@ education: string;
 certifications: string;
 volunteer: string;
 accomplishments: string;
-saveResume: string;
+saveDraft: string;
 printResume: string;
 moveSections: string;
 currentlyWorkHere: string;
@@ -112,12 +113,11 @@ currentlyAttendHere: string;
 currentlyCompletingCert: string;
 currentlyVolunteerHere: string;
 backToProfile: string;
-viewPublicProfile: string;
 }
 > = {
 English: {
 pageKicker: "RESUME GENERATOR",
-pageTitle: "Create and save your resume.",
+pageTitle: "Create and save your resume draft.",
 font: "Resume Font",
 language: "Language",
 livePreview: "Resume Preview",
@@ -130,7 +130,7 @@ education: "Education (optional)",
 certifications: "Certifications (optional)",
 volunteer: "Volunteer Work (optional)",
 accomplishments: "Accomplishments (optional)",
-saveResume: "Save Resume",
+saveDraft: "Save Draft",
 printResume: "Print Resume",
 moveSections: "Move Resume Sections",
 currentlyWorkHere: "I currently work here",
@@ -138,11 +138,10 @@ currentlyAttendHere: "I currently attend here",
 currentlyCompletingCert: "I am currently completing this certification",
 currentlyVolunteerHere: "I currently volunteer here",
 backToProfile: "Back to Profile",
-viewPublicProfile: "View Public Profile",
 },
 Spanish: {
 pageKicker: "GENERADOR DE CURRÍCULUM",
-pageTitle: "Crea y guarda tu currículum.",
+pageTitle: "Crea y guarda tu borrador de currículum.",
 font: "Fuente del currículum",
 language: "Idioma",
 livePreview: "Vista previa del currículum",
@@ -156,7 +155,7 @@ education: "Educación (opcional)",
 certifications: "Certificaciones (opcional)",
 volunteer: "Trabajo voluntario (opcional)",
 accomplishments: "Logros (opcional)",
-saveResume: "Guardar currículum",
+saveDraft: "Guardar borrador",
 printResume: "Imprimir currículum",
 moveSections: "Mover secciones del currículum",
 currentlyWorkHere: "Actualmente trabajo aquí",
@@ -164,11 +163,10 @@ currentlyAttendHere: "Actualmente estudio aquí",
 currentlyCompletingCert: "Actualmente estoy completando esta certificación",
 currentlyVolunteerHere: "Actualmente hago voluntariado aquí",
 backToProfile: "Volver al perfil",
-viewPublicProfile: "Ver perfil público",
 },
 Hindi: {
 pageKicker: "रिज़्यूमे जनरेटर",
-pageTitle: "अपना रिज़्यूमे बनाएं और सेव करें।",
+pageTitle: "अपना रिज़्यूमे ड्राफ्ट बनाएं और सेव करें।",
 font: "रिज़्यूमे फ़ॉन्ट",
 language: "भाषा",
 livePreview: "रिज़्यूमे पूर्वावलोकन",
@@ -182,7 +180,7 @@ education: "शिक्षा (वैकल्पिक)",
 certifications: "प्रमाणपत्र (वैकल्पिक)",
 volunteer: "स्वयंसेवी कार्य (वैकल्पिक)",
 accomplishments: "उपलब्धियाँ (वैकल्पिक)",
-saveResume: "रिज़्यूमे सहेजें",
+saveDraft: "ड्राफ्ट सहेजें",
 printResume: "रिज़्यूमे प्रिंट करें",
 moveSections: "रिज़्यूमे सेक्शन बदलें",
 currentlyWorkHere: "मैं वर्तमान में यहाँ काम करता/करती हूँ",
@@ -190,11 +188,10 @@ currentlyAttendHere: "मैं वर्तमान में यहाँ प
 currentlyCompletingCert: "मैं वर्तमान में यह प्रमाणपत्र पूरा कर रहा/रही हूँ",
 currentlyVolunteerHere: "मैं वर्तमान में यहाँ स्वयंसेवा करता/करती हूँ",
 backToProfile: "प्रोफ़ाइल पर वापस जाएँ",
-viewPublicProfile: "सार्वजनिक प्रोफ़ाइल देखें",
 },
 Polish: {
 pageKicker: "GENERATOR CV",
-pageTitle: "Utwórz i zapisz swoje CV.",
+pageTitle: "Utwórz i zapisz szkic CV.",
 font: "Czcionka CV",
 language: "Język",
 livePreview: "Podgląd CV",
@@ -208,7 +205,7 @@ education: "Wykształcenie (opcjonalnie)",
 certifications: "Certyfikaty (opcjonalnie)",
 volunteer: "Wolontariat (opcjonalnie)",
 accomplishments: "Osiągnięcia (opcjonalnie)",
-saveResume: "Zapisz CV",
+saveDraft: "Zapisz szkic",
 printResume: "Drukuj CV",
 moveSections: "Przenieś sekcje CV",
 currentlyWorkHere: "Obecnie tu pracuję",
@@ -216,7 +213,6 @@ currentlyAttendHere: "Obecnie tu się uczę",
 currentlyCompletingCert: "Obecnie kończę ten certyfikat",
 currentlyVolunteerHere: "Obecnie jestem tu wolontariuszem",
 backToProfile: "Wróć do profilu",
-viewPublicProfile: "Zobacz profil publiczny",
 },
 };
 
@@ -309,12 +305,71 @@ item.bullets.some((b) => b.text.trim())
 );
 }
 
+function createDefaultExperience(): ExperienceItem {
+return {
+companyName: "",
+city: "",
+state: "",
+roleTitle: "",
+startMonth: "",
+startYear: "",
+endMonth: "",
+endYear: "",
+isPresent: false,
+bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+};
+}
+
+function createDefaultEducation(): EducationItem {
+return {
+schoolName: "",
+city: "",
+state: "",
+degree: "",
+gpa: "",
+startMonth: "",
+startYear: "",
+endMonth: "",
+endYear: "",
+isPresent: false,
+};
+}
+
+function createDefaultCertificate(): CertificateItem {
+return {
+organizationName: "",
+city: "",
+state: "",
+certificateName: "",
+startMonth: "",
+startYear: "",
+endMonth: "",
+endYear: "",
+isPresent: false,
+};
+}
+
+function createDefaultVolunteer(): VolunteerItem {
+return {
+organizationName: "",
+city: "",
+state: "",
+roleTitle: "",
+startMonth: "",
+startYear: "",
+endMonth: "",
+endYear: "",
+isPresent: false,
+bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+};
+}
+
 export default function ResumeBuilderPage() {
 const [loadingUser, setLoadingUser] = useState(true);
 const [userId, setUserId] = useState("");
-const [passportSlug, setPassportSlug] = useState("");
 const [message, setMessage] = useState("");
 const [saving, setSaving] = useState(false);
+const [draftLoaded, setDraftLoaded] = useState(false);
 const resumePrintRef = useRef<HTMLDivElement>(null);
 
 const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
@@ -332,63 +387,13 @@ const [summaryText, setSummaryText] = useState("");
 const [skillsInput, setSkillsInput] = useState("");
 const [accomplishments, setAccomplishments] = useState("");
 
-const [experiences, setExperiences] = useState<ExperienceItem[]>([
-{
-companyName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-},
-]);
-
-const [educationItems, setEducationItems] = useState<EducationItem[]>([
-{
-schoolName: "",
-city: "",
-state: "",
-degree: "",
-gpa: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-},
-]);
-
+const [experiences, setExperiences] = useState<ExperienceItem[]>([createDefaultExperience()]);
+const [educationItems, setEducationItems] = useState<EducationItem[]>([createDefaultEducation()]);
 const [certificateItems, setCertificateItems] = useState<CertificateItem[]>([
-{
-organizationName: "",
-city: "",
-state: "",
-certificateName: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-},
+createDefaultCertificate(),
 ]);
-
 const [volunteerItems, setVolunteerItems] = useState<VolunteerItem[]>([
-{
-organizationName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-},
+createDefaultVolunteer(),
 ]);
 
 const [sectionOrder, setSectionOrder] = useState<ResumeSectionKey[]>([
@@ -415,12 +420,11 @@ setUserId(currentUserId);
 
 const { data: profile } = await supabase
 .from("candidate_profiles")
-.select("full_name, phone, city, state, email, linkedin_url, passport_slug")
+.select("full_name, phone, city, state, email, linkedin_url")
 .eq("user_id", currentUserId)
 .maybeSingle();
 
 if (profile) {
-setPassportSlug(profile.passport_slug || "");
 setFullName(profile.full_name || "");
 setPhone(profile.phone || "");
 setCity(profile.city || "");
@@ -436,6 +440,110 @@ setLoadingUser(false);
 
 loadUserAndProfile();
 }, []);
+
+useEffect(() => {
+try {
+const raw = window.localStorage.getItem(RESUME_DRAFT_STORAGE_KEY);
+if (raw) {
+const draft = JSON.parse(raw);
+
+setFontFamily(draft.fontFamily || "Times New Roman");
+setLanguage(draft.language || "English");
+setFullName(draft.fullName || "");
+setPhone(draft.phone || "");
+setCity(draft.city || "");
+setStateName(draft.stateName || "");
+setEmail(draft.email || "");
+setLinkedinUrl(draft.linkedinUrl || "");
+setSummaryHeading(draft.summaryHeading || "Summary");
+setSummaryText(draft.summaryText || "");
+setSkillsInput(draft.skillsInput || "");
+setAccomplishments(draft.accomplishments || "");
+setExperiences(
+Array.isArray(draft.experiences) && draft.experiences.length
+? draft.experiences
+: [createDefaultExperience()]
+);
+setEducationItems(
+Array.isArray(draft.educationItems) && draft.educationItems.length
+? draft.educationItems
+: [createDefaultEducation()]
+);
+setCertificateItems(
+Array.isArray(draft.certificateItems) && draft.certificateItems.length
+? draft.certificateItems
+: [createDefaultCertificate()]
+);
+setVolunteerItems(
+Array.isArray(draft.volunteerItems) && draft.volunteerItems.length
+? draft.volunteerItems
+: [createDefaultVolunteer()]
+);
+setSectionOrder(
+Array.isArray(draft.sectionOrder) && draft.sectionOrder.length
+? draft.sectionOrder
+: [
+"summary",
+"skills",
+"experience",
+"education",
+"certifications",
+"volunteer",
+"accomplishments",
+]
+);
+}
+} catch {
+// ignore bad local draft
+} finally {
+setDraftLoaded(true);
+}
+}, []);
+
+useEffect(() => {
+if (!draftLoaded) return;
+
+const draft = {
+fontFamily,
+language,
+fullName,
+phone,
+city,
+stateName,
+email,
+linkedinUrl,
+summaryHeading,
+summaryText,
+skillsInput,
+accomplishments,
+experiences,
+educationItems,
+certificateItems,
+volunteerItems,
+sectionOrder,
+};
+
+window.localStorage.setItem(RESUME_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+}, [
+draftLoaded,
+fontFamily,
+language,
+fullName,
+phone,
+city,
+stateName,
+email,
+linkedinUrl,
+summaryHeading,
+summaryText,
+skillsInput,
+accomplishments,
+experiences,
+educationItems,
+certificateItems,
+volunteerItems,
+sectionOrder,
+]);
 
 const ui = TRANSLATIONS[language];
 
@@ -470,28 +578,10 @@ const activeVolunteer = useMemo(
 );
 
 function addExperience() {
-setExperiences((prev) => [
-...prev,
-{
-companyName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-},
-]);
+setExperiences((prev) => [...prev, createDefaultExperience()]);
 }
 
-function updateExperience(
-index: number,
-field: keyof ExperienceItem,
-value: string | boolean
-) {
+function updateExperience(index: number, field: keyof ExperienceItem, value: string | boolean) {
 setExperiences((prev) =>
 prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
 );
@@ -520,48 +610,17 @@ return { ...item, bullets: [...item.bullets, { text: "" }] };
 }
 
 function addEducation() {
-setEducationItems((prev) => [
-...prev,
-{
-schoolName: "",
-city: "",
-state: "",
-degree: "",
-gpa: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-},
-]);
+setEducationItems((prev) => [...prev, createDefaultEducation()]);
 }
 
-function updateEducation(
-index: number,
-field: keyof EducationItem,
-value: string | boolean
-) {
+function updateEducation(index: number, field: keyof EducationItem, value: string | boolean) {
 setEducationItems((prev) =>
 prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
 );
 }
 
 function addCertificate() {
-setCertificateItems((prev) => [
-...prev,
-{
-organizationName: "",
-city: "",
-state: "",
-certificateName: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-},
-]);
+setCertificateItems((prev) => [...prev, createDefaultCertificate()]);
 }
 
 function updateCertificate(
@@ -575,28 +634,10 @@ prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
 }
 
 function addVolunteer() {
-setVolunteerItems((prev) => [
-...prev,
-{
-organizationName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-},
-]);
+setVolunteerItems((prev) => [...prev, createDefaultVolunteer()]);
 }
 
-function updateVolunteer(
-index: number,
-field: keyof VolunteerItem,
-value: string | boolean
-) {
+function updateVolunteer(index: number, field: keyof VolunteerItem, value: string | boolean) {
 setVolunteerItems((prev) =>
 prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
 );
@@ -628,94 +669,38 @@ function moveSection(index: number, direction: "up" | "down") {
 setSectionOrder((prev) => moveItem(prev, index, direction));
 }
 
-async function handleSaveResume() {
+async function handleSaveDraft() {
 setMessage("");
-
-if (!userId) {
-setMessage("You must be signed in before saving.");
-return;
-}
 
 try {
 setSaving(true);
 
-const { data: profileData, error: profileError } = await supabase
-.from("candidate_profiles")
-.select("id, created_at")
-.eq("user_id", userId)
-.order("created_at", { ascending: false })
-.limit(1)
-.maybeSingle();
-
-if (profileError) throw profileError;
-if (!profileData?.id) {
-throw new Error("No candidate profile found for this user.");
-}
-
-const profileId = profileData.id;
-
-await supabase
-.from("candidate_profiles")
-.update({
-full_name: fullName,
-phone,
-city,
-state: stateName,
-email,
-linkedin_url: linkedinUrl,
-})
-.eq("id", profileId);
-
-const payload = {
-profile_id: profileId,
-title: "Primary Resume",
-page_limit: 2,
-summary_heading: summaryHeading || ui.summary,
-summary_text: summaryText,
-skills,
-education: activeEducation,
-accomplishments,
-volunteer_work: activeVolunteer,
-section_order: sectionOrder,
-full_name: fullName,
-email,
-phone,
-city,
-state: stateName,
-linkedin_url: linkedinUrl,
-font_family: fontFamily,
+const draft = {
+fontFamily,
 language,
-work_experience: activeExperiences,
-certifications: activeCertificates,
-header_settings: {
-repeat_header_on_new_page: true,
-preview_before_print: true,
-},
+fullName,
+phone,
+city,
+stateName,
+email,
+linkedinUrl,
+summaryHeading,
+summaryText,
+skillsInput,
+accomplishments,
+experiences,
+educationItems,
+certificateItems,
+volunteerItems,
+sectionOrder,
 };
 
-const { data: existingResume } = await supabase
-.from("resumes")
-.select("id")
-.eq("profile_id", profileId)
-.order("created_at", { ascending: false })
-.limit(1)
-.maybeSingle();
-
-if (existingResume?.id) {
-const { error: updateError } = await supabase
-.from("resumes")
-.update(payload)
-.eq("id", existingResume.id);
-
-if (updateError) throw updateError;
-} else {
-const { error: insertError } = await supabase.from("resumes").insert(payload);
-if (insertError) throw insertError;
-}
-
-setMessage("Resume saved successfully to your HireMinds profile.");
-} catch (error: any) {
-setMessage(error?.message || "Something went wrong while saving.");
+window.localStorage.setItem(RESUME_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+setMessage(
+"Resume draft saved locally in this browser. To place a resume on your public profile, upload the final resume from your Profile page."
+);
+} catch {
+setMessage("Unable to save your draft locally.");
 } finally {
 setSaving(false);
 }
@@ -1256,8 +1241,9 @@ style={styles.select}
 <p style={styles.cardKicker}>RESUME GENERATOR</p>
 <h2 style={styles.cardTitle}>Create your resume</h2>
 <p style={styles.previewHelp}>
-HireMinds Resume Generator is currently open to all users. Build your
-resume, save it to your profile, and print it when ready.
+This builder now saves your work as a local draft in this browser. To make a
+resume visible on your public profile, upload your final resume from the
+Profile page.
 </p>
 </section>
 
@@ -1466,14 +1452,20 @@ placeholder="2024"
 <label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
 <input
 value={bullet.text}
-onChange={(e) => updateExperienceBullet(index, bulletIndex, e.target.value)}
+onChange={(e) =>
+updateExperienceBullet(index, bulletIndex, e.target.value)
+}
 style={styles.input}
 placeholder="Describe the work you did"
 />
 </div>
 ))}
 
-<button type="button" onClick={() => addExperienceBullet(index)} style={styles.smallButton}>
+<button
+type="button"
+onClick={() => addExperienceBullet(index)}
+style={styles.smallButton}
+>
 + Add Bullet
 </button>
 </div>
@@ -1615,7 +1607,9 @@ placeholder="3.8"
 <label style={styles.inputLabel}>Organization / Program</label>
 <input
 value={item.organizationName}
-onChange={(e) => updateCertificate(index, "organizationName", e.target.value)}
+onChange={(e) =>
+updateCertificate(index, "organizationName", e.target.value)
+}
 style={styles.input}
 placeholder="Organization / Program"
 />
@@ -1624,7 +1618,9 @@ placeholder="Organization / Program"
 <label style={styles.inputLabel}>Certificate / Course Name</label>
 <input
 value={item.certificateName}
-onChange={(e) => updateCertificate(index, "certificateName", e.target.value)}
+onChange={(e) =>
+updateCertificate(index, "certificateName", e.target.value)
+}
 style={styles.input}
 placeholder="Certificate / Course Name"
 />
@@ -1727,7 +1723,9 @@ placeholder="2024"
 <label style={styles.inputLabel}>Organization</label>
 <input
 value={item.organizationName}
-onChange={(e) => updateVolunteer(index, "organizationName", e.target.value)}
+onChange={(e) =>
+updateVolunteer(index, "organizationName", e.target.value)
+}
 style={styles.input}
 placeholder="Organization Name"
 />
@@ -1828,14 +1826,20 @@ placeholder="2022"
 <label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
 <input
 value={bullet.text}
-onChange={(e) => updateVolunteerBullet(index, bulletIndex, e.target.value)}
+onChange={(e) =>
+updateVolunteerBullet(index, bulletIndex, e.target.value)
+}
 style={styles.input}
 placeholder="Describe your volunteer work"
 />
 </div>
 ))}
 
-<button type="button" onClick={() => addVolunteerBullet(index)} style={styles.smallButton}>
+<button
+type="button"
+onClick={() => addVolunteerBullet(index)}
+style={styles.smallButton}
+>
 + Add Bullet
 </button>
 </div>
@@ -1908,11 +1912,11 @@ Down
 <div className="siteButtons" style={styles.footerButtons}>
 <button
 type="button"
-onClick={handleSaveResume}
+onClick={handleSaveDraft}
 disabled={saving}
 style={styles.saveButton}
 >
-{saving ? "Saving..." : ui.saveResume}
+{saving ? "Saving..." : ui.saveDraft}
 </button>
 <button type="button" onClick={handlePrint} style={styles.printButton}>
 {ui.printResume}
@@ -1920,11 +1924,6 @@ style={styles.saveButton}
 <a href="/profile" style={styles.backButton}>
 {ui.backToProfile}
 </a>
-{passportSlug ? (
-<a href={`/passport/${passportSlug}`} style={styles.backButton}>
-{ui.viewPublicProfile}
-</a>
-) : null}
 </div>
 </div>
 
@@ -2185,7 +2184,7 @@ cursor: "pointer",
 },
 footerButtons: {
 display: "grid",
-gridTemplateColumns: "1fr 1fr 1fr 1fr",
+gridTemplateColumns: "1fr 1fr 1fr",
 gap: "12px",
 marginTop: "12px",
 marginBottom: "32px",
