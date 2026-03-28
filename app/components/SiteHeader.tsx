@@ -73,6 +73,10 @@ export default function SiteHeader() {
               <a href="/profile" style={styles.link}>
                 My Profile
               </a>
+              
+              <a href="/career-toolkit" style={styles.navLink}>
+               Career ToolKit
+              </a>
               <button
                 type="button"
                 onClick={handleLogout}
