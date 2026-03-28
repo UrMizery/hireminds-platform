@@ -74,13 +74,13 @@ export default function SiteHeader() {
                 My Profile
               </a>
               
-              <a href="/career-toolkit" style={styles.navLink}>
+              <a href="/career-toolkit" style={styles.link}>
                Career ToolKit
               </a>
               <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
-style={styles.linkButtonLike}
+style={styles.link}
 >
 Notes
 </button>
