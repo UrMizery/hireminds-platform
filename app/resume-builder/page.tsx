@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
 type ResumeLanguage = "English" | "Spanish" | "Hindi" | "Polish";
+type ResumeType = "Chronological" | "Functional" | "Combination" | "Hybrid";
 
 type Bullet = { text: string };
 
