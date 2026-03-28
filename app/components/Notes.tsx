@@ -5,10 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 const NOTES_STORAGE_KEY = "hireminds-notes";
 const NOTES_OPEN_KEY = "hireminds-notes-open";
 const NOTES_MINIMIZED_KEY = "hireminds-notes-minimized";
+const NOTES_EXPANDED_KEY = "hireminds-notes-expanded";
 
 export default function Notes() {
 const [isOpen, setIsOpen] = useState(false);
 const [isMinimized, setIsMinimized] = useState(false);
+const [isExpanded, setIsExpanded] = useState(false);
 const [notes, setNotes] = useState("");
 const [statusMessage, setStatusMessage] = useState("");
 
@@ -16,10 +18,12 @@ useEffect(() => {
 const savedNotes = window.localStorage.getItem(NOTES_STORAGE_KEY);
 const savedOpen = window.localStorage.getItem(NOTES_OPEN_KEY);
 const savedMinimized = window.localStorage.getItem(NOTES_MINIMIZED_KEY);
+const savedExpanded = window.localStorage.getItem(NOTES_EXPANDED_KEY);
 
 if (savedNotes) setNotes(savedNotes);
 if (savedOpen === "true") setIsOpen(true);
 if (savedMinimized === "true") setIsMinimized(true);
+if (savedExpanded === "true") setIsExpanded(true);
 }, []);
 
 useEffect(() => {
@@ -33,7 +37,11 @@ window.localStorage.setItem(NOTES_OPEN_KEY, String(isOpen));
 useEffect(() => {
 window.localStorage.setItem(NOTES_MINIMIZED_KEY, String(isMinimized));
 }, [isMinimized]);
-
+  
+useEffect(() => {
+window.localStorage.setItem(NOTES_EXPANDED_KEY, String(isExpanded));
+}, [isExpanded]);
+  
 useEffect(() => {
 function handleToggle() {
 if (!isOpen) {
@@ -143,6 +151,12 @@ setIsOpen(true);
 setIsMinimized(true);
 }
 
+function handleExpandToggle() {
+setIsExpanded((prev) => !prev);
+setIsMinimized(false);
+setIsOpen(true);
+}
+  
 function handleClose() {
 setIsOpen(false);
 setIsMinimized(false);
@@ -154,6 +168,7 @@ return (
 <div
 style={{
 ...styles.panel,
+...(isExpanded ? styles.panelExpanded : {}),
 ...(isMinimized ? styles.panelMinimized : {}),
 }}
 >
@@ -191,6 +206,17 @@ title="Copy"
 >
 📋
 </button>
+
+<button
+type="button"
+onClick={handleExpandToggle}
+style={styles.iconButton}
+aria-label={isExpanded ? "Shrink notes" : "Expand notes"}
+title={isExpanded ? "Shrink" : "Expand"}
+>
+{isExpanded ? "⤡" : "⤢"}
+</button>
+  
 <button
 type="button"
 onClick={handleMinimize}
@@ -218,7 +244,10 @@ title="Close"
 value={notes}
 onChange={(e) => setNotes(e.target.value)}
 placeholder="Write notes while reviewing jobs, resumes, interview prep, videos, or anything else..."
-style={styles.textarea}
+style={{
+...styles.textarea,
+minHeight: isExpanded ? "320px" : "180px",
+}}
 />
 
 <div style={styles.footer}>
@@ -255,6 +284,14 @@ border: "1px solid #262626",
 borderRadius: "20px",
 boxShadow: "0 24px 60px rgba(0,0,0,0.34)",
 padding: "14px",
+},
+panelExpanded: {
+width: "560px",
+maxWidth: "calc(100vw - 24px)",
+},
+panelExpanded: {
+width: "560px",
+maxWidth: "calc(100vw - 24px)",
 },
 panelMinimized: {
 width: "260px",
