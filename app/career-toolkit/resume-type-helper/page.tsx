@@ -21,7 +21,8 @@ const internshipHelp = internVolunteer === "yes";
 const strongSkills = skillsStrength === "yes";
 
 let bestFit: ResumeType = "Chronological";
-let reason = "A chronological resume is usually the strongest choice when you have steady work history and want employers to quickly see recent experience.";
+let reason =
+"A chronological resume is usually the strongest choice when you have steady work history and want employers to quickly see recent experience.";
 let tips: string[] = [
 "Lead with your most recent role and work backward.",
 "Keep dates clear and easy to scan.",
@@ -139,7 +140,8 @@ return (
 <h1 style={styles.title}>Resume Format Guide</h1>
 <p style={styles.subtitle}>
 Answer a few quick questions to figure out which resume style fits you best,
-then review stronger tips, tricks, and guidance before you build your resume.
+then review the visual examples, stronger tips, and layout guidance before
+you build your resume.
 </p>
 
 <div style={styles.heroButtons}>
@@ -213,6 +215,51 @@ onChange={setSkillsStrength}
 
 <section style={styles.section}>
 <div style={styles.sectionHeader}>
+<p style={styles.sectionKicker}>Visual Examples</p>
+<h2 style={styles.sectionTitle}>See what each resume type looks like</h2>
+</div>
+
+<div style={styles.gridTwo}>
+<div style={styles.guideCard}>
+<h3 style={styles.guideTitle}>Chronological</h3>
+<ResumeMockup type="Chronological" />
+<p style={styles.guideDescription}>
+Best when your work history is the strongest part of your background and
+should stay near the top.
+</p>
+</div>
+
+<div style={styles.guideCard}>
+<h3 style={styles.guideTitle}>Functional</h3>
+<ResumeMockup type="Functional" />
+<p style={styles.guideDescription}>
+Best when your skills need more attention first and your work history is
+not the main selling point.
+</p>
+</div>
+
+<div style={styles.guideCard}>
+<h3 style={styles.guideTitle}>Combination</h3>
+<ResumeMockup type="Combination" />
+<p style={styles.guideDescription}>
+Best when you want to highlight strong transferable skills and still show
+solid work history.
+</p>
+</div>
+
+<div style={styles.guideCard}>
+<h3 style={styles.guideTitle}>Hybrid</h3>
+<ResumeMockup type="Hybrid" />
+<p style={styles.guideDescription}>
+Best when education, certifications, internship, or volunteer experience
+needs stronger placement near the top.
+</p>
+</div>
+</div>
+</section>
+
+<section style={styles.section}>
+<div style={styles.sectionHeader}>
 <p style={styles.sectionKicker}>Format Breakdown</p>
 <h2 style={styles.sectionTitle}>Tips and tricks by resume style</h2>
 </div>
@@ -283,6 +330,39 @@ style={{
 No
 </button>
 </div>
+</div>
+);
+}
+
+function ResumeMockup({ type }: { type: ResumeType }) {
+const blocks =
+type === "Chronological"
+? ["Header", "Summary", "Skills", "Experience", "Education"]
+: type === "Functional"
+? ["Header", "Summary", "Skills", "Skill Categories", "Work History"]
+: type === "Combination"
+? ["Header", "Summary", "Skills", "Experience", "Education"]
+: ["Header", "Summary", "Skills", "Education/Certs", "Experience"];
+
+return (
+<div style={styles.mockupPaper}>
+{blocks.map((block, index) => (
+<div
+key={`${type}-${block}-${index}`}
+style={{
+...styles.mockupBlock,
+...(block === "Experience" || block === "Work History"
+? styles.mockupLongBlock
+: {}),
+...(block === "Skills" || block === "Skill Categories"
+? styles.mockupAccentBlock
+: {}),
+...(block === "Education/Certs" ? styles.mockupSecondaryBlock : {}),
+}}
+>
+<span style={styles.mockupLabel}>{block}</span>
+</div>
+))}
 </div>
 );
 }
@@ -511,5 +591,37 @@ marginBottom: "8px",
 color: "#d4d4d8",
 fontSize: "14px",
 lineHeight: 1.7,
+},
+mockupPaper: {
+background: "#ffffff",
+borderRadius: "16px",
+padding: "14px",
+border: "1px solid rgba(255,255,255,0.08)",
+marginBottom: "16px",
+display: "grid",
+gap: "8px",
+},
+mockupBlock: {
+height: "34px",
+borderRadius: "10px",
+background: "#e5e7eb",
+display: "flex",
+alignItems: "center",
+padding: "0 12px",
+},
+mockupLongBlock: {
+height: "68px",
+},
+mockupAccentBlock: {
+background: "#dbeafe",
+},
+mockupSecondaryBlock: {
+background: "#ede9fe",
+},
+mockupLabel: {
+color: "#111827",
+fontSize: "12px",
+fontWeight: 700,
+letterSpacing: "0.02em",
 },
 };
