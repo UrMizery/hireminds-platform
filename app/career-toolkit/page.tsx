@@ -262,16 +262,6 @@ Open Industry Core Skills
 </div>
 
 <div style={styles.supportList}>
-<a href="/career-toolkit/community-feed" style={styles.supportRow}>
-<div>
-<h3 style={styles.supportTitle}>Vid Feed Library</h3>
-<p style={styles.supportText}>
-Watch short career prep videos on resumes, interviews, job
-applications, job boards, and job search tips.
-</p>
-</div>
-<span style={styles.supportArrow}>↗</span>
-</a>
 
 <a href="/career-toolkit/job-search-tips" style={styles.supportRow}>
 <div>
