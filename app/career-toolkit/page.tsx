@@ -65,7 +65,18 @@ clean professional layout.
 Open Resume Generator
 </a>
 </div>
-
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Resume Match Analyzer</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Paste a job description and your resume text to compare overlap, missing keywords, strengths, and gaps before applying.
+</p>
+<a href="/career-toolkit/resume-match-analyzer" style={styles.linkButton}>
+Open Resume Match Analyzer
+</a>
+</div>
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Cover Letter Generator</h3>
