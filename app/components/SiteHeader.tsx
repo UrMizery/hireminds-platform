@@ -80,7 +80,7 @@ export default function SiteHeader() {
               <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
-style={styles.link}
+style={styles.linkbuttonlike}
 >
 Notes
 </button>
@@ -148,14 +148,18 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
-  linkButtonLike: {
+ linkButtonLike: {
 border: "none",
 background: "transparent",
-color: "#f5f5f5",
+color: "#d4d4d8",
+textDecoration: "none",
 fontSize: "14px",
 fontWeight: 700,
 cursor: "pointer",
 padding: 0,
+whiteSpace: "nowrap",
+appearance: "none",
+WebkitAppearance: "none",
 },
   lockedLink: {
     color: "#7c7c85",
