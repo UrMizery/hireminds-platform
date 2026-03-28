@@ -43,7 +43,7 @@ bestFit = "Functional";
 reason =
 "A functional resume can help place more attention on skills when work history is not the strongest selling point.";
 tips = [
-"Group experience by skill area instead of relying only on job dates.",
+"Group your strongest abilities into skill areas instead of relying only on job dates.",
 "Keep work history included, even if it is shorter.",
 "Use this format carefully, since many employers still prefer chronological structure.",
 ];
@@ -84,6 +84,8 @@ tricks: [
 "If you have older unrelated jobs, keep those shorter and simpler.",
 "Use this format whenever your recent history supports the role you want.",
 ],
+plainNote:
+"This is the format most employers expect to see first. It is usually the best choice when your work history is solid.",
 },
 Functional: {
 description:
@@ -99,6 +101,8 @@ tricks: [
 "Use this format only when it clearly helps your story.",
 "Make sure your skill claims are backed by real examples you can discuss.",
 ],
+plainNote:
+"Skill Categories means grouped skill sections like Customer Service, Communication, Leadership, or Operations. Under each one, you show examples of what you can do.",
 },
 Combination: {
 description:
@@ -114,6 +118,8 @@ tricks: [
 "Follow your skills with work history that supports those same strengths.",
 "Avoid making the top half too crowded. Keep it clean and focused.",
 ],
+plainNote:
+"This format is strong when you want employers to see both your skills and your work history early.",
 },
 Hybrid: {
 description:
@@ -129,6 +135,8 @@ tricks: [
 "Keep section order intentional so employers see your strongest value first.",
 "This can work well for entry-level applicants when built cleanly.",
 ],
+plainNote:
+"This format works well when your strongest value is a mix of education, skills, certifications, volunteer work, and experience.",
 },
 } as const;
 
@@ -220,8 +228,20 @@ onChange={setSkillsStrength}
 </div>
 
 <div style={styles.gridTwo}>
-<div style={styles.guideCard}>
+<div
+style={{
+...styles.guideCard,
+...(recommendation.bestFit === "Chronological"
+? styles.recommendedCard
+: {}),
+}}
+>
+<div style={styles.cardTopRow}>
 <h3 style={styles.guideTitle}>Chronological</h3>
+{recommendation.bestFit === "Chronological" ? (
+<span style={styles.recommendedBadge}>Best Match</span>
+) : null}
+</div>
 <ResumeMockup type="Chronological" />
 <p style={styles.guideDescription}>
 Best when your work history is the strongest part of your background and
@@ -229,17 +249,46 @@ should stay near the top.
 </p>
 </div>
 
-<div style={styles.guideCard}>
+<div
+style={{
+...styles.guideCard,
+...(recommendation.bestFit === "Functional"
+? styles.recommendedCard
+: {}),
+}}
+>
+<div style={styles.cardTopRow}>
 <h3 style={styles.guideTitle}>Functional</h3>
+{recommendation.bestFit === "Functional" ? (
+<span style={styles.recommendedBadge}>Best Match</span>
+) : null}
+</div>
 <ResumeMockup type="Functional" />
 <p style={styles.guideDescription}>
-Best when your skills need more attention first and your work history is
-not the main selling point.
+Best when your strongest value is your skill set and you need to place
+less attention on timeline.
+</p>
+<p style={styles.functionalNote}>
+<strong>What are Skill Categories?</strong> These are grouped sections
+like Customer Service, Communication, Leadership, Operations, or Admin
+Support. Under each category, you show examples of what you can do.
 </p>
 </div>
 
-<div style={styles.guideCard}>
+<div
+style={{
+...styles.guideCard,
+...(recommendation.bestFit === "Combination"
+? styles.recommendedCard
+: {}),
+}}
+>
+<div style={styles.cardTopRow}>
 <h3 style={styles.guideTitle}>Combination</h3>
+{recommendation.bestFit === "Combination" ? (
+<span style={styles.recommendedBadge}>Best Match</span>
+) : null}
+</div>
 <ResumeMockup type="Combination" />
 <p style={styles.guideDescription}>
 Best when you want to highlight strong transferable skills and still show
@@ -247,14 +296,37 @@ solid work history.
 </p>
 </div>
 
-<div style={styles.guideCard}>
+<div
+style={{
+...styles.guideCard,
+...(recommendation.bestFit === "Hybrid" ? styles.recommendedCard : {}),
+}}
+>
+<div style={styles.cardTopRow}>
 <h3 style={styles.guideTitle}>Hybrid</h3>
+{recommendation.bestFit === "Hybrid" ? (
+<span style={styles.recommendedBadge}>Best Match</span>
+) : null}
+</div>
 <ResumeMockup type="Hybrid" />
 <p style={styles.guideDescription}>
 Best when education, certifications, internship, or volunteer experience
 needs stronger placement near the top.
 </p>
 </div>
+</div>
+</section>
+
+<section style={styles.section}>
+<div style={styles.sectionHeader}>
+<p style={styles.sectionKicker}>Recommended Format</p>
+<h2 style={styles.sectionTitle}>Based on your answers</h2>
+</div>
+
+<div style={styles.recommendedPanel}>
+<p style={styles.recommendedPanelKicker}>Suggested Resume Type</p>
+<h3 style={styles.recommendedPanelTitle}>{recommendation.bestFit}</h3>
+<p style={styles.recommendedPanelText}>{recommendation.reason}</p>
 </div>
 </section>
 
@@ -269,6 +341,8 @@ needs stronger placement near the top.
 <div key={type} style={styles.guideCard}>
 <h3 style={styles.guideTitle}>{type}</h3>
 <p style={styles.guideDescription}>{resumeGuide[type].description}</p>
+
+<p style={styles.guidePlainNote}>{resumeGuide[type].plainNote}</p>
 
 <p style={styles.guideSubhead}>Why it works</p>
 <ul style={styles.guideList}>
@@ -337,30 +411,50 @@ No
 function ResumeMockup({ type }: { type: ResumeType }) {
 const blocks =
 type === "Chronological"
-? ["Header", "Summary", "Skills", "Experience", "Education"]
+? [
+{ label: "Header", tone: "neutral", tall: false },
+{ label: "Summary", tone: "neutral", tall: false },
+{ label: "Experience", tone: "primary", tall: true },
+{ label: "Education", tone: "neutral", tall: false },
+{ label: "Skills", tone: "neutral", tall: false },
+]
 : type === "Functional"
-? ["Header", "Summary", "Skills", "Skill Categories", "Work History"]
+? [
+{ label: "Header", tone: "neutral", tall: false },
+{ label: "Summary", tone: "neutral", tall: false },
+{ label: "Skills", tone: "primary", tall: false },
+{ label: "Skill Categories", tone: "primary", tall: true },
+{ label: "Work History", tone: "neutral", tall: false },
+]
 : type === "Combination"
-? ["Header", "Summary", "Skills", "Experience", "Education"]
-: ["Header", "Summary", "Skills", "Education/Certs", "Experience"];
+? [
+{ label: "Header", tone: "neutral", tall: false },
+{ label: "Summary", tone: "neutral", tall: false },
+{ label: "Skills", tone: "primary", tall: false },
+{ label: "Experience", tone: "primary", tall: true },
+{ label: "Education", tone: "neutral", tall: false },
+]
+: [
+{ label: "Header", tone: "neutral", tall: false },
+{ label: "Summary", tone: "neutral", tall: false },
+{ label: "Skills", tone: "primary", tall: false },
+{ label: "Education/Certs", tone: "secondary", tall: false },
+{ label: "Experience", tone: "neutral", tall: true },
+];
 
 return (
 <div style={styles.mockupPaper}>
 {blocks.map((block, index) => (
 <div
-key={`${type}-${block}-${index}`}
+key={`${type}-${block.label}-${index}`}
 style={{
 ...styles.mockupBlock,
-...(block === "Experience" || block === "Work History"
-? styles.mockupLongBlock
-: {}),
-...(block === "Skills" || block === "Skill Categories"
-? styles.mockupAccentBlock
-: {}),
-...(block === "Education/Certs" ? styles.mockupSecondaryBlock : {}),
+...(block.tall ? styles.mockupLongBlock : {}),
+...(block.tone === "primary" ? styles.mockupAccentBlock : {}),
+...(block.tone === "secondary" ? styles.mockupSecondaryBlock : {}),
 }}
 >
-<span style={styles.mockupLabel}>{block}</span>
+<span style={styles.mockupLabel}>{block.label}</span>
 </div>
 ))}
 </div>
@@ -562,8 +656,32 @@ borderRadius: "26px",
 padding: "22px",
 boxShadow: "0 22px 60px rgba(0,0,0,0.28)",
 },
+recommendedCard: {
+border: "1px solid rgba(148,163,184,0.45)",
+boxShadow: "0 0 0 1px rgba(148,163,184,0.22), 0 22px 60px rgba(0,0,0,0.28)",
+},
+cardTopRow: {
+display: "flex",
+justifyContent: "space-between",
+gap: "12px",
+alignItems: "center",
+marginBottom: "10px",
+},
+recommendedBadge: {
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+whiteSpace: "nowrap",
+padding: "8px 10px",
+borderRadius: "999px",
+background: "rgba(59,130,246,0.14)",
+border: "1px solid rgba(59,130,246,0.28)",
+color: "#dbeafe",
+fontSize: "12px",
+fontWeight: 700,
+},
 guideTitle: {
-margin: "0 0 10px",
+margin: 0,
 fontSize: "24px",
 lineHeight: 1.2,
 fontWeight: 700,
@@ -582,6 +700,12 @@ fontSize: "14px",
 fontWeight: 700,
 letterSpacing: "0.02em",
 },
+guidePlainNote: {
+margin: "0 0 16px",
+color: "#e5e7eb",
+fontSize: "14px",
+lineHeight: 1.7,
+},
 guideList: {
 margin: "0 0 14px",
 paddingLeft: "18px",
@@ -589,6 +713,12 @@ paddingLeft: "18px",
 guideItem: {
 marginBottom: "8px",
 color: "#d4d4d8",
+fontSize: "14px",
+lineHeight: 1.7,
+},
+functionalNote: {
+margin: 0,
+color: "#e5e7eb",
 fontSize: "14px",
 lineHeight: 1.7,
 },
@@ -623,5 +753,33 @@ color: "#111827",
 fontSize: "12px",
 fontWeight: 700,
 letterSpacing: "0.02em",
+},
+recommendedPanel: {
+background:
+"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
+border: "1px solid rgba(148,163,184,0.25)",
+borderRadius: "26px",
+padding: "24px",
+boxShadow: "0 22px 60px rgba(0,0,0,0.28)",
+},
+recommendedPanelKicker: {
+margin: "0 0 8px",
+color: "#9ca3af",
+fontSize: "12px",
+letterSpacing: "0.18em",
+textTransform: "uppercase",
+},
+recommendedPanelTitle: {
+margin: "0 0 10px",
+color: "#f5f5f5",
+fontSize: "28px",
+lineHeight: 1.1,
+fontWeight: 700,
+},
+recommendedPanelText: {
+margin: 0,
+color: "#d4d4d8",
+fontSize: "15px",
+lineHeight: 1.75,
 },
 };
