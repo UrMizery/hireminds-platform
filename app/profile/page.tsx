@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 function slugify(value: string) {
@@ -28,17 +28,12 @@ const [stateName, setStateName] = useState("");
 const [bio, setBio] = useState("");
 const [headline, setHeadline] = useState("");
 const [linkedinUrl, setLinkedinUrl] = useState("");
-const [passportSlug, setPassportSlug] = useState("");
 
 const [photoFile, setPhotoFile] = useState<File | null>(null);
 const [resumeFile, setResumeFile] = useState<File | null>(null);
 
 const [photoUrl, setPhotoUrl] = useState("");
 const [resumeUrl, setResumeUrl] = useState("");
-
-const publicPassportUrl = useMemo(() => {
-return passportSlug ? `/passport/${passportSlug}` : "";
-}, [passportSlug]);
 
 useEffect(() => {
 async function loadProfile() {
@@ -79,7 +74,6 @@ setStateName(profile.state || "");
 setBio(profile.bio || "");
 setHeadline(profile.headline || "");
 setLinkedinUrl(profile.linkedin_url || "");
-setPassportSlug(profile.passport_slug || "");
 setResumeUrl(profile.resume_url || "");
 setPhotoUrl(profile.photo_url || "");
 setLoading(false);
@@ -113,7 +107,7 @@ return;
 try {
 setSaving(true);
 
-const finalSlug = passportSlug || slugify(fullName || "career-passport");
+const finalSlug = slugify(fullName || "career-passport");
 
 let nextPhotoUrl = photoUrl;
 let nextResumeUrl = resumeUrl;
@@ -136,7 +130,6 @@ state: stateName,
 bio,
 headline,
 linkedin_url: linkedinUrl,
-passport_slug: finalSlug,
 resume_url: nextResumeUrl || null,
 photo_url: nextPhotoUrl || null,
 };
@@ -161,7 +154,6 @@ setProfileId(data.id);
 
 setPhotoUrl(nextPhotoUrl);
 setResumeUrl(nextResumeUrl);
-setPassportSlug(finalSlug);
 
 setMessage("Profile saved successfully.");
 } catch (err: any) {
