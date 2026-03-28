@@ -289,10 +289,6 @@ panelExpanded: {
 width: "560px",
 maxWidth: "calc(100vw - 24px)",
 },
-panelExpanded: {
-width: "560px",
-maxWidth: "calc(100vw - 24px)",
-},
 panelMinimized: {
 width: "260px",
 paddingBottom: "12px",
