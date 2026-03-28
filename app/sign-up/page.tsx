@@ -9,6 +9,7 @@ const [phone, setPhone] = useState("");
 const [city, setCity] = useState("");
 const [stateName, setStateName] = useState("");
 const [email, setEmail] = useState("");
+const [heardAboutUs, setHeardAboutUs] = useState("");
 const [password, setPassword] = useState("");
 const [showPassword, setShowPassword] = useState(false);
 const [message, setMessage] = useState("");
