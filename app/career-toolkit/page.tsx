@@ -42,6 +42,18 @@ and access practical tools designed to support job seekers in one clean space.
 <div style={styles.grid}>
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Job Description Analyzer</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Paste a job description to extract skills, qualifications, keywords, systems, and the best details to reflect in your resume and cover letter.
+</p>
+<a href="/career-toolkit/job-description-analyzer" style={styles.linkButton}>
+Open Job Description Analyzer
+</a>
+</div>
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Resume Generator</h3>
 <span style={styles.liveTag}>Live</span>
 </div>
