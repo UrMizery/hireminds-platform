@@ -182,10 +182,10 @@ return (
 <section style={styles.hero}>
 <div style={styles.heroLeft}>
 <p style={styles.kicker}>Career Passport</p>
-<h1 style={styles.title}>Your private profile editor</h1>
+<h1 style={styles.title}>Career Passport Editor</h1>
 <p style={styles.subtitle}>
-Update the details that appear on your Career Passport, upload your resume,
-and keep your saved profile information current.
+Update the details that appear on your Career Passport
+& keep your saved profile information current.
 </p>
 </div>
 
@@ -270,23 +270,17 @@ for approved partners and employers.
 </p>
 </div>
 
-<div style={styles.assetSingle}>
 <div style={styles.assetFloat}>
-<p style={styles.assetTitle}>Resume Upload</p>
+<p style={styles.assetTitle}>Resume Upload 🔒</p>
 <input
 type="file"
-accept=".pdf,.doc,.docx"
-onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-style={styles.input}
+accept=".pdf"
+disabled
+style={{ ...styles.input, opacity: 0.6, cursor: "not-allowed" }}
 />
-{resumeUrl ? (
-<a href={resumeUrl} target="_blank" rel="noreferrer" style={styles.assetLink}>
-View current resume
-</a>
-) : (
-<p style={styles.assetMuted}>No resume uploaded yet.</p>
-)}
-</div>
+<p style={styles.assetMuted}>
+Resume sharing to HireMinds employers and partners is coming soon.
+</p>
 </div>
 </section>
 
