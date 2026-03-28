@@ -238,6 +238,26 @@ return `${from || "Start"} - ${to || "End"}`;
 }
 
 function splitSkillsIntoColumns(skills: string[]) {
+function detectResumeType(sectionOrder: ResumeSectionKey[]): ResumeType {
+const skillsIndex = sectionOrder.indexOf("skills");
+const experienceIndex = sectionOrder.indexOf("experience");
+const educationIndex = sectionOrder.indexOf("education");
+const certificationsIndex = sectionOrder.indexOf("certifications");
+const volunteerIndex = sectionOrder.indexOf("volunteer");
+
+const educationLikeNearTop =
+(educationIndex !== -1 && educationIndex < experienceIndex) ||
+(certificationsIndex !== -1 && certificationsIndex < experienceIndex) ||
+(volunteerIndex !== -1 && volunteerIndex < experienceIndex);
+
+const skillsVeryHigh = skillsIndex !== -1 && skillsIndex <= 1;
+const experienceHigh = experienceIndex !== -1 && experienceIndex <= 2;
+
+if (educationLikeNearTop && skillsVeryHigh) return "Hybrid";
+if (skillsVeryHigh && experienceHigh) return "Combination";
+if (skillsVeryHigh && experienceIndex > 2) return "Functional";
+return "Chronological";
+}
 const safeSkills = skills.slice(0, SKILL_LIMIT);
 const columns = [[], [], []] as string[][];
 safeSkills.forEach((skill, index) => {
@@ -556,7 +576,7 @@ return skillsInput
 }, [skillsInput]);
 
 const skillColumns = useMemo(() => splitSkillsIntoColumns(skills), [skills]);
-
+const detectedResumeType = useMemo(() => detectResumeType(sectionOrder), [sectionOrder]);
 const activeExperiences = useMemo(
 () => experiences.filter((item) => hasExperienceContent(item)),
 [experiences]
@@ -1246,7 +1266,15 @@ resume visible on your public profile, upload your final resume from the
 Profile page.
 </p>
 </section>
-
+<section style={styles.card}>
+<p style={styles.cardKicker}>RESUME TYPE</p>
+<h2 style={styles.cardTitle}>
+You’re currently building a {detectedResumeType} Resume
+</h2>
+<p style={styles.previewHelp}>
+This updates automatically based on how you move your sections around.
+</p>
+</section>
 <section style={styles.card}>
 <p style={styles.cardKicker}>HEADER</p>
 <h2 style={styles.cardTitle}>{ui.header}</h2>
@@ -1932,6 +1960,9 @@ style={styles.saveButton}
 <p style={styles.cardKicker}>LIVE PREVIEW</p>
 <h2 style={styles.cardTitle}>{ui.livePreview}</h2>
 <p style={styles.previewHelp}>{ui.previewHelp}</p>
+<p style={styles.resumeTypePreview}>
+  Current layout: <strong>{detectedResumeType}</strong>
+</p>
 </div>
 
 <div
@@ -2080,6 +2111,12 @@ margin: 0,
 color: "#d4d4d8",
 fontSize: "15px",
 lineHeight: 1.5,
+},
+resumeTypePreview: {
+margin: "12px 0 0",
+color: "#e5e7eb",
+fontSize: "15px",
+lineHeight: 1.6,
 },
 select: {
 background: "#0b0f19",
