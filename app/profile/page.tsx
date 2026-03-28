@@ -231,11 +231,6 @@ style={styles.input}
 </p>
 <p style={styles.metaPreview}>{email || "email@example.com"}</p>
 
-{publicPassportUrl ? (
-<a href={publicPassportUrl} style={styles.publicLink}>
-View public passport
-</a>
-) : null}
 </div>
 </section>
 
