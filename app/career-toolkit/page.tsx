@@ -1,5 +1,7 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 export default function CareerToolkitPage() {
 return (
 <main style={styles.page}>
@@ -7,84 +9,72 @@ return (
 <section style={styles.hero}>
 <div style={styles.heroTextWrap}>
 <p style={styles.kicker}>Career ToolKit</p>
-<h1 style={styles.title}>Career tools built to help candidates move faster.</h1>
+<h1 style={styles.title}>Build your next move with confidence.</h1>
 <p style={styles.subtitle}>
-Create resumes and letters, explore interview guidance, strengthen your skills,
-and access practical tools designed to support job seekers in one clean space.
+Create stronger application materials, prepare with purpose, explore career
+tools, and take control of your next opportunity with practical support
+built to help you move forward.
 </p>
 </div>
 
 <div style={styles.heroPanel}>
-<p style={styles.heroPanelKicker}>Available Now</p>
-<div style={styles.heroStatList}>
-<div style={styles.heroStatRow}>
-<span style={styles.heroStatLabel}>Resume Tools</span>
-<span style={styles.heroStatValue}>Live preview</span>
-</div>
-<div style={styles.heroStatRow}>
-<span style={styles.heroStatLabel}>Career Guidance</span>
-<span style={styles.heroStatValue}>Ready to use</span>
-</div>
-<div style={styles.heroStatRow}>
-<span style={styles.heroStatLabel}>Skills Support</span>
-<span style={styles.heroStatValue}>Organized by topic</span>
-</div>
-</div>
+<p style={styles.heroPanelKicker}>Featured Library</p>
+<h2 style={styles.heroPanelTitle}>Vid Feed Library</h2>
+<p style={styles.heroPanelText}>
+Watch short videos on resumes, interviews, job applications, job boards,
+and career tips.
+</p>
+
+<a href="/career-toolkit/community-feed" style={styles.heroPanelButton}>
+Open Vid Feed Library
+</a>
 </div>
 </section>
 
 <section style={styles.section}>
 <div style={styles.sectionHeader}>
 <p style={styles.sectionKicker}>Generators</p>
-<h2 style={styles.sectionTitle}>Build, match, and prepare</h2>
+<h2 style={styles.sectionTitle}>Build, prepare, and move forward</h2>
 </div>
 
 <div style={styles.grid}>
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Job Description Analyzer</h3>
-<span style={styles.liveTag}>New</span>
+<h3 style={styles.featureTitle}>Resume Format Guide</h3>
+<span style={styles.liveTag}>Live</span>
 </div>
 <p style={styles.featureText}>
-Paste a job description to extract skills, qualifications, keywords, systems, and the best details to reflect in your resume and cover letter.
+Learn the difference between chronological, functional, combination, and
+hybrid resumes so you can choose the format that fits your background
+best before you begin writing.
 </p>
-<a href="/career-toolkit/job-description-analyzer" style={styles.linkButton}>
-Open Job Description Analyzer
+<a href="/career-toolkit/resume-type-helper" style={styles.linkButton}>
+Open Resume Format Guide
 </a>
 </div>
+
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Resume Generator</h3>
 <span style={styles.liveTag}>Live</span>
 </div>
 <p style={styles.featureText}>
-Build, preview, save, and print your resume with structured sections and a
-clean professional layout.
+Build, preview, save, and print your resume with structured sections and
+a clean professional layout.
 </p>
 <a href="/resume-builder" style={styles.linkButton}>
 Open Resume Generator
 </a>
 </div>
-<div style={styles.featureCard}>
-<div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Resume Match Analyzer</h3>
-<span style={styles.liveTag}>New</span>
-</div>
-<p style={styles.featureText}>
-Paste a job description and your resume text to compare overlap, missing keywords, strengths, and gaps before applying.
-</p>
-<a href="/career-toolkit/resume-match-analyzer" style={styles.linkButton}>
-Open Resume Match Analyzer
-</a>
-</div>
+
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Cover Letter Generator</h3>
 <span style={styles.liveTag}>Live</span>
 </div>
 <p style={styles.featureText}>
-Create a short professional cover letter with guided prompts, template support,
-and live preview.
+Create a short professional cover letter with guided prompts, template
+support, and live preview.
 </p>
 <a href="/career-toolkit/cover-letter-generator" style={styles.linkButton}>
 Open Cover Letter Generator
@@ -97,10 +87,13 @@ Open Cover Letter Generator
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-Create a thank-you email after an interview or a polite follow-up email to
-check on your application status.
+Create a thank-you email after an interview or a polite follow-up email
+to check on your application status.
 </p>
-<a href="/career-toolkit/employer-follow-up-generator" style={styles.linkButton}>
+<a
+href="/career-toolkit/employer-follow-up-generator"
+style={styles.linkButton}
+>
 Open Follow-Up Generator
 </a>
 </div>
@@ -111,24 +104,14 @@ Open Follow-Up Generator
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-Generate general and industry-focused interview questions to help you prepare more confidently.
+Generate general and industry-focused interview questions to help you
+prepare with more confidence.
 </p>
-<a href="/career-toolkit/interview-question-generator" style={styles.linkButton}>
+<a
+href="/career-toolkit/interview-question-generator"
+style={styles.linkButton}
+>
 Open Interview Question Generator
-</a>
-</div>
-
-<div style={styles.featureCard}>
-<div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Resume Format Guide</h3>
-<span style={styles.liveTag}>Live</span>
-</div>
-<p style={styles.featureText}>
-Learn the difference between chronological, functional, combination, and hybrid
-resumes and find the format that fits you best.
-</p>
-<a href="/career-toolkit/resume-type-helper" style={styles.linkButton}>
-Open Resume Format Guide
 </a>
 </div>
 
@@ -137,52 +120,100 @@ Open Resume Format Guide
 <h3 style={styles.featureTitle}>Job Log Generator</h3>
 <span style={styles.liveTag}>New</span>
 </div>
-  
-  
 <p style={styles.featureText}>
-Track where you applied, dates, contacts, interview updates, and follow-up activity
-in one organized place.
+Track where you applied, dates, contacts, interview updates, and
+follow-up activity in one organized place.
 </p>
 <a href="/career-toolkit/job-log-generator" style={styles.linkButton}>
 Open Job Log Generator
 </a>
 </div>
-</div>
-  <div style={styles.featureCard}>
+
+<div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Career Path Generator</h3>
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-Explore career paths based on the work you enjoy, the environment you prefer, and how quickly you want to get started.
+Explore career paths based on the work you enjoy, the environment you
+prefer, and how quickly you want to get started.
 </p>
 <a href="/career-toolkit/career-path-generator" style={styles.linkButton}>
 Open Career Path Generator
 </a>
 </div>
-  <div style={styles.featureCard}>
-<div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Budget Generator</h3>
-<span style={styles.liveTag}>New</span>
-</div>
-<p style={styles.featureText}>
-Build a simple monthly budget to understand your income, expenses, and what may be left over each month.
-</p>
-<a href="/career-toolkit/budget-generator" style={styles.linkButton}>
-Open Budget Generator
-</a>
-</div>
-  <div style={styles.featureCard}>
+
+<div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Career Goal Generator</h3>
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-Create a clear written statement about your career goal, your research, your expected outcome, and your next steps.
+Build a stronger goal statement that explains where you want to go, why
+it matters, and how you plan to move forward.
 </p>
 <a href="/career-toolkit/career-goal-generator" style={styles.linkButton}>
 Open Career Goal Generator
 </a>
+</div>
+
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Budget Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Build a simple monthly budget to understand your income, expenses, and
+what may be left over each month.
+</p>
+<a href="/career-toolkit/budget-generator" style={styles.linkButton}>
+Open Budget Generator
+</a>
+</div>
+</div>
+</section>
+
+<section style={styles.section}>
+<div style={styles.sectionHeader}>
+<p style={styles.sectionKicker}>Analyzers</p>
+<h2 style={styles.sectionTitle}>Extract, compare, and tailor</h2>
+</div>
+
+<div style={styles.gridTwo}>
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Job Description Analyzer</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Paste a job description to extract skills, qualifications, keywords,
+systems, and the best details to reflect in your resume and cover
+letter.
+</p>
+<a
+href="/career-toolkit/job-description-analyzer"
+style={styles.linkButton}
+>
+Open Job Description Analyzer
+</a>
+</div>
+
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Resume Match Analyzer</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Paste a job description and your resume text to compare overlap, missing
+keywords, strengths, and gaps before applying.
+</p>
+<a
+href="/career-toolkit/resume-match-analyzer"
+style={styles.linkButton}
+>
+Open Resume Match Analyzer
+</a>
+</div>
 </div>
 </section>
 
@@ -199,8 +230,8 @@ Open Career Goal Generator
 <span style={styles.liveTag}>Live</span>
 </div>
 <p style={styles.featureText}>
-Review soft skills employers look for, including communication, teamwork,
-adaptability, time management, and problem solving.
+Review soft skills employers look for, including communication,
+teamwork, adaptability, time management, and problem solving.
 </p>
 <a href="/career-toolkit/soft-skills" style={styles.linkButton}>
 Open Soft Skills
@@ -214,7 +245,8 @@ Open Soft Skills
 </div>
 <p style={styles.featureText}>
 Explore core skills by industry, including healthcare, warehouse,
-manufacturing, hospitality, admin, retail, logistics, IT, trades, and more.
+manufacturing, hospitality, admin, retail, logistics, IT, trades, and
+more.
 </p>
 <a href="/career-toolkit/industry-core-skills" style={styles.linkButton}>
 Open Industry Core Skills
@@ -226,27 +258,16 @@ Open Industry Core Skills
 <section style={styles.supportSection}>
 <div style={styles.sectionHeader}>
 <p style={styles.sectionKicker}>Career Support</p>
-<h2 style={styles.sectionTitle}>Guidance, community, and preparation</h2>
+<h2 style={styles.sectionTitle}>Guidance, video support, and preparation</h2>
 </div>
 
 <div style={styles.supportList}>
-<a href="/career-toolkit/interview-questions" style={styles.supportRow}>
-<div>
-<h3 style={styles.supportTitle}>Interview Questions</h3>
-<p style={styles.supportText}>
-Review common employer questions, strong sample answers, prep tips, and smart
-questions to ask during and after an interview.
-</p>
-</div>
-<span style={styles.supportArrow}>↗</span>
-</a>
-
 <a href="/career-toolkit/community-feed" style={styles.supportRow}>
 <div>
-<h3 style={styles.supportTitle}>HireMinds Community Feed</h3>
+<h3 style={styles.supportTitle}>Vid Feed Library</h3>
 <p style={styles.supportText}>
-Browse announcements, questions, opportunities, and community support in one
-shared space.
+Watch short career prep videos on resumes, interviews, job
+applications, job boards, and job search tips.
 </p>
 </div>
 <span style={styles.supportArrow}>↗</span>
@@ -256,8 +277,20 @@ shared space.
 <div>
 <h3 style={styles.supportTitle}>Job Search Tips</h3>
 <p style={styles.supportText}>
-Learn how to read a job description, pull the right skills from it, and use those
-details in your resume and cover letter more effectively.
+Learn how to read a job description, pull the right skills from it,
+and use those details in your resume and cover letter more
+effectively.
+</p>
+</div>
+<span style={styles.supportArrow}>↗</span>
+</a>
+
+<a href="/career-toolkit/interview-questions" style={styles.supportRow}>
+<div>
+<h3 style={styles.supportTitle}>Interview Questions</h3>
+<p style={styles.supportText}>
+Review common employer questions, strong sample answers, prep tips,
+and smart questions to ask during and after an interview.
 </p>
 </div>
 <span style={styles.supportArrow}>↗</span>
@@ -309,7 +342,7 @@ Premium resume support and detailed revision assistance.
 );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
 page: {
 minHeight: "100vh",
 background:
@@ -374,33 +407,38 @@ lineHeight: 1.8,
 maxWidth: "760px",
 },
 heroPanelKicker: {
-margin: "0 0 18px",
+margin: "0 0 12px",
 color: "#d4d4d8",
 fontSize: "12px",
 letterSpacing: "0.18em",
 textTransform: "uppercase",
 },
-heroStatList: {
-display: "grid",
-gap: "14px",
-},
-heroStatRow: {
-display: "flex",
-justifyContent: "space-between",
-gap: "12px",
-alignItems: "center",
-padding: "14px 0",
-borderBottom: "1px solid rgba(255,255,255,0.08)",
-},
-heroStatLabel: {
-color: "#a1a1aa",
-fontSize: "14px",
-},
-heroStatValue: {
-color: "#f5f5f5",
-fontSize: "14px",
+heroPanelTitle: {
+margin: "0 0 12px",
+fontSize: "28px",
+lineHeight: 1.1,
 fontWeight: 700,
-textAlign: "right",
+color: "#f5f5f5",
+},
+heroPanelText: {
+margin: "0 0 18px",
+color: "#d4d4d8",
+fontSize: "15px",
+lineHeight: 1.7,
+},
+heroPanelButton: {
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+width: "fit-content",
+textDecoration: "none",
+padding: "12px 15px",
+borderRadius: "16px",
+border: "1px solid rgba(255,255,255,0.14)",
+background: "#111111",
+color: "#f5f5f5",
+fontWeight: 700,
+fontSize: "14px",
 },
 section: {
 display: "grid",
