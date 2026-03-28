@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import SiteHeader from "./components/SiteHeader";
 import { LanguageProvider, useLanguage } from "./lib/language-context";
+import Notes from "./components/Notes";
 
 function LayoutContent({ children }: { children: ReactNode }) {
   const { lang, setLang, t } = useLanguage();
@@ -28,6 +29,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
         <SiteHeader />
         {children}
+        <Notes />
       </body>
     </html>
   );
