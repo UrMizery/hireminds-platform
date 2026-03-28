@@ -239,6 +239,16 @@ return `${from || "Start"} - ${to || "End"}`;
 }
 
 function splitSkillsIntoColumns(skills: string[]) {
+const safeSkills = skills.slice(0, SKILL_LIMIT);
+const columns = [[], [], []] as string[][];
+
+safeSkills.forEach((skill, index) => {
+columns[index % 3].push(skill);
+});
+
+return columns;
+}
+
 function detectResumeType(sectionOrder: ResumeSectionKey[]): ResumeType {
 const skillsIndex = sectionOrder.indexOf("skills");
 const experienceIndex = sectionOrder.indexOf("experience");
@@ -258,13 +268,6 @@ if (educationLikeNearTop && skillsVeryHigh) return "Hybrid";
 if (skillsVeryHigh && experienceHigh) return "Combination";
 if (skillsVeryHigh && experienceIndex > 2) return "Functional";
 return "Chronological";
-}
-const safeSkills = skills.slice(0, SKILL_LIMIT);
-const columns = [[], [], []] as string[][];
-safeSkills.forEach((skill, index) => {
-columns[index % 3].push(skill);
-});
-return columns;
 }
 
 function hasExperienceContent(item: ExperienceItem) {
