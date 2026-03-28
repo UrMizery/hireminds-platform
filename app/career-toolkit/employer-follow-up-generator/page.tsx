@@ -1,33 +1,138 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-type TemplateType = "thank-you" | "follow-up";
+type TemplateType =
+| "thank-you"
+| "follow-up-status"
+| "withdraw-application"
+| "accept-job-offer"
+| "decline-job-offer"
+| "request-interview-reschedule"
+| "request-raise"
+| "request-promotion"
+| "request-pto"
+| "request-extended-leave"
+| "resignation-letter"
+| "farewell-message"
+| "new-position-introduction"
+| "confidential-hr-concern"
+| "report-workplace-incident";
 
-export default function EmployerFollowUpGeneratorPage() {
+const LETTER_DRAFT_KEY = "hireminds-house-of-letters-draft-v1";
+
+export default function HouseOfLettersPage() {
 const [template, setTemplate] = useState<TemplateType>("thank-you");
+const [createdDate, setCreatedDate] = useState("");
+const [effectiveDate, setEffectiveDate] = useState("");
 const [candidateName, setCandidateName] = useState("");
 const [employerName, setEmployerName] = useState("");
 const [companyName, setCompanyName] = useState("");
 const [jobTitle, setJobTitle] = useState("");
 const [interviewDate, setInterviewDate] = useState("");
 const [customNote, setCustomNote] = useState("");
+const [message, setMessage] = useState("");
+const [draftLoaded, setDraftLoaded] = useState(false);
+
+useEffect(() => {
+try {
+const raw = window.localStorage.getItem(LETTER_DRAFT_KEY);
+if (raw) {
+const draft = JSON.parse(raw);
+setTemplate(draft.template || "thank-you");
+setCreatedDate(draft.createdDate || "");
+setEffectiveDate(draft.effectiveDate || "");
+setCandidateName(draft.candidateName || "");
+setEmployerName(draft.employerName || "");
+setCompanyName(draft.companyName || "");
+setJobTitle(draft.jobTitle || "");
+setInterviewDate(draft.interviewDate || "");
+setCustomNote(draft.customNote || "");
+}
+} catch {
+// ignore bad draft
+} finally {
+setDraftLoaded(true);
+}
+}, []);
+
+useEffect(() => {
+if (!draftLoaded) return;
+
+const draft = {
+template,
+createdDate,
+effectiveDate,
+candidateName,
+employerName,
+companyName,
+jobTitle,
+interviewDate,
+customNote,
+};
+
+window.localStorage.setItem(LETTER_DRAFT_KEY, JSON.stringify(draft));
+}, [
+draftLoaded,
+template,
+createdDate,
+effectiveDate,
+candidateName,
+employerName,
+companyName,
+jobTitle,
+interviewDate,
+customNote,
+]);
 
 const subjectLine = useMemo(() => {
-if (template === "thank-you") {
+switch (template) {
+case "thank-you":
 return `Thank You - ${jobTitle || "Interview"}${companyName ? ` - ${companyName}` : ""}`;
-}
+case "follow-up-status":
 return `Follow-Up on ${jobTitle || "Application"}${companyName ? ` - ${companyName}` : ""}`;
+case "withdraw-application":
+return `Withdrawal of Application${jobTitle ? ` - ${jobTitle}` : ""}`;
+case "accept-job-offer":
+return `Acceptance of Job Offer${jobTitle ? ` - ${jobTitle}` : ""}`;
+case "decline-job-offer":
+return `Declining Job Offer${jobTitle ? ` - ${jobTitle}` : ""}`;
+case "request-interview-reschedule":
+return `Request to Reschedule Interview${jobTitle ? ` - ${jobTitle}` : ""}`;
+case "request-raise":
+return "Request for Compensation Review";
+case "request-promotion":
+return "Request for Promotion Consideration";
+case "request-pto":
+return "Request for PTO";
+case "request-extended-leave":
+return "Request for Extended Leave / FMLA";
+case "resignation-letter":
+return "Resignation Letter";
+case "farewell-message":
+return "Farewell and Thank You";
+case "new-position-introduction":
+return "Introduction - Excited to Join the Team";
+case "confidential-hr-concern":
+return "Confidential HR Concern";
+case "report-workplace-incident":
+return "Report of Workplace Incident";
+default:
+return "Professional Letter";
+}
 }, [template, jobTitle, companyName]);
 
-const emailBody = useMemo(() => {
+const bodyText = useMemo(() => {
 const greetingName = employerName || "Hiring Manager";
 const senderName = candidateName || "Your Name";
 const roleText = jobTitle || "the position";
 const companyText = companyName || "your company";
-const dateText = interviewDate || "our recent interview";
+const dateText = interviewDate || "our recent conversation";
+const createdText = createdDate || "today";
+const effectiveText = effectiveDate || "the requested date";
 
-if (template === "thank-you") {
+switch (template) {
+case "thank-you":
 return `Dear ${greetingName},
 
 Thank you for taking the time to speak with me regarding ${roleText} at ${companyText}. I appreciate the opportunity to learn more about the role and your team.
@@ -38,8 +143,8 @@ ${customNote ? `${customNote}\n\n` : ""}Thank you again for your time and consid
 
 Sincerely,
 ${senderName}`;
-}
 
+case "follow-up-status":
 return `Dear ${greetingName},
 
 I hope you are doing well. I wanted to follow up regarding ${roleText} at ${companyText} and see whether there have been any updates on the hiring process.
@@ -50,17 +155,222 @@ ${customNote ? `${customNote}\n\n` : ""}Thank you again for your time and consid
 
 Sincerely,
 ${senderName}`;
-}, [template, employerName, candidateName, jobTitle, companyName, interviewDate, customNote]);
+
+case "withdraw-application":
+return `Dear ${greetingName},
+
+Thank you for considering me for ${roleText} at ${companyText}. After careful consideration, I would like to respectfully withdraw my application from consideration at this time.
+
+${customNote ? `${customNote}\n\n` : ""}I appreciate the time and consideration extended to me and wish you continued success in filling the position.
+
+Sincerely,
+${senderName}`;
+
+case "accept-job-offer":
+return `Dear ${greetingName},
+
+Thank you for offering me the opportunity to join ${companyText} as ${roleText}. I am pleased to formally accept the offer.
+
+${customNote ? `${customNote}\n\n` : ""}I appreciate the confidence you and your team have placed in me, and I look forward to contributing to the organization.
+
+Sincerely,
+${senderName}`;
+
+case "decline-job-offer":
+return `Dear ${greetingName},
+
+Thank you very much for offering me the opportunity to join ${companyText} as ${roleText}. After careful consideration, I have decided to respectfully decline the offer at this time.
+
+${customNote ? `${customNote}\n\n` : ""}I sincerely appreciate your time, consideration, and the opportunity to learn more about your team.
+
+Sincerely,
+${senderName}`;
+
+case "request-interview-reschedule":
+return `Dear ${greetingName},
+
+Thank you for the opportunity to interview for ${roleText} at ${companyText}. I am very interested in the position and appreciate your time.
+
+I am writing to respectfully ask whether it would be possible to reschedule the interview.
+
+${customNote ? `${customNote}\n\n` : ""}Thank you for your understanding and flexibility. I remain very interested in the opportunity and look forward to speaking with you.
+
+Sincerely,
+${senderName}`;
+
+case "request-raise":
+return `Dear ${greetingName},
+
+I hope you are doing well. I am writing to respectfully request a conversation regarding my compensation and the possibility of a salary increase.
+
+Over time, I have continued to contribute to my role and support the goals of ${companyText}. I would appreciate the opportunity to discuss my performance, responsibilities, and compensation in more detail.
+
+${customNote ? `${customNote}\n\n` : ""}Thank you for your time and consideration. I would be grateful for the opportunity to speak with you further.
+
+Sincerely,
+${senderName}`;
+
+case "request-promotion":
+return `Dear ${greetingName},
+
+I hope you are doing well. I am writing to express my interest in being considered for a promotion opportunity within ${companyText}.
+
+I value my role and the experience I have gained, and I would appreciate the opportunity to discuss my growth, contributions, and readiness for additional responsibility.
+
+${customNote ? `${customNote}\n\n` : ""}Thank you for your time and consideration. I would welcome the opportunity to speak with you further.
+
+Sincerely,
+${senderName}`;
+
+case "request-pto":
+return `Dear ${greetingName},
+
+I am writing to respectfully request paid time off beginning on ${effectiveText}.
+
+${customNote ? `${customNote}\n\n` : ""}Please let me know whether this request can be approved or if any additional information is needed.
+
+Thank you for your time and consideration.
+
+Sincerely,
+${senderName}`;
+
+case "request-extended-leave":
+return `Dear ${greetingName},
+
+I am writing to formally request extended leave beginning on ${effectiveText}. This request may include leave under applicable policies such as FMLA, if appropriate.
+
+${customNote ? `${customNote}\n\n` : ""}Please let me know what documentation or next steps are needed to support this request.
+
+Thank you for your time and consideration.
+
+Sincerely,
+${senderName}`;
+
+case "resignation-letter":
+return `Dear ${greetingName},
+
+Please accept this letter as formal notice of my resignation from my position${jobTitle ? ` as ${jobTitle}` : ""} at ${companyText}, effective ${effectiveText}.
+
+${customNote ? `${customNote}\n\n` : ""}I appreciate the opportunity to have been part of the organization and thank you for the experience and support provided during my time here.
+
+Sincerely,
+${senderName}`;
+
+case "farewell-message":
+return `Dear Team,
+
+As I prepare to move on from ${companyText}, I wanted to take a moment to thank everyone for the support, collaboration, and experiences shared during my time here.
+
+${customNote ? `${customNote}\n\n` : ""}I truly appreciate the time we worked together and wish everyone continued success in the future.
+
+Warm regards,
+${senderName}`;
+
+case "new-position-introduction":
+return `Dear Team,
+
+My name is ${senderName}, and I am excited to introduce myself as I begin my new position${jobTitle ? ` as ${jobTitle}` : ""}${companyText ? ` at ${companyText}` : ""}.
+
+${customNote ? `${customNote}\n\n` : ""}I look forward to working with everyone, learning from the team, and contributing in a positive and professional way.
+
+Best regards,
+${senderName}`;
+
+case "confidential-hr-concern":
+return `Dear ${greetingName},
+
+I am writing on ${createdText} to raise a confidential workplace concern and respectfully request that this matter be handled with discretion.
+
+${customNote ? `${customNote}\n\n` : ""}I would appreciate the opportunity to discuss this matter further and understand the next appropriate steps.
+
+Sincerely,
+${senderName}`;
+
+case "report-workplace-incident":
+return `Dear ${greetingName},
+
+I am writing on ${createdText} to formally document and report a workplace incident.
+
+${customNote ? `${customNote}\n\n` : ""}I am sharing this information so the matter is documented appropriately and can be reviewed according to company policy.
+
+Sincerely,
+${senderName}`;
+
+default:
+return "";
+}
+}, [
+template,
+employerName,
+candidateName,
+jobTitle,
+companyName,
+interviewDate,
+createdDate,
+effectiveDate,
+customNote,
+]);
+
+function handleSaveDraft() {
+try {
+const draft = {
+template,
+createdDate,
+effectiveDate,
+candidateName,
+employerName,
+companyName,
+jobTitle,
+interviewDate,
+customNote,
+};
+
+window.localStorage.setItem(LETTER_DRAFT_KEY, JSON.stringify(draft));
+setMessage("Letter draft saved locally in this browser.");
+} catch {
+setMessage("Unable to save your draft locally.");
+}
+}
+
+function handlePrint() {
+window.print();
+}
 
 return (
 <main style={styles.page}>
+<style>{`
+@media print {
+body * {
+visibility: hidden !important;
+}
+
+.print-wrap,
+.print-wrap * {
+visibility: visible !important;
+}
+
+.print-wrap {
+position: absolute !important;
+top: 0 !important;
+left: 0 !important;
+width: 100% !important;
+background: white !important;
+padding: 24px !important;
+margin: 0 !important;
+}
+
+.hide-on-print {
+display: none !important;
+}
+}
+`}</style>
+
 <div style={styles.shell}>
 <section style={styles.heroCard}>
 <p style={styles.kicker}>Career ToolKit</p>
-<h1 style={styles.title}>Employer Follow-Up Generator</h1>
+<h1 style={styles.title}>The House of Letters</h1>
 <p style={styles.subtitle}>
-Create a professional thank-you email after an interview or a polite follow-up
-email to check on your application status.
+From thank-you notes to resignation letters, create the words that move your career forward.
 </p>
 
 <div style={styles.heroButtons}>
@@ -71,35 +381,39 @@ Back to Career ToolKit
 </section>
 
 <div style={styles.layout}>
-<section style={styles.formCard}>
+<section className="hide-on-print" style={styles.formCard}>
 <p style={styles.sectionKicker}>Template</p>
-<h2 style={styles.sectionTitle}>Choose your email type</h2>
+<h2 style={styles.sectionTitle}>Choose your letter type</h2>
 
-<div style={styles.templateRow}>
+<div style={styles.templateGrid}>
+{TEMPLATES.map((item) => (
 <button
+key={item.value}
 type="button"
-onClick={() => setTemplate("thank-you")}
+onClick={() => setTemplate(item.value)}
 style={{
 ...styles.templateButton,
-...(template === "thank-you" ? styles.templateButtonActive : {}),
+...(template === item.value ? styles.templateButtonActive : {}),
 }}
 >
-Thank-You After Interview
+{item.label}
 </button>
-
-<button
-type="button"
-onClick={() => setTemplate("follow-up")}
-style={{
-...styles.templateButton,
-...(template === "follow-up" ? styles.templateButtonActive : {}),
-}}
->
-Follow-Up on Status
-</button>
+))}
 </div>
 
 <div style={styles.formGrid}>
+<Field
+label="Date Created / Sent"
+value={createdDate}
+onChange={setCreatedDate}
+placeholder="March 28, 2026"
+/>
+<Field
+label="Effective Date (if needed)"
+value={effectiveDate}
+onChange={setEffectiveDate}
+placeholder="April 15, 2026"
+/>
 <Field
 label="Your Name"
 value={candidateName}
@@ -107,10 +421,10 @@ onChange={setCandidateName}
 placeholder="Your full name"
 />
 <Field
-label="Employer / Interviewer Name"
+label="Employer / Manager / HR Name"
 value={employerName}
 onChange={setEmployerName}
-placeholder="Hiring manager or interviewer"
+placeholder="Hiring manager, HR, supervisor"
 />
 <Field
 label="Company Name"
@@ -119,33 +433,45 @@ onChange={setCompanyName}
 placeholder="Company name"
 />
 <Field
-label="Job Title"
+label="Job Title / Role"
 value={jobTitle}
 onChange={setJobTitle}
-placeholder="Job title"
+placeholder="Job title or current role"
 />
 <Field
-label="Interview Date or Reference"
+label="Interview Date / Reference"
 value={interviewDate}
 onChange={setInterviewDate}
-placeholder="Example: March 25 or our recent interview"
+placeholder="Example: March 25 or our recent conversation"
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Extra Note (optional)</label>
+<label style={styles.label}>Extra Details / Custom Note</label>
 <textarea
 value={customNote}
 onChange={(e) => setCustomNote(e.target.value)}
-placeholder="Add a short personalized note if you'd like."
+placeholder="Add details, context, request information, incident notes, or a personalized message here."
 style={styles.textarea}
 />
 </div>
+
+{message ? <p style={styles.message}>{message}</p> : null}
+
+<div style={styles.actionRow}>
+<button type="button" onClick={handleSaveDraft} style={styles.primaryButton}>
+Save Draft
+</button>
+
+<button type="button" onClick={handlePrint} style={styles.secondaryButton}>
+Print / Save
+</button>
+</div>
 </section>
 
-<section style={styles.previewCard}>
+<section className="print-wrap" style={styles.previewCard}>
 <p style={styles.sectionKicker}>Live Preview</p>
-<h2 style={styles.sectionTitle}>Email Preview</h2>
+<h2 style={styles.sectionTitle}>Letter Preview</h2>
 
 <div style={styles.previewBlock}>
 <p style={styles.previewLabel}>Subject</p>
@@ -153,7 +479,7 @@ style={styles.textarea}
 
 <p style={styles.previewLabel}>Message</p>
 <div style={styles.bodyBox}>
-{emailBody.split("\n").map((line, index) => (
+{bodyText.split("\n").map((line, index) => (
 <p key={index} style={styles.previewText}>
 {line || "\u00A0"}
 </p>
@@ -166,6 +492,24 @@ style={styles.textarea}
 </main>
 );
 }
+
+const TEMPLATES: { value: TemplateType; label: string }[] = [
+{ value: "thank-you", label: "Thank-You After Interview" },
+{ value: "follow-up-status", label: "Follow-Up on Status" },
+{ value: "withdraw-application", label: "Withdraw Application" },
+{ value: "accept-job-offer", label: "Accept Job Offer" },
+{ value: "decline-job-offer", label: "Decline Job Offer" },
+{ value: "request-interview-reschedule", label: "Request Interview Reschedule" },
+{ value: "request-raise", label: "Request a Raise" },
+{ value: "request-promotion", label: "Request a Promotion" },
+{ value: "request-pto", label: "Request PTO" },
+{ value: "request-extended-leave", label: "Request Extended Leave / FMLA" },
+{ value: "resignation-letter", label: "Resignation Letter" },
+{ value: "farewell-message", label: "Farewell / Goodbye Message" },
+{ value: "new-position-introduction", label: "Accepted New Position - Introduction" },
+{ value: "confidential-hr-concern", label: "Confidential HR Concern" },
+{ value: "report-workplace-incident", label: "Report Workplace Incident" },
+];
 
 function Field({
 label,
@@ -235,7 +579,7 @@ margin: 0,
 color: "#d4d4d8",
 fontSize: "16px",
 lineHeight: 1.75,
-maxWidth: "820px",
+maxWidth: "860px",
 },
 heroButtons: {
 display: "flex",
@@ -294,10 +638,10 @@ lineHeight: 1.1,
 fontWeight: 700,
 color: "#f5f5f5",
 },
-templateRow: {
-display: "flex",
+templateGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
 gap: "12px",
-flexWrap: "wrap",
 marginBottom: "20px",
 },
 templateButton: {
@@ -309,6 +653,7 @@ color: "#f5f5f5",
 fontWeight: 700,
 fontSize: "14px",
 cursor: "pointer",
+textAlign: "left",
 },
 templateButtonActive: {
 background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
@@ -343,7 +688,7 @@ outline: "none",
 },
 textarea: {
 width: "100%",
-minHeight: "120px",
+minHeight: "140px",
 padding: "14px 16px",
 borderRadius: "16px",
 border: "1px solid #313131",
@@ -353,6 +698,40 @@ fontSize: "15px",
 resize: "vertical",
 boxSizing: "border-box",
 outline: "none",
+},
+message: {
+margin: "4px 0 0",
+color: "#e5e7eb",
+fontSize: "14px",
+lineHeight: 1.6,
+},
+actionRow: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "12px",
+marginTop: "16px",
+},
+primaryButton: {
+width: "100%",
+padding: "15px 18px",
+borderRadius: "18px",
+border: "1px solid #d1d5db",
+background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+color: "#09090b",
+fontSize: "15px",
+fontWeight: 700,
+cursor: "pointer",
+},
+secondaryButton: {
+width: "100%",
+padding: "15px 18px",
+borderRadius: "18px",
+border: "1px solid rgba(148,163,184,0.28)",
+background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+color: "#fff",
+fontSize: "15px",
+fontWeight: 700,
+cursor: "pointer",
 },
 previewBlock: {
 display: "grid",
