@@ -78,6 +78,13 @@ export default function SiteHeader() {
                Career ToolKit
               </a>
               <button
+type="button"
+onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
+style={styles.linkButtonLike}
+>
+Notes
+</button>
+              <button
                 type="button"
                 onClick={handleLogout}
                 style={styles.logoutButton}
@@ -141,6 +148,15 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
+  linkButtonLike: {
+border: "none",
+background: "transparent",
+color: "#f5f5f5",
+fontSize: "14px",
+fontWeight: 700,
+cursor: "pointer",
+padding: 0,
+},
   lockedLink: {
     color: "#7c7c85",
     fontSize: "14px",
