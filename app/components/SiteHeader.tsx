@@ -1,98 +1,116 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-export default function SiteHeader() {
-const { t } = useLanguage();
+type AccessRow = {
+account_type?: string | null;
+contact_email?: string | null;
+};
 
-const [isLoggedIn, setIsLoggedIn] = useState(false);
-const [checkingAuth, setCheckingAuth] = useState(true);
-const [loadingLogout, setLoadingLogout] = useState(false);
+export default function SiteHeader() {
+const [isSignedIn, setIsSignedIn] = useState(false);
+const [accountType, setAccountType] = useState<string>("");
 
 useEffect(() => {
-async function checkAuth() {
-const { data } = await supabase.auth.getSession();
-setIsLoggedIn(Boolean(data.session));
-setCheckingAuth(false);
+let mounted = true;
+
+async function loadUserRole() {
+const { data: authData } = await supabase.auth.getUser();
+
+if (!mounted) return;
+
+if (!authData.user?.email) {
+setIsSignedIn(false);
+setAccountType("");
+return;
 }
 
-checkAuth();
+setIsSignedIn(true);
+
+const email = authData.user.email;
+
+const { data: accessRow } = await supabase
+.from("partners")
+.select("account_type, contact_email")
+.eq("contact_email", email)
+.maybeSingle<AccessRow>();
+
+if (!mounted) return;
+
+setAccountType(accessRow?.account_type || "");
+}
+
+loadUserRole();
+
+const {
+data: { subscription },
+} = supabase.auth.onAuthStateChange(() => {
+loadUserRole();
+});
+
+return () => {
+mounted = false;
+subscription.unsubscribe();
+};
 }, []);
 
-async function handleLogout() {
-try {
-setLoadingLogout(true);
-await supabase.auth.signOut();
-window.location.href = "/";
-} finally {
-setLoadingLogout(false);
-}
-}
+const isPartner = accountType === "partner";
+const isEmployer = accountType === "employer";
+const isAdmin = accountType === "admin";
+const isInternalAccount = isPartner || isEmployer || isAdmin;
 
 return (
 <header style={styles.header}>
 <div style={styles.inner}>
-<a href="/" style={styles.logo}>
+<Link href="/" style={styles.brand}>
 HireMinds
-</a>
+</Link>
 
-<div style={styles.centerNav}>
-<a href="/" style={styles.link}>
-{t.home}
-</a>
+<nav style={styles.nav}>
+<Link href="/career-toolkit" style={styles.link}>
+Career ToolKit
+</Link>
 
-{!checkingAuth && !isLoggedIn ? (
-<a href="/sign-in" style={styles.link}>
-{t.signIn}
-</a>
+{isPartner ? (
+<Link href="/partner-dashboard" style={styles.link}>
+Partner Dashboard
+</Link>
 ) : null}
 
-<a href="/partner-with-hireminds" style={styles.link}>
-{t.partner}
-</a>
+{isEmployer ? (
+<Link href="/employer-dashboard" style={styles.link}>
+Employer Dashboard
+</Link>
+) : null}
 
-<a href="/contact" style={styles.link}>
-{t.contact}
-</a>
-</div>
-
-<div style={styles.rightNav}>
-{isLoggedIn ? (
+{isAdmin ? (
 <>
-<a href="/profile" style={styles.link}>
-My Profile
-</a>
-
-<a href="/career-toolkit" style={styles.link}>
-Career ToolKit
-</a>
-
-<button
-type="button"
-onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
-style={styles.linkButtonLike}
->
-Notes
-</button>
-
-<button
-type="button"
-onClick={handleLogout}
-style={styles.logoutButton}
-disabled={loadingLogout}
->
-{loadingLogout ? "Logging Off..." : "Log Off"}
-</button>
+<Link href="/admin-dashboard" style={styles.link}>
+Admin Dashboard
+</Link>
+<Link href="/partner-dashboard" style={styles.link}>
+Partner Dashboard
+</Link>
+<Link href="/employer-dashboard" style={styles.link}>
+Employer Dashboard
+</Link>
 </>
 ) : null}
 
-<span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
-<a href="/employer-partner-login" style={styles.linkButtonLike}>
-{t.employerPartnerSignIn}
-</a>
-</div>
+{isSignedIn && !isInternalAccount ? (
+<Link href="/profile" style={styles.link}>
+My Profile
+</Link>
+) : null}
+
+{!isSignedIn ? (
+<Link href="/employer-partner-login" style={styles.link}>
+Employer/Partner Sign In
+</Link>
+) : null}
+</nav>
 </div>
 </header>
 );
@@ -103,78 +121,36 @@ header: {
 width: "100%",
 position: "sticky",
 top: 0,
-zIndex: 100,
-background: "rgba(5,5,5,0.95)",
+zIndex: 50,
+background: "rgba(10,10,12,0.92)",
 backdropFilter: "blur(10px)",
-borderBottom: "1px solid #1f1f1f",
+borderBottom: "1px solid rgba(255,255,255,0.08)",
 },
 inner: {
-maxWidth: "1520px",
+maxWidth: "1400px",
 margin: "0 auto",
 padding: "14px 24px",
-display: "grid",
-gridTemplateColumns: "220px 1fr auto",
+display: "flex",
 alignItems: "center",
-gap: "20px",
+justifyContent: "space-between",
+gap: "16px",
 },
-logo: {
+brand: {
 color: "#f5f5f5",
-fontSize: "20px",
-fontWeight: 600,
 textDecoration: "none",
+fontWeight: 800,
+fontSize: "18px",
 },
-centerNav: {
+nav: {
 display: "flex",
-gap: "20px",
 alignItems: "center",
-justifyContent: "center",
-flexWrap: "wrap",
-},
-rightNav: {
-display: "flex",
-gap: "18px",
-alignItems: "center",
-justifyContent: "flex-end",
+gap: "14px",
 flexWrap: "wrap",
 },
 link: {
-color: "#d4d4d8",
+color: "#f5f5f5",
 textDecoration: "none",
+fontWeight: 600,
 fontSize: "14px",
-cursor: "pointer",
-whiteSpace: "nowrap",
-},
-linkButtonLike: {
-border: "none",
-background: "transparent",
-color: "#d4d4d8",
-textDecoration: "none",
-fontSize: "14px",
-fontWeight: 400,
-fontFamily: "inherit",
-lineHeight: "inherit",
-cursor: "pointer",
-padding: 0,
-margin: 0,
-whiteSpace: "nowrap",
-appearance: "none",
-WebkitAppearance: "none",
-outline: "none",
-boxShadow: "none",
-},
-lockedLink: {
-color: "#7c7c85",
-fontSize: "14px",
-whiteSpace: "nowrap",
-},
-logoutButton: {
-background: "transparent",
-border: "1px solid #3f3f46",
-color: "#d4d4d8",
-fontSize: "14px",
-cursor: "pointer",
-whiteSpace: "nowrap",
-borderRadius: "10px",
-padding: "8px 12px",
 },
 };
