@@ -18,7 +18,12 @@ const { data, error } = await supabase.auth.signInWithPassword({
 email,
 password,
 });
+const { data, error } = await supabase.auth.signInWithPassword({
+email,
+password,
+});
 
+console.log("signIn result", { data, error });
 if (error || !data.user) {
 setMessage(error?.message || "Unable to sign in.");
 setLoading(false);
