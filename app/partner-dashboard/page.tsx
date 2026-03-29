@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
 type PeriodKey = "day" | "week" | "month" | "quarter" | "fiscal";
@@ -176,12 +176,25 @@ const [period, setPeriod] = useState<PeriodKey>("month");
 const [workshopNotes, setWorkshopNotes] = useState("");
 const [jobFairNotes, setJobFairNotes] = useState("");
 const [meetingNotes, setMeetingNotes] = useState("");
+const [outsideReferralNotes, setOutsideReferralNotes] = useState("");
+const [hireMindsReferralNotes, setHireMindsReferralNotes] = useState("");
+const [interviewNotes, setInterviewNotes] = useState("");
+const [jobPlacementNotes, setJobPlacementNotes] = useState("");
 const [additionalNotes, setAdditionalNotes] = useState("");
+
+const mountedRef = useRef(true);
 
 const notesStorageKey = useMemo(() => {
 const code = partner?.referral_code || "partner";
 return `hireminds-partner-notes-${code}-${period}`;
 }, [partner?.referral_code, period]);
+
+useEffect(() => {
+mountedRef.current = true;
+return () => {
+mountedRef.current = false;
+};
+}, []);
 
 useEffect(() => {
 try {
@@ -191,17 +204,29 @@ const parsed = JSON.parse(raw);
 setWorkshopNotes(parsed.workshopNotes || "");
 setJobFairNotes(parsed.jobFairNotes || "");
 setMeetingNotes(parsed.meetingNotes || "");
+setOutsideReferralNotes(parsed.outsideReferralNotes || "");
+setHireMindsReferralNotes(parsed.hireMindsReferralNotes || "");
+setInterviewNotes(parsed.interviewNotes || "");
+setJobPlacementNotes(parsed.jobPlacementNotes || "");
 setAdditionalNotes(parsed.additionalNotes || "");
 } else {
 setWorkshopNotes("");
 setJobFairNotes("");
 setMeetingNotes("");
+setOutsideReferralNotes("");
+setHireMindsReferralNotes("");
+setInterviewNotes("");
+setJobPlacementNotes("");
 setAdditionalNotes("");
 }
 } catch {
 setWorkshopNotes("");
 setJobFairNotes("");
 setMeetingNotes("");
+setOutsideReferralNotes("");
+setHireMindsReferralNotes("");
+setInterviewNotes("");
+setJobPlacementNotes("");
 setAdditionalNotes("");
 }
 }, [notesStorageKey]);
@@ -214,6 +239,10 @@ JSON.stringify({
 workshopNotes,
 jobFairNotes,
 meetingNotes,
+outsideReferralNotes,
+hireMindsReferralNotes,
+interviewNotes,
+jobPlacementNotes,
 additionalNotes,
 })
 );
@@ -223,9 +252,13 @@ setMessage("Unable to save notes in this browser.");
 }
 }
 
-async function loadDashboard() {
+async function loadDashboard(options?: { silent?: boolean }) {
+const silent = options?.silent ?? false;
+
+if (!silent) {
 setLoading(true);
 setMessage("");
+}
 
 const { data: authData, error: authError } = await supabase.auth.getUser();
 
@@ -243,18 +276,20 @@ const { data: partnerRow, error: partnerError } = await supabase
 .maybeSingle<PartnerRow>();
 
 if (partnerError) {
+if (mountedRef.current) {
 setMessage(partnerError.message);
-setLoading(false);
+if (!silent) setLoading(false);
+}
 return;
 }
 
 if (!partnerRow || partnerRow.account_type !== "partner" || !partnerRow.referral_code) {
+if (mountedRef.current) {
 setMessage("This account does not have partner dashboard access.");
-setLoading(false);
+if (!silent) setLoading(false);
+}
 return;
 }
-
-setPartner(partnerRow);
 
 const { data: participantRows, error: participantError } = await supabase
 .from("candidate_profiles")
@@ -263,8 +298,10 @@ const { data: participantRows, error: participantError } = await supabase
 .order("created_at", { ascending: false });
 
 if (participantError) {
+if (mountedRef.current) {
 setMessage(participantError.message);
-setLoading(false);
+if (!silent) setLoading(false);
+}
 return;
 }
 
@@ -276,14 +313,19 @@ const { data: activityRows, error: activityError } = await supabase
 .limit(1000);
 
 if (activityError) {
+if (mountedRef.current) {
 setMessage(activityError.message);
-setLoading(false);
+if (!silent) setLoading(false);
+}
 return;
 }
 
+if (!mountedRef.current) return;
+
+setPartner(partnerRow);
 setParticipants((participantRows as ParticipantRow[]) || []);
 setActivity((activityRows as ActivityRow[]) || []);
-setLoading(false);
+if (!silent) setLoading(false);
 }
 
 useEffect(() => {
@@ -292,7 +334,7 @@ loadDashboard();
 
 useEffect(() => {
 const interval = setInterval(() => {
-loadDashboard();
+loadDashboard({ silent: true });
 }, 15000);
 
 return () => clearInterval(interval);
@@ -341,6 +383,7 @@ const totalNewUsers = newUsers.length;
 const totalActivity = filteredActivity.length;
 const totalCompletions = filteredActivity.filter((row) => row.event_type === "tool_completed").length;
 const totalLogins = filteredActivity.filter((row) => row.event_type === "login").length;
+const totalPlatformUses = filteredActivity.length;
 
 const resumesCompleted = filteredActivity.filter(
 (row) => row.tool_name === "resume_generator" && row.event_type === "tool_completed"
@@ -352,6 +395,14 @@ const applicationsSubmitted = filteredActivity.filter(
 
 const employerContacts = filteredActivity.filter(
 (row) => row.event_type === "employer_contacted_candidate"
+).length;
+
+const interviewsLanded = filteredActivity.filter(
+(row) => row.event_type === "interview_landed"
+).length;
+
+const jobsLanded = filteredActivity.filter(
+(row) => row.event_type === "job_landed"
 ).length;
 
 const liveFeed = useMemo(() => filteredActivity.slice(0, 50), [filteredActivity]);
@@ -377,7 +428,6 @@ return rowKey === key;
 });
 
 const loginCount = personActivity.filter((row) => row.event_type === "login").length;
-
 const toolsUsed = [
 ...new Set(personActivity.map((row) => row.tool_name || "").filter(Boolean)),
 ];
@@ -400,13 +450,18 @@ const notes: string[] = [];
 if (workshopNotes.trim()) notes.push(`Workshops/Trainings: ${workshopNotes.trim()}`);
 if (jobFairNotes.trim()) notes.push(`Job Fairs/Hiring Events: ${jobFairNotes.trim()}`);
 if (meetingNotes.trim()) notes.push(`One-on-One Meetings: ${meetingNotes.trim()}`);
+if (hireMindsReferralNotes.trim()) notes.push(`HireMinds Tool Referrals: ${hireMindsReferralNotes.trim()}`);
+if (outsideReferralNotes.trim()) notes.push(`Outside Referrals: ${outsideReferralNotes.trim()}`);
+if (interviewNotes.trim()) notes.push(`Interview Notes: ${interviewNotes.trim()}`);
+if (jobPlacementNotes.trim()) notes.push(`Job Placement Notes: ${jobPlacementNotes.trim()}`);
 if (additionalNotes.trim()) notes.push(`Additional Notes: ${additionalNotes.trim()}`);
 
 return [
 `${periodLabel(period)}, HireMinds supported ${totalParticipants} participant${totalParticipants === 1 ? "" : "s"} tied to referral code ${partner?.referral_code || "—"}.`,
 `${totalNewUsers} new user${totalNewUsers === 1 ? "" : "s"} entered the platform during this reporting period.`,
+`The platform was used ${totalPlatformUses} time${totalPlatformUses === 1 ? "" : "s"} during this period, including repeat use by the same participant on the same day.`,
 `${activeUsersCount} active user${activeUsersCount === 1 ? "" : "s"} generated ${totalActivity} tracked activity event${totalActivity === 1 ? "" : "s"} and ${totalCompletions} completion${totalCompletions === 1 ? "" : "s"}.`,
-`Participants completed ${resumesCompleted} resume action${resumesCompleted === 1 ? "" : "s"}, submitted ${applicationsSubmitted} application${applicationsSubmitted === 1 ? "" : "s"}, and ${employerContacts} participant${employerContacts === 1 ? " was" : "s were"} marked as contacted by employers.`,
+`Participants completed ${resumesCompleted} resume action${resumesCompleted === 1 ? "" : "s"}, submitted ${applicationsSubmitted} application${applicationsSubmitted === 1 ? "" : "s"}, ${employerContacts} participant${employerContacts === 1 ? " was" : "s were"} marked as contacted by employers, ${interviewsLanded} interview${interviewsLanded === 1 ? "" : "s"} were recorded, and ${jobsLanded} job placement${jobsLanded === 1 ? "" : "s"} were recorded.`,
 inactiveUsersCount > 0
 ? `${inactiveUsersCount} assigned participant${inactiveUsersCount === 1 ? "" : "s"} had no tracked activity during this period.`
 : `All assigned participants showed activity during this period.`,
@@ -416,17 +471,24 @@ inactiveUsersCount > 0
 period,
 totalParticipants,
 totalNewUsers,
+totalPlatformUses,
 activeUsersCount,
 totalActivity,
 totalCompletions,
 resumesCompleted,
 applicationsSubmitted,
 employerContacts,
+interviewsLanded,
+jobsLanded,
 inactiveUsersCount,
 partner?.referral_code,
 workshopNotes,
 jobFairNotes,
 meetingNotes,
+hireMindsReferralNotes,
+outsideReferralNotes,
+interviewNotes,
+jobPlacementNotes,
 additionalNotes,
 ]);
 
@@ -447,7 +509,6 @@ created_at: row.created_at || "",
 last_activity: lastActivityByUser.get(row.user_id || row.email || "") || "",
 }));
 
-console.log("participants export rows", rows);
 downloadCsv(`partner-participants-${period}.csv`, rows);
 }
 
@@ -462,7 +523,6 @@ tool_name: row.tool_name || "",
 page_name: row.page_name || "",
 }));
 
-console.log("activity export rows", rows);
 downloadCsv(`partner-live-feed-${period}.csv`, rows);
 }
 
@@ -477,7 +537,6 @@ total_activity: row.total_activity || 0,
 last_activity: row.last_activity || "",
 }));
 
-console.log("usage export rows", rows);
 downloadCsv(`partner-usage-report-${period}.csv`, rows);
 }
 
@@ -496,6 +555,62 @@ ${summaryText}
 `.trim();
 
 downloadText(`partner-summary-report-${period}.txt`, reportText);
+}
+
+function printSummaryReport() {
+const printWindow = window.open("", "_blank", "width=900,height=1200");
+if (!printWindow) {
+alert("Pop-up blocked. Please allow pop-ups and try again.");
+return;
+}
+
+const html = `
+<!doctype html>
+<html>
+<head>
+<title>Partner Summary Report</title>
+<style>
+body {
+font-family: Arial, sans-serif;
+padding: 40px;
+color: #111827;
+line-height: 1.7;
+}
+h1 {
+margin: 0 0 12px;
+font-size: 28px;
+}
+p {
+margin: 0 0 10px;
+}
+.meta {
+margin-bottom: 18px;
+}
+.summary {
+margin-top: 24px;
+white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>${partner?.organization_name || "Partner"} Summary Report</h1>
+<div class="meta">
+<p><strong>Contact Name:</strong> ${partner?.contact_name || "—"}</p>
+<p><strong>Contact Title:</strong> ${partner?.contact_title || "—"}</p>
+<p><strong>Contact Email:</strong> ${partner?.contact_email || "—"}</p>
+<p><strong>Referral Code:</strong> ${partner?.referral_code || "—"}</p>
+<p><strong>Reporting Period:</strong> ${periodLabel(period)}</p>
+</div>
+<div class="summary">${summaryText}</div>
+</body>
+</html>
+`;
+
+printWindow.document.open();
+printWindow.document.write(html);
+printWindow.document.close();
+printWindow.focus();
+printWindow.print();
 }
 
 if (loading) {
@@ -536,7 +651,7 @@ style={styles.select}
 <option value="fiscal">Fiscal Year</option>
 </select>
 
-<button type="button" onClick={loadDashboard} style={styles.secondaryButton}>
+<button type="button" onClick={() => loadDashboard()} style={styles.secondaryButton}>
 Refresh
 </button>
 
@@ -559,9 +674,15 @@ disabled={loadingLogout}
 <p style={styles.sectionKicker}>Current Activity</p>
 <h2 style={styles.sectionTitle}>Live reporting feed</h2>
 </div>
+<div style={styles.sectionActions}>
+<div style={styles.usageChip}>
+<span style={styles.usageChipLabel}>{periodLabel(period)} Platform Uses</span>
+<span style={styles.usageChipValue}>{totalPlatformUses}</span>
+</div>
 <button type="button" onClick={exportActivity} style={styles.secondaryButton}>
 Export CSV
 </button>
+</div>
 </div>
 
 {liveFeed.length === 0 ? (
@@ -623,12 +744,12 @@ return (
 <p style={styles.summaryValue}>{inactiveUsersCount}</p>
 </div>
 <div style={styles.summaryCard}>
-<p style={styles.summaryLabel}>Resume Completions</p>
-<p style={styles.summaryValue}>{resumesCompleted}</p>
+<p style={styles.summaryLabel}>Interviews Landed</p>
+<p style={styles.summaryValue}>{interviewsLanded}</p>
 </div>
 <div style={styles.summaryCard}>
-<p style={styles.summaryLabel}>Login Count</p>
-<p style={styles.summaryValue}>{totalLogins}</p>
+<p style={styles.summaryLabel}>Jobs Landed</p>
+<p style={styles.summaryValue}>{jobsLanded}</p>
 </div>
 </section>
 
@@ -749,9 +870,14 @@ Export CSV
 <p style={styles.sectionKicker}>Grant-Friendly Summary</p>
 <h2 style={styles.sectionTitle}>Reporting summary</h2>
 </div>
+<div style={styles.sectionActions}>
 <button type="button" onClick={exportSummaryReport} style={styles.secondaryButton}>
-Export Summary
+Save Report
 </button>
+<button type="button" onClick={printSummaryReport} style={styles.secondaryButton}>
+Print Report
+</button>
+</div>
 </div>
 
 <div style={styles.summaryTextBox}>
@@ -785,6 +911,46 @@ style={styles.textarea}
 value={meetingNotes}
 onChange={(e) => setMeetingNotes(e.target.value)}
 placeholder="Add one-on-one meetings, check-ins, or support sessions."
+style={styles.textarea}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>HireMinds Tool Referrals</label>
+<textarea
+value={hireMindsReferralNotes}
+onChange={(e) => setHireMindsReferralNotes(e.target.value)}
+placeholder="Add any referrals made to HireMinds tools or platform resources."
+style={styles.textarea}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Outside Referrals</label>
+<textarea
+value={outsideReferralNotes}
+onChange={(e) => setOutsideReferralNotes(e.target.value)}
+placeholder="Add any outside referrals or community resource referrals."
+style={styles.textarea}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Interview Notes</label>
+<textarea
+value={interviewNotes}
+onChange={(e) => setInterviewNotes(e.target.value)}
+placeholder="Add interview outcomes, interview prep, or interview support notes."
+style={styles.textarea}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Job Placement Notes</label>
+<textarea
+value={jobPlacementNotes}
+onChange={(e) => setJobPlacementNotes(e.target.value)}
+placeholder="Add job placement outcomes or employment notes."
 style={styles.textarea}
 />
 </div>
@@ -869,6 +1035,12 @@ color: "#a1a1aa",
 fontSize: "14px",
 },
 headerActions: {
+display: "flex",
+gap: "12px",
+flexWrap: "wrap",
+alignItems: "center",
+},
+sectionActions: {
 display: "flex",
 gap: "12px",
 flexWrap: "wrap",
@@ -964,6 +1136,29 @@ background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
 color: "#fff",
 fontWeight: 700,
 cursor: "pointer",
+},
+usageChip: {
+display: "flex",
+flexDirection: "column",
+justifyContent: "center",
+minWidth: "190px",
+padding: "12px 16px",
+borderRadius: "18px",
+border: "1px solid rgba(255,255,255,0.12)",
+background: "#111111",
+},
+usageChipLabel: {
+color: "#a1a1aa",
+fontSize: "12px",
+marginBottom: "6px",
+letterSpacing: "0.06em",
+textTransform: "uppercase",
+},
+usageChipValue: {
+color: "#ffffff",
+fontSize: "28px",
+fontWeight: 700,
+lineHeight: 1,
 },
 tableWrap: {
 overflowX: "auto",
