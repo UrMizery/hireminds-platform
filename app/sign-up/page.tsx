@@ -1,13 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "../lib/supabase";
 
 export default function SignupPage() {
-const router = useRouter();
-const supabase = createClient();
-
 const [fullName, setFullName] = useState("");
 const [phone, setPhone] = useState("");
 const [city, setCity] = useState("");
@@ -97,24 +93,19 @@ return;
 
 setMessage("Account created successfully.");
 setLoading(false);
-router.push("/login");
+window.location.href = "/login";
 }
 
 return (
 <main style={styles.page}>
-<div style={styles.card}>
-<h1 style={styles.title}>Create Your Career Passport</h1>
-<p style={styles.subtitle}>
-Sign up to access your tools, documents, and career resources.
-</p>
+<form onSubmit={handleSignUp} style={styles.card}>
+<h1 style={styles.title}>Create Career Passport / Sign Up</h1>
 
-<form onSubmit={handleSignUp} style={styles.form}>
 <input
 placeholder="Full Name"
 value={fullName}
 onChange={(e) => setFullName(e.target.value)}
 style={styles.input}
-required
 />
 
 <input
@@ -139,27 +130,26 @@ style={styles.input}
 />
 
 <input
+placeholder="Email"
 type="email"
-placeholder="Email Address"
 value={email}
 onChange={(e) => setEmail(e.target.value)}
 style={styles.input}
-required
 />
 
 <div style={styles.passwordWrap}>
 <input
-type={showPassword ? "text" : "password"}
 placeholder="Password"
+type={showPassword ? "text" : "password"}
 value={password}
 onChange={(e) => setPassword(e.target.value)}
 style={styles.passwordInput}
-required
 />
 <button
 type="button"
-onClick={() => setShowPassword(!showPassword)}
-style={styles.showButton}
+onClick={() => setShowPassword((prev) => !prev)}
+aria-label={showPassword ? "Hide password" : "Show password"}
+style={styles.passwordToggle}
 >
 {showPassword ? "Hide" : "Show"}
 </button>
@@ -206,13 +196,12 @@ style={styles.input}
 />
 )}
 
-<button type="submit" style={styles.submitButton} disabled={loading}>
+<button type="submit" style={styles.button} disabled={loading}>
 {loading ? "Creating Account..." : "Create Career Passport"}
 </button>
 
-{message && <p style={styles.message}>{message}</p>}
+{message ? <p style={styles.message}>{message}</p> : null}
 </form>
-</div>
 </main>
 );
 }
@@ -221,52 +210,43 @@ const styles: { [key: string]: React.CSSProperties } = {
 page: {
 minHeight: "100vh",
 display: "flex",
-alignItems: "center",
 justifyContent: "center",
-padding: "32px 16px",
-background: "#f8fafc",
+alignItems: "center",
+padding: "24px",
+backgroundColor: "#f8fafc",
 },
 card: {
 width: "100%",
 maxWidth: "520px",
-background: "#ffffff",
-borderRadius: "20px",
+backgroundColor: "#ffffff",
 padding: "32px",
-boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-},
-title: {
-fontSize: "30px",
-fontWeight: 700,
-marginBottom: "8px",
-color: "#111827",
-textAlign: "center",
-},
-subtitle: {
-fontSize: "15px",
-color: "#6b7280",
-marginBottom: "24px",
-textAlign: "center",
-lineHeight: 1.5,
-},
-form: {
+borderRadius: "20px",
+boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
 display: "flex",
 flexDirection: "column",
 gap: "14px",
 },
+title: {
+fontSize: "28px",
+fontWeight: 700,
+color: "#111827",
+textAlign: "center",
+marginBottom: "8px",
+},
 input: {
 width: "100%",
 padding: "14px 16px",
-fontSize: "15px",
 borderRadius: "12px",
 border: "1px solid #d1d5db",
+fontSize: "15px",
 outline: "none",
-backgroundColor: "#fff",
+backgroundColor: "#ffffff",
 },
 helperText: {
 fontSize: "13px",
 color: "#6b7280",
 marginTop: "-8px",
-marginBottom: "12px",
+marginBottom: "4px",
 lineHeight: 1.4,
 },
 passwordWrap: {
@@ -275,35 +255,35 @@ width: "100%",
 },
 passwordInput: {
 width: "100%",
-padding: "14px 90px 14px 16px",
-fontSize: "15px",
+padding: "14px 70px 14px 16px",
 borderRadius: "12px",
 border: "1px solid #d1d5db",
+fontSize: "15px",
 outline: "none",
-backgroundColor: "#fff",
+backgroundColor: "#ffffff",
 },
-showButton: {
+passwordToggle: {
 position: "absolute",
-right: "10px",
 top: "50%",
+right: "12px",
 transform: "translateY(-50%)",
+background: "none",
 border: "none",
-background: "transparent",
 cursor: "pointer",
 fontSize: "14px",
-fontWeight: 600,
 color: "#374151",
+fontWeight: 600,
 },
-submitButton: {
+button: {
 width: "100%",
 padding: "14px 16px",
 borderRadius: "12px",
 border: "none",
-cursor: "pointer",
+backgroundColor: "#111827",
+color: "#ffffff",
 fontSize: "15px",
 fontWeight: 700,
-background: "#111827",
-color: "#ffffff",
+cursor: "pointer",
 marginTop: "8px",
 },
 message: {
