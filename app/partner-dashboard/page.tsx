@@ -732,7 +732,7 @@ Live
 <span style={styles.usageChipLabel}>Platform Uses</span>
 <InfoBubble
 title="Platform Uses"
-text="Counts tracked activity events. This can include repeat use by the same participant multiple times in one day."
+text="Counts tracked activity events. This can include repeat uses by the same participant."
 />
 </div>
 
