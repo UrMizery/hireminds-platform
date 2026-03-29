@@ -174,7 +174,7 @@ Open Career Goal Generator
 </a>
 </div>
 
-<div style={styles.featureCard}>
+<div style={{ ...styles.featureCard, gridColumn: "1 / -1" }}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Budget Generator</h3>
 <span style={styles.liveTag}>New</span>
