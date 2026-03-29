@@ -72,6 +72,22 @@ setLoading(false);
 return;
 }
 
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: user.id,
+full_name: fullName,
+email: email,
+referral_code: referralCode || null,
+event_type: "signup",
+tool_name: null,
+page_name: "sign-up",
+});
+
+if (activityError) {
+console.error("Activity tracking error:", activityError.message);
+}
+  
 setMessage("Account created successfully!");
 setLoading(false);
 
