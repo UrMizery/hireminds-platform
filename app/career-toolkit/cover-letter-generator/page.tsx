@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { supabase } from "../../lib/supabase";
 
 const COVER_LETTER_DRAFT_KEY = "hireminds-cover-letter-draft-v1";
 
@@ -22,11 +23,52 @@ const [signatureName, setSignatureName] = useState("");
 const [message, setMessage] = useState("");
 const [draftLoaded, setDraftLoaded] = useState(false);
 
+const [userId, setUserId] = useState("");
+const [referralCode, setReferralCode] = useState<string | null>(null);
+const openTrackedRef = useRef(false);
+
 const signatureFont = useMemo(() => {
 if (fontFamily === "Calibri") return "cursive";
 if (fontFamily === "Arial") return "cursive";
 return "cursive";
 }, [fontFamily]);
+
+useEffect(() => {
+async function loadUserAndTrack() {
+const { data, error } = await supabase.auth.getUser();
+
+if (error || !data.user || openTrackedRef.current) return;
+
+openTrackedRef.current = true;
+setUserId(data.user.id);
+
+const { data: profile } = await supabase
+.from("candidate_profiles")
+.select("full_name, email, referral_code")
+.eq("user_id", data.user.id)
+.maybeSingle();
+
+setReferralCode(profile?.referral_code || null);
+
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: data.user.id,
+full_name: profile?.full_name || null,
+email: profile?.email || data.user.email || null,
+referral_code: profile?.referral_code || null,
+event_type: "tool_opened",
+tool_name: "cover_letter_generator",
+page_name: "/career-toolkit/cover-letter-generator",
+});
+
+if (activityError) {
+console.error("Cover letter generator tracking error:", activityError);
+}
+}
+
+loadUserAndTrack();
+}, []);
 
 useEffect(() => {
 try {
@@ -94,7 +136,7 @@ closingLine,
 signatureName,
 ]);
 
-function handleSaveDraft() {
+async function handleSaveDraft() {
 try {
 const draft = {
 fontFamily,
@@ -114,6 +156,25 @@ signatureName,
 };
 
 window.localStorage.setItem(COVER_LETTER_DRAFT_KEY, JSON.stringify(draft));
+
+if (userId) {
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: userId,
+full_name: fullName || null,
+email: email || null,
+referral_code: referralCode,
+event_type: "tool_completed",
+tool_name: "cover_letter_generator",
+page_name: "/career-toolkit/cover-letter-generator",
+});
+
+if (activityError) {
+console.error("Cover letter save tracking error:", activityError);
+}
+}
+
 setMessage("Cover letter draft saved locally in this browser.");
 } catch {
 setMessage("Unable to save your draft locally.");
