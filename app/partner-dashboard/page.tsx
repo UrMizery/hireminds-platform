@@ -14,17 +14,6 @@ referral_code?: string | null;
 account_type?: string | null;
 };
 
-type ParticipantRow = {
-id?: string | null;
-user_id?: string | null;
-full_name?: string | null;
-email?: string | null;
-phone?: string | null;
-referral_code?: string | null;
-resume_url?: string | null;
-created_at?: string | null;
-};
-
 type ActivityRow = {
 id?: string | null;
 user_id?: string | null;
@@ -34,6 +23,17 @@ referral_code?: string | null;
 event_type?: string | null;
 tool_name?: string | null;
 page_name?: string | null;
+created_at?: string | null;
+};
+
+type ParticipantRow = {
+id?: string | null;
+user_id?: string | null;
+full_name?: string | null;
+email?: string | null;
+phone?: string | null;
+referral_code?: string | null;
+resume_url?: string | null;
 created_at?: string | null;
 };
 
@@ -118,49 +118,46 @@ return "This Month";
 }
 }
 
-function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
-if (!rows || rows.length === 0) {
-alert("No data available to export yet.");
-return;
-}
-
-const headers = Object.keys(rows[0]);
-
-const escapeCell = (value: unknown) => {
-const text = String(value ?? "");
-return `"${text.replace(/"/g, '""')}"`;
-};
-
-const csv = [
-headers.join(","),
-...rows.map((row) => headers.map((header) => escapeCell(row[header])).join(",")),
-].join("\n");
-
-const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-const url = URL.createObjectURL(blob);
-
-const link = document.createElement("a");
-link.href = url;
-link.download = filename;
-document.body.appendChild(link);
-link.click();
-document.body.removeChild(link);
-
-URL.revokeObjectURL(url);
-}
-
 function downloadText(filename: string, text: string) {
 const blob = new Blob([text], { type: "text/plain;charset=utf-8;" });
 const url = window.URL.createObjectURL(blob);
-
 const link = document.createElement("a");
 link.href = url;
 link.setAttribute("download", filename);
 document.body.appendChild(link);
 link.click();
 document.body.removeChild(link);
-
 window.URL.revokeObjectURL(url);
+}
+
+function InfoBubble({
+title,
+text,
+}: {
+title: string;
+text: string;
+}) {
+const [open, setOpen] = useState(false);
+
+return (
+<span style={styles.infoWrap}>
+<button
+type="button"
+onClick={() => setOpen((prev) => !prev)}
+style={styles.infoButton}
+aria-label={`About ${title}`}
+title={`About ${title}`}
+>
+i
+</button>
+{open ? (
+<div style={styles.infoPopup}>
+<p style={styles.infoTitle}>{title}</p>
+<p style={styles.infoText}>{text}</p>
+</div>
+) : null}
+</span>
+);
 }
 
 export default function PartnerDashboardPage() {
@@ -172,21 +169,24 @@ const [partner, setPartner] = useState<PartnerRow | null>(null);
 const [participants, setParticipants] = useState<ParticipantRow[]>([]);
 const [activity, setActivity] = useState<ActivityRow[]>([]);
 const [period, setPeriod] = useState<PeriodKey>("month");
+const [platformUseView, setPlatformUseView] = useState<"day" | "week" | "month">("month");
+const [lastUpdated, setLastUpdated] = useState<string>("");
 
-const [workshopNotes, setWorkshopNotes] = useState("");
-const [jobFairNotes, setJobFairNotes] = useState("");
-const [meetingNotes, setMeetingNotes] = useState("");
-const [outsideReferralNotes, setOutsideReferralNotes] = useState("");
-const [hireMindsReferralNotes, setHireMindsReferralNotes] = useState("");
-const [interviewNotes, setInterviewNotes] = useState("");
-const [jobPlacementNotes, setJobPlacementNotes] = useState("");
-const [additionalNotes, setAdditionalNotes] = useState("");
+const [workshopQ, setWorkshopQ] = useState("");
+const [jobFairQ, setJobFairQ] = useState("");
+const [meetingQ, setMeetingQ] = useState("");
+const [hireMindsReferralQ, setHireMindsReferralQ] = useState("");
+const [outsideReferralQ, setOutsideReferralQ] = useState("");
+const [interviewQ, setInterviewQ] = useState("");
+const [resumeSupportQ, setResumeSupportQ] = useState("");
+const [analyzerSupportQ, setAnalyzerSupportQ] = useState("");
+const [successStoryQ, setSuccessStoryQ] = useState("");
 
 const mountedRef = useRef(true);
 
 const notesStorageKey = useMemo(() => {
 const code = partner?.referral_code || "partner";
-return `hireminds-partner-notes-${code}-${period}`;
+return `hireminds-partner-report-${code}-${period}`;
 }, [partner?.referral_code, period]);
 
 useEffect(() => {
@@ -201,54 +201,58 @@ try {
 const raw = window.localStorage.getItem(notesStorageKey);
 if (raw) {
 const parsed = JSON.parse(raw);
-setWorkshopNotes(parsed.workshopNotes || "");
-setJobFairNotes(parsed.jobFairNotes || "");
-setMeetingNotes(parsed.meetingNotes || "");
-setOutsideReferralNotes(parsed.outsideReferralNotes || "");
-setHireMindsReferralNotes(parsed.hireMindsReferralNotes || "");
-setInterviewNotes(parsed.interviewNotes || "");
-setJobPlacementNotes(parsed.jobPlacementNotes || "");
-setAdditionalNotes(parsed.additionalNotes || "");
+setWorkshopQ(parsed.workshopQ || "");
+setJobFairQ(parsed.jobFairQ || "");
+setMeetingQ(parsed.meetingQ || "");
+setHireMindsReferralQ(parsed.hireMindsReferralQ || "");
+setOutsideReferralQ(parsed.outsideReferralQ || "");
+setInterviewQ(parsed.interviewQ || "");
+setResumeSupportQ(parsed.resumeSupportQ || "");
+setAnalyzerSupportQ(parsed.analyzerSupportQ || "");
+setSuccessStoryQ(parsed.successStoryQ || "");
 } else {
-setWorkshopNotes("");
-setJobFairNotes("");
-setMeetingNotes("");
-setOutsideReferralNotes("");
-setHireMindsReferralNotes("");
-setInterviewNotes("");
-setJobPlacementNotes("");
-setAdditionalNotes("");
+setWorkshopQ("");
+setJobFairQ("");
+setMeetingQ("");
+setHireMindsReferralQ("");
+setOutsideReferralQ("");
+setInterviewQ("");
+setResumeSupportQ("");
+setAnalyzerSupportQ("");
+setSuccessStoryQ("");
 }
 } catch {
-setWorkshopNotes("");
-setJobFairNotes("");
-setMeetingNotes("");
-setOutsideReferralNotes("");
-setHireMindsReferralNotes("");
-setInterviewNotes("");
-setJobPlacementNotes("");
-setAdditionalNotes("");
+setWorkshopQ("");
+setJobFairQ("");
+setMeetingQ("");
+setHireMindsReferralQ("");
+setOutsideReferralQ("");
+setInterviewQ("");
+setResumeSupportQ("");
+setAnalyzerSupportQ("");
+setSuccessStoryQ("");
 }
 }, [notesStorageKey]);
 
-function saveNotes() {
+function saveQuestions() {
 try {
 window.localStorage.setItem(
 notesStorageKey,
 JSON.stringify({
-workshopNotes,
-jobFairNotes,
-meetingNotes,
-outsideReferralNotes,
-hireMindsReferralNotes,
-interviewNotes,
-jobPlacementNotes,
-additionalNotes,
+workshopQ,
+jobFairQ,
+meetingQ,
+hireMindsReferralQ,
+outsideReferralQ,
+interviewQ,
+resumeSupportQ,
+analyzerSupportQ,
+successStoryQ,
 })
 );
-setMessage("Partner reporting notes saved in this browser.");
+setMessage("Report responses saved in this browser.");
 } catch {
-setMessage("Unable to save notes in this browser.");
+setMessage("Unable to save report responses in this browser.");
 }
 }
 
@@ -325,6 +329,7 @@ if (!mountedRef.current) return;
 setPartner(partnerRow);
 setParticipants((participantRows as ParticipantRow[]) || []);
 setActivity((activityRows as ActivityRow[]) || []);
+setLastUpdated(new Date().toLocaleTimeString());
 if (!silent) setLoading(false);
 }
 
@@ -351,6 +356,7 @@ return true;
 }, [participants]);
 
 const periodStart = useMemo(() => getPeriodStart(period), [period]);
+const usePeriodStart = useMemo(() => getPeriodStart(platformUseView), [platformUseView]);
 
 const filteredActivity = useMemo(() => {
 return activity.filter((row) => {
@@ -358,6 +364,15 @@ const date = toDate(row.created_at);
 return date ? date >= periodStart : false;
 });
 }, [activity, periodStart]);
+
+const usesBySelectedView = useMemo(() => {
+return activity.filter((row) => {
+const date = toDate(row.created_at);
+return date ? date >= usePeriodStart : false;
+}).length;
+}, [activity, usePeriodStart]);
+
+const totalHireMindsUsesReference = activity.length;
 
 const newUsers = useMemo(() => {
 return uniqueParticipants.filter((row) => {
@@ -382,162 +397,121 @@ const totalParticipants = uniqueParticipants.length;
 const totalNewUsers = newUsers.length;
 const totalActivity = filteredActivity.length;
 const totalCompletions = filteredActivity.filter((row) => row.event_type === "tool_completed").length;
-const totalLogins = filteredActivity.filter((row) => row.event_type === "login").length;
-const totalPlatformUses = filteredActivity.length;
 
 const resumesCompleted = filteredActivity.filter(
 (row) => row.tool_name === "resume_generator" && row.event_type === "tool_completed"
 ).length;
 
-const applicationsSubmitted = filteredActivity.filter(
-(row) => row.event_type === "job_applied"
+const jobDescriptionAnalyzerUses = filteredActivity.filter(
+(row) => row.tool_name === "job_description_analyzer"
 ).length;
 
-const employerContacts = filteredActivity.filter(
-(row) => row.event_type === "employer_contacted_candidate"
-).length;
-
-const interviewsLanded = filteredActivity.filter(
-(row) => row.event_type === "interview_landed"
-).length;
-
-const jobsLanded = filteredActivity.filter(
-(row) => row.event_type === "job_landed"
+const resumeMatchAnalyzerUses = filteredActivity.filter(
+(row) => row.tool_name === "resume_match_analyzer"
 ).length;
 
 const liveFeed = useMemo(() => filteredActivity.slice(0, 50), [filteredActivity]);
 
-const lastActivityByUser = useMemo(() => {
-const map = new Map<string, string>();
-activity.forEach((row) => {
-const key = row.user_id || row.email || "";
-if (!key) return;
-if (!map.has(key)) {
-map.set(key, row.created_at || "");
-}
-});
-return map;
-}, [activity]);
-
-const usageReport = useMemo(() => {
-return uniqueParticipants.map((participant) => {
-const key = participant.user_id || participant.email || "";
-const personActivity = filteredActivity.filter((row) => {
-const rowKey = row.user_id || row.email || "";
-return rowKey === key;
+const dailyTrend = useMemo(() => {
+const bucket = new Map<string, number>();
+filteredActivity.forEach((row) => {
+const date = toDate(row.created_at);
+if (!date) return;
+const key = `${date.getMonth() + 1}/${date.getDate()}`;
+bucket.set(key, (bucket.get(key) || 0) + 1);
 });
 
-const loginCount = personActivity.filter((row) => row.event_type === "login").length;
-const toolsUsed = [
-...new Set(personActivity.map((row) => row.tool_name || "").filter(Boolean)),
+return [...bucket.entries()]
+.map(([label, count]) => ({ label, count }))
+.sort((a, b) => {
+const [am, ad] = a.label.split("/").map(Number);
+const [bm, bd] = b.label.split("/").map(Number);
+return am === bm ? ad - bd : am - bm;
+})
+.slice(-10);
+}, [filteredActivity]);
+
+const toolBreakdown = useMemo(() => {
+const trackedTools = [
+"resume_generator",
+"cover_letter_generator",
+"house_of_letters",
+"professional_branding_generator",
+"job_description_analyzer",
+"resume_match_analyzer",
 ];
 
-return {
-full_name: participant.full_name || "",
-email: participant.email || "",
-phone: participant.phone || "",
-login_count: loginCount,
-tools_used: toolsUsed.join(", "),
-total_activity: personActivity.length,
-last_activity: lastActivityByUser.get(key) || "",
+const prettyName: Record<string, string> = {
+resume_generator: "Resume Generator",
+cover_letter_generator: "Cover Letter Generator",
+house_of_letters: "House of Letters",
+professional_branding_generator: "Branding Generator",
+job_description_analyzer: "Job Description Analyzer",
+resume_match_analyzer: "Resume Match Analyzer",
 };
-});
-}, [uniqueParticipants, filteredActivity, lastActivityByUser]);
+
+return trackedTools
+.map((tool) => ({
+label: prettyName[tool],
+count: filteredActivity.filter((row) => row.tool_name === tool).length,
+}))
+.filter((item) => item.count > 0);
+}, [filteredActivity]);
+
+const maxTrendCount = dailyTrend.length ? Math.max(...dailyTrend.map((d) => d.count)) : 1;
+const maxToolCount = toolBreakdown.length ? Math.max(...toolBreakdown.map((d) => d.count)) : 1;
 
 const summaryText = useMemo(() => {
-const notes: string[] = [];
+const answers: string[] = [];
 
-if (workshopNotes.trim()) notes.push(`Workshops/Trainings: ${workshopNotes.trim()}`);
-if (jobFairNotes.trim()) notes.push(`Job Fairs/Hiring Events: ${jobFairNotes.trim()}`);
-if (meetingNotes.trim()) notes.push(`One-on-One Meetings: ${meetingNotes.trim()}`);
-if (hireMindsReferralNotes.trim()) notes.push(`HireMinds Tool Referrals: ${hireMindsReferralNotes.trim()}`);
-if (outsideReferralNotes.trim()) notes.push(`Outside Referrals: ${outsideReferralNotes.trim()}`);
-if (interviewNotes.trim()) notes.push(`Interview Notes: ${interviewNotes.trim()}`);
-if (jobPlacementNotes.trim()) notes.push(`Job Placement Notes: ${jobPlacementNotes.trim()}`);
-if (additionalNotes.trim()) notes.push(`Additional Notes: ${additionalNotes.trim()}`);
+if (workshopQ.trim()) answers.push(`Workshops/Trainings: ${workshopQ.trim()}`);
+if (jobFairQ.trim()) answers.push(`Job Fairs/Hiring Events: ${jobFairQ.trim()}`);
+if (meetingQ.trim()) answers.push(`Participant Meetings: ${meetingQ.trim()}`);
+if (hireMindsReferralQ.trim()) answers.push(`HireMinds Referrals: ${hireMindsReferralQ.trim()}`);
+if (outsideReferralQ.trim()) answers.push(`Outside Referrals: ${outsideReferralQ.trim()}`);
+if (interviewQ.trim()) answers.push(`Interview Outcomes: ${interviewQ.trim()}`);
+if (resumeSupportQ.trim()) answers.push(`Resume Support Notes: ${resumeSupportQ.trim()}`);
+if (analyzerSupportQ.trim()) answers.push(`Analyzer Support Notes: ${analyzerSupportQ.trim()}`);
+if (successStoryQ.trim()) answers.push(`Success Stories / Additional Outcomes: ${successStoryQ.trim()}`);
 
 return [
 `${periodLabel(period)}, HireMinds supported ${totalParticipants} participant${totalParticipants === 1 ? "" : "s"} tied to referral code ${partner?.referral_code || "—"}.`,
 `${totalNewUsers} new user${totalNewUsers === 1 ? "" : "s"} entered the platform during this reporting period.`,
-`The platform was used ${totalPlatformUses} time${totalPlatformUses === 1 ? "" : "s"} during this period, including repeat use by the same participant on the same day.`,
-`${activeUsersCount} active user${activeUsersCount === 1 ? "" : "s"} generated ${totalActivity} tracked activity event${totalActivity === 1 ? "" : "s"} and ${totalCompletions} completion${totalCompletions === 1 ? "" : "s"}.`,
-`Participants completed ${resumesCompleted} resume action${resumesCompleted === 1 ? "" : "s"}, submitted ${applicationsSubmitted} application${applicationsSubmitted === 1 ? "" : "s"}, ${employerContacts} participant${employerContacts === 1 ? " was" : "s were"} marked as contacted by employers, ${interviewsLanded} interview${interviewsLanded === 1 ? "" : "s"} were recorded, and ${jobsLanded} job placement${jobsLanded === 1 ? "" : "s"} were recorded.`,
+`${activeUsersCount} active user${activeUsersCount === 1 ? "" : "s"} generated ${totalActivity} tracked activity event${totalActivity === 1 ? "" : "s"}.`,
+`Tracked completions totaled ${totalCompletions}. This counter reflects completed actions across tracked HireMinds generators and tools.`,
+`Users completed ${resumesCompleted} resumes, used the Job Description Analyzer ${jobDescriptionAnalyzerUses} time${jobDescriptionAnalyzerUses === 1 ? "" : "s"}, and used the Resume Match Analyzer ${resumeMatchAnalyzerUses} time${resumeMatchAnalyzerUses === 1 ? "" : "s"}.`,
 inactiveUsersCount > 0
-? `${inactiveUsersCount} assigned participant${inactiveUsersCount === 1 ? "" : "s"} had no tracked activity during this period.`
-: `All assigned participants showed activity during this period.`,
-...notes,
+? `${inactiveUsersCount} assigned participant${inactiveUsersCount === 1 ? "" : "s"} had no tracked activity during this reporting period.`
+: `All assigned participants showed activity during this reporting period.`,
+...answers,
 ].join(" ");
 }, [
 period,
 totalParticipants,
 totalNewUsers,
-totalPlatformUses,
 activeUsersCount,
 totalActivity,
 totalCompletions,
 resumesCompleted,
-applicationsSubmitted,
-employerContacts,
-interviewsLanded,
-jobsLanded,
+jobDescriptionAnalyzerUses,
+resumeMatchAnalyzerUses,
 inactiveUsersCount,
 partner?.referral_code,
-workshopNotes,
-jobFairNotes,
-meetingNotes,
-hireMindsReferralNotes,
-outsideReferralNotes,
-interviewNotes,
-jobPlacementNotes,
-additionalNotes,
+workshopQ,
+jobFairQ,
+meetingQ,
+hireMindsReferralQ,
+outsideReferralQ,
+interviewQ,
+resumeSupportQ,
+analyzerSupportQ,
+successStoryQ,
 ]);
 
 async function handleLogout() {
 setLoadingLogout(true);
 await supabase.auth.signOut();
 window.location.href = "/employer-partner-login";
-}
-
-function exportParticipants() {
-const rows = uniqueParticipants.map((row) => ({
-full_name: row.full_name || "",
-email: row.email || "",
-phone: row.phone || "",
-referral_code: row.referral_code || "",
-resume_url: row.resume_url || "",
-created_at: row.created_at || "",
-last_activity: lastActivityByUser.get(row.user_id || row.email || "") || "",
-}));
-
-downloadCsv(`partner-participants-${period}.csv`, rows);
-}
-
-function exportActivity() {
-const rows = liveFeed.map((row) => ({
-created_at: row.created_at || "",
-full_name: row.full_name || "",
-email: row.email || "",
-referral_code: row.referral_code || "",
-event_type: row.event_type || "",
-tool_name: row.tool_name || "",
-page_name: row.page_name || "",
-}));
-
-downloadCsv(`partner-live-feed-${period}.csv`, rows);
-}
-
-function exportUsageReport() {
-const rows = usageReport.map((row) => ({
-full_name: row.full_name || "",
-email: row.email || "",
-phone: row.phone || "",
-login_count: row.login_count || 0,
-tools_used: row.tools_used || "",
-total_activity: row.total_activity || 0,
-last_activity: row.last_activity || "",
-}));
-
-downloadCsv(`partner-usage-report-${period}.csv`, rows);
 }
 
 function exportSummaryReport() {
@@ -570,26 +544,11 @@ const html = `
 <head>
 <title>Partner Summary Report</title>
 <style>
-body {
-font-family: Arial, sans-serif;
-padding: 40px;
-color: #111827;
-line-height: 1.7;
-}
-h1 {
-margin: 0 0 12px;
-font-size: 28px;
-}
-p {
-margin: 0 0 10px;
-}
-.meta {
-margin-bottom: 18px;
-}
-.summary {
-margin-top: 24px;
-white-space: pre-wrap;
-}
+body { font-family: Arial, sans-serif; padding: 40px; color: #111827; line-height: 1.7; }
+h1 { margin: 0 0 12px; font-size: 28px; }
+p { margin: 0 0 10px; }
+.meta { margin-bottom: 18px; }
+.summary { margin-top: 24px; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -623,6 +582,22 @@ return (
 
 return (
 <main style={styles.page}>
+<style>{`
+@keyframes pulseDot {
+0% { opacity: 0.35; transform: scale(0.95); }
+50% { opacity: 1; transform: scale(1.08); }
+100% { opacity: 0.35; transform: scale(0.95); }
+}
+@keyframes riseIn {
+from { transform: scaleY(0.2); opacity: 0.45; }
+to { transform: scaleY(1); opacity: 1; }
+}
+@keyframes slideGlow {
+0% { background-position: 0% 50%; }
+100% { background-position: 100% 50%; }
+}
+`}</style>
+
 <div style={styles.shell}>
 <section style={styles.headerCard}>
 <div>
@@ -671,24 +646,67 @@ disabled={loadingLogout}
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
+<div style={styles.titleRow}>
 <p style={styles.sectionKicker}>Current Activity</p>
+<InfoBubble
+title="Live Reporting Feed"
+text="This stream shows the most recent tracked participant activity for this partner referral code. It refreshes automatically every 15 seconds."
+/>
+</div>
 <h2 style={styles.sectionTitle}>Live reporting feed</h2>
+<div style={styles.liveMetaRow}>
+<span style={styles.liveBadge}>
+<span style={styles.liveDot} />
+Live
+</span>
+<span style={styles.lastUpdated}>Last updated: {lastUpdated || "—"}</span>
 </div>
+</div>
+
 <div style={styles.sectionActions}>
-<div style={styles.usageChip}>
-<span style={styles.usageChipLabel}>{periodLabel(period)} Platform Uses</span>
-<span style={styles.usageChipValue}>{totalPlatformUses}</span>
+<div style={styles.usagePanel}>
+<div style={styles.usagePanelTop}>
+<span style={styles.usageChipLabel}>Platform Uses</span>
+<InfoBubble
+title="Platform Uses"
+text="Counts tracked activity events. This can include repeat use by the same participant multiple times in one day."
+/>
 </div>
-<button type="button" onClick={exportActivity} style={styles.secondaryButton}>
-Export CSV
+
+<div style={styles.toggleRow}>
+{(["day", "week", "month"] as const).map((key) => (
+<button
+key={key}
+type="button"
+onClick={() => setPlatformUseView(key)}
+style={{
+...styles.toggleButton,
+...(platformUseView === key ? styles.toggleButtonActive : {}),
+}}
+>
+{key === "day" ? "Daily" : key === "week" ? "Weekly" : "Monthly"}
 </button>
+))}
+</div>
+
+<div style={styles.usageValues}>
+<div>
+<p style={styles.usageValue}>{usesBySelectedView}</p>
+<p style={styles.usageSubValue}>{periodLabel(platformUseView)}</p>
+</div>
+<div style={styles.referenceBox}>
+<p style={styles.referenceLabel}>HireMinds Total</p>
+<p style={styles.referenceValue}>{totalHireMindsUsesReference}</p>
+</div>
+</div>
+</div>
 </div>
 </div>
 
 {liveFeed.length === 0 ? (
 <p style={styles.emptyText}>No activity found yet for this reporting period.</p>
 ) : (
-<div style={styles.tableWrap}>
+<div style={styles.liveFeedWrap}>
 <table style={styles.table}>
 <thead>
 <tr>
@@ -719,156 +737,200 @@ return (
 </section>
 
 <section style={styles.summaryGrid}>
-<div style={styles.summaryCard}>
+<div style={styles.metricCardBlue}>
+<div style={styles.metricTop}>
 <p style={styles.summaryLabel}>Total Participants</p>
+<InfoBubble
+title="Total Participants"
+text="Unique participants tied to this partner referral code."
+/>
+</div>
 <p style={styles.summaryValue}>{totalParticipants}</p>
 </div>
-<div style={styles.summaryCard}>
+
+<div style={styles.metricCardGreen}>
+<div style={styles.metricTop}>
 <p style={styles.summaryLabel}>Total New Users</p>
+<InfoBubble
+title="Total New Users"
+text="Participants whose signup date falls inside the selected reporting period."
+/>
+</div>
 <p style={styles.summaryValue}>{totalNewUsers}</p>
 </div>
-<div style={styles.summaryCard}>
+
+<div style={styles.metricCardPurple}>
+<div style={styles.metricTop}>
 <p style={styles.summaryLabel}>Total Activity</p>
+<InfoBubble
+title="Total Activity"
+text="All tracked events for this partner during the selected reporting period."
+/>
+</div>
 <p style={styles.summaryValue}>{totalActivity}</p>
 </div>
-<div style={styles.summaryCard}>
+
+<div style={styles.metricCardNeutral}>
+<div style={styles.metricTop}>
 <p style={styles.summaryLabel}>Total Completions</p>
-<p style={styles.summaryValue}>{totalCompletions}</p>
+<InfoBubble
+title="Total Completions"
+text="Counts all tracked completed actions across HireMinds generators and tools."
+/>
 </div>
-<div style={styles.summaryCard}>
+<p style={styles.summaryValue}>{totalCompletions}</p>
+<p style={styles.metricFootnote}>
+Counts all tracked completed tasks on generators and tools.
+</p>
+</div>
+
+<div style={styles.metricCardGreen}>
+<div style={styles.metricTop}>
 <p style={styles.summaryLabel}>Active Users</p>
+<InfoBubble
+title="Active Users"
+text="Assigned participants with activity during the selected reporting period."
+/>
+</div>
 <p style={styles.summaryValue}>{activeUsersCount}</p>
 </div>
-<div style={styles.summaryCard}>
+
+<div style={styles.metricCardAmber}>
+<div style={styles.metricTop}>
 <p style={styles.summaryLabel}>Inactive Users</p>
+<InfoBubble
+title="Inactive Users"
+text="Assigned participants with no tracked activity during the selected reporting period."
+/>
+</div>
 <p style={styles.summaryValue}>{inactiveUsersCount}</p>
 </div>
-<div style={styles.summaryCard}>
-<p style={styles.summaryLabel}>Interviews Landed</p>
-<p style={styles.summaryValue}>{interviewsLanded}</p>
+
+<div style={styles.metricCardBlue}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Resumes Completed</p>
+<InfoBubble
+title="Resumes Completed"
+text="Tracked completed actions in the Resume Generator."
+/>
 </div>
-<div style={styles.summaryCard}>
-<p style={styles.summaryLabel}>Jobs Landed</p>
-<p style={styles.summaryValue}>{jobsLanded}</p>
+<p style={styles.summaryValue}>{resumesCompleted}</p>
+</div>
+
+<div style={styles.metricCardPurple}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Job Description Analyzer Uses</p>
+<InfoBubble
+title="Job Description Analyzer Uses"
+text="All tracked uses of the Job Description Analyzer during the selected reporting period."
+/>
+</div>
+<p style={styles.summaryValue}>{jobDescriptionAnalyzerUses}</p>
+</div>
+
+<div style={styles.metricCardPurple}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Resume Match Analyzer Uses</p>
+<InfoBubble
+title="Resume Match Analyzer Uses"
+text="All tracked uses of the Resume Match Analyzer during the selected reporting period."
+/>
+</div>
+<p style={styles.summaryValue}>{resumeMatchAnalyzerUses}</p>
 </div>
 </section>
 
-<section style={styles.card}>
-<div style={styles.sectionTop}>
+<section style={styles.graphGrid}>
+<div style={styles.card}>
+<div style={styles.titleRow}>
 <div>
-<p style={styles.sectionKicker}>Participants</p>
-<h2 style={styles.sectionTitle}>Assigned participants</h2>
+<p style={styles.sectionKicker}>Trend View</p>
+<h2 style={styles.sectionTitle}>Activity over time</h2>
 </div>
-<button type="button" onClick={exportParticipants} style={styles.secondaryButton}>
-Export CSV
-</button>
+<InfoBubble
+title="Activity Over Time"
+text="Shows how many tracked events occurred across the selected reporting period."
+/>
 </div>
 
-{uniqueParticipants.length === 0 ? (
-<p style={styles.emptyText}>No participants found for this referral code yet.</p>
+{dailyTrend.length === 0 ? (
+<p style={styles.emptyText}>No trend data yet for this reporting period.</p>
 ) : (
-<div style={styles.tableWrap}>
-<table style={styles.table}>
-<thead>
-<tr>
-<th style={styles.th}>Full Name</th>
-<th style={styles.th}>Email</th>
-<th style={styles.th}>Phone</th>
-<th style={styles.th}>Referral Code</th>
-<th style={styles.th}>Resume</th>
-<th style={styles.th}>Last Activity</th>
-</tr>
-</thead>
-<tbody>
-{uniqueParticipants.map((row, index) => {
-const rowKey = row.user_id || row.email || row.id || `participant-${index}`;
-const lastActivity =
-lastActivityByUser.get(row.user_id || row.email || "") || "";
-return (
-<tr key={rowKey}>
-<td style={styles.td}>{row.full_name || "—"}</td>
-<td style={styles.td}>{row.email || "—"}</td>
-<td style={styles.td}>{row.phone || "—"}</td>
-<td style={styles.td}>{row.referral_code || "—"}</td>
-<td style={styles.td}>
-{row.resume_url ? (
-<div style={styles.linkStack}>
-<a
-href={row.resume_url}
-target="_blank"
-rel="noreferrer"
-style={styles.tableLink}
->
-View
-</a>
-<a href={row.resume_url} download style={styles.tableLink}>
-Download
-</a>
+<div style={styles.verticalChart}>
+{dailyTrend.map((item) => (
+<div key={item.label} style={styles.verticalBarCol}>
+<div style={styles.verticalBarOuter}>
+<div
+style={{
+...styles.verticalBarInnerBlue,
+height: `${Math.max((item.count / maxTrendCount) * 100, 6)}%`,
+}}
+/>
 </div>
-) : (
-"—"
+<span style={styles.verticalBarCount}>{item.count}</span>
+<span style={styles.verticalBarLabel}>{item.label}</span>
+</div>
+))}
+</div>
 )}
-</td>
-<td style={styles.td}>{formatDate(lastActivity)}</td>
-</tr>
+</div>
+
+<div style={styles.card}>
+<div style={styles.titleRow}>
+<div>
+<p style={styles.sectionKicker}>Tool Breakdown</p>
+<h2 style={styles.sectionTitle}>Tracked tool usage</h2>
+</div>
+<InfoBubble
+title="Tracked Tool Usage"
+text="Shows the most-used HireMinds tools for this partner during the selected reporting period."
+/>
+</div>
+
+{toolBreakdown.length === 0 ? (
+<p style={styles.emptyText}>No tracked tool usage yet for this reporting period.</p>
+) : (
+<div style={styles.horizontalChart}>
+{toolBreakdown.map((item, index) => {
+const colors = [
+styles.horizontalBarBlue,
+styles.horizontalBarGreen,
+styles.horizontalBarPurple,
+styles.horizontalBarAmber,
+styles.horizontalBarTeal,
+styles.horizontalBarPink,
+];
+return (
+<div key={item.label} style={styles.horizontalRow}>
+<div style={styles.horizontalLabel}>{item.label}</div>
+<div style={styles.horizontalOuter}>
+<div
+style={{
+...colors[index % colors.length],
+width: `${Math.max((item.count / maxToolCount) * 100, 8)}%`,
+}}
+/>
+</div>
+<div style={styles.horizontalCount}>{item.count}</div>
+</div>
 );
 })}
-</tbody>
-</table>
 </div>
 )}
+</div>
 </section>
 
 <section style={styles.card}>
 <div style={styles.sectionTop}>
-<div>
-<p style={styles.sectionKicker}>Usage Report</p>
-<h2 style={styles.sectionTitle}>Participant usage report</h2>
-</div>
-<button type="button" onClick={exportUsageReport} style={styles.secondaryButton}>
-Export CSV
-</button>
-</div>
-
-{usageReport.length === 0 ? (
-<p style={styles.emptyText}>No usage data available for this reporting period.</p>
-) : (
-<div style={styles.tableWrap}>
-<table style={styles.table}>
-<thead>
-<tr>
-<th style={styles.th}>Full Name</th>
-<th style={styles.th}>Email</th>
-<th style={styles.th}>Phone</th>
-<th style={styles.th}>Times Logged In</th>
-<th style={styles.th}>Tools Used</th>
-<th style={styles.th}>Total Activity</th>
-<th style={styles.th}>Last Activity</th>
-</tr>
-</thead>
-<tbody>
-{usageReport.map((row, index) => (
-<tr key={`${row.email || row.full_name || "usage"}-${index}`}>
-<td style={styles.td}>{row.full_name || "—"}</td>
-<td style={styles.td}>{row.email || "—"}</td>
-<td style={styles.td}>{row.phone || "—"}</td>
-<td style={styles.td}>{row.login_count}</td>
-<td style={styles.td}>{row.tools_used || "—"}</td>
-<td style={styles.td}>{row.total_activity}</td>
-<td style={styles.td}>{formatDate(row.last_activity)}</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-)}
-</section>
-
-<section style={styles.card}>
-<div style={styles.sectionTop}>
+<div className="titleRow">
 <div>
 <p style={styles.sectionKicker}>Grant-Friendly Summary</p>
 <h2 style={styles.sectionTitle}>Reporting summary</h2>
+</div>
+<InfoBubble
+title="Reporting Summary"
+text="This combines platform metrics with partner-entered answers so the report can be used for grants, internal reporting, and partner updates."
+/>
 </div>
 <div style={styles.sectionActions}>
 <button type="button" onClick={exportSummaryReport} style={styles.secondaryButton}>
@@ -886,89 +948,108 @@ Print Report
 
 <div style={styles.notesGrid}>
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Workshops / Trainings</label>
+<label style={styles.label}>
+How many workshops or trainings were held during this reporting period?
+</label>
 <textarea
-value={workshopNotes}
-onChange={(e) => setWorkshopNotes(e.target.value)}
-placeholder="Add workshop attendance, trainings, or group sessions."
+value={workshopQ}
+onChange={(e) => setWorkshopQ(e.target.value)}
 style={styles.textarea}
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Job Fairs / Hiring Events</label>
+<label style={styles.label}>
+How many job fairs or hiring events were attended?
+</label>
 <textarea
-value={jobFairNotes}
-onChange={(e) => setJobFairNotes(e.target.value)}
-placeholder="Add job fairs or hiring events attended."
+value={jobFairQ}
+onChange={(e) => setJobFairQ(e.target.value)}
 style={styles.textarea}
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Participant Meetings</label>
+<label style={styles.label}>
+How many one-on-one meetings took place with participants?
+</label>
 <textarea
-value={meetingNotes}
-onChange={(e) => setMeetingNotes(e.target.value)}
-placeholder="Add one-on-one meetings, check-ins, or support sessions."
+value={meetingQ}
+onChange={(e) => setMeetingQ(e.target.value)}
 style={styles.textarea}
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>HireMinds Tool Referrals</label>
+<label style={styles.label}>
+Were any participants referred to HireMinds tools or services?
+</label>
 <textarea
-value={hireMindsReferralNotes}
-onChange={(e) => setHireMindsReferralNotes(e.target.value)}
-placeholder="Add any referrals made to HireMinds tools or platform resources."
+value={hireMindsReferralQ}
+onChange={(e) => setHireMindsReferralQ(e.target.value)}
 style={styles.textarea}
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Outside Referrals</label>
+<label style={styles.label}>
+Were any outside referrals made?
+</label>
 <textarea
-value={outsideReferralNotes}
-onChange={(e) => setOutsideReferralNotes(e.target.value)}
-placeholder="Add any outside referrals or community resource referrals."
+value={outsideReferralQ}
+onChange={(e) => setOutsideReferralQ(e.target.value)}
 style={styles.textarea}
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Interview Notes</label>
+<label style={styles.label}>
+How many participants landed interviews or received interview support?
+</label>
 <textarea
-value={interviewNotes}
-onChange={(e) => setInterviewNotes(e.target.value)}
-placeholder="Add interview outcomes, interview prep, or interview support notes."
+value={interviewQ}
+onChange={(e) => setInterviewQ(e.target.value)}
 style={styles.textarea}
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Job Placement Notes</label>
+<label style={styles.label}>
+What resume-related support or outcomes should be included?
+</label>
 <textarea
-value={jobPlacementNotes}
-onChange={(e) => setJobPlacementNotes(e.target.value)}
-placeholder="Add job placement outcomes or employment notes."
+value={resumeSupportQ}
+onChange={(e) => setResumeSupportQ(e.target.value)}
 style={styles.textarea}
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Additional Partner Notes</label>
+<label style={styles.label}>
+What analyzer-related support or outcomes should be included?
+</label>
 <textarea
-value={additionalNotes}
-onChange={(e) => setAdditionalNotes(e.target.value)}
-placeholder="Add any extra narrative or outcome notes for your report."
+value={analyzerSupportQ}
+onChange={(e) => setAnalyzerSupportQ(e.target.value)}
 style={styles.textarea}
+/>
+</div>
+
+<div style={{ ...styles.fieldWrap, gridColumn: "1 / -1" }}>
+<label style={styles.label}>
+What additional outcomes, success stories, or narrative should be included?
+</label>
+<textarea
+value={successStoryQ}
+onChange={(e) => setSuccessStoryQ(e.target.value)}
+style={styles.textareaLarge}
 />
 </div>
 </div>
 
 <div style={styles.notesActions}>
-<button type="button" onClick={saveNotes} style={styles.secondaryButton}>
-Save Notes
+<button type="button" onClick={saveQuestions} style={styles.secondaryButton}>
+Save Responses
 </button>
 </div>
 </section>
@@ -977,10 +1058,18 @@ Save Notes
 );
 }
 
+const baseMetricCard: CSSProperties = {
+borderRadius: "22px",
+padding: "20px",
+border: "1px solid rgba(255,255,255,0.08)",
+boxShadow: "0 18px 40px rgba(0,0,0,0.18)",
+};
+
 const styles: Record<string, CSSProperties> = {
 page: {
 minHeight: "100vh",
-background: "linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
+background:
+"radial-gradient(circle at top left, rgba(59,130,246,0.09), transparent 22%), linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
 color: "#e7e7e7",
 padding: "32px 24px 56px",
 fontFamily:
@@ -994,7 +1083,7 @@ justifyContent: "center",
 fontSize: "18px",
 },
 shell: {
-maxWidth: "1440px",
+maxWidth: "1480px",
 margin: "0 auto",
 display: "grid",
 gap: "24px",
@@ -1054,27 +1143,14 @@ background: "#0f0f10",
 color: "#f4f4f5",
 fontSize: "14px",
 },
-summaryGrid: {
-display: "grid",
-gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-gap: "16px",
-},
-summaryCard: {
-background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-border: "1px solid #262626",
-borderRadius: "22px",
-padding: "20px",
-},
-summaryLabel: {
-margin: "0 0 10px",
-color: "#a1a1aa",
-fontSize: "13px",
-},
-summaryValue: {
-margin: 0,
-color: "#ffffff",
-fontSize: "34px",
-fontWeight: 700,
+notice: {
+background: "rgba(250,204,21,0.08)",
+border: "1px solid rgba(250,204,21,0.24)",
+color: "#fde68a",
+borderRadius: "18px",
+padding: "14px 16px",
+fontSize: "14px",
+lineHeight: 1.6,
 },
 card: {
 background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
@@ -1090,6 +1166,11 @@ gap: "16px",
 flexWrap: "wrap",
 marginBottom: "18px",
 },
+titleRow: {
+display: "flex",
+alignItems: "center",
+gap: "8px",
+},
 sectionKicker: {
 margin: "0 0 8px",
 color: "#9ca3af",
@@ -1104,64 +1185,167 @@ lineHeight: 1.1,
 fontWeight: 700,
 color: "#f5f5f5",
 },
-notice: {
-background: "rgba(250,204,21,0.08)",
-border: "1px solid rgba(250,204,21,0.24)",
-color: "#fde68a",
-borderRadius: "18px",
-padding: "14px 16px",
-fontSize: "14px",
-lineHeight: 1.6,
+infoWrap: {
+position: "relative",
+display: "inline-flex",
+alignItems: "center",
 },
-emptyText: {
-margin: 0,
-color: "#c8c8c8",
-fontSize: "15px",
-lineHeight: 1.7,
-},
-secondaryButton: {
-padding: "12px 16px",
-borderRadius: "16px",
-border: "1px solid rgba(255,255,255,0.12)",
+infoButton: {
+width: "20px",
+height: "20px",
+borderRadius: "999px",
+border: "1px solid rgba(255,255,255,0.18)",
 background: "#111111",
 color: "#f5f5f5",
+fontSize: "12px",
 fontWeight: 700,
 cursor: "pointer",
-},
-logoutButton: {
-padding: "12px 16px",
-borderRadius: "16px",
-border: "1px solid rgba(148,163,184,0.28)",
-background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
-color: "#fff",
-fontWeight: 700,
-cursor: "pointer",
-},
-usageChip: {
-display: "flex",
-flexDirection: "column",
+display: "inline-flex",
+alignItems: "center",
 justifyContent: "center",
-minWidth: "190px",
-padding: "12px 16px",
-borderRadius: "18px",
-border: "1px solid rgba(255,255,255,0.12)",
+padding: 0,
+},
+infoPopup: {
+position: "absolute",
+top: "28px",
+right: 0,
+width: "260px",
+zIndex: 10,
 background: "#111111",
+border: "1px solid rgba(255,255,255,0.14)",
+borderRadius: "14px",
+padding: "12px",
+boxShadow: "0 18px 40px rgba(0,0,0,0.28)",
+},
+infoTitle: {
+margin: "0 0 6px",
+color: "#ffffff",
+fontSize: "13px",
+fontWeight: 700,
+},
+infoText: {
+margin: 0,
+color: "#d4d4d8",
+fontSize: "12px",
+lineHeight: 1.6,
+},
+liveMetaRow: {
+display: "flex",
+alignItems: "center",
+gap: "12px",
+marginTop: "10px",
+flexWrap: "wrap",
+},
+liveBadge: {
+display: "inline-flex",
+alignItems: "center",
+gap: "8px",
+padding: "8px 12px",
+borderRadius: "999px",
+background: "rgba(34,197,94,0.12)",
+color: "#bbf7d0",
+border: "1px solid rgba(34,197,94,0.22)",
+fontSize: "13px",
+fontWeight: 700,
+},
+liveDot: {
+width: "10px",
+height: "10px",
+borderRadius: "999px",
+background: "#22c55e",
+display: "inline-block",
+animation: "pulseDot 1.8s infinite ease-in-out",
+},
+lastUpdated: {
+color: "#a1a1aa",
+fontSize: "13px",
+},
+usagePanel: {
+minWidth: "320px",
+maxWidth: "420px",
+padding: "16px",
+borderRadius: "20px",
+border: "1px solid rgba(255,255,255,0.08)",
+background: "linear-gradient(135deg, rgba(22,22,25,0.96) 0%, rgba(11,11,12,0.98) 100%)",
+},
+usagePanelTop: {
+display: "flex",
+alignItems: "center",
+gap: "8px",
+marginBottom: "10px",
 },
 usageChipLabel: {
 color: "#a1a1aa",
 fontSize: "12px",
-marginBottom: "6px",
-letterSpacing: "0.06em",
+letterSpacing: "0.08em",
 textTransform: "uppercase",
 },
-usageChipValue: {
+toggleRow: {
+display: "flex",
+gap: "8px",
+marginBottom: "14px",
+flexWrap: "wrap",
+},
+toggleButton: {
+padding: "8px 12px",
+borderRadius: "999px",
+border: "1px solid rgba(255,255,255,0.1)",
+background: "#0f0f10",
+color: "#d4d4d8",
+fontSize: "13px",
+fontWeight: 700,
+cursor: "pointer",
+},
+toggleButtonActive: {
+background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+color: "#09090b",
+border: "1px solid #d1d5db",
+},
+usageValues: {
+display: "flex",
+justifyContent: "space-between",
+gap: "14px",
+alignItems: "stretch",
+},
+usageValue: {
+margin: "0 0 4px",
 color: "#ffffff",
-fontSize: "28px",
+fontSize: "34px",
 fontWeight: 700,
 lineHeight: 1,
 },
-tableWrap: {
-overflowX: "auto",
+usageSubValue: {
+margin: 0,
+color: "#a1a1aa",
+fontSize: "13px",
+},
+referenceBox: {
+minWidth: "120px",
+padding: "10px 12px",
+borderRadius: "16px",
+background: "rgba(59,130,246,0.09)",
+border: "1px solid rgba(59,130,246,0.22)",
+alignSelf: "flex-start",
+},
+referenceLabel: {
+margin: "0 0 6px",
+color: "#93c5fd",
+fontSize: "12px",
+textTransform: "uppercase",
+letterSpacing: "0.06em",
+},
+referenceValue: {
+margin: 0,
+color: "#eff6ff",
+fontSize: "22px",
+fontWeight: 700,
+lineHeight: 1,
+},
+liveFeedWrap: {
+maxHeight: "420px",
+overflow: "auto",
+borderRadius: "18px",
+border: "1px solid #2b2b2e",
 },
 table: {
 width: "100%",
@@ -1174,6 +1358,10 @@ borderBottom: "1px solid #2c2c2c",
 color: "#a1a1aa",
 fontSize: "13px",
 fontWeight: 700,
+background: "#121214",
+position: "sticky",
+top: 0,
+zIndex: 1,
 },
 td: {
 padding: "12px 10px",
@@ -1181,16 +1369,182 @@ borderBottom: "1px solid #232323",
 color: "#f1f5f9",
 fontSize: "14px",
 verticalAlign: "top",
+background: "#171719",
 },
-tableLink: {
-color: "#dbeafe",
-textDecoration: "none",
-fontWeight: 600,
+emptyText: {
+margin: 0,
+color: "#c8c8c8",
+fontSize: "15px",
+lineHeight: 1.7,
 },
-linkStack: {
+summaryGrid: {
+display: "grid",
+gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+gap: "16px",
+},
+metricCardBlue: {
+...baseMetricCard,
+background: "linear-gradient(180deg, rgba(30,64,175,0.24) 0%, rgba(20,20,24,1) 100%)",
+},
+metricCardGreen: {
+...baseMetricCard,
+background: "linear-gradient(180deg, rgba(22,163,74,0.22) 0%, rgba(20,20,24,1) 100%)",
+},
+metricCardPurple: {
+...baseMetricCard,
+background: "linear-gradient(180deg, rgba(126,34,206,0.22) 0%, rgba(20,20,24,1) 100%)",
+},
+metricCardAmber: {
+...baseMetricCard,
+background: "linear-gradient(180deg, rgba(217,119,6,0.22) 0%, rgba(20,20,24,1) 100%)",
+},
+metricCardNeutral: {
+...baseMetricCard,
+background: "linear-gradient(180deg, rgba(115,115,115,0.22) 0%, rgba(20,20,24,1) 100%)",
+},
+metricTop: {
+display: "flex",
+alignItems: "center",
+gap: "8px",
+marginBottom: "10px",
+},
+summaryLabel: {
+margin: 0,
+color: "#d4d4d8",
+fontSize: "13px",
+},
+summaryValue: {
+margin: 0,
+color: "#ffffff",
+fontSize: "34px",
+fontWeight: 700,
+lineHeight: 1,
+},
+metricFootnote: {
+margin: "10px 0 0",
+color: "#c4c4c7",
+fontSize: "12px",
+lineHeight: 1.5,
+},
+graphGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "24px",
+},
+verticalChart: {
+height: "280px",
+display: "grid",
+gridTemplateColumns: "repeat(10, minmax(0, 1fr))",
+gap: "10px",
+alignItems: "end",
+marginTop: "16px",
+},
+verticalBarCol: {
 display: "flex",
 flexDirection: "column",
-gap: "6px",
+alignItems: "center",
+gap: "8px",
+minWidth: 0,
+},
+verticalBarOuter: {
+height: "200px",
+width: "100%",
+borderRadius: "18px",
+background: "#0f0f10",
+border: "1px solid #2a2a2d",
+display: "flex",
+alignItems: "flex-end",
+overflow: "hidden",
+},
+verticalBarInnerBlue: {
+width: "100%",
+borderRadius: "16px 16px 0 0",
+background:
+"linear-gradient(180deg, #60a5fa 0%, #2563eb 70%, #1d4ed8 100%)",
+transformOrigin: "bottom",
+animation: "riseIn 700ms ease-out",
+},
+verticalBarCount: {
+color: "#e5e7eb",
+fontSize: "12px",
+fontWeight: 700,
+},
+verticalBarLabel: {
+color: "#a1a1aa",
+fontSize: "12px",
+textAlign: "center",
+},
+horizontalChart: {
+display: "grid",
+gap: "14px",
+marginTop: "16px",
+},
+horizontalRow: {
+display: "grid",
+gridTemplateColumns: "180px 1fr 42px",
+gap: "12px",
+alignItems: "center",
+},
+horizontalLabel: {
+color: "#e5e7eb",
+fontSize: "14px",
+lineHeight: 1.4,
+},
+horizontalOuter: {
+height: "16px",
+width: "100%",
+borderRadius: "999px",
+background: "#0f0f10",
+border: "1px solid #2a2a2d",
+overflow: "hidden",
+},
+horizontalBarBlue: {
+height: "100%",
+borderRadius: "999px",
+background: "linear-gradient(90deg, #60a5fa, #2563eb, #60a5fa)",
+backgroundSize: "200% 200%",
+animation: "slideGlow 2.8s linear infinite",
+},
+horizontalBarGreen: {
+height: "100%",
+borderRadius: "999px",
+background: "linear-gradient(90deg, #4ade80, #16a34a, #4ade80)",
+backgroundSize: "200% 200%",
+animation: "slideGlow 2.8s linear infinite",
+},
+horizontalBarPurple: {
+height: "100%",
+borderRadius: "999px",
+background: "linear-gradient(90deg, #c084fc, #7e22ce, #c084fc)",
+backgroundSize: "200% 200%",
+animation: "slideGlow 2.8s linear infinite",
+},
+horizontalBarAmber: {
+height: "100%",
+borderRadius: "999px",
+background: "linear-gradient(90deg, #fbbf24, #d97706, #fbbf24)",
+backgroundSize: "200% 200%",
+animation: "slideGlow 2.8s linear infinite",
+},
+horizontalBarTeal: {
+height: "100%",
+borderRadius: "999px",
+background: "linear-gradient(90deg, #5eead4, #0f766e, #5eead4)",
+backgroundSize: "200% 200%",
+animation: "slideGlow 2.8s linear infinite",
+},
+horizontalBarPink: {
+height: "100%",
+borderRadius: "999px",
+background: "linear-gradient(90deg, #f9a8d4, #db2777, #f9a8d4)",
+backgroundSize: "200% 200%",
+animation: "slideGlow 2.8s linear infinite",
+},
+horizontalCount: {
+color: "#ffffff",
+fontSize: "14px",
+fontWeight: 700,
+textAlign: "right",
 },
 summaryTextBox: {
 border: "1px solid #2c2c2c",
@@ -1218,6 +1572,7 @@ label: {
 color: "#d4d4d8",
 fontSize: "13px",
 fontWeight: 600,
+lineHeight: 1.5,
 },
 textarea: {
 width: "100%",
@@ -1232,7 +1587,38 @@ resize: "vertical",
 boxSizing: "border-box",
 outline: "none",
 },
+textareaLarge: {
+width: "100%",
+minHeight: "140px",
+padding: "14px 16px",
+borderRadius: "16px",
+border: "1px solid #313131",
+background: "#0f0f10",
+color: "#f4f4f5",
+fontSize: "15px",
+resize: "vertical",
+boxSizing: "border-box",
+outline: "none",
+},
 notesActions: {
 marginTop: "16px",
+},
+secondaryButton: {
+padding: "12px 16px",
+borderRadius: "16px",
+border: "1px solid rgba(255,255,255,0.12)",
+background: "#111111",
+color: "#f5f5f5",
+fontWeight: 700,
+cursor: "pointer",
+},
+logoutButton: {
+padding: "12px 16px",
+borderRadius: "16px",
+border: "1px solid rgba(148,163,184,0.28)",
+background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+color: "#fff",
+fontWeight: 700,
+cursor: "pointer",
 },
 };
