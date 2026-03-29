@@ -4,21 +4,110 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
+type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
+
 export default function SiteHeader() {
 const { t } = useLanguage();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
+const [role, setRole] = useState<UserRole>("guest");
 
 useEffect(() => {
+let mounted = true;
+
 async function checkAuth() {
 const { data } = await supabase.auth.getSession();
-setIsLoggedIn(Boolean(data.session));
+const sessionUser = data.session?.user ?? null;
+
+if (!mounted) return;
+
+if (!sessionUser) {
+setIsLoggedIn(false);
+setRole("guest");
+setCheckingAuth(false);
+return;
+}
+
+setIsLoggedIn(true);
+
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"";
+
+const normalizedRole = String(rawRole).toLowerCase().trim();
+
+if (normalizedRole === "admin") {
+setRole("admin");
+} else if (normalizedRole === "partner") {
+setRole("partner");
+} else if (normalizedRole === "employer") {
+setRole("employer");
+} else if (
+normalizedRole === "candidate" ||
+normalizedRole === "career_passport" ||
+normalizedRole === "career-passport"
+) {
+setRole("candidate");
+} else {
+setRole("candidate");
+}
+
 setCheckingAuth(false);
 }
 
 checkAuth();
+
+const {
+data: { subscription },
+} = supabase.auth.onAuthStateChange((_event, session) => {
+const sessionUser = session?.user ?? null;
+
+if (!mounted) return;
+
+if (!sessionUser) {
+setIsLoggedIn(false);
+setRole("guest");
+setCheckingAuth(false);
+return;
+}
+
+setIsLoggedIn(true);
+
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"";
+
+const normalizedRole = String(rawRole).toLowerCase().trim();
+
+if (normalizedRole === "admin") {
+setRole("admin");
+} else if (normalizedRole === "partner") {
+setRole("partner");
+} else if (normalizedRole === "employer") {
+setRole("employer");
+} else if (
+normalizedRole === "candidate" ||
+normalizedRole === "career_passport" ||
+normalizedRole === "career-passport"
+) {
+setRole("candidate");
+} else {
+setRole("candidate");
+}
+
+setCheckingAuth(false);
+});
+
+return () => {
+mounted = false;
+subscription.unsubscribe();
+};
 }, []);
 
 async function handleLogout() {
@@ -30,6 +119,11 @@ window.location.href = "/";
 setLoadingLogout(false);
 }
 }
+
+const isAdmin = role === "admin";
+const isPartner = role === "partner";
+const isEmployer = role === "employer";
+const isCandidate = role === "candidate";
 
 return (
 <header style={styles.header}>
@@ -61,14 +155,37 @@ HireMinds
 <div style={styles.rightNav}>
 {isLoggedIn ? (
 <>
+{isCandidate || isAdmin ? (
 <a href="/profile" style={styles.link}>
 My Profile
 </a>
+) : null}
 
+{isPartner ? (
+<a href="/partner-dashboard" style={styles.link}>
+Partner Dashboard
+</a>
+) : null}
+
+{isEmployer ? (
+<a href="/employer-dashboard" style={styles.link}>
+Employer Dashboard
+</a>
+) : null}
+
+{isAdmin ? (
+<a href="/admin-dashboard" style={styles.link}>
+Admin Dashboard
+</a>
+) : null}
+
+{isCandidate || isPartner || isAdmin ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
+) : null}
 
+{isCandidate || isPartner || isAdmin ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
@@ -76,6 +193,7 @@ style={styles.linkButtonLike}
 >
 Notes
 </button>
+) : null}
 
 <button
 type="button"
@@ -89,7 +207,12 @@ disabled={loadingLogout}
 ) : null}
 
 <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
-<span style={styles.lockedLink}>{t.employerPartnerSignIn}</span>
+
+{!isLoggedIn ? (
+<a href="/employer-partner-sign-in" style={styles.link}>
+{t.employerPartnerSignIn}
+</a>
+) : null}
 </div>
 </div>
 </header>
@@ -171,4 +294,3 @@ borderRadius: "10px",
 padding: "8px 12px",
 },
 };
-
