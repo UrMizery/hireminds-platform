@@ -92,7 +92,7 @@ return;
 }
 
 setLoading(false);
-window.location.href = "/my-profile";
+window.location.href = "/";
 }
 
 return (
