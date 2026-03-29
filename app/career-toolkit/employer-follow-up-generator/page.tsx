@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 type TemplateType =
 | "thank-you"
@@ -33,6 +34,47 @@ const [interviewDate, setInterviewDate] = useState("");
 const [customNote, setCustomNote] = useState("");
 const [message, setMessage] = useState("");
 const [draftLoaded, setDraftLoaded] = useState(false);
+
+const [userId, setUserId] = useState("");
+const [referralCode, setReferralCode] = useState<string | null>(null);
+const openTrackedRef = useRef(false);
+
+useEffect(() => {
+async function loadUserAndTrack() {
+const { data, error } = await supabase.auth.getUser();
+
+if (error || !data.user || openTrackedRef.current) return;
+
+openTrackedRef.current = true;
+setUserId(data.user.id);
+
+const { data: profile } = await supabase
+.from("candidate_profiles")
+.select("full_name, email, referral_code")
+.eq("user_id", data.user.id)
+.maybeSingle();
+
+setReferralCode(profile?.referral_code || null);
+
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: data.user.id,
+full_name: profile?.full_name || null,
+email: profile?.email || data.user.email || null,
+referral_code: profile?.referral_code || null,
+event_type: "tool_opened",
+tool_name: "house_of_letters",
+page_name: "/career-toolkit/house-of-letters",
+});
+
+if (activityError) {
+console.error("House of Letters tracking error:", activityError);
+}
+}
+
+loadUserAndTrack();
+}, []);
 
 useEffect(() => {
 try {
@@ -311,7 +353,7 @@ effectiveDate,
 customNote,
 ]);
 
-function handleSaveDraft() {
+async function handleSaveDraft() {
 try {
 const draft = {
 template,
@@ -326,6 +368,25 @@ customNote,
 };
 
 window.localStorage.setItem(LETTER_DRAFT_KEY, JSON.stringify(draft));
+
+if (userId) {
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: userId,
+full_name: null,
+email: null,
+referral_code: referralCode,
+event_type: "tool_completed",
+tool_name: "house_of_letters",
+page_name: "/career-toolkit/house-of-letters",
+});
+
+if (activityError) {
+console.error("House of Letters save tracking error:", activityError);
+}
+}
+
 setMessage("Letter draft saved locally in this browser.");
 } catch {
 setMessage("Unable to save your draft locally.");
