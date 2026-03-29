@@ -3,36 +3,19 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "../../lib/supabase";
 
-type BrandTool =
-| "resume-summary"
-| "professional-bio"
-| "headline"
-| "elevator-pitch"
-| "networking-intro";
+type BrandMode = "summary" | "bio";
+type ToneOption = "Professional" | "Warm" | "Confident" | "Friendly";
 
-type ToneOption =
-| "Professional"
-| "Confident"
-| "Warm"
-| "Corporate"
-| "Friendly"
-| "Bold";
-
-const BRAND_DRAFT_KEY = "hireminds-professional-branding-generator-v1";
+const BRAND_DRAFT_KEY = "hireminds-professional-branding-generator-v2";
 
 export default function ProfessionalBrandingGeneratorPage() {
-const [activeTool, setActiveTool] = useState<BrandTool>("resume-summary");
-
+const [mode, setMode] = useState<BrandMode>("summary");
 const [fullName, setFullName] = useState("");
 const [currentTitle, setCurrentTitle] = useState("");
-const [targetTitle, setTargetTitle] = useState("");
-const [yearsExperience, setYearsExperience] = useState("");
 const [industry, setIndustry] = useState("");
 const [skills, setSkills] = useState("");
 const [strengths, setStrengths] = useState("");
 const [experience, setExperience] = useState("");
-const [achievements, setAchievements] = useState("");
-const [audience, setAudience] = useState("");
 const [tone, setTone] = useState<ToneOption>("Professional");
 const [message, setMessage] = useState("");
 const [draftLoaded, setDraftLoaded] = useState(false);
@@ -44,7 +27,6 @@ const openTrackedRef = useRef(false);
 useEffect(() => {
 async function loadUserAndTrack() {
 const { data, error } = await supabase.auth.getUser();
-
 if (error || !data.user || openTrackedRef.current) return;
 
 openTrackedRef.current = true;
@@ -83,21 +65,17 @@ try {
 const raw = window.localStorage.getItem(BRAND_DRAFT_KEY);
 if (raw) {
 const draft = JSON.parse(raw);
-setActiveTool(draft.activeTool || "resume-summary");
+setMode(draft.mode || "summary");
 setFullName(draft.fullName || "");
 setCurrentTitle(draft.currentTitle || "");
-setTargetTitle(draft.targetTitle || "");
-setYearsExperience(draft.yearsExperience || "");
 setIndustry(draft.industry || "");
 setSkills(draft.skills || "");
 setStrengths(draft.strengths || "");
 setExperience(draft.experience || "");
-setAchievements(draft.achievements || "");
-setAudience(draft.audience || "");
 setTone(draft.tone || "Professional");
 }
 } catch {
-// ignore bad local draft
+// ignore bad draft
 } finally {
 setDraftLoaded(true);
 }
@@ -107,120 +85,75 @@ useEffect(() => {
 if (!draftLoaded) return;
 
 const draft = {
-activeTool,
+mode,
 fullName,
 currentTitle,
-targetTitle,
-yearsExperience,
 industry,
 skills,
 strengths,
 experience,
-achievements,
-audience,
 tone,
 };
 
 window.localStorage.setItem(BRAND_DRAFT_KEY, JSON.stringify(draft));
-}, [
-draftLoaded,
-activeTool,
-fullName,
-currentTitle,
-targetTitle,
-yearsExperience,
-industry,
-skills,
-strengths,
-experience,
-achievements,
-audience,
-tone,
-]);
+}, [draftLoaded, mode, fullName, currentTitle, industry, skills, strengths, experience, tone]);
 
 const cleanSkills = useMemo(
-() => skills.split(",").map((s) => s.trim()).filter(Boolean),
+() => skills.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 4),
 [skills]
 );
 
 const cleanStrengths = useMemo(
-() => strengths.split(",").map((s) => s.trim()).filter(Boolean),
+() => strengths.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 4),
 [strengths]
 );
 
-const cleanAchievements = useMemo(
-() => achievements.split(",").map((s) => s.trim()).filter(Boolean),
-[achievements]
-);
-
-const firstName = fullName.trim().split(" ")[0] || "I";
+const firstName = fullName.trim().split(" ")[0] || "This professional";
 const displayName = fullName || "Your Name";
-const roleName = targetTitle || currentTitle || "professional";
-const yearsText = yearsExperience
-? `${yearsExperience}+ years of experience`
-: "professional experience";
-const industryText = industry || "your field";
-const skillText = cleanSkills.slice(0, 4).join(", ");
-const strengthText = cleanStrengths.slice(0, 4).join(", ");
-const achievementText = cleanAchievements.slice(0, 3).join(", ");
+const roleText = currentTitle || "professional";
+const industryText = industry || "their field";
 
-const generated = useMemo(() => {
-const summaryOptions = [
-`${roleName} with ${yearsText} in ${industryText}. Brings strengths in ${skillText || "communication, organization, and problem-solving"}, with a consistent ability to support teams, build relationships, and deliver results.`,
-`${tone} ${roleName} known for ${strengthText || "professionalism, adaptability, and strong communication"}. Offers hands-on experience in ${industryText} and the ability to contribute through ${skillText || "operations, customer support, and teamwork"}.`,
-`${roleName} offering ${yearsText}, a background in ${industryText}, and a strong focus on ${skillText || "service, coordination, and follow-through"}. Recognized for ${strengthText || "dependability, efficiency, and a positive attitude"}.`,
-];
+const toneLead =
+tone === "Warm"
+? "approachable and people-focused"
+: tone === "Confident"
+? "results-driven and confident"
+: tone === "Friendly"
+? "friendly and dependable"
+: "professional and dependable";
 
-const bioOptions = [
-`${displayName} is a ${tone.toLowerCase()} ${roleName} with ${yearsText} in ${industryText}.`,
-`${displayName} is a ${roleName} with ${yearsText} in ${industryText}. Known for ${strengthText || "strong communication, professionalism, and adaptability"}, ${firstName} brings experience in ${skillText || "operations, client support, and team collaboration"} and a commitment to meaningful results.`,
-`${displayName} is a ${roleName} with ${yearsText} in ${industryText}. With experience that includes ${experience || "supporting teams, working with clients, and contributing to day-to-day success"}, ${firstName} is recognized for ${strengthText || "clear communication, reliability, and leadership"}. Key strengths include ${skillText || "relationship-building, organization, and problem-solving"}${achievementText ? `, with accomplishments such as ${achievementText}` : ""}.`,
-];
+const skillPhrase =
+cleanSkills.length > 0
+? cleanSkills.join(", ")
+: "communication, organization, and relationship-building";
 
-const headlineOptions = [
-`${roleName} | ${skillText || "Communication | Organization | Problem Solving"}`,
-`${roleName} in ${industryText} | ${strengthText || "Reliable | Adaptable | Detail-Oriented"}`,
-`${roleName} | ${yearsExperience ? `${yearsExperience}+ Years Experience` : "Experienced"} | ${skillText || "Client Support | Operations | Teamwork"}`,
-];
+const strengthPhrase =
+cleanStrengths.length > 0
+? cleanStrengths.join(", ")
+: "professionalism, adaptability, and follow-through";
 
-const elevatorOptions = [
-`Hi, I’m ${displayName}. I’m a ${roleName} with ${yearsText} in ${industryText}.`,
-`My background includes ${experience || "supporting teams, serving clients, and helping organizations stay organized and effective"}, and I bring strengths in ${strengthText || "communication, adaptability, and professionalism"}.`,
-`I’m especially interested in opportunities where I can contribute through ${skillText || "service, coordination, and team support"}${achievementText ? `, with results such as ${achievementText}` : ""}.`,
-];
+const experiencePhrase =
+experience.trim() ||
+"supporting teams, working with people, and helping day-to-day operations run effectively";
 
-const networkingOptions = [
-`Hi, my name is ${displayName}. I’m a ${roleName} with ${yearsText} in ${industryText}.`,
-`My experience includes ${experience || "working with people, supporting day-to-day operations, and helping teams reach their goals"}, and my strengths include ${strengthText || "communication, organization, and professionalism"}.`,
-`I’m interested in connecting with professionals and opportunities related to ${targetTitle || currentTitle || "my next role"}${audience ? `, especially within ${audience}` : ""}. It’s great to connect with you.`,
-];
+const summaryPreview = useMemo(() => {
+return `${roleText} with experience in ${industryText}. Known for ${strengthPhrase} and strengths in ${skillPhrase}. Brings a ${toneLead} approach to the work and a background in ${experiencePhrase}.`;
+}, [roleText, industryText, strengthPhrase, skillPhrase, toneLead, experiencePhrase]);
 
-return {
-"resume-summary": summaryOptions,
-"professional-bio": bioOptions,
-headline: headlineOptions,
-"elevator-pitch": elevatorOptions,
-"networking-intro": networkingOptions,
-};
+const bioPreview = useMemo(() => {
+return `${displayName} is a ${roleText} with experience in ${industryText}. ${firstName} is known for ${strengthPhrase} and for bringing strength in ${skillPhrase}. With a background in ${experiencePhrase}, ${firstName} takes a ${toneLead} approach to creating value and building strong working relationships.`;
 }, [
 displayName,
-roleName,
-yearsText,
-industryText,
-skillText,
-strengthText,
-tone,
 firstName,
-experience,
-achievementText,
-yearsExperience,
-targetTitle,
-currentTitle,
-audience,
+roleText,
+industryText,
+strengthPhrase,
+skillPhrase,
+experiencePhrase,
+toneLead,
 ]);
 
-const currentOutputs = generated[activeTool];
-const previewText = currentOutputs.join("\n\n");
+const activeText = mode === "summary" ? summaryPreview : bioPreview;
 
 async function trackCompletion() {
 if (!userId) return;
@@ -242,31 +175,27 @@ console.error("Professional branding completion tracking error:", activityError)
 }
 }
 
-async function handleCopy(text: string) {
-await navigator.clipboard.writeText(text);
-setMessage("Copied to clipboard.");
+async function handleCopy() {
+await navigator.clipboard.writeText(activeText);
+setMessage(`${mode === "summary" ? "Summary" : "Bio"} copied to clipboard.`);
 await trackCompletion();
 }
 
 async function handleSaveDraft() {
 try {
 const draft = {
-activeTool,
+mode,
 fullName,
 currentTitle,
-targetTitle,
-yearsExperience,
 industry,
 skills,
 strengths,
 experience,
-achievements,
-audience,
 tone,
 };
 
 window.localStorage.setItem(BRAND_DRAFT_KEY, JSON.stringify(draft));
-setMessage("Professional branding draft saved locally in this browser.");
+setMessage("Branding draft saved locally in this browser.");
 await trackCompletion();
 } catch {
 setMessage("Unable to save your draft locally.");
@@ -278,17 +207,6 @@ window.print();
 await trackCompletion();
 }
 
-const previewTitle =
-activeTool === "resume-summary"
-? "Resume Summary Preview"
-: activeTool === "professional-bio"
-? "Professional Bio Preview"
-: activeTool === "headline"
-? "Headline Preview"
-: activeTool === "elevator-pitch"
-? "Elevator Pitch Preview"
-: "Networking Intro Preview";
-
 return (
 <main style={styles.page}>
 <style>{`
@@ -296,12 +214,10 @@ return (
 body * {
 visibility: hidden !important;
 }
-
 .print-wrap,
 .print-wrap * {
 visibility: visible !important;
 }
-
 .print-wrap {
 position: absolute !important;
 top: 0 !important;
@@ -311,7 +227,6 @@ background: white !important;
 padding: 24px !important;
 margin: 0 !important;
 }
-
 .hide-on-print {
 display: none !important;
 }
@@ -333,34 +248,35 @@ Back to Career ToolKit
 
 <div style={styles.layout}>
 <section className="hide-on-print" style={styles.formCard}>
-<p style={styles.sectionKicker}>Branding Tools</p>
-<h2 style={styles.sectionTitle}>Create polished written branding content</h2>
+<p style={styles.sectionKicker}>Choose Format</p>
+<h2 style={styles.sectionTitle}>Build a stronger introduction</h2>
 
-<div style={styles.tabGrid}>
-{[
-["resume-summary", "Resume Summary"],
-["professional-bio", "Professional Bio"],
-["headline", "Headline"],
-["elevator-pitch", "Elevator Pitch"],
-["networking-intro", "Networking Intro"],
-].map(([value, label]) => (
+<div style={styles.tabRow}>
 <button
-key={value}
 type="button"
-onClick={() => setActiveTool(value as BrandTool)}
+onClick={() => setMode("summary")}
 style={{
 ...styles.tabButton,
-...(activeTool === value ? styles.tabButtonActive : {}),
+...(mode === "summary" ? styles.tabButtonActive : {}),
 }}
 >
-{label}
+Professional Summary
 </button>
-))}
+<button
+type="button"
+onClick={() => setMode("bio")}
+style={{
+...styles.tabButton,
+...(mode === "bio" ? styles.tabButtonActive : {}),
+}}
+>
+Professional Bio
+</button>
 </div>
 
 <div style={styles.formGrid}>
 <Field
-label="Your Full Name"
+label="Full Name"
 value={fullName}
 onChange={setFullName}
 placeholder="Your full name"
@@ -369,38 +285,19 @@ placeholder="Your full name"
 label="Current Title"
 value={currentTitle}
 onChange={setCurrentTitle}
-placeholder="Current title"
+placeholder="Recruiter, Admin Assistant, Case Manager"
 />
 <Field
-label="Target Title"
-value={targetTitle}
-onChange={setTargetTitle}
-placeholder="Target role"
-/>
-<Field
-label="Years of Experience"
-value={yearsExperience}
-onChange={setYearsExperience}
-placeholder="Example: 5"
-/>
-<Field
-label="Industry"
+label="Industry / Field"
 value={industry}
 onChange={setIndustry}
-placeholder="Healthcare, Admin, Recruiting"
+placeholder="Healthcare, Staffing, Workforce Development"
 />
 <SelectField
 label="Tone"
 value={tone}
-onChange={(v) => setTone(v as ToneOption)}
-options={[
-"Professional",
-"Confident",
-"Warm",
-"Corporate",
-"Friendly",
-"Bold",
-]}
+onChange={(value) => setTone(value as ToneOption)}
+options={["Professional", "Warm", "Confident", "Friendly"]}
 />
 </div>
 
@@ -408,35 +305,21 @@ options={[
 label="Top Skills"
 value={skills}
 onChange={setSkills}
-placeholder="Comma separated: customer service, scheduling, recruiting"
+placeholder="Comma separated: recruiting, communication, scheduling, client support"
 />
 
 <TextAreaField
 label="Strengths"
 value={strengths}
 onChange={setStrengths}
-placeholder="Comma separated: dependable, organized, detail-oriented"
+placeholder="Comma separated: dependable, organized, adaptable, strong communicator"
 />
 
 <TextAreaField
-label="Experience / Background"
+label="Work Background / Experience"
 value={experience}
 onChange={setExperience}
-placeholder="Briefly describe your work background"
-/>
-
-<TextAreaField
-label="Achievements"
-value={achievements}
-onChange={setAchievements}
-placeholder="Comma separated: improved workflow, supported 100+ clients, increased placement rate"
-/>
-
-<Field
-label="Audience (optional)"
-value={audience}
-onChange={setAudience}
-placeholder="Recruiters, employers, LinkedIn network"
+placeholder="Briefly describe who you are, what you do, or the type of work you have done."
 />
 
 {message ? <p style={styles.message}>{message}</p> : null}
@@ -448,34 +331,29 @@ Save Draft
 <button type="button" onClick={handlePrint} style={styles.secondaryButton}>
 Print / Save
 </button>
+<button type="button" onClick={handleCopy} style={styles.secondaryButton}>
+Copy
+</button>
 </div>
 </section>
 
 <aside className="print-wrap" style={styles.previewCard}>
 <p style={styles.sectionKicker}>Live Preview</p>
-<h2 style={styles.sectionTitle}>{previewTitle}</h2>
+<h2 style={styles.previewTitle}>
+{mode === "summary" ? "Professional Summary Preview" : "Professional Bio Preview"}
+</h2>
 
-<div style={styles.previewBox}>
-{previewText.split("\n").map((line, index) => (
-<p key={index} style={styles.previewText}>
-{line || "\u00A0"}
+<div style={styles.previewPaper}>
+<p style={styles.previewText}>{activeText}</p>
+</div>
+
+<div style={styles.sampleWrap}>
+<p style={styles.sampleLabel}>How it works</p>
+<p style={styles.sampleText}>
+Start with the sample and watch it change as you add your information. The more
+specific your title, skills, strengths, and work background are, the stronger your
+result will be.
 </p>
-))}
-</div>
-
-<div style={styles.outputGrid}>
-{currentOutputs.map((item, index) => (
-<div key={`${item}-${index}`} style={styles.outputCard}>
-<p style={styles.outputText}>{item}</p>
-<button
-type="button"
-onClick={() => handleCopy(item)}
-style={styles.smallButton}
->
-Copy
-</button>
-</div>
-))}
 </div>
 </aside>
 </div>
@@ -565,7 +443,7 @@ fontFamily:
 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 },
 shell: {
-maxWidth: "1440px",
+maxWidth: "1400px",
 margin: "0 auto",
 display: "grid",
 gap: "24px",
@@ -615,7 +493,7 @@ fontWeight: 700,
 },
 layout: {
 display: "grid",
-gridTemplateColumns: "0.95fr 1.05fr",
+gridTemplateColumns: "1fr 1fr",
 gap: "24px",
 alignItems: "start",
 },
@@ -646,9 +524,16 @@ margin: "0 0 18px",
 fontSize: "28px",
 lineHeight: 1.1,
 fontWeight: 700,
-color: "inherit",
+color: "#f5f5f5",
 },
-tabGrid: {
+previewTitle: {
+margin: "0 0 18px",
+fontSize: "28px",
+lineHeight: 1.1,
+fontWeight: 700,
+color: "#111827",
+},
+tabRow: {
 display: "grid",
 gridTemplateColumns: "1fr 1fr",
 gap: "12px",
@@ -663,7 +548,6 @@ color: "#f5f5f5",
 fontWeight: 700,
 fontSize: "14px",
 cursor: "pointer",
-textAlign: "left",
 },
 tabButtonActive: {
 background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
@@ -698,7 +582,7 @@ outline: "none",
 },
 textarea: {
 width: "100%",
-minHeight: "100px",
+minHeight: "110px",
 padding: "14px 16px",
 borderRadius: "16px",
 border: "1px solid #313131",
@@ -717,7 +601,7 @@ lineHeight: 1.6,
 },
 buttonRow: {
 display: "grid",
-gridTemplateColumns: "1fr 1fr",
+gridTemplateColumns: "1fr 1fr 1fr",
 gap: "12px",
 marginTop: "16px",
 },
@@ -743,45 +627,37 @@ fontSize: "15px",
 fontWeight: 700,
 cursor: "pointer",
 },
-previewBox: {
+previewPaper: {
+background: "#f9fafb",
 border: "1px solid #d1d5db",
 borderRadius: "18px",
-padding: "18px",
-background: "#f9fafb",
+padding: "20px",
 marginBottom: "18px",
 },
 previewText: {
-margin: "0 0 12px",
+margin: 0,
 color: "#111827",
-fontSize: "15px",
-lineHeight: 1.8,
+fontSize: "16px",
+lineHeight: 1.9,
 whiteSpace: "pre-wrap",
 },
-outputGrid: {
-display: "grid",
-gap: "14px",
-},
-outputCard: {
-border: "1px solid #d1d5db",
+sampleWrap: {
+border: "1px solid #e5e7eb",
 borderRadius: "18px",
-background: "#ffffff",
 padding: "18px",
+background: "#ffffff",
 },
-outputText: {
-margin: "0 0 14px",
-color: "#111827",
-fontSize: "15px",
-lineHeight: 1.8,
-whiteSpace: "pre-wrap",
+sampleLabel: {
+margin: "0 0 8px",
+color: "#6b7280",
+fontSize: "12px",
+letterSpacing: "0.14em",
+textTransform: "uppercase",
 },
-smallButton: {
-padding: "10px 14px",
-borderRadius: "14px",
-border: "1px solid rgba(148,163,184,0.28)",
-background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
-color: "#fff",
+sampleText: {
+margin: 0,
+color: "#374151",
 fontSize: "14px",
-fontWeight: 700,
-cursor: "pointer",
+lineHeight: 1.7,
 },
 };
