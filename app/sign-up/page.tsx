@@ -25,6 +25,17 @@ setMessage("");
 const { data, error } = await supabase.auth.signUp({
 email,
 password,
+options: {
+data: {
+full_name: fullName,
+phone,
+city,
+state_name: stateName,
+referral_code: referralCode,
+heard_about_us: heardAboutUs,
+heard_about_us_other: heardAboutUsOther,
+},
+},
 });
 
 if (error) {
@@ -50,6 +61,9 @@ phone: phone,
 email: email,
 city: city,
 state: stateName,
+referral_code: referralCode,
+heard_about_us: heardAboutUs,
+heard_about_us_other: heardAboutUsOther,
 });
 
 if (profileError) {
