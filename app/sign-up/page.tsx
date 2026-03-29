@@ -28,12 +28,12 @@ password,
 options: {
 data: {
 full_name: fullName,
-phone,
-city,
-state_name: stateName,
-referral_code: referralCode,
-heard_about_us: heardAboutUs,
-heard_about_us_other: heardAboutUsOther,
+phone: phone || null,
+city: city || null,
+state_name: stateName || null,
+referral_code: referralCode || null,
+heard_about_us: heardAboutUs || null,
+heard_about_us_other: heardAboutUsOther || null,
 },
 },
 });
@@ -57,10 +57,10 @@ const { error: profileError } = await supabase
 .upsert({
 user_id: user.id,
 full_name: fullName,
-phone: phone,
+phone: phone || null,
 email: email,
-city: city,
-state: stateName,
+city: city || null,
+state: stateName || null,
 referral_code: referralCode || null,
 heard_about_us: heardAboutUs || null,
 heard_about_us_other: heardAboutUsOther || null,
@@ -91,7 +91,6 @@ setLoading(false);
 return;
 }
 
-setMessage("Account created successfully.");
 setLoading(false);
 window.location.href = "/login";
 }
@@ -106,6 +105,7 @@ placeholder="Full Name"
 value={fullName}
 onChange={(e) => setFullName(e.target.value)}
 style={styles.input}
+required
 />
 
 <input
@@ -135,6 +135,7 @@ type="email"
 value={email}
 onChange={(e) => setEmail(e.target.value)}
 style={styles.input}
+required
 />
 
 <div style={styles.passwordWrap}>
@@ -144,6 +145,7 @@ type={showPassword ? "text" : "password"}
 value={password}
 onChange={(e) => setPassword(e.target.value)}
 style={styles.passwordInput}
+required
 />
 <button
 type="button"
@@ -213,23 +215,24 @@ display: "flex",
 justifyContent: "center",
 alignItems: "center",
 padding: "24px",
-backgroundColor: "#f8fafc",
+backgroundColor: "#000000",
 },
 card: {
 width: "100%",
 maxWidth: "520px",
-backgroundColor: "#ffffff",
+backgroundColor: "#111111",
 padding: "32px",
 borderRadius: "20px",
-boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+boxShadow: "0 10px 30px rgba(255, 255, 255, 0.08)",
 display: "flex",
 flexDirection: "column",
 gap: "14px",
+border: "1px solid #2a2a2a",
 },
 title: {
 fontSize: "28px",
 fontWeight: 700,
-color: "#111827",
+color: "#ffffff",
 textAlign: "center",
 marginBottom: "8px",
 },
@@ -237,14 +240,16 @@ input: {
 width: "100%",
 padding: "14px 16px",
 borderRadius: "12px",
-border: "1px solid #d1d5db",
+border: "1px solid #3a3a3a",
 fontSize: "15px",
 outline: "none",
-backgroundColor: "#ffffff",
+backgroundColor: "#1a1a1a",
+color: "#ffffff",
+boxSizing: "border-box",
 },
 helperText: {
 fontSize: "13px",
-color: "#6b7280",
+color: "#d1d5db",
 marginTop: "-8px",
 marginBottom: "4px",
 lineHeight: 1.4,
@@ -252,34 +257,39 @@ lineHeight: 1.4,
 passwordWrap: {
 position: "relative",
 width: "100%",
+boxSizing: "border-box",
 },
 passwordInput: {
 width: "100%",
-padding: "14px 70px 14px 16px",
+padding: "14px 72px 14px 16px",
 borderRadius: "12px",
-border: "1px solid #d1d5db",
+border: "1px solid #3a3a3a",
 fontSize: "15px",
 outline: "none",
-backgroundColor: "#ffffff",
+backgroundColor: "#1a1a1a",
+color: "#ffffff",
+boxSizing: "border-box",
 },
 passwordToggle: {
 position: "absolute",
 top: "50%",
-right: "12px",
+right: "14px",
 transform: "translateY(-50%)",
 background: "none",
 border: "none",
 cursor: "pointer",
 fontSize: "14px",
-color: "#374151",
+color: "#ffffff",
 fontWeight: 600,
+padding: 0,
+lineHeight: 1,
 },
 button: {
 width: "100%",
 padding: "14px 16px",
 borderRadius: "12px",
-border: "none",
-backgroundColor: "#111827",
+border: "1px solid #2a2a2a",
+backgroundColor: "#000000",
 color: "#ffffff",
 fontSize: "15px",
 fontWeight: 700,
@@ -289,7 +299,7 @@ marginTop: "8px",
 message: {
 marginTop: "8px",
 fontSize: "14px",
-color: "#111827",
+color: "#ffffff",
 textAlign: "center",
 },
 };
