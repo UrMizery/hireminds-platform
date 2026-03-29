@@ -31,9 +31,6 @@ id?: string | null;
 user_id?: string | null;
 full_name?: string | null;
 email?: string | null;
-phone?: string | null;
-referral_code?: string | null;
-resume_url?: string | null;
 created_at?: string | null;
 };
 
@@ -181,12 +178,21 @@ const [interviewQ, setInterviewQ] = useState("");
 const [resumeSupportQ, setResumeSupportQ] = useState("");
 const [analyzerSupportQ, setAnalyzerSupportQ] = useState("");
 const [successStoryQ, setSuccessStoryQ] = useState("");
+const [manualCandidatesServed, setManualCandidatesServed] = useState("");
+const [manualNewUsers, setManualNewUsers] = useState("");
+const [manualResumesCompleted, setManualResumesCompleted] = useState("");
+const [manualApplicationsSubmitted, setManualApplicationsSubmitted] = useState("");
+const [manualEmployerContacts, setManualEmployerContacts] = useState("");
+const [manualInterviews, setManualInterviews] = useState("");
+const [manualJobsLanded, setManualJobsLanded] = useState("");
+const [manualHireMindsReferrals, setManualHireMindsReferrals] = useState("");
+const [manualOutsideReferrals, setManualOutsideReferrals] = useState("");
 
 const mountedRef = useRef(true);
 
 const notesStorageKey = useMemo(() => {
 const code = partner?.referral_code || "partner";
-return `hireminds-partner-report-${code}-${period}`;
+return `hireminds-partner-report-generator-${code}-${period}`;
 }, [partner?.referral_code, period]);
 
 useEffect(() => {
@@ -210,6 +216,15 @@ setInterviewQ(parsed.interviewQ || "");
 setResumeSupportQ(parsed.resumeSupportQ || "");
 setAnalyzerSupportQ(parsed.analyzerSupportQ || "");
 setSuccessStoryQ(parsed.successStoryQ || "");
+setManualCandidatesServed(parsed.manualCandidatesServed || "");
+setManualNewUsers(parsed.manualNewUsers || "");
+setManualResumesCompleted(parsed.manualResumesCompleted || "");
+setManualApplicationsSubmitted(parsed.manualApplicationsSubmitted || "");
+setManualEmployerContacts(parsed.manualEmployerContacts || "");
+setManualInterviews(parsed.manualInterviews || "");
+setManualJobsLanded(parsed.manualJobsLanded || "");
+setManualHireMindsReferrals(parsed.manualHireMindsReferrals || "");
+setManualOutsideReferrals(parsed.manualOutsideReferrals || "");
 } else {
 setWorkshopQ("");
 setJobFairQ("");
@@ -220,6 +235,15 @@ setInterviewQ("");
 setResumeSupportQ("");
 setAnalyzerSupportQ("");
 setSuccessStoryQ("");
+setManualCandidatesServed("");
+setManualNewUsers("");
+setManualResumesCompleted("");
+setManualApplicationsSubmitted("");
+setManualEmployerContacts("");
+setManualInterviews("");
+setManualJobsLanded("");
+setManualHireMindsReferrals("");
+setManualOutsideReferrals("");
 }
 } catch {
 setWorkshopQ("");
@@ -231,6 +255,15 @@ setInterviewQ("");
 setResumeSupportQ("");
 setAnalyzerSupportQ("");
 setSuccessStoryQ("");
+setManualCandidatesServed("");
+setManualNewUsers("");
+setManualResumesCompleted("");
+setManualApplicationsSubmitted("");
+setManualEmployerContacts("");
+setManualInterviews("");
+setManualJobsLanded("");
+setManualHireMindsReferrals("");
+setManualOutsideReferrals("");
 }
 }, [notesStorageKey]);
 
@@ -248,6 +281,15 @@ interviewQ,
 resumeSupportQ,
 analyzerSupportQ,
 successStoryQ,
+manualCandidatesServed,
+manualNewUsers,
+manualResumesCompleted,
+manualApplicationsSubmitted,
+manualEmployerContacts,
+manualInterviews,
+manualJobsLanded,
+manualHireMindsReferrals,
+manualOutsideReferrals,
 })
 );
 setMessage("Report responses saved in this browser.");
@@ -297,7 +339,7 @@ return;
 
 const { data: participantRows, error: participantError } = await supabase
 .from("candidate_profiles")
-.select("id, user_id, full_name, email, phone, referral_code, resume_url, created_at")
+.select("id, user_id, full_name, email, created_at")
 .eq("referral_code", partnerRow.referral_code)
 .order("created_at", { ascending: false });
 
@@ -474,6 +516,17 @@ if (resumeSupportQ.trim()) answers.push(`Resume Support Notes: ${resumeSupportQ.
 if (analyzerSupportQ.trim()) answers.push(`Analyzer Support Notes: ${analyzerSupportQ.trim()}`);
 if (successStoryQ.trim()) answers.push(`Success Stories / Additional Outcomes: ${successStoryQ.trim()}`);
 
+const manualStats: string[] = [];
+if (manualCandidatesServed.trim()) manualStats.push(`Manual Candidates Served: ${manualCandidatesServed.trim()}`);
+if (manualNewUsers.trim()) manualStats.push(`Manual New Users: ${manualNewUsers.trim()}`);
+if (manualResumesCompleted.trim()) manualStats.push(`Manual Resumes Completed: ${manualResumesCompleted.trim()}`);
+if (manualApplicationsSubmitted.trim()) manualStats.push(`Manual Applications Submitted: ${manualApplicationsSubmitted.trim()}`);
+if (manualEmployerContacts.trim()) manualStats.push(`Manual Employer Contacts: ${manualEmployerContacts.trim()}`);
+if (manualInterviews.trim()) manualStats.push(`Manual Interviews: ${manualInterviews.trim()}`);
+if (manualJobsLanded.trim()) manualStats.push(`Manual Jobs Landed: ${manualJobsLanded.trim()}`);
+if (manualHireMindsReferrals.trim()) manualStats.push(`Manual HireMinds Referrals: ${manualHireMindsReferrals.trim()}`);
+if (manualOutsideReferrals.trim()) manualStats.push(`Manual Outside Referrals: ${manualOutsideReferrals.trim()}`);
+
 return [
 `${periodLabel(period)}, HireMinds supported ${totalParticipants} participant${totalParticipants === 1 ? "" : "s"} tied to referral code ${partner?.referral_code || "—"}.`,
 `${totalNewUsers} new user${totalNewUsers === 1 ? "" : "s"} entered the platform during this reporting period.`,
@@ -483,6 +536,7 @@ return [
 inactiveUsersCount > 0
 ? `${inactiveUsersCount} assigned participant${inactiveUsersCount === 1 ? "" : "s"} had no tracked activity during this reporting period.`
 : `All assigned participants showed activity during this reporting period.`,
+...manualStats,
 ...answers,
 ].join(" ");
 }, [
@@ -506,6 +560,15 @@ interviewQ,
 resumeSupportQ,
 analyzerSupportQ,
 successStoryQ,
+manualCandidatesServed,
+manualNewUsers,
+manualResumesCompleted,
+manualApplicationsSubmitted,
+manualEmployerContacts,
+manualInterviews,
+manualJobsLanded,
+manualHireMindsReferrals,
+manualOutsideReferrals,
 ]);
 
 async function handleLogout() {
@@ -669,7 +732,7 @@ Live
 <span style={styles.usageChipLabel}>Platform Uses</span>
 <InfoBubble
 title="Platform Uses"
-text="Counts tracked activity events. This can include repeat use by the same participant."
+text="Counts tracked activity events. This can include repeat use by the same participant multiple times in one day."
 />
 </div>
 
@@ -922,14 +985,14 @@ width: `${Math.max((item.count / maxToolCount) * 100, 8)}%`,
 
 <section style={styles.card}>
 <div style={styles.sectionTop}>
-<div className="titleRow">
+<div style={styles.titleRow}>
 <div>
-<p style={styles.sectionKicker}>Grant-Friendly Summary</p>
-<h2 style={styles.sectionTitle}>Reporting summary</h2>
+<p style={styles.sectionKicker}>Report Builder</p>
+<h2 style={styles.sectionTitle}>Report Summary Generator</h2>
 </div>
 <InfoBubble
-title="Reporting Summary Generator"
-text="This combines platform metrics with partner-entered answers so the report can be used for grants, internal reporting, and partner updates."
+title="Report Summary Generator"
+text="Use the tracked HireMinds numbers plus your own manually entered outcomes to prepare grant-ready summaries and reporting language."
 />
 </div>
 <div style={styles.sectionActions}>
@@ -944,6 +1007,99 @@ Print Report
 
 <div style={styles.summaryTextBox}>
 <p style={styles.summaryParagraph}>{summaryText}</p>
+</div>
+
+<div style={styles.manualStatsCard}>
+<div style={styles.titleRow}>
+<p style={styles.manualStatsTitle}>Manual Outcome Counts</p>
+<InfoBubble
+title="Manual Outcome Counts"
+text="Enter any counts you track outside the platform here. These values will be included in the generated report summary."
+/>
+</div>
+
+<div style={styles.manualStatsGrid}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Candidates Served</label>
+<input
+value={manualCandidatesServed}
+onChange={(e) => setManualCandidatesServed(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>New Users</label>
+<input
+value={manualNewUsers}
+onChange={(e) => setManualNewUsers(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Resumes Completed</label>
+<input
+value={manualResumesCompleted}
+onChange={(e) => setManualResumesCompleted(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Applications Submitted</label>
+<input
+value={manualApplicationsSubmitted}
+onChange={(e) => setManualApplicationsSubmitted(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Employer Contacts</label>
+<input
+value={manualEmployerContacts}
+onChange={(e) => setManualEmployerContacts(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Interviews Landed</label>
+<input
+value={manualInterviews}
+onChange={(e) => setManualInterviews(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Jobs Landed</label>
+<input
+value={manualJobsLanded}
+onChange={(e) => setManualJobsLanded(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>HireMinds Referrals</label>
+<input
+value={manualHireMindsReferrals}
+onChange={(e) => setManualHireMindsReferrals(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Outside Referrals</label>
+<input
+value={manualOutsideReferrals}
+onChange={(e) => setManualOutsideReferrals(e.target.value)}
+style={styles.input}
+/>
+</div>
+</div>
 </div>
 
 <div style={styles.notesGrid}>
@@ -1559,6 +1715,25 @@ color: "#e5e7eb",
 fontSize: "15px",
 lineHeight: 1.9,
 },
+manualStatsCard: {
+border: "1px solid #2c2c2c",
+borderRadius: "18px",
+padding: "18px",
+background: "#101010",
+marginBottom: "18px",
+},
+manualStatsTitle: {
+margin: 0,
+color: "#f5f5f5",
+fontSize: "16px",
+fontWeight: 700,
+},
+manualStatsGrid: {
+marginTop: "16px",
+display: "grid",
+gridTemplateColumns: "1fr 1fr 1fr",
+gap: "14px",
+},
 notesGrid: {
 display: "grid",
 gridTemplateColumns: "1fr 1fr",
@@ -1573,6 +1748,17 @@ color: "#d4d4d8",
 fontSize: "13px",
 fontWeight: 600,
 lineHeight: 1.5,
+},
+input: {
+width: "100%",
+padding: "14px 16px",
+borderRadius: "16px",
+border: "1px solid #313131",
+background: "#0f0f10",
+color: "#f4f4f5",
+fontSize: "15px",
+boxSizing: "border-box",
+outline: "none",
 },
 textarea: {
 width: "100%",
