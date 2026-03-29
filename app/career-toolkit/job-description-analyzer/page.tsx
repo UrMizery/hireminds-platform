@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 type AnalysisResult = {
 topSkills: string[];
@@ -416,6 +417,46 @@ export default function JobDescriptionAnalyzerPage() {
 const [jobTitle, setJobTitle] = useState("");
 const [jobDescription, setJobDescription] = useState("");
 const [analyzed, setAnalyzed] = useState(false);
+const [userId, setUserId] = useState("");
+const [referralCode, setReferralCode] = useState<string | null>(null);
+const openTrackedRef = useRef(false);
+
+useEffect(() => {
+async function loadUserAndTrack() {
+const { data, error } = await supabase.auth.getUser();
+
+if (error || !data.user || openTrackedRef.current) return;
+
+openTrackedRef.current = true;
+setUserId(data.user.id);
+
+const { data: profile } = await supabase
+.from("candidate_profiles")
+.select("full_name, email, referral_code")
+.eq("user_id", data.user.id)
+.maybeSingle();
+
+setReferralCode(profile?.referral_code || null);
+
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: data.user.id,
+full_name: profile?.full_name || null,
+email: profile?.email || data.user.email || null,
+referral_code: profile?.referral_code || null,
+event_type: "tool_opened",
+tool_name: "job_description_analyzer",
+page_name: "/career-toolkit/job-description-analyzer",
+});
+
+if (activityError) {
+console.error("Job description analyzer tracking error:", activityError);
+}
+}
+
+loadUserAndTrack();
+}, []);
 
 const result = useMemo(() => {
 if (!jobDescription.trim()) {
@@ -424,8 +465,26 @@ return null;
 return analyzeJobDescription(jobDescription);
 }, [jobDescription]);
 
-function handleAnalyze() {
+async function handleAnalyze() {
 setAnalyzed(true);
+
+if (!userId) return;
+
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: userId,
+full_name: null,
+email: null,
+referral_code: referralCode,
+event_type: "tool_completed",
+tool_name: "job_description_analyzer",
+page_name: "/career-toolkit/job-description-analyzer",
+});
+
+if (activityError) {
+console.error("Job description analyze tracking error:", activityError);
+}
 }
 
 function handlePrint() {
