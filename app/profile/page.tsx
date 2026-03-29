@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 function slugify(value: string) {
@@ -36,7 +36,6 @@ const trackedRef = useRef(false);
 const [photoUrl, setPhotoUrl] = useState("");
 const [resumeUrl, setResumeUrl] = useState("");
 
-useEffect(() => {
 useEffect(() => {
 async function loadProfile() {
 const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -123,6 +122,7 @@ try {
 setSaving(true);
 
 const finalSlug = slugify(fullName || "career-passport");
+void finalSlug;
 
 let nextPhotoUrl = photoUrl;
 let nextResumeUrl = resumeUrl;
@@ -200,7 +200,10 @@ return (
 <h1 style={styles.title}>Career Passport Editor</h1>
 <p style={styles.subtitle}>
 Update the details that appear on your Career Passport
-& keep your saved profile information current.
+{" "}
+&amp;
+{" "}
+keep your saved profile information current.
 </p>
 </div>
 
@@ -237,7 +240,6 @@ style={styles.input}
 {[city, stateName].filter(Boolean).join(", ") || "City, State"}
 </p>
 <p style={styles.metaPreview}>{email || "email@example.com"}</p>
-
 </div>
 </section>
 
@@ -319,25 +321,13 @@ platform and reporting purposes.
 <button
 onClick={handleSaveProfile}
 disabled={saving}
-style={styles.saveButton}
+style={styles.primaryButton}
 >
 {saving ? "Saving..." : "Save Profile"}
 </button>
 
 <a href="/career-toolkit" style={styles.linkButton}>
 Career Toolkit
-</a>
-</section>
-
-{message ? <p style={styles.message}>{message}</p> : null}
-</div>
-</main>
-);
-}
-
-
-<a href="/career-toolkit" style={styles.linkButton}>
-Career ToolKit
 </a>
 </section>
 
@@ -398,14 +388,14 @@ style={styles.textarea}
 );
 }
 
-const glass = {
+const glass: CSSProperties = {
 background: "rgba(255,255,255,0.035)",
 border: "1px solid rgba(255,255,255,0.06)",
 boxShadow: "0 18px 60px rgba(0,0,0,0.22)",
 backdropFilter: "blur(14px)",
-} as React.CSSProperties;
+};
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
 page: {
 minHeight: "100vh",
 background:
