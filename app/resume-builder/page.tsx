@@ -395,6 +395,7 @@ const [message, setMessage] = useState("");
 const [saving, setSaving] = useState(false);
 const [draftLoaded, setDraftLoaded] = useState(false);
 const resumePrintRef = useRef<HTMLDivElement>(null);
+const openTrackedRef = useRef(false);
 
 const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
 const [language, setLanguage] = useState<ResumeLanguage>("English");
@@ -444,7 +445,7 @@ setUserId(currentUserId);
 
 const { data: profile } = await supabase
 .from("candidate_profiles")
-.select("full_name, phone, city, state, email, linkedin_url")
+.select("full_name, phone, city, state, email, linkedin_url, referral_code")
 .eq("user_id", currentUserId)
 .maybeSingle();
 
@@ -457,6 +458,26 @@ setEmail(profile.email || data.user.email || "");
 setLinkedinUrl(profile.linkedin_url || "");
 } else {
 setEmail(data.user.email || "");
+}
+
+if (!openTrackedRef.current) {
+openTrackedRef.current = true;
+
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: currentUserId,
+full_name: profile?.full_name || null,
+email: profile?.email || data.user.email || null,
+referral_code: profile?.referral_code || null,
+event_type: "tool_opened",
+tool_name: "resume_generator",
+page_name: "/career-toolkit/resume-generator",
+});
+
+if (activityError) {
+console.error("Resume generator tracking error:", activityError);
+}
 }
 
 setLoadingUser(false);
