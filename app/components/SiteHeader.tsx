@@ -89,7 +89,7 @@ disabled={loadingLogout}
 ) : null}
 
 <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
-<a href="/employer-partner-login" style={styles.lockedLink}>
+<a href="/employer-partner-login" style={styles.linkButtonLike}>
 {t.employerPartnerSignIn}
 </a>
 </div>
