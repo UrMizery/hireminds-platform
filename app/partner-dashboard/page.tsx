@@ -119,7 +119,7 @@ return "This Month";
 }
 
 function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
-if (!rows.length) {
+if (!rows || rows.length === 0) {
 alert("No data available to export yet.");
 return;
 }
@@ -131,22 +131,22 @@ const text = String(value ?? "");
 return `"${text.replace(/"/g, '""')}"`;
 };
 
-const csvContent = [
+const csv = [
 headers.join(","),
 ...rows.map((row) => headers.map((header) => escapeCell(row[header])).join(",")),
 ].join("\n");
 
-const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-const url = window.URL.createObjectURL(blob);
+const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+const url = URL.createObjectURL(blob);
 
 const link = document.createElement("a");
 link.href = url;
-link.setAttribute("download", filename);
+link.download = filename;
 document.body.appendChild(link);
 link.click();
 document.body.removeChild(link);
 
-window.URL.revokeObjectURL(url);
+URL.revokeObjectURL(url);
 }
 
 function downloadText(filename: string, text: string) {
@@ -290,6 +290,14 @@ useEffect(() => {
 loadDashboard();
 }, []);
 
+useEffect(() => {
+const interval = setInterval(() => {
+loadDashboard();
+}, 15000);
+
+return () => clearInterval(interval);
+}, []);
+
 const uniqueParticipants = useMemo(() => {
 const seen = new Set<string>();
 return participants.filter((row) => {
@@ -370,11 +378,9 @@ return rowKey === key;
 
 const loginCount = personActivity.filter((row) => row.event_type === "login").length;
 
-const toolsUsed = [...new Set(
-personActivity
-.map((row) => row.tool_name || "")
-.filter(Boolean)
-)];
+const toolsUsed = [
+...new Set(personActivity.map((row) => row.tool_name || "").filter(Boolean)),
+];
 
 return {
 full_name: participant.full_name || "",
@@ -441,6 +447,7 @@ created_at: row.created_at || "",
 last_activity: lastActivityByUser.get(row.user_id || row.email || "") || "",
 }));
 
+console.log("participants export rows", rows);
 downloadCsv(`partner-participants-${period}.csv`, rows);
 }
 
@@ -455,20 +462,22 @@ tool_name: row.tool_name || "",
 page_name: row.page_name || "",
 }));
 
+console.log("activity export rows", rows);
 downloadCsv(`partner-live-feed-${period}.csv`, rows);
 }
 
 function exportUsageReport() {
 const rows = usageReport.map((row) => ({
-full_name: row.full_name,
-email: row.email,
-phone: row.phone,
-login_count: row.login_count,
-tools_used: row.tools_used,
-total_activity: row.total_activity,
-last_activity: row.last_activity,
+full_name: row.full_name || "",
+email: row.email || "",
+phone: row.phone || "",
+login_count: row.login_count || 0,
+tools_used: row.tools_used || "",
+total_activity: row.total_activity || 0,
+last_activity: row.last_activity || "",
 }));
 
+console.log("usage export rows", rows);
 downloadCsv(`partner-usage-report-${period}.csv`, rows);
 }
 
@@ -509,15 +518,9 @@ return (
 <p style={styles.subtitle}>
 Account Holder: <strong>{partner?.contact_name || "—"}</strong>
 </p>
-<p style={styles.subtleLine}>
-Title: {partner?.contact_title || "—"}
-</p>
-<p style={styles.subtleLine}>
-Email: {partner?.contact_email || "—"}
-</p>
-<p style={styles.subtleLine}>
-Referral Code: {partner?.referral_code || "—"}
-</p>
+<p style={styles.subtleLine}>Title: {partner?.contact_title || "—"}</p>
+<p style={styles.subtleLine}>Email: {partner?.contact_email || "—"}</p>
+<p style={styles.subtleLine}>Referral Code: {partner?.referral_code || "—"}</p>
 </div>
 
 <div style={styles.headerActions}>
@@ -632,70 +635,6 @@ return (
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
-<p style={styles.sectionKicker}>Grant-Friendly Summary</p>
-<h2 style={styles.sectionTitle}>Reporting summary</h2>
-</div>
-<button type="button" onClick={exportSummaryReport} style={styles.secondaryButton}>
-Export Summary
-</button>
-</div>
-
-<div style={styles.summaryTextBox}>
-<p style={styles.summaryParagraph}>{summaryText}</p>
-</div>
-
-<div style={styles.notesGrid}>
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Workshops / Trainings</label>
-<textarea
-value={workshopNotes}
-onChange={(e) => setWorkshopNotes(e.target.value)}
-placeholder="Add workshop attendance, trainings, or group sessions."
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Job Fairs / Hiring Events</label>
-<textarea
-value={jobFairNotes}
-onChange={(e) => setJobFairNotes(e.target.value)}
-placeholder="Add job fairs or hiring events attended."
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Participant Meetings</label>
-<textarea
-value={meetingNotes}
-onChange={(e) => setMeetingNotes(e.target.value)}
-placeholder="Add one-on-one meetings, check-ins, or support sessions."
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Additional Partner Notes</label>
-<textarea
-value={additionalNotes}
-onChange={(e) => setAdditionalNotes(e.target.value)}
-placeholder="Add any extra narrative or outcome notes for your report."
-style={styles.textarea}
-/>
-</div>
-</div>
-
-<div style={styles.notesActions}>
-<button type="button" onClick={saveNotes} style={styles.secondaryButton}>
-Save Notes
-</button>
-</div>
-</section>
-
-<section style={styles.card}>
-<div style={styles.sectionTop}>
-<div>
 <p style={styles.sectionKicker}>Participants</p>
 <h2 style={styles.sectionTitle}>Assigned participants</h2>
 </div>
@@ -722,7 +661,8 @@ Export CSV
 <tbody>
 {uniqueParticipants.map((row, index) => {
 const rowKey = row.user_id || row.email || row.id || `participant-${index}`;
-const lastActivity = lastActivityByUser.get(row.user_id || row.email || "") || "";
+const lastActivity =
+lastActivityByUser.get(row.user_id || row.email || "") || "";
 return (
 <tr key={rowKey}>
 <td style={styles.td}>{row.full_name || "—"}</td>
@@ -732,7 +672,12 @@ return (
 <td style={styles.td}>
 {row.resume_url ? (
 <div style={styles.linkStack}>
-<a href={row.resume_url} target="_blank" rel="noreferrer" style={styles.tableLink}>
+<a
+href={row.resume_url}
+target="_blank"
+rel="noreferrer"
+style={styles.tableLink}
+>
 View
 </a>
 <a href={row.resume_url} download style={styles.tableLink}>
@@ -796,6 +741,70 @@ Export CSV
 </table>
 </div>
 )}
+</section>
+
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<p style={styles.sectionKicker}>Grant-Friendly Summary</p>
+<h2 style={styles.sectionTitle}>Reporting summary</h2>
+</div>
+<button type="button" onClick={exportSummaryReport} style={styles.secondaryButton}>
+Export Summary
+</button>
+</div>
+
+<div style={styles.summaryTextBox}>
+<p style={styles.summaryParagraph}>{summaryText}</p>
+</div>
+
+<div style={styles.notesGrid}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Workshops / Trainings</label>
+<textarea
+value={workshopNotes}
+onChange={(e) => setWorkshopNotes(e.target.value)}
+placeholder="Add workshop attendance, trainings, or group sessions."
+style={styles.textarea}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Job Fairs / Hiring Events</label>
+<textarea
+value={jobFairNotes}
+onChange={(e) => setJobFairNotes(e.target.value)}
+placeholder="Add job fairs or hiring events attended."
+style={styles.textarea}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Participant Meetings</label>
+<textarea
+value={meetingNotes}
+onChange={(e) => setMeetingNotes(e.target.value)}
+placeholder="Add one-on-one meetings, check-ins, or support sessions."
+style={styles.textarea}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Additional Partner Notes</label>
+<textarea
+value={additionalNotes}
+onChange={(e) => setAdditionalNotes(e.target.value)}
+placeholder="Add any extra narrative or outcome notes for your report."
+style={styles.textarea}
+/>
+</div>
+</div>
+
+<div style={styles.notesActions}>
+<button type="button" onClick={saveNotes} style={styles.secondaryButton}>
+Save Notes
+</button>
+</div>
 </section>
 </div>
 </main>
