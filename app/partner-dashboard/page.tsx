@@ -669,7 +669,7 @@ Live
 <span style={styles.usageChipLabel}>Platform Uses</span>
 <InfoBubble
 title="Platform Uses"
-text="Counts tracked activity events. This can include repeat use by the same participant multiple times in one day."
+text="Counts tracked activity events. This can include repeat use by the same participant."
 />
 </div>
 
@@ -928,7 +928,7 @@ width: `${Math.max((item.count / maxToolCount) * 100, 8)}%`,
 <h2 style={styles.sectionTitle}>Reporting summary</h2>
 </div>
 <InfoBubble
-title="Reporting Summary"
+title="Reporting Summary Generator"
 text="This combines platform metrics with partner-entered answers so the report can be used for grants, internal reporting, and partner updates."
 />
 </div>
