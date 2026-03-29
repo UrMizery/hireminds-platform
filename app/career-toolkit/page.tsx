@@ -82,6 +82,12 @@ Open Cover Letter Generator
 </div>
 
 <div style={styles.featureCard}>
+<h3 style={styles.featureTitle}>...</h3>
+<p style={styles.featureText}>...</p>
+<a href="..." style={styles.linkButton}>...</a>
+</div>
+
+  <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>The House of Letters</h3>
 <span style={styles.liveTag}>New</span>
