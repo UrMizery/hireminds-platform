@@ -18,6 +18,8 @@ type ToneOption =
 | "Friendly"
 | "Bold";
 
+const BRAND_DRAFT_KEY = "hireminds-professional-branding-generator-v1";
+
 export default function ProfessionalBrandingGeneratorPage() {
 const [activeTool, setActiveTool] = useState<BrandTool>("resume-summary");
 
@@ -32,6 +34,8 @@ const [experience, setExperience] = useState("");
 const [achievements, setAchievements] = useState("");
 const [audience, setAudience] = useState("");
 const [tone, setTone] = useState<ToneOption>("Professional");
+const [message, setMessage] = useState("");
+const [draftLoaded, setDraftLoaded] = useState(false);
 
 const [userId, setUserId] = useState("");
 const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -74,6 +78,66 @@ console.error("Professional branding generator tracking error:", activityError);
 loadUserAndTrack();
 }, []);
 
+useEffect(() => {
+try {
+const raw = window.localStorage.getItem(BRAND_DRAFT_KEY);
+if (raw) {
+const draft = JSON.parse(raw);
+setActiveTool(draft.activeTool || "resume-summary");
+setFullName(draft.fullName || "");
+setCurrentTitle(draft.currentTitle || "");
+setTargetTitle(draft.targetTitle || "");
+setYearsExperience(draft.yearsExperience || "");
+setIndustry(draft.industry || "");
+setSkills(draft.skills || "");
+setStrengths(draft.strengths || "");
+setExperience(draft.experience || "");
+setAchievements(draft.achievements || "");
+setAudience(draft.audience || "");
+setTone(draft.tone || "Professional");
+}
+} catch {
+// ignore bad local draft
+} finally {
+setDraftLoaded(true);
+}
+}, []);
+
+useEffect(() => {
+if (!draftLoaded) return;
+
+const draft = {
+activeTool,
+fullName,
+currentTitle,
+targetTitle,
+yearsExperience,
+industry,
+skills,
+strengths,
+experience,
+achievements,
+audience,
+tone,
+};
+
+window.localStorage.setItem(BRAND_DRAFT_KEY, JSON.stringify(draft));
+}, [
+draftLoaded,
+activeTool,
+fullName,
+currentTitle,
+targetTitle,
+yearsExperience,
+industry,
+skills,
+strengths,
+experience,
+achievements,
+audience,
+tone,
+]);
+
 const cleanSkills = useMemo(
 () => skills.split(",").map((s) => s.trim()).filter(Boolean),
 [skills]
@@ -89,67 +153,76 @@ const cleanAchievements = useMemo(
 [achievements]
 );
 
-const introName = fullName || "Your Name";
-const baseTitle = targetTitle || currentTitle || "professional";
-const yearsText = yearsExperience ? `${yearsExperience}+ years of experience` : "experience";
+const firstName = fullName.trim().split(" ")[0] || "I";
+const displayName = fullName || "Your Name";
+const roleName = targetTitle || currentTitle || "professional";
+const yearsText = yearsExperience
+? `${yearsExperience}+ years of experience`
+: "professional experience";
 const industryText = industry || "your field";
-const topSkills = cleanSkills.slice(0, 3).join(", ");
-const topStrengths = cleanStrengths.slice(0, 3).join(", ");
-const topAchievements = cleanAchievements.slice(0, 2).join(", ");
+const skillText = cleanSkills.slice(0, 4).join(", ");
+const strengthText = cleanStrengths.slice(0, 4).join(", ");
+const achievementText = cleanAchievements.slice(0, 3).join(", ");
 
-const outputs = useMemo(() => {
-const summary1 = `${baseTitle} with ${yearsText} in ${industryText}. Brings strengths in ${topSkills || "communication, organization, and problem-solving"}, with a track record of ${topAchievements || "supporting team goals and delivering strong results"}.`;
-const summary2 = `${tone} ${baseTitle} known for ${topStrengths || "strong communication, adaptability, and professionalism"}. Experienced in ${industryText} and skilled at ${topSkills || "supporting operations, building relationships, and staying organized"} while contributing to business goals.`;
-const summary3 = `${baseTitle} offering ${yearsText}, hands-on experience in ${industryText}, and the ability to add value through ${topSkills || "customer service, coordination, and follow-through"}. Recognized for ${topStrengths || "reliability, efficiency, and a positive attitude"}.`;
+const generated = useMemo(() => {
+const summaryOptions = [
+`${roleName} with ${yearsText} in ${industryText}. Brings strengths in ${skillText || "communication, organization, and problem-solving"}, with a consistent ability to support teams, build relationships, and deliver results.`,
+`${tone} ${roleName} known for ${strengthText || "professionalism, adaptability, and strong communication"}. Offers hands-on experience in ${industryText} and the ability to contribute through ${skillText || "operations, customer support, and teamwork"}.`,
+`${roleName} offering ${yearsText}, a background in ${industryText}, and a strong focus on ${skillText || "service, coordination, and follow-through"}. Recognized for ${strengthText || "dependability, efficiency, and a positive attitude"}.`,
+];
 
-const bioShort = `${introName} is a ${tone.toLowerCase()} ${baseTitle} with ${yearsText} in ${industryText}.`;
-const bioMedium = `${introName} is a ${baseTitle} with ${yearsText} in ${industryText}. Known for ${topStrengths || "professionalism, strong communication, and adaptability"}, ${introName.split(" ")[0]} brings experience in ${topSkills || "operations, customer service, and team support"} and a commitment to delivering meaningful results.`;
-const bioLong = `${introName} is a ${baseTitle} with ${yearsText} in ${industryText}. With experience that includes ${experience || "supporting teams, serving clients, and driving day-to-day success"}, ${introName.split(" ")[0]} is recognized for ${topStrengths || "clear communication, leadership, and dependability"}. Core strengths include ${topSkills || "relationship-building, organization, and problem-solving"}, with accomplishments such as ${topAchievements || "improving processes and contributing to strong outcomes"}.`;
+const bioOptions = [
+`${displayName} is a ${tone.toLowerCase()} ${roleName} with ${yearsText} in ${industryText}.`,
+`${displayName} is a ${roleName} with ${yearsText} in ${industryText}. Known for ${strengthText || "strong communication, professionalism, and adaptability"}, ${firstName} brings experience in ${skillText || "operations, client support, and team collaboration"} and a commitment to meaningful results.`,
+`${displayName} is a ${roleName} with ${yearsText} in ${industryText}. With experience that includes ${experience || "supporting teams, working with clients, and contributing to day-to-day success"}, ${firstName} is recognized for ${strengthText || "clear communication, reliability, and leadership"}. Key strengths include ${skillText || "relationship-building, organization, and problem-solving"}${achievementText ? `, with accomplishments such as ${achievementText}` : ""}.`,
+];
 
-const headline1 = `${targetTitle || currentTitle || "Professional"} | ${topSkills || "Communication | Organization | Problem Solving"}`;
-const headline2 = `${targetTitle || currentTitle || "Professional"} in ${industryText} | ${topStrengths || "Reliable | Adaptable | Detail-Oriented"}`;
-const headline3 = `${targetTitle || currentTitle || "Professional"} | ${yearsExperience ? `${yearsExperience}+ Years Experience` : "Experienced"} | ${topSkills || "Client Support | Operations | Teamwork"}`;
+const headlineOptions = [
+`${roleName} | ${skillText || "Communication | Organization | Problem Solving"}`,
+`${roleName} in ${industryText} | ${strengthText || "Reliable | Adaptable | Detail-Oriented"}`,
+`${roleName} | ${yearsExperience ? `${yearsExperience}+ Years Experience` : "Experienced"} | ${skillText || "Client Support | Operations | Teamwork"}`,
+];
 
-const elevator1 = `Hi, I’m ${introName}. I’m a ${baseTitle} with ${yearsText} in ${industryText}, and I specialize in ${topSkills || "keeping work organized, supporting people, and getting results"}.`;
-const elevator2 = `I bring a ${tone.toLowerCase()} approach to my work, with strengths in ${topStrengths || "communication, adaptability, and follow-through"}. I’m especially interested in opportunities where I can contribute through ${topSkills || "service, coordination, and team support"}.`;
-const elevator3 = `One thing that stands out about my background is ${topAchievements || "my ability to add value quickly and contribute in a meaningful way"}.`;
+const elevatorOptions = [
+`Hi, I’m ${displayName}. I’m a ${roleName} with ${yearsText} in ${industryText}.`,
+`My background includes ${experience || "supporting teams, serving clients, and helping organizations stay organized and effective"}, and I bring strengths in ${strengthText || "communication, adaptability, and professionalism"}.`,
+`I’m especially interested in opportunities where I can contribute through ${skillText || "service, coordination, and team support"}${achievementText ? `, with results such as ${achievementText}` : ""}.`,
+];
 
-const networking1 = `Hi, my name is ${introName}. I’m a ${baseTitle} with ${yearsText} in ${industryText}.`;
-const networking2 = `My background includes ${experience || "supporting teams, serving clients, and helping organizations meet their goals"}, and my strengths include ${topStrengths || "communication, organization, and professionalism"}.`;
-const networking3 = `I’m currently interested in connecting with professionals and opportunities related to ${targetTitle || currentTitle || "my next role"}. It’s great to connect with you.`;
+const networkingOptions = [
+`Hi, my name is ${displayName}. I’m a ${roleName} with ${yearsText} in ${industryText}.`,
+`My experience includes ${experience || "working with people, supporting day-to-day operations, and helping teams reach their goals"}, and my strengths include ${strengthText || "communication, organization, and professionalism"}.`,
+`I’m interested in connecting with professionals and opportunities related to ${targetTitle || currentTitle || "my next role"}${audience ? `, especially within ${audience}` : ""}. It’s great to connect with you.`,
+];
 
 return {
-summary: [summary1, summary2, summary3],
-bio: [bioShort, bioMedium, bioLong],
-headline: [headline1, headline2, headline3],
-elevator: [elevator1, elevator2, elevator3],
-networking: [networking1, networking2, networking3],
+"resume-summary": summaryOptions,
+"professional-bio": bioOptions,
+headline: headlineOptions,
+"elevator-pitch": elevatorOptions,
+"networking-intro": networkingOptions,
 };
 }, [
-achievements,
-audience,
-baseTitle,
-cleanAchievements,
-cleanSkills,
-cleanStrengths,
-experience,
-fullName,
-industry,
+displayName,
+roleName,
+yearsText,
 industryText,
-introName,
+skillText,
+strengthText,
+tone,
+firstName,
+experience,
+achievementText,
+yearsExperience,
 targetTitle,
 currentTitle,
-tone,
-topAchievements,
-topSkills,
-topStrengths,
-yearsExperience,
-yearsText,
+audience,
 ]);
 
-async function copyText(text: string) {
-await navigator.clipboard.writeText(text);
+const currentOutputs = generated[activeTool];
+const previewText = currentOutputs.join("\n\n");
 
+async function trackCompletion() {
 if (!userId) return;
 
 const { error: activityError } = await supabase
@@ -165,27 +238,86 @@ page_name: "/career-toolkit/professional-branding-generator",
 });
 
 if (activityError) {
-console.error("Professional branding copy tracking error:", activityError);
+console.error("Professional branding completion tracking error:", activityError);
 }
 }
 
-function renderOutputCards(items: string[]) {
-return (
-<div style={styles.outputGrid}>
-{items.map((item, index) => (
-<div key={`${item}-${index}`} style={styles.outputCard}>
-<p style={styles.outputText}>{item}</p>
-<button type="button" onClick={() => copyText(item)} style={styles.smallButton}>
-Copy
-</button>
-</div>
-))}
-</div>
-);
+async function handleCopy(text: string) {
+await navigator.clipboard.writeText(text);
+setMessage("Copied to clipboard.");
+await trackCompletion();
 }
+
+async function handleSaveDraft() {
+try {
+const draft = {
+activeTool,
+fullName,
+currentTitle,
+targetTitle,
+yearsExperience,
+industry,
+skills,
+strengths,
+experience,
+achievements,
+audience,
+tone,
+};
+
+window.localStorage.setItem(BRAND_DRAFT_KEY, JSON.stringify(draft));
+setMessage("Professional branding draft saved locally in this browser.");
+await trackCompletion();
+} catch {
+setMessage("Unable to save your draft locally.");
+}
+}
+
+async function handlePrint() {
+window.print();
+await trackCompletion();
+}
+
+const previewTitle =
+activeTool === "resume-summary"
+? "Resume Summary Preview"
+: activeTool === "professional-bio"
+? "Professional Bio Preview"
+: activeTool === "headline"
+? "Headline Preview"
+: activeTool === "elevator-pitch"
+? "Elevator Pitch Preview"
+: "Networking Intro Preview";
 
 return (
 <main style={styles.page}>
+<style>{`
+@media print {
+body * {
+visibility: hidden !important;
+}
+
+.print-wrap,
+.print-wrap * {
+visibility: visible !important;
+}
+
+.print-wrap {
+position: absolute !important;
+top: 0 !important;
+left: 0 !important;
+width: 100% !important;
+background: white !important;
+padding: 24px !important;
+margin: 0 !important;
+}
+
+.hide-on-print {
+display: none !important;
+}
+}
+`}</style>
+
 <div style={styles.shell}>
 <section style={styles.heroCard}>
 <p style={styles.kicker}>Career ToolKit</p>
@@ -200,9 +332,9 @@ Back to Career ToolKit
 </section>
 
 <div style={styles.layout}>
-<section style={styles.formCard}>
+<section className="hide-on-print" style={styles.formCard}>
 <p style={styles.sectionKicker}>Branding Tools</p>
-<h2 style={styles.sectionTitle}>Choose what you want to create</h2>
+<h2 style={styles.sectionTitle}>Create polished written branding content</h2>
 
 <div style={styles.tabGrid}>
 {[
@@ -227,12 +359,49 @@ style={{
 </div>
 
 <div style={styles.formGrid}>
-<Field label="Your Full Name" value={fullName} onChange={setFullName} placeholder="Your full name" />
-<Field label="Current Title" value={currentTitle} onChange={setCurrentTitle} placeholder="Current title" />
-<Field label="Target Title" value={targetTitle} onChange={setTargetTitle} placeholder="Target role" />
-<Field label="Years of Experience" value={yearsExperience} onChange={setYearsExperience} placeholder="Example: 5" />
-<Field label="Industry" value={industry} onChange={setIndustry} placeholder="Healthcare, Admin, Recruiting" />
-<SelectField label="Tone" value={tone} onChange={(v) => setTone(v as ToneOption)} options={["Professional", "Confident", "Warm", "Corporate", "Friendly", "Bold"]} />
+<Field
+label="Your Full Name"
+value={fullName}
+onChange={setFullName}
+placeholder="Your full name"
+/>
+<Field
+label="Current Title"
+value={currentTitle}
+onChange={setCurrentTitle}
+placeholder="Current title"
+/>
+<Field
+label="Target Title"
+value={targetTitle}
+onChange={setTargetTitle}
+placeholder="Target role"
+/>
+<Field
+label="Years of Experience"
+value={yearsExperience}
+onChange={setYearsExperience}
+placeholder="Example: 5"
+/>
+<Field
+label="Industry"
+value={industry}
+onChange={setIndustry}
+placeholder="Healthcare, Admin, Recruiting"
+/>
+<SelectField
+label="Tone"
+value={tone}
+onChange={(v) => setTone(v as ToneOption)}
+options={[
+"Professional",
+"Confident",
+"Warm",
+"Corporate",
+"Friendly",
+"Bold",
+]}
+/>
 </div>
 
 <TextAreaField
@@ -269,28 +438,46 @@ value={audience}
 onChange={setAudience}
 placeholder="Recruiters, employers, LinkedIn network"
 />
+
+{message ? <p style={styles.message}>{message}</p> : null}
+
+<div style={styles.buttonRow}>
+<button type="button" onClick={handleSaveDraft} style={styles.primaryButton}>
+Save Draft
+</button>
+<button type="button" onClick={handlePrint} style={styles.secondaryButton}>
+Print / Save
+</button>
+</div>
 </section>
 
-<section style={styles.previewCard}>
-<p style={styles.sectionKicker}>Generated Content</p>
-<h2 style={styles.sectionTitle}>
-{activeTool === "resume-summary"
-? "Resume Summary Options"
-: activeTool === "professional-bio"
-? "Professional Bio Options"
-: activeTool === "headline"
-? "Headline Options"
-: activeTool === "elevator-pitch"
-? "Elevator Pitch Options"
-: "Networking Introduction Options"}
-</h2>
+<aside className="print-wrap" style={styles.previewCard}>
+<p style={styles.sectionKicker}>Live Preview</p>
+<h2 style={styles.sectionTitle}>{previewTitle}</h2>
 
-{activeTool === "resume-summary" && renderOutputCards(outputs.summary)}
-{activeTool === "professional-bio" && renderOutputCards(outputs.bio)}
-{activeTool === "headline" && renderOutputCards(outputs.headline)}
-{activeTool === "elevator-pitch" && renderOutputCards(outputs.elevator)}
-{activeTool === "networking-intro" && renderOutputCards(outputs.networking)}
-</section>
+<div style={styles.previewBox}>
+{previewText.split("\n").map((line, index) => (
+<p key={index} style={styles.previewText}>
+{line || "\u00A0"}
+</p>
+))}
+</div>
+
+<div style={styles.outputGrid}>
+{currentOutputs.map((item, index) => (
+<div key={`${item}-${index}`} style={styles.outputCard}>
+<p style={styles.outputText}>{item}</p>
+<button
+type="button"
+onClick={() => handleCopy(item)}
+style={styles.smallButton}
+>
+Copy
+</button>
+</div>
+))}
+</div>
+</aside>
 </div>
 </div>
 </main>
@@ -439,12 +626,13 @@ borderRadius: "24px",
 padding: "24px",
 },
 previewCard: {
-background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-border: "1px solid #262626",
+background: "#ffffff",
+color: "#111827",
 borderRadius: "24px",
 padding: "24px",
 position: "sticky",
 top: "24px",
+boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
 },
 sectionKicker: {
 margin: "0 0 8px",
@@ -458,7 +646,7 @@ margin: "0 0 18px",
 fontSize: "28px",
 lineHeight: 1.1,
 fontWeight: 700,
-color: "#f5f5f5",
+color: "inherit",
 },
 tabGrid: {
 display: "grid",
@@ -521,19 +709,67 @@ resize: "vertical",
 boxSizing: "border-box",
 outline: "none",
 },
+message: {
+margin: "8px 0 0",
+color: "#e5e7eb",
+fontSize: "14px",
+lineHeight: 1.6,
+},
+buttonRow: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "12px",
+marginTop: "16px",
+},
+primaryButton: {
+width: "100%",
+padding: "15px 18px",
+borderRadius: "18px",
+border: "1px solid #d1d5db",
+background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+color: "#09090b",
+fontSize: "15px",
+fontWeight: 700,
+cursor: "pointer",
+},
+secondaryButton: {
+width: "100%",
+padding: "15px 18px",
+borderRadius: "18px",
+border: "1px solid rgba(148,163,184,0.28)",
+background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+color: "#fff",
+fontSize: "15px",
+fontWeight: 700,
+cursor: "pointer",
+},
+previewBox: {
+border: "1px solid #d1d5db",
+borderRadius: "18px",
+padding: "18px",
+background: "#f9fafb",
+marginBottom: "18px",
+},
+previewText: {
+margin: "0 0 12px",
+color: "#111827",
+fontSize: "15px",
+lineHeight: 1.8,
+whiteSpace: "pre-wrap",
+},
 outputGrid: {
 display: "grid",
 gap: "14px",
 },
 outputCard: {
-border: "1px solid #2d2d2d",
+border: "1px solid #d1d5db",
 borderRadius: "18px",
-background: "#101010",
+background: "#ffffff",
 padding: "18px",
 },
 outputText: {
 margin: "0 0 14px",
-color: "#e5e7eb",
+color: "#111827",
 fontSize: "15px",
 lineHeight: 1.8,
 whiteSpace: "pre-wrap",
