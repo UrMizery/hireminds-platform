@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 function slugify(value: string) {
@@ -31,6 +31,7 @@ const [linkedinUrl, setLinkedinUrl] = useState("");
 
 const [photoFile, setPhotoFile] = useState<File | null>(null);
 const [resumeFile, setResumeFile] = useState<File | null>(null);
+const trackedRef = useRef(false);
 
 const [photoUrl, setPhotoUrl] = useState("");
 const [resumeUrl, setResumeUrl] = useState("");
@@ -76,7 +77,28 @@ setHeadline(profile.headline || "");
 setLinkedinUrl(profile.linkedin_url || "");
 setResumeUrl(profile.resume_url || "");
 setPhotoUrl(profile.photo_url || "");
-setLoading(false);
+
+if (!trackedRef.current) {
+trackedRef.current = true;
+
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: authData.user.id,
+full_name: profile.full_name || null,
+email: profile.email || authData.user.email || null,
+referral_code: profile.referral_code || null,
+event_type: "profile_viewed",
+tool_name: "profile",
+page_name: "/profile",
+});
+
+if (activityError) {
+console.error("Profile tracking error:", activityError);
+  }
+}
+  
+}setLoading(false);
 }
 
 loadProfile();
