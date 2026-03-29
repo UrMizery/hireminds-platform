@@ -55,14 +55,6 @@ throw new Error("useLanguage must be used inside LanguageProvider");
 return context;
 }
 
-
-
-
-
-———————————————————————-
-
-
-
 export type Lang = "en" | "es" | "hi" | "pl";
 
 export const translations: Record<
