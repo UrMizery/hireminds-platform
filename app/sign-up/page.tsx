@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../lib/supabase";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
-export default function SignUpPage() {
+export default function SignupPage() {
+const router = useRouter();
+const supabase = createClient();
+
 const [fullName, setFullName] = useState("");
 const [phone, setPhone] = useState("");
 const [city, setCity] = useState("");
@@ -17,7 +21,7 @@ const [showPassword, setShowPassword] = useState(false);
 const [message, setMessage] = useState("");
 const [loading, setLoading] = useState(false);
 
-async function handleSignUp(e: React.FormEvent) {
+async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
 e.preventDefault();
 setLoading(true);
 setMessage("");
@@ -61,9 +65,9 @@ phone: phone,
 email: email,
 city: city,
 state: stateName,
-referral_code: referralCode,
-heard_about_us: heardAboutUs,
-heard_about_us_other: heardAboutUsOther,
+referral_code: referralCode || null,
+heard_about_us: heardAboutUs || null,
+heard_about_us_other: heardAboutUsOther || null,
 });
 
 if (profileError) {
@@ -85,25 +89,32 @@ page_name: "sign-up",
 });
 
 if (activityError) {
-console.error("Activity tracking error:", activityError.message);
-}
-  
-setMessage("Account created successfully!");
+console.error("Activity tracking error:", activityError);
+setMessage(`Activity tracking error: ${activityError.message}`);
 setLoading(false);
+return;
+}
 
-window.location.href = "/profile";
+setMessage("Account created successfully.");
+setLoading(false);
+router.push("/login");
 }
 
 return (
 <main style={styles.page}>
-<form onSubmit={handleSignUp} style={styles.card}>
-<h1 style={styles.title}>Create Career Passport / Sign Up</h1>
+<div style={styles.card}>
+<h1 style={styles.title}>Create Your Career Passport</h1>
+<p style={styles.subtitle}>
+Sign up to access your tools, documents, and career resources.
+</p>
 
+<form onSubmit={handleSignUp} style={styles.form}>
 <input
 placeholder="Full Name"
 value={fullName}
 onChange={(e) => setFullName(e.target.value)}
 style={styles.input}
+required
 />
 
 <input
@@ -128,61 +139,29 @@ style={styles.input}
 />
 
 <input
-placeholder="Email"
 type="email"
+placeholder="Email Address"
 value={email}
 onChange={(e) => setEmail(e.target.value)}
 style={styles.input}
+required
 />
 
 <div style={styles.passwordWrap}>
 <input
-placeholder="Password"
 type={showPassword ? "text" : "password"}
+placeholder="Password"
 value={password}
 onChange={(e) => setPassword(e.target.value)}
 style={styles.passwordInput}
+required
 />
-
 <button
 type="button"
-onClick={() => setShowPassword((prev) => !prev)}
-aria-label={showPassword ? "Hide password" : "Show password"}
-style={styles.passwordToggle}
+onClick={() => setShowPassword(!showPassword)}
+style={styles.showButton}
 >
-{showPassword ? (
-<svg
-xmlns="http://www.w3.org/2000/svg"
-width="20"
-height="20"
-viewBox="0 0 24 24"
-fill="none"
-stroke="currentColor"
-strokeWidth="2"
-strokeLinecap="round"
-strokeLinejoin="round"
->
-<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.89 1 12c.69-1.94 1.79-3.68 3.19-5.1" />
-<path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.11 11 8a11.83 11.83 0 0 1-4.29 5.94" />
-<path d="M1 1l22 22" />
-<path d="M10.58 10.58a2 2 0 1 0 2.83 2.83" />
-</svg>
-) : (
-<svg
-xmlns="http://www.w3.org/2000/svg"
-width="20"
-height="20"
-viewBox="0 0 24 24"
-fill="none"
-stroke="currentColor"
-strokeWidth="2"
-strokeLinecap="round"
-strokeLinejoin="round"
->
-<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
-<circle cx="12" cy="12" r="3" />
-</svg>
-)}
+{showPassword ? "Hide" : "Show"}
 </button>
 </div>
 
@@ -194,7 +173,8 @@ style={styles.input}
 />
 
 <p style={styles.helperText}>
-Enter a code if one was provided by your organization, employer, school, or program.
+Enter a code if one was provided by your organization, employer,
+school, or program.
 </p>
 
 <select
@@ -204,9 +184,13 @@ style={styles.input}
 >
 <option value="">How did you hear about us? (Optional)</option>
 <option value="found_on_my_own">I found HireMinds on my own</option>
-<option value="ricannect_direct_staffing">RicanNECT Direct Staffing</option>
+<option value="ricannect_direct_staffing">
+RicanNECT Direct Staffing
+</option>
 <option value="job_fair">Job Fair</option>
-<option value="organization_or_program">Organization or Program</option>
+<option value="organization_or_program">
+Organization or Program
+</option>
 <option value="employer">Employer</option>
 <option value="friend_or_family">Friend or Family</option>
 <option value="social_media">Social Media</option>
@@ -220,51 +204,63 @@ value={heardAboutUsOther}
 onChange={(e) => setHeardAboutUsOther(e.target.value)}
 style={styles.input}
 />
-)}<button type="submit" style={styles.button} disabled={loading}>
-{loading ? "Creating..." : "Create Account"}
+)}
+
+<button type="submit" style={styles.submitButton} disabled={loading}>
+{loading ? "Creating Account..." : "Create Career Passport"}
 </button>
 
 {message && <p style={styles.message}>{message}</p>}
 </form>
+</div>
 </main>
 );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: { [key: string]: React.CSSProperties } = {
 page: {
 minHeight: "100vh",
 display: "flex",
-justifyContent: "center",
 alignItems: "center",
-background: "#0a0a0a",
-padding: "24px",
+justifyContent: "center",
+padding: "32px 16px",
+background: "#f8fafc",
 },
 card: {
-background: "#111",
-padding: "30px",
-borderRadius: "20px",
 width: "100%",
-maxWidth: "420px",
-display: "flex",
-flexDirection: "column",
-gap: "12px",
+maxWidth: "520px",
+background: "#ffffff",
+borderRadius: "20px",
+padding: "32px",
+boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
 },
 title: {
-color: "#fff",
-marginBottom: "10px",
+fontSize: "30px",
+fontWeight: 700,
+marginBottom: "8px",
+color: "#111827",
+textAlign: "center",
+},
+subtitle: {
+fontSize: "15px",
+color: "#6b7280",
+marginBottom: "24px",
+textAlign: "center",
+lineHeight: 1.5,
+},
+form: {
+display: "flex",
+flexDirection: "column",
+gap: "14px",
 },
 input: {
-padding: "12px",
-borderRadius: "10px",
-border: "1px solid #333",
-background: "#000",
-color: "#fff",
 width: "100%",
-boxSizing: "border-box",
-},
-passwordWrap: {
-position: "relative",
-width: "100%",
+padding: "14px 16px",
+fontSize: "15px",
+borderRadius: "12px",
+border: "1px solid #d1d5db",
+outline: "none",
+backgroundColor: "#fff",
 },
 helperText: {
 fontSize: "13px",
@@ -273,40 +269,47 @@ marginTop: "-8px",
 marginBottom: "12px",
 lineHeight: 1.4,
 },
-passwordInput: {
-padding: "12px 44px 12px 12px",
-borderRadius: "10px",
-border: "1px solid #333",
-background: "#000",
-color: "#fff",
+passwordWrap: {
+position: "relative",
 width: "100%",
-boxSizing: "border-box",
 },
-passwordToggle: {
+passwordInput: {
+width: "100%",
+padding: "14px 90px 14px 16px",
+fontSize: "15px",
+borderRadius: "12px",
+border: "1px solid #d1d5db",
+outline: "none",
+backgroundColor: "#fff",
+},
+showButton: {
 position: "absolute",
-right: "12px",
+right: "10px",
 top: "50%",
 transform: "translateY(-50%)",
 border: "none",
 background: "transparent",
-color: "#d4d4d8",
-padding: 0,
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
 cursor: "pointer",
+fontSize: "14px",
+fontWeight: 600,
+color: "#374151",
 },
-button: {
-padding: "12px",
-borderRadius: "10px",
+submitButton: {
+width: "100%",
+padding: "14px 16px",
+borderRadius: "12px",
 border: "none",
-background: "#2563eb",
-color: "#fff",
-fontWeight: "bold",
 cursor: "pointer",
+fontSize: "15px",
+fontWeight: 700,
+background: "#111827",
+color: "#ffffff",
+marginTop: "8px",
 },
 message: {
-color: "#ccc",
-marginTop: "10px",
+marginTop: "8px",
+fontSize: "14px",
+color: "#111827",
+textAlign: "center",
 },
 };
