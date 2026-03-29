@@ -82,9 +82,21 @@ Open Cover Letter Generator
 </div>
 
 <div style={styles.featureCard}>
-<h3 style={styles.featureTitle}>...</h3>
-<p style={styles.featureText}>...</p>
-<a href="..." style={styles.linkButton}>...</a>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Professional Branding Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+
+<p style={styles.featureText}>
+You Are Your Brand. Build It With Intention.
+</p>
+
+<a
+href="/career-toolkit/professional-branding-generator"
+style={styles.linkButton}
+>
+Open Professional Branding Generator
+</a>
 </div>
 
   <div style={styles.featureCard}>
