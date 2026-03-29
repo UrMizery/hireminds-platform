@@ -92,7 +92,7 @@ return;
 }
 
 setLoading(false);
-window.location.href = "/";
+window.location.href = "/career-toolkit";
 }
 
 return (
