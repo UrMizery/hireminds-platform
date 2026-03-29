@@ -10,6 +10,8 @@ const [city, setCity] = useState("");
 const [stateName, setStateName] = useState("");
 const [email, setEmail] = useState("");
 const [heardAboutUs, setHeardAboutUs] = useState("");
+const [referralCode, setReferralCode] = useState("");
+const [heardAboutUsOther, setHeardAboutUsOther] = useState("");
 const [password, setPassword] = useState("");
 const [showPassword, setShowPassword] = useState(false);
 const [message, setMessage] = useState("");
@@ -154,7 +156,41 @@ strokeLinejoin="round"
 </button>
 </div>
 
-<button type="submit" style={styles.button} disabled={loading}>
+<input
+placeholder="Referral Code (Optional)"
+value={referralCode}
+onChange={(e) => setReferralCode(e.target.value)}
+style={styles.input}
+/>
+
+<p style={styles.helperText}>
+Enter a code if one was provided by your organization, employer, school, or program.
+</p>
+
+<select
+value={heardAboutUs}
+onChange={(e) => setHeardAboutUs(e.target.value)}
+style={styles.input}
+>
+<option value="">How did you hear about us? (Optional)</option>
+<option value="found_on_my_own">I found HireMinds on my own</option>
+<option value="ricannect_direct_staffing">RicanNECT Direct Staffing</option>
+<option value="job_fair">Job Fair</option>
+<option value="organization_or_program">Organization or Program</option>
+<option value="employer">Employer</option>
+<option value="friend_or_family">Friend or Family</option>
+<option value="social_media">Social Media</option>
+<option value="other">Other</option>
+</select>
+
+{heardAboutUs === "other" && (
+<input
+placeholder="Please tell us how you heard about us."
+value={heardAboutUsOther}
+onChange={(e) => setHeardAboutUsOther(e.target.value)}
+style={styles.input}
+/>
+)}<button type="submit" style={styles.button} disabled={loading}>
 {loading ? "Creating..." : "Create Account"}
 </button>
 
@@ -199,6 +235,13 @@ boxSizing: "border-box",
 passwordWrap: {
 position: "relative",
 width: "100%",
+},
+helperText: {
+fontSize: "13px",
+color: "#6b7280",
+marginTop: "-8px",
+marginBottom: "12px",
+lineHeight: 1.4,
 },
 passwordInput: {
 padding: "12px 44px 12px 12px",
