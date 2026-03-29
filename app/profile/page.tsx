@@ -302,23 +302,39 @@ Resume sharing to HireMinds employers and partners is coming soon.
 <section style={styles.noticeFloat}>
 <p style={styles.noticeTitle}>Public Profile Note</p>
 <p style={styles.noticeText}>
-Your photo, headline, location, LinkedIn, uploaded resume, and other saved
-profile details can appear on your Career Passport once saved.
+Your photo, headline, location, LinkedIn, uploaded resume, and profile
+details can appear on your Career Passport once completed.
 </p>
 </section>
 
 <section style={styles.noticeFloat}>
 <p style={styles.noticeTitle}>Privacy Notice</p>
 <p style={styles.noticeText}>
-Your information is stored securely and is not sold or shared for marketing
-purposes.
+Your information is stored securely and is not sold or shared outside
+platform and reporting purposes.
 </p>
 </section>
 
 <section style={styles.bottomDock}>
-<button onClick={handleSaveProfile} disabled={saving} style={styles.primaryButton}>
+<button
+onClick={handleSaveProfile}
+disabled={saving}
+style={styles.saveButton}
+>
 {saving ? "Saving..." : "Save Profile"}
 </button>
+
+<a href="/career-toolkit" style={styles.linkButton}>
+Career Toolkit
+</a>
+</section>
+
+{message ? <p style={styles.message}>{message}</p> : null}
+</div>
+</main>
+);
+}
+
 
 <a href="/career-toolkit" style={styles.linkButton}>
 Career ToolKit
