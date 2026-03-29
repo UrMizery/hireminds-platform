@@ -37,6 +37,7 @@ const [photoUrl, setPhotoUrl] = useState("");
 const [resumeUrl, setResumeUrl] = useState("");
 
 useEffect(() => {
+useEffect(() => {
 async function loadProfile() {
 const { data: authData, error: authError } = await supabase.auth.getUser();
 
@@ -45,27 +46,19 @@ window.location.href = "/sign-in";
 return;
 }
 
-const currentUserId = authData.user.id;
-setUserId(currentUserId);
-
 const { data: profile, error: profileError } = await supabase
 .from("candidate_profiles")
 .select("*")
-.eq("user_id", currentUserId)
-.maybeSingle();
+.eq("user_id", authData.user.id)
+.single();
 
-if (profileError) {
-setMessage(profileError.message);
+if (profileError || !profile) {
+setMessage(profileError?.message || "Profile not found.");
 setLoading(false);
 return;
 }
 
-if (!profile) {
-setEmail(authData.user.email || "");
-setLoading(false);
-return;
-}
-
+setUserId(authData.user.id || "");
 setProfileId(profile.id || "");
 setFullName(profile.full_name || "");
 setPhone(profile.phone || "");
@@ -95,10 +88,10 @@ page_name: "/profile",
 
 if (activityError) {
 console.error("Profile tracking error:", activityError);
-  }
 }
-  
-}setLoading(false);
+}
+
+setLoading(false);
 }
 
 loadProfile();
