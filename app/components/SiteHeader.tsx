@@ -209,7 +209,7 @@ disabled={loadingLogout}
 <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
 
 {!isLoggedIn ? (
-<a href="/employer-partner-log-in" style={styles.link}>
+<a href="/employer-partner-login" style={styles.link}>
 {t.employerPartnerSignIn}
 </a>
 ) : null}
