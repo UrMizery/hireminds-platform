@@ -4,7 +4,7 @@ import { useLanguage } from "./lib/language-context";
 
 export default function HomePage() {
 const { t, lang } = useLanguage();
-const isRTL = false;
+const isRTL = lang === "ar";
 
 return (
 <main style={styles.page}>
@@ -76,6 +76,27 @@ increases visibility, and creates stronger employment connections.
 </div>
 </div>
 </section>
+
+<section style={styles.statsSection}>
+<div style={styles.statsRow}>
+<div style={styles.statItem}>
+<p style={styles.statNumber}>Visitor Counter</p>
+<p style={styles.statLabel}>Tracking platform reach and visibility</p>
+</div>
+
+<div style={styles.statItem}>
+<p style={styles.statNumber}>New Users</p>
+<p style={styles.statLabel}>Welcoming fresh talent and opportunity</p>
+</div>
+
+<div style={styles.statItem}>
+<p style={styles.statNumber}>5-Star Platform</p>
+<p style={styles.statLabel}>Empowering talent, readiness, and career momentum</p>
+</div>
+</div>
+
+<p style={styles.footerText}>A product of RicanNECT</p>
+</section>
 </main>
 );
 }
@@ -86,18 +107,14 @@ minHeight: "100vh",
 background:
 "radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)",
 color: "#f5f5f5",
-padding: "56px 24px 72px",
+padding: "40px 24px 56px",
 fontFamily:
 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 },
 hero: {
 maxWidth: "1100px",
-margin: "0 auto 40px",
-padding: "48px 24px",
-background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
-border: "1px solid #232323",
-borderRadius: "28px",
-boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
+margin: "0 auto 34px",
+padding: "24px 12px 12px",
 },
 kicker: {
 margin: "0 0 14px",
@@ -108,17 +125,17 @@ textTransform: "uppercase",
 },
 title: {
 margin: "0 0 16px",
-fontSize: "56px",
+fontSize: "clamp(2.8rem, 6vw, 4.6rem)",
 lineHeight: 1.02,
-fontWeight: 500,
-letterSpacing: "-0.04em",
+fontWeight: 600,
+letterSpacing: "-0.05em",
 color: "#f5f5f5",
 },
 subtitle: {
-maxWidth: "820px",
+maxWidth: "760px",
 margin: "0 auto",
 color: "#c4c4c4",
-fontSize: "18px",
+fontSize: "17px",
 lineHeight: 1.8,
 },
 buttonRow: {
@@ -139,20 +156,20 @@ fontWeight: 700,
 infoSection: {
 maxWidth: "1100px",
 margin: "0 auto",
-paddingTop: "8px",
+paddingTop: "12px",
 },
 sectionTitle: {
 margin: "0 0 14px",
 color: "#f5f5f5",
-fontSize: "34px",
+fontSize: "32px",
 fontWeight: 600,
 letterSpacing: "-0.03em",
 },
 sectionIntro: {
 maxWidth: "850px",
-margin: "0 auto 32px",
+margin: "0 auto 28px",
 color: "#c4c4c4",
-fontSize: "18px",
+fontSize: "17px",
 lineHeight: 1.8,
 },
 featureGrid: {
@@ -167,7 +184,7 @@ background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
 border: "1px solid #262626",
 borderRadius: "24px",
 padding: "24px",
-boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
+boxShadow: "0 18px 50px rgba(0,0,0,0.18)",
 textAlign: "inherit",
 },
 cardTitle: {
@@ -181,5 +198,42 @@ margin: 0,
 color: "#c8c8c8",
 fontSize: "15px",
 lineHeight: 1.8,
+},
+statsSection: {
+maxWidth: "1100px",
+margin: "42px auto 0",
+paddingTop: "24px",
+borderTop: "1px solid rgba(255,255,255,0.08)",
+},
+statsRow: {
+display: "grid",
+gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+gap: "18px",
+alignItems: "start",
+marginBottom: "22px",
+},
+statItem: {
+textAlign: "center",
+},
+statNumber: {
+margin: "0 0 6px",
+color: "#f5f5f5",
+fontSize: "22px",
+fontWeight: 600,
+letterSpacing: "-0.02em",
+},
+statLabel: {
+margin: 0,
+color: "#a1a1aa",
+fontSize: "14px",
+lineHeight: 1.7,
+},
+footerText: {
+margin: 0,
+textAlign: "center",
+color: "#8b8b93",
+fontSize: "14px",
+lineHeight: 1.7,
+letterSpacing: "0.04em",
 },
 };
