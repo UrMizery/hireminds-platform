@@ -3,8 +3,8 @@
 import { useLanguage } from "./lib/language-context";
 
 export default function HomePage() {
-const { t, lang } = useLanguage();
-const isRTL = lang === "ar";
+const { t } = useLanguage();
+const isRTL = false;
 
 return (
 <main style={styles.page}>
