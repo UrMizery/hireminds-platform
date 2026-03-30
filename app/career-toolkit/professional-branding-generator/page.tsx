@@ -3,10 +3,210 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "../../lib/supabase";
 
-type BrandMode = "summary" | "bio";
+type BrandMode = "summary" | "bio" | "bullets";
 type ToneOption = "Professional" | "Warm" | "Confident" | "Friendly";
+type BulletStyle =
+| "Professional"
+| "Corporate"
+| "Customer Service"
+| "Operations"
+| "Healthcare"
+| "Entry-Level";
 
-const BRAND_DRAFT_KEY = "hireminds-professional-branding-generator-v2";
+const BRAND_DRAFT_KEY = "hireminds-professional-branding-generator-v3";
+
+function toTitleCase(value: string) {
+return value
+.trim()
+.toLowerCase()
+.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function cleanList(value: string, limit = 4) {
+return value
+.split(",")
+.map((s) => s.trim())
+.filter(Boolean)
+.slice(0, limit);
+}
+
+function enhanceSingleBullet(raw: string, style: BulletStyle, roleHint: string) {
+const text = raw.trim();
+if (!text) return [];
+
+const lower = text.toLowerCase();
+const roleText = roleHint.trim() || "the role";
+
+const genericProfessional = [
+`Demonstrated strong ${lower} responsibilities while maintaining professionalism, consistency, and attention to detail.`,
+`Supported daily operations through ${lower}, contributing to efficiency, organization, and reliable follow-through.`,
+`Applied transferable strengths through ${lower}, helping create a productive and well-supported work environment.`,
+];
+
+if (lower.includes("customer service")) {
+return [
+"Delivered responsive customer service while resolving questions, addressing concerns, and creating a positive experience.",
+"Supported client satisfaction by communicating clearly, responding professionally, and maintaining a service-focused approach.",
+"Built positive customer relationships through active listening, professionalism, and consistent support in fast-paced environments.",
+style === "Corporate"
+? "Strengthened client experience through professional communication, issue resolution, and relationship-focused service delivery."
+: "Provided front-line support to customers while maintaining patience, professionalism, and a strong service mindset.",
+];
+}
+
+if (
+lower.includes("cash") ||
+lower.includes("register") ||
+lower.includes("money") ||
+lower.includes("payments")
+) {
+return [
+"Processed cash and payment transactions accurately while maintaining accountability and attention to detail.",
+"Handled register activity, payments, and cash-balancing tasks in a fast-paced environment with a strong focus on accuracy.",
+"Maintained financial responsibility through accurate payment processing, register handling, and routine cash procedures.",
+style === "Operations" || style === "Corporate"
+? "Supported daily financial operations by processing transactions, reconciling payments, and maintaining cash-handling standards."
+: "Completed high-volume payment transactions while ensuring accuracy, efficiency, and dependable cash-handling practices.",
+];
+}
+
+if (
+lower.includes("care") ||
+lower.includes("caregiver") ||
+lower.includes("hha") ||
+lower.includes("took care") ||
+lower.includes("patients") ||
+lower.includes("client support")
+) {
+return [
+"Provided compassionate support while assisting with daily needs, routines, and overall well-being in a respectful and dependable manner.",
+"Supported individuals with care, patience, and consistency while maintaining dignity, comfort, and attention to changing needs.",
+"Delivered dependable care and support services while building trust, observing needs, and responding with professionalism.",
+style === "Healthcare"
+? "Provided client-centered support through attentive care, routine assistance, and dependable communication in care-focused settings."
+: "Demonstrated empathy, consistency, and responsibility through hands-on support and daily care assistance.",
+];
+}
+
+if (
+lower.includes("schedule") ||
+lower.includes("appointment") ||
+lower.includes("calendar")
+) {
+return [
+"Coordinated schedules, appointments, and time-sensitive responsibilities while maintaining organization and follow-through.",
+"Managed scheduling needs efficiently, helping keep daily priorities organized and on track.",
+"Supported workflow through strong calendar coordination, appointment tracking, and time-management practices.",
+];
+}
+
+if (
+lower.includes("clean") ||
+lower.includes("cleaning") ||
+lower.includes("sanitize") ||
+lower.includes("sanitiz")
+) {
+return [
+"Maintained clean, organized, and safe environments while following standards and supporting day-to-day operations.",
+"Upheld cleanliness and sanitation expectations through consistent attention to detail and dependable routine execution.",
+"Supported safe and orderly environments through cleaning, upkeep, and quality-focused maintenance tasks.",
+];
+}
+
+if (
+lower.includes("team") ||
+lower.includes("trained") ||
+lower.includes("supervised") ||
+lower.includes("lead")
+) {
+return [
+"Supported team success through communication, coordination, and dependable follow-through on shared responsibilities.",
+"Contributed to stronger workflow and team performance through collaboration, accountability, and day-to-day support.",
+"Demonstrated leadership potential by helping guide tasks, support others, and maintain productive working relationships.",
+];
+}
+
+if (
+lower.includes("phones") ||
+lower.includes("front desk") ||
+lower.includes("reception") ||
+lower.includes("answered calls")
+) {
+return [
+"Managed incoming calls and front-facing communication while maintaining professionalism and strong customer support.",
+"Supported daily office or service operations by handling calls, inquiries, and first-point-of-contact responsibilities efficiently.",
+"Created a positive first impression through clear communication, responsiveness, and organized front-desk support.",
+];
+}
+
+if (
+lower.includes("filing") ||
+lower.includes("paperwork") ||
+lower.includes("documents") ||
+lower.includes("data entry")
+) {
+return [
+"Maintained accurate records, paperwork, and documentation while supporting organized administrative workflows.",
+"Handled data entry and document-related tasks with attention to detail, accuracy, and consistency.",
+"Supported office efficiency through organized record keeping, paperwork management, and dependable administrative support.",
+];
+}
+
+if (
+lower.includes("multitask") ||
+lower.includes("busy") ||
+lower.includes("fast paced") ||
+lower.includes("fast-paced")
+) {
+return [
+"Managed multiple priorities in fast-paced environments while maintaining organization, accuracy, and professionalism.",
+"Adapted quickly to changing demands and shifting priorities while supporting consistent service and workflow.",
+"Demonstrated strong multitasking and time-management skills in high-volume, deadline-sensitive settings.",
+];
+}
+
+if (style === "Customer Service") {
+return [
+`Supported positive customer experiences through ${text.toLowerCase()}, clear communication, and dependable service.`,
+`Handled ${text.toLowerCase()} while maintaining professionalism, responsiveness, and a strong customer-first mindset.`,
+`Delivered service-focused support through ${text.toLowerCase()} in alignment with ${roleText}.`,
+];
+}
+
+if (style === "Operations") {
+return [
+`Supported day-to-day operations through ${text.toLowerCase()}, helping maintain workflow, consistency, and efficiency.`,
+`Contributed to organized operations by managing ${text.toLowerCase()} with follow-through and attention to detail.`,
+`Strengthened operational reliability through ${text.toLowerCase()} and dependable execution of daily responsibilities.`,
+];
+}
+
+if (style === "Healthcare") {
+return [
+`Provided dependable support through ${text.toLowerCase()} while maintaining care, consistency, and professionalism.`,
+`Applied patience, responsibility, and attention to detail through ${text.toLowerCase()} in support-focused environments.`,
+`Helped maintain quality support and care standards through ${text.toLowerCase()} and reliable daily follow-through.`,
+];
+}
+
+if (style === "Entry-Level") {
+return [
+`Built transferable skills through ${text.toLowerCase()}, demonstrating reliability, willingness to learn, and strong effort.`,
+`Supported daily responsibilities through ${text.toLowerCase()} while building readiness for professional opportunities.`,
+`Applied consistency, teamwork, and a positive work ethic through ${text.toLowerCase()} in practical settings.`,
+];
+}
+
+if (style === "Corporate") {
+return [
+`Supported business needs through ${text.toLowerCase()}, demonstrating professionalism, organization, and dependable execution.`,
+`Contributed to productivity and service quality through ${text.toLowerCase()} with strong attention to detail.`,
+`Applied transferable business strengths through ${text.toLowerCase()} in support of ${roleText}.`,
+];
+}
+
+return genericProfessional;
+}
 
 export default function ProfessionalBrandingGeneratorPage() {
 const [mode, setMode] = useState<BrandMode>("summary");
@@ -18,10 +218,16 @@ const [strengths, setStrengths] = useState("");
 const [experience, setExperience] = useState("");
 const [tone, setTone] = useState<ToneOption>("Professional");
 const [message, setMessage] = useState("");
+
+const [bulletInput, setBulletInput] = useState("");
+const [bulletStyle, setBulletStyle] = useState<BulletStyle>("Professional");
+const [bulletRoleHint, setBulletRoleHint] = useState("");
+
 const [draftLoaded, setDraftLoaded] = useState(false);
 
 const [userId, setUserId] = useState("");
 const [referralCode, setReferralCode] = useState<string | null>(null);
+const [profileEmail, setProfileEmail] = useState<string | null>(null);
 const openTrackedRef = useRef(false);
 
 useEffect(() => {
@@ -39,10 +245,9 @@ const { data: profile } = await supabase
 .maybeSingle();
 
 setReferralCode(profile?.referral_code || null);
+setProfileEmail(profile?.email || data.user.email || null);
 
-const { error: activityError } = await supabase
-.from("user_activity")
-.insert({
+const { error: activityError } = await supabase.from("user_activity").insert({
 user_id: data.user.id,
 full_name: profile?.full_name || null,
 email: profile?.email || data.user.email || null,
@@ -73,6 +278,9 @@ setSkills(draft.skills || "");
 setStrengths(draft.strengths || "");
 setExperience(draft.experience || "");
 setTone(draft.tone || "Professional");
+setBulletInput(draft.bulletInput || "");
+setBulletStyle(draft.bulletStyle || "Professional");
+setBulletRoleHint(draft.bulletRoleHint || "");
 }
 } catch {
 // ignore bad draft
@@ -93,20 +301,29 @@ skills,
 strengths,
 experience,
 tone,
+bulletInput,
+bulletStyle,
+bulletRoleHint,
 };
 
 window.localStorage.setItem(BRAND_DRAFT_KEY, JSON.stringify(draft));
-}, [draftLoaded, mode, fullName, currentTitle, industry, skills, strengths, experience, tone]);
+}, [
+draftLoaded,
+mode,
+fullName,
+currentTitle,
+industry,
+skills,
+strengths,
+experience,
+tone,
+bulletInput,
+bulletStyle,
+bulletRoleHint,
+]);
 
-const cleanSkills = useMemo(
-() => skills.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 4),
-[skills]
-);
-
-const cleanStrengths = useMemo(
-() => strengths.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 4),
-[strengths]
-);
+const cleanSkills = useMemo(() => cleanList(skills), [skills]);
+const cleanStrengths = useMemo(() => cleanList(strengths), [strengths]);
 
 const firstName = fullName.trim().split(" ")[0] || "This professional";
 const displayName = fullName || "Your Name";
@@ -153,21 +370,34 @@ experiencePhrase,
 toneLead,
 ]);
 
+const enhancedBullets = useMemo(() => {
+const lines = bulletInput
+.split("\n")
+.map((line) => line.trim())
+.filter(Boolean);
+
+if (!lines.length) return [];
+
+return lines.flatMap((line) => enhanceSingleBullet(line, bulletStyle, bulletRoleHint));
+}, [bulletInput, bulletStyle, bulletRoleHint]);
+
 const activeText = mode === "summary" ? summaryPreview : bioPreview;
 
-async function trackCompletion() {
+async function trackCompletion(actionLabel?: string) {
 if (!userId) return;
 
-const { error: activityError } = await supabase
-.from("user_activity")
-.insert({
+const { error: activityError } = await supabase.from("user_activity").insert({
 user_id: userId,
 full_name: fullName || null,
-email: null,
+email: profileEmail,
 referral_code: referralCode,
 event_type: "tool_completed",
-tool_name: "professional_branding_generator",
+tool_name:
+mode === "bullets"
+? "professional_branding_generator_bullet_enhancer"
+: "professional_branding_generator",
 page_name: "/career-toolkit/professional-branding-generator",
+action_label: actionLabel || null,
 });
 
 if (activityError) {
@@ -176,9 +406,17 @@ console.error("Professional branding completion tracking error:", activityError)
 }
 
 async function handleCopy() {
+if (mode === "bullets") {
+const text = enhancedBullets.map((item) => `• ${item}`).join("\n");
+await navigator.clipboard.writeText(text);
+setMessage("Enhanced bullet points copied to clipboard.");
+await trackCompletion("copy_bullets");
+return;
+}
+
 await navigator.clipboard.writeText(activeText);
 setMessage(`${mode === "summary" ? "Summary" : "Bio"} copied to clipboard.`);
-await trackCompletion();
+await trackCompletion(mode === "summary" ? "copy_summary" : "copy_bio");
 }
 
 async function handleSaveDraft() {
@@ -192,11 +430,14 @@ skills,
 strengths,
 experience,
 tone,
+bulletInput,
+bulletStyle,
+bulletRoleHint,
 };
 
 window.localStorage.setItem(BRAND_DRAFT_KEY, JSON.stringify(draft));
 setMessage("Branding draft saved locally in this browser.");
-await trackCompletion();
+await trackCompletion("save_draft");
 } catch {
 setMessage("Unable to save your draft locally.");
 }
@@ -204,7 +445,7 @@ setMessage("Unable to save your draft locally.");
 
 async function handlePrint() {
 window.print();
-await trackCompletion();
+await trackCompletion(mode === "bullets" ? "print_bullets" : "print_branding");
 }
 
 return (
@@ -237,7 +478,9 @@ display: none !important;
 <section style={styles.heroCard}>
 <p style={styles.kicker}>Career ToolKit</p>
 <h1 style={styles.title}>Professional Branding Generator</h1>
-<p style={styles.subtitle}>You Are Your Brand. Build It With Intention.</p>
+<p style={styles.subtitle}>
+You Are Your Brand. Build It With Intention.
+</p>
 
 <div style={styles.heroButtons}>
 <a href="/career-toolkit" style={styles.linkButton}>
@@ -249,7 +492,7 @@ Back to Career ToolKit
 <div style={styles.layout}>
 <section className="hide-on-print" style={styles.formCard}>
 <p style={styles.sectionKicker}>Choose Format</p>
-<h2 style={styles.sectionTitle}>Build a stronger introduction</h2>
+<h2 style={styles.sectionTitle}>Build stronger professional language</h2>
 
 <div style={styles.tabRow}>
 <button
@@ -272,8 +515,20 @@ style={{
 >
 Professional Bio
 </button>
+<button
+type="button"
+onClick={() => setMode("bullets")}
+style={{
+...styles.tabButton,
+...(mode === "bullets" ? styles.tabButtonActive : {}),
+}}
+>
+Resume Bullet Enhancer
+</button>
 </div>
 
+{mode !== "bullets" ? (
+<>
 <div style={styles.formGrid}>
 <Field
 label="Full Name"
@@ -321,6 +576,49 @@ value={experience}
 onChange={setExperience}
 placeholder="Briefly describe who you are, what you do, or the type of work you have done."
 />
+</>
+) : (
+<>
+<div style={styles.formGrid}>
+<Field
+label="Target Role (optional)"
+value={bulletRoleHint}
+onChange={setBulletRoleHint}
+placeholder="Customer Service Rep, Caregiver, Admin Assistant"
+/>
+<SelectField
+label="Enhancer Style"
+value={bulletStyle}
+onChange={(value) => setBulletStyle(value as BulletStyle)}
+options={[
+"Professional",
+"Corporate",
+"Customer Service",
+"Operations",
+"Healthcare",
+"Entry-Level",
+]}
+/>
+</div>
+
+<TextAreaField
+label="Paste simple job duties or bullet ideas"
+value={bulletInput}
+onChange={setBulletInput}
+placeholder={
+"Add one per line, for example:\ncustomer service\nhandled cash\ntook care of people\nscheduled appointments\nanswered phones"
+}
+/>
+
+<div style={styles.helperBox}>
+<p style={styles.helperTitle}>How to use it</p>
+<p style={styles.helperText}>
+Type basic duties in simple language and this tool will turn them
+into stronger, more articulate, resume-ready bullet points.
+</p>
+</div>
+</>
+)}
 
 {message ? <p style={styles.message}>{message}</p> : null}
 
@@ -340,19 +638,40 @@ Copy
 <aside className="print-wrap" style={styles.previewCard}>
 <p style={styles.sectionKicker}>Live Preview</p>
 <h2 style={styles.previewTitle}>
-{mode === "summary" ? "Professional Summary Preview" : "Professional Bio Preview"}
+{mode === "summary"
+? "Professional Summary Preview"
+: mode === "bio"
+? "Professional Bio Preview"
+: "Enhanced Resume Bullet Points"}
 </h2>
 
 <div style={styles.previewPaper}>
+{mode !== "bullets" ? (
 <p style={styles.previewText}>{activeText}</p>
+) : enhancedBullets.length ? (
+<div style={styles.bulletPreviewWrap}>
+{enhancedBullets.map((item, index) => (
+<p key={`${item}-${index}`} style={styles.previewBullet}>
+• {item}
+</p>
+))}
+</div>
+) : (
+<p style={styles.previewText}>
+Add simple bullet ideas on the left to see enhanced resume bullet
+points here.
+</p>
+)}
 </div>
 
 <div style={styles.sampleWrap}>
-<p style={styles.sampleLabel}>How it works</p>
+<p style={styles.sampleLabel}>
+{mode === "bullets" ? "Branding add-on" : "How it works"}
+</p>
 <p style={styles.sampleText}>
-Start with the sample and watch it change as you add your information. The more
-specific your title, skills, strengths, and work background are, the stronger your
-result will be.
+{mode === "bullets"
+? "This bullet enhancer lives inside the Professional Branding Generator so you can strengthen summaries, bios, and resume language in one place."
+: "Start with the sample and watch it change as you add your information. The more specific your title, skills, strengths, and work background are, the stronger your result will be."}
 </p>
 </div>
 </aside>
@@ -535,7 +854,7 @@ color: "#111827",
 },
 tabRow: {
 display: "grid",
-gridTemplateColumns: "1fr 1fr",
+gridTemplateColumns: "1fr 1fr 1fr",
 gap: "12px",
 marginBottom: "20px",
 },
@@ -593,6 +912,25 @@ resize: "vertical",
 boxSizing: "border-box",
 outline: "none",
 },
+helperBox: {
+border: "1px solid rgba(255,255,255,0.08)",
+borderRadius: "18px",
+padding: "16px",
+background: "rgba(255,255,255,0.03)",
+marginTop: "6px",
+},
+helperTitle: {
+margin: "0 0 8px",
+color: "#f5f5f5",
+fontSize: "14px",
+fontWeight: 700,
+},
+helperText: {
+margin: 0,
+color: "#d4d4d8",
+fontSize: "14px",
+lineHeight: 1.7,
+},
 message: {
 margin: "8px 0 0",
 color: "#e5e7eb",
@@ -640,6 +978,16 @@ color: "#111827",
 fontSize: "16px",
 lineHeight: 1.9,
 whiteSpace: "pre-wrap",
+},
+bulletPreviewWrap: {
+display: "grid",
+gap: "10px",
+},
+previewBullet: {
+margin: 0,
+color: "#111827",
+fontSize: "15px",
+lineHeight: 1.8,
 },
 sampleWrap: {
 border: "1px solid #e5e7eb",
