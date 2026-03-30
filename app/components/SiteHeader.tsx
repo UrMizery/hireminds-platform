@@ -189,7 +189,7 @@ Career ToolKit
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
-style={styles.linkButtonLike}
+style={styles.notesButtonLike}
 >
 Notes
 </button>
