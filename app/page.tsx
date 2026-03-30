@@ -72,8 +72,17 @@ textAlign: isRTL ? "right" : "center",
 direction: isRTL ? "rtl" : "ltr",
 }}
 >
-<h1 style={styles.title}>{t.title}</h1>
-<p style={styles.subtitle}>{t.subtitle}</p>
+<p style={styles.heroEyebrow}>Workforce Infrastructure Platform</p>
+
+<h1 style={styles.title}>
+{t.title}
+</h1>
+
+<p style={styles.subtitle}>
+HireMinds is a workforce infrastructure platform designed to strengthen
+talent readiness, expand visibility, support partner engagement, and
+create stronger employment connections.
+</p>
 
 <div
 style={{
@@ -83,6 +92,9 @@ justifyContent: isRTL ? "flex-start" : "center",
 >
 <a href="/sign-up" style={styles.primaryButton}>
 {t.createPassport}
+</a>
+<a href="/partner-with-hireminds" style={styles.secondaryButton}>
+Partner With HireMinds
 </a>
 </div>
 </section>
@@ -94,11 +106,11 @@ textAlign: isRTL ? "right" : "center",
 direction: isRTL ? "rtl" : "ltr",
 }}
 >
-<h2 style={styles.sectionTitle}>Built for Visibility and Opportunity</h2>
+<h2 style={styles.sectionTitle}>Built for Talent, Partners, and Employers</h2>
 <p style={styles.sectionIntro}>
-HireMinds is a forward-thinking career platform designed to elevate
-visibility, expand opportunity, and create stronger employment
-connections.
+HireMinds helps individuals prepare, helps partners measure engagement
+and readiness, and helps employers connect with more visible,
+better-prepared talent.
 </p>
 
 <div
@@ -108,26 +120,28 @@ direction: isRTL ? "rtl" : "ltr",
 }}
 >
 <div style={styles.card}>
-<h3 style={styles.cardTitle}>Connect With Opportunity</h3>
+<h3 style={styles.cardTitle}>Talent Readiness</h3>
 <p style={styles.cardText}>
-Explore job opportunities, strengthen your professional presence,
-and move forward with confidence.
+Build resumes, strengthen branding, prepare for interviews, and use
+guided career tools that help transform potential into opportunity.
 </p>
 </div>
 
 <div style={styles.card}>
-<h3 style={styles.cardTitle}>Hire With More Visibility</h3>
+<h3 style={styles.cardTitle}>Partner Infrastructure</h3>
 <p style={styles.cardText}>
-Connect with candidates presenting a fuller picture of their
-skills, experience, and professional potential.
+Support participants with practical tools, stronger visibility,
+referral-based engagement, and a platform designed for measurable
+workforce progress.
 </p>
 </div>
 
 <div style={styles.card}>
-<h3 style={styles.cardTitle}>For Partners</h3>
+<h3 style={styles.cardTitle}>Employer Visibility</h3>
 <p style={styles.cardText}>
-Use HireMinds as a career and hiring platform that expands access,
-increases visibility, and creates stronger employment connections.
+Connect with talent that is better prepared, more visible, and
+supported by a platform focused on readiness, confidence, and
+stronger employment outcomes.
 </p>
 </div>
 </div>
@@ -159,8 +173,8 @@ Signed up and building career momentum
 
 <p style={styles.platformLine}>
 5-Star Platform built to elevate visibility, strengthen readiness, and
-empower talent through smarter career tools, stronger branding, and
-more meaningful employment connections.
+empower talent through smarter career tools, stronger branding, partner
+engagement, and more meaningful employment connections.
 </p>
 
 <p style={styles.footerText}>A product of RicanNECT</p>
@@ -184,6 +198,14 @@ maxWidth: "1100px",
 margin: "0 auto 34px",
 padding: "24px 12px 12px",
 },
+heroEyebrow: {
+margin: "0 0 14px",
+color: "#a1a1aa",
+fontSize: "12px",
+fontWeight: 700,
+letterSpacing: "0.2em",
+textTransform: "uppercase",
+},
 title: {
 margin: "0 0 16px",
 fontSize: "clamp(2.8rem, 6vw, 4.6rem)",
@@ -193,7 +215,7 @@ letterSpacing: "-0.05em",
 color: "#f5f5f5",
 },
 subtitle: {
-maxWidth: "760px",
+maxWidth: "820px",
 margin: "0 auto",
 color: "#c4c4c4",
 fontSize: "17px",
@@ -214,6 +236,16 @@ background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
 color: "#09090b",
 fontWeight: 700,
 },
+secondaryButton: {
+display: "inline-block",
+padding: "15px 20px",
+borderRadius: "18px",
+textDecoration: "none",
+background: "transparent",
+border: "1px solid rgba(255,255,255,0.16)",
+color: "#f5f5f5",
+fontWeight: 700,
+},
 infoSection: {
 maxWidth: "1100px",
 margin: "0 auto",
@@ -227,7 +259,7 @@ fontWeight: 600,
 letterSpacing: "-0.03em",
 },
 sectionIntro: {
-maxWidth: "850px",
+maxWidth: "860px",
 margin: "0 auto 28px",
 color: "#c4c4c4",
 fontSize: "17px",
