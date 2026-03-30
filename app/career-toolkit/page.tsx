@@ -174,7 +174,8 @@ Open Career Goal Generator
 </a>
 </div>
 
-<div style={{ ...styles.featureCard, gridColumn: "span 1" }}>
+<div style={styles.bottomTwoCardRow}>
+<div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Budget Generator</h3>
 <span style={styles.liveTag}>New</span>
@@ -188,7 +189,7 @@ Open Budget Generator
 </a>
 </div>
 
-<div style={{ ...styles.featureCard, gridColumn: "span 1" }}>
+<div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Distance &amp; Commute Generator</h3>
 <span style={styles.liveTag}>New</span>
@@ -203,6 +204,7 @@ style={styles.linkButton}
 >
 Open Distance &amp; Commute Generator
 </a>
+</div>
 </div>
 
 <div style={styles.placeholderCard} aria-hidden="true" />
@@ -513,8 +515,11 @@ display: "grid",
 gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
 gap: "18px",
 },
-  placeholderCard: {
-visibility: "hidden",
+bottomTwoCardRow: {
+gridColumn: "1 / -1",
+display: "grid",
+gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+gap: "18px",
 },
 featureCard: {
 background:
