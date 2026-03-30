@@ -1,324 +1,2069 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { supabase } from "../../lib/supabase";
 
-type OpportunityType =
-| "reentry"
-| "career-gap"
-| "stay-at-home-parent"
+type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
+type ResumeType = "Chronological" | "Functional" | "Combination" | "Hybrid";
+type OpportunityPath =
 | "veteran"
-| "no-experience"
-| "recent-graduate"
-| "training-program"
 | "caregiver"
-| "career-restart";
+| "career-restart"
+| "reentry"
+| "little-no-experience";
 
-export default function NewOpportunitiesResumeGeneratorPage() {
-const [pathType, setPathType] = useState<OpportunityType>("career-gap");
-const [targetRole, setTargetRole] = useState("");
-const [headlineGoal, setHeadlineGoal] = useState("");
-const [experienceText, setExperienceText] = useState("");
-const [strengthsText, setStrengthsText] = useState("");
-const [educationText, setEducationText] = useState("");
-const [summaryTone, setSummaryTone] = useState("professional");
+type Bullet = { text: string };
 
-const suggestedTitle = useMemo(() => {
-const role = targetRole.trim();
+type ExperienceItem = {
+companyName: string;
+city: string;
+state: string;
+roleTitle: string;
+startMonth: string;
+startYear: string;
+endMonth: string;
+endYear: string;
+isPresent: boolean;
+bullets: Bullet[];
+};
 
-if (role) return role;
+type CredentialItem = {
+organizationName: string;
+city: string;
+state: string;
+credentialName: string;
+details: string;
+startMonth: string;
+startYear: string;
+endMonth: string;
+endYear: string;
+isPresent: boolean;
+};
 
-switch (pathType) {
-case "reentry":
-return "Workforce Reentry Candidate";
-case "stay-at-home-parent":
-return "Organized and Dependable Professional";
-case "veteran":
-return "Mission-Driven Professional";
-case "recent-graduate":
-return "Entry-Level Candidate";
-case "training-program":
-return "Training Program Graduate";
-case "caregiver":
-return "Caregiver with Transferable Skills";
-case "career-restart":
-return "Career Restart Candidate";
-case "no-experience":
-return "Emerging Professional";
-default:
-return "Career-Focused Candidate";
+type VolunteerItem = {
+organizationName: string;
+city: string;
+state: string;
+roleTitle: string;
+startMonth: string;
+startYear: string;
+endMonth: string;
+endYear: string;
+isPresent: boolean;
+bullets: Bullet[];
+};
+
+type ResumeSectionKey =
+| "summary"
+| "skills"
+| "experience"
+| "credentials"
+| "volunteer"
+| "accomplishments";
+
+const BULLET_LIMIT = 5;
+const SKILL_LIMIT = 9;
+const RESUME_DRAFT_STORAGE_KEY = "hireminds-new-opportunities-resume-draft-v1";
+
+const MONTHS = [
+"",
+"Jan",
+"Feb",
+"Mar",
+"Apr",
+"May",
+"Jun",
+"Jul",
+"Aug",
+"Sep",
+"Oct",
+"Nov",
+"Dec",
+];
+
+function moveItem<T>(arr: T[], index: number, direction: "up" | "down") {
+const updated = [...arr];
+const nextIndex = direction === "up" ? index - 1 : index + 1;
+if (nextIndex < 0 || nextIndex >= arr.length) return arr;
+[updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+return updated;
 }
-}, [pathType, targetRole]);
 
-const summaryHeading = "Professional Summary";
-
-const generatedSummary = useMemo(() => {
-const role = targetRole.trim() || "a new opportunity";
-const goal = headlineGoal.trim();
-const strengths = strengthsText.trim();
-const education = educationText.trim();
-
-const ending =
-summaryTone === "professional"
-? "Brings reliability, adaptability, and a strong willingness to learn."
-: summaryTone === "bold"
-? "Offers resilience, determination, and a strong drive to contribute and grow."
-: "Ready to apply practical strengths and transferable skills in a meaningful role.";
-
-switch (pathType) {
-case "reentry":
-return `Motivated candidate preparing to reenter the workforce and pursue ${role}. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-case "career-gap":
-return `Dependable and adaptable professional returning to the workforce and pursuing ${role}. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-case "stay-at-home-parent":
-return `Organized and resilient candidate pursuing ${role} after managing household, caregiving, scheduling, and daily priorities. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-case "veteran":
-return `Mission-driven candidate pursuing ${role} with transferable strengths in responsibility, teamwork, discipline, and adaptability. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-case "no-experience":
-return `Entry-level candidate pursuing ${role} and ready to apply transferable skills, determination, and a strong work ethic. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-case "recent-graduate":
-return `Recent graduate pursuing ${role}${education ? ` with a background in ${education}` : ""}. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-case "training-program":
-return `Candidate pursuing ${role}${education ? ` after completing ${education}` : ""}. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-case "caregiver":
-return `Compassionate and dependable candidate pursuing ${role} with experience supporting others, managing responsibilities, and maintaining consistency in demanding situations. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-case "career-restart":
-return `Determined candidate restarting a professional journey and pursuing ${role}. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
-default:
-return `Career-focused candidate pursuing ${role}. ${goal ? `${goal}. ` : ""}${strengths ? `${strengths}. ` : ""}${ending}`;
+function formatDateRange(
+startMonth: string,
+startYear: string,
+endMonth: string,
+endYear: string,
+isPresent: boolean
+) {
+const from = [startMonth, startYear].filter(Boolean).join(" ");
+const to = isPresent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ");
+if (!from && !to) return "";
+return `${from || "Start"} - ${to || "End"}`;
 }
-}, [pathType, targetRole, headlineGoal, strengthsText, educationText, summaryTone]);
 
-const generatedBullets = useMemo(() => {
-const customExperience = experienceText
-.split("\n")
-.map((item) => item.trim())
+function splitSkillsIntoColumns(skills: string[]) {
+const safeSkills = skills.slice(0, SKILL_LIMIT);
+const columns = [[], [], []] as string[][];
+
+safeSkills.forEach((skill, index) => {
+columns[index % 3].push(skill);
+});
+
+return columns;
+}
+
+function detectResumeType(sectionOrder: ResumeSectionKey[]): ResumeType {
+const skillsIndex = sectionOrder.indexOf("skills");
+const experienceIndex = sectionOrder.indexOf("experience");
+const credentialsIndex = sectionOrder.indexOf("credentials");
+const volunteerIndex = sectionOrder.indexOf("volunteer");
+
+const educationLikeNearTop =
+(credentialsIndex !== -1 && credentialsIndex < experienceIndex) ||
+(volunteerIndex !== -1 && volunteerIndex < experienceIndex);
+
+const skillsVeryHigh = skillsIndex !== -1 && skillsIndex <= 1;
+const experienceHigh = experienceIndex !== -1 && experienceIndex <= 2;
+
+if (educationLikeNearTop && skillsVeryHigh) return "Hybrid";
+if (skillsVeryHigh && experienceHigh) return "Combination";
+if (skillsVeryHigh && experienceIndex > 2) return "Functional";
+return "Chronological";
+}
+
+function hasExperienceContent(item: ExperienceItem) {
+return Boolean(
+item.companyName ||
+item.roleTitle ||
+item.city ||
+item.state ||
+item.startMonth ||
+item.startYear ||
+item.endMonth ||
+item.endYear ||
+item.isPresent ||
+item.bullets.some((b) => b.text.trim())
+);
+}
+
+function hasCredentialContent(item: CredentialItem) {
+return Boolean(
+item.organizationName ||
+item.credentialName ||
+item.details ||
+item.city ||
+item.state ||
+item.startMonth ||
+item.startYear ||
+item.endMonth ||
+item.endYear ||
+item.isPresent
+);
+}
+
+function hasVolunteerContent(item: VolunteerItem) {
+return Boolean(
+item.organizationName ||
+item.roleTitle ||
+item.city ||
+item.state ||
+item.startMonth ||
+item.startYear ||
+item.endMonth ||
+item.endYear ||
+item.isPresent ||
+item.bullets.some((b) => b.text.trim())
+);
+}
+
+function createDefaultExperience(): ExperienceItem {
+return {
+companyName: "",
+city: "",
+state: "",
+roleTitle: "",
+startMonth: "",
+startYear: "",
+endMonth: "",
+endYear: "",
+isPresent: false,
+bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+};
+}
+
+function createDefaultCredential(): CredentialItem {
+return {
+organizationName: "",
+city: "",
+state: "",
+credentialName: "",
+details: "",
+startMonth: "",
+startYear: "",
+endMonth: "",
+endYear: "",
+isPresent: false,
+};
+}
+
+function createDefaultVolunteer(): VolunteerItem {
+return {
+organizationName: "",
+city: "",
+state: "",
+roleTitle: "",
+startMonth: "",
+startYear: "",
+endMonth: "",
+endYear: "",
+isPresent: false,
+bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+};
+}
+
+function normalizeSkillLabel(value: string) {
+return value
+.trim()
+.replace(/\s+/g, " ")
+.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function makeSkillSuggestions(
+pathType: OpportunityPath,
+strengthsText: string,
+supportNeedsText: string
+) {
+const typed = `${strengthsText}, ${supportNeedsText}`
+.split(",")
+.map((item) => normalizeSkillLabel(item))
 .filter(Boolean);
 
-if (customExperience.length > 0) {
-return customExperience.map((item) => {
-if (pathType === "stay-at-home-parent") {
-return `Managed ${item.toLowerCase()} while maintaining organization, consistency, and attention to daily priorities.`;
+const baseByPath: Record<OpportunityPath, string[]> = {
+veteran: [
+"Leadership",
+"Teamwork",
+"Operations Support",
+"Discipline",
+"Adaptability",
+"Problem Solving",
+"Communication",
+"Accountability",
+"Time Management",
+],
+caregiver: [
+"Scheduling",
+"Organization",
+"Communication",
+"Compassion",
+"Multitasking",
+"Problem Solving",
+"Time Management",
+"Record Keeping",
+"Dependability",
+],
+"career-restart": [
+"Adaptability",
+"Communication",
+"Organization",
+"Problem Solving",
+"Professionalism",
+"Time Management",
+"Teamwork",
+"Dependability",
+"Initiative",
+],
+reentry: [
+"Accountability",
+"Consistency",
+"Adaptability",
+"Communication",
+"Time Management",
+"Problem Solving",
+"Teamwork",
+"Dependability",
+"Professional Growth",
+],
+"little-no-experience": [
+"Willingness To Learn",
+"Communication",
+"Teamwork",
+"Dependability",
+"Adaptability",
+"Time Management",
+"Customer Service",
+"Problem Solving",
+"Professionalism",
+],
+};
+
+const merged = [...typed, ...baseByPath[pathType]];
+return Array.from(new Set(merged)).slice(0, SKILL_LIMIT);
 }
-if (pathType === "reentry") {
-return `Applied discipline, accountability, and adaptability through ${item.toLowerCase()} while preparing for a successful return to the workforce.`;
+
+function improveBulletText(
+raw: string,
+pathType: OpportunityPath,
+roleTitle: string,
+targetRole: string
+) {
+const text = raw.trim();
+if (!text) return "";
+
+const lower = text.toLowerCase();
+const target = targetRole.trim() || roleTitle.trim() || "new opportunities";
+
+if (lower === "customer service" || lower.includes("customer service")) {
+return `Delivered responsive customer support while building trust, resolving questions, and creating a positive service experience aligned with ${target}.`;
 }
-if (pathType === "veteran") {
-return `Demonstrated responsibility, teamwork, and mission focus through ${item.toLowerCase()} in structured and high-accountability environments.`;
+
+if (lower.includes("cash") || lower.includes("register") || lower.includes("money")) {
+return `Handled payments, register activity, and cash-balancing responsibilities with accuracy, attention to detail, and accountability in a fast-paced environment.`;
 }
-if (pathType === "recent-graduate" || pathType === "training-program") {
-return `Built practical experience through ${item.toLowerCase()}, strengthening readiness for entry-level professional opportunities.`;
+
+if (lower.includes("clean") || lower.includes("cleaning") || lower.includes("sanit")) {
+return `Maintained clean, organized, and safe environments while following standards, routines, and quality expectations consistently.`;
 }
-if (pathType === "caregiver") {
-return `Provided dependable support through ${item.toLowerCase()}, demonstrating patience, consistency, and strong interpersonal skills.`;
+
+if (lower.includes("care") || lower.includes("caregiving") || lower.includes("took care")) {
+return `Provided dependable support and attentive care while managing routines, changing needs, and respectful communication in high-responsibility situations.`;
 }
-return `Strengthened transferable skills through ${item.toLowerCase()}, demonstrating reliability, initiative, and readiness for new opportunities.`;
+
+if (lower.includes("schedule") || lower.includes("appointment")) {
+return `Coordinated schedules, appointments, and time-sensitive responsibilities while maintaining organization and follow-through across competing priorities.`;
+}
+
+if (lower.includes("household") || lower.includes("budget")) {
+return `Managed household logistics, planning, and budgeting responsibilities while demonstrating organization, problem-solving, and consistency.`;
+}
+
+if (lower.includes("team") || lower.includes("worked with others")) {
+return `Collaborated effectively with others to complete responsibilities, maintain workflow, and support shared goals in structured environments.`;
+}
+
+if (lower.includes("training") || lower.includes("course") || lower.includes("class")) {
+return `Completed structured training and learning activities while building job-ready skills, consistency, and readiness for professional opportunities.`;
+}
+
+switch (pathType) {
+case "veteran":
+return `Applied responsibility, discipline, and teamwork through ${text.toLowerCase()}, strengthening readiness for ${target}.`;
+case "caregiver":
+return `Demonstrated patience, organization, and dependable follow-through through ${text.toLowerCase()}, building transferable strengths for ${target}.`;
+case "career-restart":
+return `Strengthened transferable professional skills through ${text.toLowerCase()}, supporting a confident return toward ${target}.`;
+case "reentry":
+return `Built accountability, consistency, and readiness through ${text.toLowerCase()}, reinforcing preparation for ${target}.`;
+case "little-no-experience":
+return `Developed practical strengths through ${text.toLowerCase()}, demonstrating reliability, willingness to learn, and readiness for ${target}.`;
+default:
+return text;
+}
+}
+
+function createGuidedSummary(
+pathType: OpportunityPath,
+targetRole: string,
+supportNeedsText: string,
+strengthsText: string
+) {
+const role = targetRole.trim() || "new professional opportunities";
+const strengths = strengthsText
+.split(",")
+.map((item) => item.trim())
+.filter(Boolean)
+.slice(0, 4);
+const strengthsLine = strengths.length
+? `Known for ${strengths.join(", ").toLowerCase()}.`
+: "";
+
+const support = supportNeedsText.trim();
+const supportLine = support ? `${support}.` : "";
+
+switch (pathType) {
+case "veteran":
+return `Mission-driven professional pursuing ${role} with transferable strengths in discipline, teamwork, accountability, and adaptability. ${supportLine} ${strengthsLine} Ready to contribute with professionalism, follow-through, and a strong commitment to growth.`
+.replace(/\s+/g, " ")
+.trim();
+
+case "caregiver":
+return `Dependable and organized candidate pursuing ${role} after building transferable strengths through caregiving, household management, scheduling, and daily problem-solving. ${supportLine} ${strengthsLine} Brings compassion, consistency, and a strong ability to manage responsibilities with care and professionalism.`
+.replace(/\s+/g, " ")
+.trim();
+
+case "career-restart":
+return `Adaptable professional pursuing ${role} while restarting a career path with renewed focus, resilience, and determination. ${supportLine} ${strengthsLine} Brings transferable skills, a strong work ethic, and readiness to contribute with confidence in a new chapter.`
+.replace(/\s+/g, " ")
+.trim();
+
+case "reentry":
+return `Motivated candidate pursuing ${role} while reentering the workforce with focus, accountability, and a commitment to forward progress. ${supportLine} ${strengthsLine} Brings resilience, readiness to learn, and a strong determination to contribute in a meaningful professional environment.`
+.replace(/\s+/g, " ")
+.trim();
+
+case "little-no-experience":
+return `Entry-level candidate pursuing ${role} with transferable strengths in reliability, adaptability, communication, and willingness to learn. ${supportLine} ${strengthsLine} Ready to bring energy, consistency, and career-ready momentum into a professional opportunity.`
+.replace(/\s+/g, " ")
+.trim();
+
+default:
+return "";
+}
+}
+
+export default function NewOpportunitiesResumeGeneratorPage() {
+const [loadingUser, setLoadingUser] = useState(true);
+const [userId, setUserId] = useState("");
+const [message, setMessage] = useState("");
+const [saving, setSaving] = useState(false);
+const [draftLoaded, setDraftLoaded] = useState(false);
+const resumePrintRef = useRef<HTMLDivElement>(null);
+const openTrackedRef = useRef(false);
+
+const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
+const [fullName, setFullName] = useState("");
+const [phone, setPhone] = useState("");
+const [city, setCity] = useState("");
+const [stateName, setStateName] = useState("");
+const [email, setEmail] = useState("");
+const [linkedinUrl, setLinkedinUrl] = useState("");
+
+const [pathType, setPathType] = useState<OpportunityPath>("veteran");
+const [targetRole, setTargetRole] = useState("");
+const [supportNeedsText, setSupportNeedsText] = useState("");
+const [strengthsText, setStrengthsText] = useState("");
+
+const [summaryHeading, setSummaryHeading] = useState("Professional Summary");
+const [summaryText, setSummaryText] = useState("");
+const [skillsInput, setSkillsInput] = useState("");
+const [accomplishments, setAccomplishments] = useState("");
+
+const [experiences, setExperiences] = useState<ExperienceItem[]>([createDefaultExperience()]);
+const [credentialItems, setCredentialItems] = useState<CredentialItem[]>([
+createDefaultCredential(),
+]);
+const [volunteerItems, setVolunteerItems] = useState<VolunteerItem[]>([
+createDefaultVolunteer(),
+]);
+
+const [sectionOrder, setSectionOrder] = useState<ResumeSectionKey[]>([
+"summary",
+"skills",
+"experience",
+"credentials",
+"volunteer",
+"accomplishments",
+]);
+
+useEffect(() => {
+async function loadUserAndProfile() {
+const { data, error } = await supabase.auth.getUser();
+
+if (error || !data.user) {
+setLoadingUser(false);
+return;
+}
+
+const currentUserId = data.user.id;
+setUserId(currentUserId);
+
+const { data: profile } = await supabase
+.from("candidate_profiles")
+.select("full_name, phone, city, state, email, linkedin_url, referral_code")
+.eq("user_id", currentUserId)
+.maybeSingle();
+
+if (profile) {
+setFullName(profile.full_name || "");
+setPhone(profile.phone || "");
+setCity(profile.city || "");
+setStateName(profile.state || "");
+setEmail(profile.email || data.user.email || "");
+setLinkedinUrl(profile.linkedin_url || "");
+} else {
+setEmail(data.user.email || "");
+}
+
+if (!openTrackedRef.current) {
+openTrackedRef.current = true;
+
+const { error: activityError } = await supabase.from("user_activity").insert({
+user_id: currentUserId,
+full_name: profile?.full_name || null,
+email: profile?.email || data.user.email || null,
+referral_code: profile?.referral_code || null,
+event_type: "tool_opened",
+tool_name: "new_opportunities_resume_generator",
+page_name: "/career-toolkit/new-opportunities-resume-generator",
+});
+
+if (activityError) {
+console.error("New Opportunities Resume Generator tracking error:", activityError);
+}
+}
+
+setLoadingUser(false);
+}
+
+loadUserAndProfile();
+}, []);
+
+useEffect(() => {
+try {
+const raw = window.localStorage.getItem(RESUME_DRAFT_STORAGE_KEY);
+if (raw) {
+const draft = JSON.parse(raw);
+
+setFontFamily(draft.fontFamily || "Times New Roman");
+setFullName(draft.fullName || "");
+setPhone(draft.phone || "");
+setCity(draft.city || "");
+setStateName(draft.stateName || "");
+setEmail(draft.email || "");
+setLinkedinUrl(draft.linkedinUrl || "");
+setPathType(draft.pathType || "veteran");
+setTargetRole(draft.targetRole || "");
+setSupportNeedsText(draft.supportNeedsText || "");
+setStrengthsText(draft.strengthsText || "");
+setSummaryHeading(draft.summaryHeading || "Professional Summary");
+setSummaryText(draft.summaryText || "");
+setSkillsInput(draft.skillsInput || "");
+setAccomplishments(draft.accomplishments || "");
+setExperiences(
+Array.isArray(draft.experiences) && draft.experiences.length
+? draft.experiences
+: [createDefaultExperience()]
+);
+setCredentialItems(
+Array.isArray(draft.credentialItems) && draft.credentialItems.length
+? draft.credentialItems
+: [createDefaultCredential()]
+);
+setVolunteerItems(
+Array.isArray(draft.volunteerItems) && draft.volunteerItems.length
+? draft.volunteerItems
+: [createDefaultVolunteer()]
+);
+setSectionOrder(
+Array.isArray(draft.sectionOrder) && draft.sectionOrder.length
+? draft.sectionOrder
+: ["summary", "skills", "experience", "credentials", "volunteer", "accomplishments"]
+);
+}
+} catch {
+// ignore bad local draft
+} finally {
+setDraftLoaded(true);
+}
+}, []);
+
+useEffect(() => {
+if (!draftLoaded) return;
+
+const draft = {
+fontFamily,
+fullName,
+phone,
+city,
+stateName,
+email,
+linkedinUrl,
+pathType,
+targetRole,
+supportNeedsText,
+strengthsText,
+summaryHeading,
+summaryText,
+skillsInput,
+accomplishments,
+experiences,
+credentialItems,
+volunteerItems,
+sectionOrder,
+};
+
+window.localStorage.setItem(RESUME_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+}, [
+draftLoaded,
+fontFamily,
+fullName,
+phone,
+city,
+stateName,
+email,
+linkedinUrl,
+pathType,
+targetRole,
+supportNeedsText,
+strengthsText,
+summaryHeading,
+summaryText,
+skillsInput,
+accomplishments,
+experiences,
+credentialItems,
+volunteerItems,
+sectionOrder,
+]);
+
+const suggestedSkills = useMemo(
+() => makeSkillSuggestions(pathType, strengthsText, supportNeedsText),
+[pathType, strengthsText, supportNeedsText]
+);
+
+const skills = useMemo(() => {
+const typed = skillsInput
+.split(",")
+.map((item) => normalizeSkillLabel(item))
+.filter(Boolean);
+
+const merged = [...typed, ...suggestedSkills];
+return Array.from(new Set(merged)).slice(0, SKILL_LIMIT);
+}, [skillsInput, suggestedSkills]);
+
+const skillColumns = useMemo(() => splitSkillsIntoColumns(skills), [skills]);
+const detectedResumeType = useMemo(() => detectResumeType(sectionOrder), [sectionOrder]);
+
+const activeExperiences = useMemo(
+() =>
+experiences
+.filter((item) => hasExperienceContent(item))
+.map((item) => ({
+...item,
+bullets: item.bullets
+.filter((b) => b.text.trim())
+.map((bullet) => ({
+text: improveBulletText(
+bullet.text,
+pathType,
+item.roleTitle,
+targetRole
+),
+})),
+})),
+[experiences, pathType, targetRole]
+);
+
+const activeCredentials = useMemo(
+() => credentialItems.filter((item) => hasCredentialContent(item)),
+[credentialItems]
+);
+
+const activeVolunteer = useMemo(
+() =>
+volunteerItems
+.filter((item) => hasVolunteerContent(item))
+.map((item) => ({
+...item,
+bullets: item.bullets
+.filter((b) => b.text.trim())
+.map((bullet) => ({
+text: improveBulletText(
+bullet.text,
+pathType,
+item.roleTitle,
+targetRole
+),
+})),
+})),
+[volunteerItems, pathType, targetRole]
+);
+
+const guidedSummary = useMemo(() => {
+if (summaryText.trim()) return summaryText.trim();
+
+return createGuidedSummary(pathType, targetRole, supportNeedsText, strengthsText);
+}, [summaryText, pathType, targetRole, supportNeedsText, strengthsText]);
+
+function handleGenerateSummary() {
+const next = createGuidedSummary(pathType, targetRole, supportNeedsText, strengthsText);
+setSummaryText(next);
+}
+
+function handleGenerateSkills() {
+setSkillsInput(suggestedSkills.join(", "));
+}
+
+function addExperience() {
+setExperiences((prev) => [...prev, createDefaultExperience()]);
+}
+
+function updateExperience(index: number, field: keyof ExperienceItem, value: string | boolean) {
+setExperiences((prev) =>
+prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+);
+}
+
+function updateExperienceBullet(index: number, bulletIndex: number, value: string) {
+setExperiences((prev) =>
+prev.map((item, i) => {
+if (i !== index) return item;
+const bullets = item.bullets.map((bullet, j) =>
+j === bulletIndex ? { text: value } : bullet
+);
+return { ...item, bullets };
+})
+);
+}
+
+function addExperienceBullet(index: number) {
+setExperiences((prev) =>
+prev.map((item, i) => {
+if (i !== index) return item;
+if (item.bullets.length >= BULLET_LIMIT) return item;
+return { ...item, bullets: [...item.bullets, { text: "" }] };
+})
+);
+}
+
+function addCredential() {
+setCredentialItems((prev) => [...prev, createDefaultCredential()]);
+}
+
+function updateCredential(index: number, field: keyof CredentialItem, value: string | boolean) {
+setCredentialItems((prev) =>
+prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+);
+}
+
+function addVolunteer() {
+setVolunteerItems((prev) => [...prev, createDefaultVolunteer()]);
+}
+
+function updateVolunteer(index: number, field: keyof VolunteerItem, value: string | boolean) {
+setVolunteerItems((prev) =>
+prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+);
+}
+
+function updateVolunteerBullet(index: number, bulletIndex: number, value: string) {
+setVolunteerItems((prev) =>
+prev.map((item, i) => {
+if (i !== index) return item;
+const bullets = item.bullets.map((bullet, j) =>
+j === bulletIndex ? { text: value } : bullet
+);
+return { ...item, bullets };
+})
+);
+}
+
+function addVolunteerBullet(index: number) {
+setVolunteerItems((prev) =>
+prev.map((item, i) => {
+if (i !== index) return item;
+if (item.bullets.length >= BULLET_LIMIT) return item;
+return { ...item, bullets: [...item.bullets, { text: "" }] };
+})
+);
+}
+
+function moveSection(index: number, direction: "up" | "down") {
+setSectionOrder((prev) => moveItem(prev, index, direction));
+}
+
+async function handleSaveDraft() {
+setMessage("");
+
+try {
+setSaving(true);
+
+const draft = {
+fontFamily,
+fullName,
+phone,
+city,
+stateName,
+email,
+linkedinUrl,
+pathType,
+targetRole,
+supportNeedsText,
+strengthsText,
+summaryHeading,
+summaryText,
+skillsInput,
+accomplishments,
+experiences,
+credentialItems,
+volunteerItems,
+sectionOrder,
+};
+
+window.localStorage.setItem(RESUME_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+
+if (userId) {
+await supabase.from("user_activity").insert({
+user_id: userId,
+full_name: fullName || null,
+email: email || null,
+event_type: "draft_saved",
+tool_name: "new_opportunities_resume_generator",
+page_name: "/career-toolkit/new-opportunities-resume-generator",
 });
 }
 
-switch (pathType) {
-case "reentry":
-return [
-"Demonstrated accountability, consistency, and readiness while preparing to reenter the workforce.",
-"Strengthened communication, time management, and adaptability through personal and professional development efforts.",
-"Prepared for employment by building a stronger foundation in responsibility, follow-through, and workplace readiness.",
-"Focused on rebuilding career direction with determination, resilience, and a willingness to learn."
-];
-case "stay-at-home-parent":
-return [
-"Managed daily schedules, appointments, and competing priorities in a fast-paced home environment.",
-"Coordinated routines, planning, and household responsibilities with strong organization and time management.",
-"Handled budgeting, logistics, and problem-solving while maintaining consistency and dependability.",
-"Built transferable skills in communication, multitasking, and adaptability through ongoing caregiving responsibilities."
-];
-case "veteran":
-return [
-"Applied discipline, teamwork, and mission focus in structured, high-responsibility environments.",
-"Demonstrated reliability, adaptability, and commitment to completing responsibilities with precision.",
-"Transferred leadership, accountability, and communication skills into civilian career readiness.",
-"Brings a strong foundation in professionalism, resilience, and continuous improvement."
-];
-case "no-experience":
-return [
-"Built transferable strengths in reliability, communication, and willingness to learn.",
-"Prepared for workforce entry by developing strong habits in follow-through, responsibility, and consistency.",
-"Demonstrated motivation and readiness to contribute in entry-level professional environments.",
-"Offers adaptability, a strong work ethic, and an eagerness to grow through hands-on experience."
-];
-case "recent-graduate":
-return [
-"Completed coursework, projects, and training milestones while building readiness for professional opportunities.",
-"Applied communication, teamwork, and problem-solving skills through academic and practical assignments.",
-"Built a foundation in organization, learning agility, and follow-through through structured education.",
-"Prepared to contribute in entry-level roles with a strong willingness to learn and grow."
-];
-case "training-program":
-return [
-"Completed hands-on training and structured learning aligned with professional readiness.",
-"Applied practical instruction, participation, and follow-through in a program-based environment.",
-"Built confidence in transferable skills through guided learning and performance expectations.",
-"Prepared to enter the workforce with determination, reliability, and job-focused training."
-];
-case "caregiver":
-return [
-"Provided dependable support while managing routines, responsibilities, and changing daily needs.",
-"Demonstrated patience, empathy, communication, and consistency in caregiving-focused responsibilities.",
-"Balanced multiple priorities while maintaining a supportive, organized, and reliable environment.",
-"Built transferable skills in observation, responsibility, and service through ongoing care support."
-];
-case "career-restart":
-return [
-"Took active steps toward restarting a professional path with focus, determination, and purpose.",
-"Strengthened readiness for new opportunities through reflection, preparation, and transferable skill building.",
-"Brings resilience, adaptability, and renewed motivation to contribute in a professional setting.",
-"Prepared to move forward with stronger direction, accountability, and commitment to growth."
-];
-default:
-return [
-"Built transferable strengths through life experience, responsibility, and daily problem-solving.",
-"Demonstrated reliability, adaptability, and a willingness to learn in changing environments.",
-"Prepared to bring strong interpersonal and organizational skills into a professional role.",
-"Offers resilience, determination, and readiness for a meaningful new opportunity."
-];
+setMessage(
+"Resume draft saved locally in this browser. To place a resume on your public profile, upload your final resume from the Profile page."
+);
+} catch {
+setMessage("Unable to save your draft locally.");
+} finally {
+setSaving(false);
 }
-}, [experienceText, pathType]);
+}
+
+function handlePrint() {
+const resumeNode = resumePrintRef.current;
+
+if (!resumeNode) {
+setMessage("Resume preview is not ready to print yet.");
+return;
+}
+
+const printWindow = window.open("", "_blank", "width=900,height=1200");
+
+if (!printWindow) {
+setMessage("Pop-up blocked. Please allow pop-ups and try again.");
+return;
+}
+
+const resumeHtml = resumeNode.innerHTML;
+
+printWindow.document.open();
+printWindow.document.write(`
+<!doctype html>
+<html>
+<head>
+<title>Resume Preview</title>
+<style>
+@page {
+size: letter;
+margin: 0.5in;
+}
+
+html, body {
+margin: 0;
+padding: 0;
+background: white;
+color: #111827;
+font-family: ${fontFamily}, serif;
+}
+
+body {
+-webkit-print-color-adjust: exact;
+print-color-adjust: exact;
+}
+
+.print-resume {
+width: 100%;
+max-width: 100%;
+margin: 0 auto;
+padding-top: 90px;
+color: #111827;
+}
+
+.resumeHeader {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+background: white;
+text-align: center;
+padding: 0 0 8px;
+}
+
+.resumeName {
+margin: 0 0 8px;
+font-size: 28px;
+font-weight: 700;
+color: #111827;
+}
+
+.resumeContact {
+margin: 0 0 6px;
+font-size: 14px;
+line-height: 1.5;
+color: #374151;
+word-break: break-word;
+}
+
+.resumeLinkedin {
+margin: 0;
+font-size: 14px;
+line-height: 1.5;
+color: #1d4ed8;
+word-break: break-word;
+}
+
+.resumeSection {
+margin-bottom: 20px;
+break-inside: auto;
+page-break-inside: auto;
+}
+
+.resumeSectionTitle {
+margin: 0 0 10px;
+text-align: center;
+font-size: 22px;
+font-weight: 700;
+color: #111827;
+}
+
+.resumeParagraph {
+margin: 0;
+font-size: 15px;
+line-height: 1.7;
+color: #111827;
+white-space: pre-wrap;
+word-break: break-word;
+}
+
+.skillsGrid {
+display: grid;
+grid-template-columns: 1fr 1fr 1fr;
+gap: 10px 24px;
+}
+
+.skillColumn {
+min-width: 0;
+}
+
+.skillItem {
+margin: 0 0 8px;
+font-size: 15px;
+line-height: 1.5;
+color: #111827;
+word-break: break-word;
+}
+
+.resumeEntry {
+margin-bottom: 16px;
+break-inside: avoid;
+page-break-inside: avoid;
+}
+
+.resumeEntryTop {
+display: flex;
+justify-content: space-between;
+align-items: flex-start;
+gap: 16px;
+margin-bottom: 6px;
+}
+
+.resumeEntryHeading {
+margin: 0;
+font-size: 16px;
+font-weight: 700;
+color: #111827;
+}
+
+.resumeEntrySubheading {
+margin: 4px 0 0;
+font-size: 15px;
+font-weight: 600;
+color: #111827;
+}
+
+.resumeEntryDates {
+margin: 0;
+font-size: 14px;
+color: #374151;
+white-space: nowrap;
+}
+
+.resumeBullet {
+margin: 4px 0;
+font-size: 15px;
+line-height: 1.65;
+color: #111827;
+white-space: pre-wrap;
+word-break: break-word;
+}
+</style>
+</head>
+<body>
+<div class="print-resume">
+${resumeHtml}
+</div>
+</body>
+</html>
+`);
+printWindow.document.close();
+printWindow.focus();
+
+setTimeout(() => {
+printWindow.print();
+}, 300);
+}
+
+function renderResumeSection(section: ResumeSectionKey) {
+switch (section) {
+case "summary":
+if (!guidedSummary && !summaryHeading) return null;
+return (
+<section className="resumeSection" style={styles.resumeSectionBlock}>
+<h3 style={styles.resumeSectionTitle}>
+{summaryHeading || "Professional Summary"}
+</h3>
+<p style={styles.resumeParagraph}>
+{guidedSummary || "Add your professional summary here."}
+</p>
+</section>
+);
+
+case "skills":
+if (!skills.length) return null;
+return (
+<section className="resumeSection" style={styles.resumeSectionBlock}>
+<h3 style={styles.resumeSectionTitle}>SKILLS</h3>
+<div className="skillsGrid" style={styles.skillsGrid}>
+{skillColumns.map((column, index) => (
+<div key={index} className="skillColumn" style={styles.skillColumn}>
+{column.map((skill, skillIndex) => (
+<p
+key={`${skill}-${skillIndex}`}
+className="skillItem"
+style={styles.skillItem}
+>
+• {skill}
+</p>
+))}
+</div>
+))}
+</div>
+</section>
+);
+
+case "experience":
+if (!activeExperiences.length) return null;
+return (
+<section className="resumeSection" style={styles.resumeSectionBlock}>
+<h3 style={styles.resumeSectionTitle}>EXPERIENCE / TRANSFERABLE EXPERIENCE</h3>
+{activeExperiences.map((item, index) => (
+<div key={index} className="resumeEntry" style={styles.resumeEntry}>
+<div className="resumeEntryTop" style={styles.resumeEntryTop}>
+<div>
+<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+{item.companyName || "Organization / Setting"}{" "}
+{item.city || item.state
+? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
+: ""}
+</p>
+<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
+{item.roleTitle || "Role / Experience Title"}
+</p>
+</div>
+<p className="resumeEntryDates" style={styles.resumeEntryDates}>
+{formatDateRange(
+item.startMonth,
+item.startYear,
+item.endMonth,
+item.endYear,
+item.isPresent
+)}
+</p>
+</div>
+{item.bullets.map((bullet, bulletIndex) => (
+<p
+key={bulletIndex}
+className="resumeBullet"
+style={styles.resumeBullet}
+>
+• {bullet.text}
+</p>
+))}
+</div>
+))}
+</section>
+);
+
+case "credentials":
+if (!activeCredentials.length) return null;
+return (
+<section className="resumeSection" style={styles.resumeSectionBlock}>
+<h3 style={styles.resumeSectionTitle}>EDUCATION + CERTIFICATIONS</h3>
+{activeCredentials.map((item, index) => (
+<div key={index} className="resumeEntry" style={styles.resumeEntry}>
+<div className="resumeEntryTop" style={styles.resumeEntryTop}>
+<div>
+<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+{item.organizationName || "School / Program / Organization"}{" "}
+{item.city || item.state
+? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
+: ""}
+</p>
+<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
+{item.credentialName || "Credential / Degree / Training"}
+{item.details ? ` | ${item.details}` : ""}
+</p>
+</div>
+<p className="resumeEntryDates" style={styles.resumeEntryDates}>
+{formatDateRange(
+item.startMonth,
+item.startYear,
+item.endMonth,
+item.endYear,
+item.isPresent
+)}
+</p>
+</div>
+</div>
+))}
+</section>
+);
+
+case "volunteer":
+if (!activeVolunteer.length) return null;
+return (
+<section className="resumeSection" style={styles.resumeSectionBlock}>
+<h3 style={styles.resumeSectionTitle}>VOLUNTEER WORK</h3>
+{activeVolunteer.map((item, index) => (
+<div key={index} className="resumeEntry" style={styles.resumeEntry}>
+<div className="resumeEntryTop" style={styles.resumeEntryTop}>
+<div>
+<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+{item.organizationName || "Organization"}{" "}
+{item.city || item.state
+? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
+: ""}
+</p>
+<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
+{item.roleTitle || "Role Title"}
+</p>
+</div>
+<p className="resumeEntryDates" style={styles.resumeEntryDates}>
+{formatDateRange(
+item.startMonth,
+item.startYear,
+item.endMonth,
+item.endYear,
+item.isPresent
+)}
+</p>
+</div>
+{item.bullets.map((bullet, bulletIndex) => (
+<p
+key={bulletIndex}
+className="resumeBullet"
+style={styles.resumeBullet}
+>
+• {bullet.text}
+</p>
+))}
+</div>
+))}
+</section>
+);
+
+case "accomplishments":
+if (!accomplishments.trim()) return null;
+return (
+<section className="resumeSection" style={styles.resumeSectionBlock}>
+<h3 style={styles.resumeSectionTitle}>ACCOMPLISHMENTS</h3>
+<p style={styles.resumeParagraph}>{accomplishments}</p>
+</section>
+);
+
+default:
+return null;
+}
+}
+
+if (loadingUser) {
+return (
+<main style={styles.page}>
+<div style={styles.centerWrap}>Loading...</div>
+</main>
+);
+}
 
 return (
 <main style={styles.page}>
-<div style={styles.shell}>
-<section style={styles.heroCard}>
-<p style={styles.kicker}>Career ToolKit</p>
-<h1 style={styles.title}>New Opportunities Resume Generator</h1>
-<p style={styles.subtitle}>
-Created for those rebuilding, restarting, reentering, and stepping boldly into new opportunities. Designed for people turning life experience, resilience, and determination into career-ready momentum.
-</p>
+<style>{`
+@media print {
+@page {
+margin: 0.5in;
+}
 
-<div style={styles.heroButtons}>
-<a href="/career-toolkit" style={styles.linkButton}>
-Back to Career ToolKit
-</a>
+html,
+body {
+margin: 0 !important;
+padding: 0 !important;
+background: white !important;
+}
+
+body * {
+visibility: hidden !important;
+}
+
+.resumePrintWrap,
+.resumePrintWrap * {
+visibility: visible !important;
+}
+
+.resumePrintWrap {
+position: static !important;
+width: 100% !important;
+margin: 0 !important;
+padding: 0 !important;
+background: white !important;
+}
+
+.topBar {
+display: none !important;
+}
+
+.container {
+max-width: none !important;
+margin: 0 !important;
+padding: 0 !important;
+}
+
+main {
+min-height: auto !important;
+padding: 0 !important;
+margin: 0 !important;
+}
+
+.layout {
+display: block !important;
+}
+
+.rightCol {
+position: static !important;
+top: 0 !important;
+align-self: auto !important;
+margin: 0 !important;
+padding: 0 !important;
+}
+
+.previewCard {
+display: none !important;
+}
+
+.builderShell {
+display: block !important;
+}
+
+.builderLeft {
+display: none !important;
+}
+
+.resumePaper {
+width: 100% !important;
+max-width: none !important;
+min-height: auto !important;
+margin: 0 !important;
+padding: 0 !important;
+border: none !important;
+border-radius: 0 !important;
+box-shadow: none !important;
+background: white !important;
+overflow: visible !important;
+}
+
+.resumeHeader {
+break-inside: avoid !important;
+page-break-inside: avoid !important;
+}
+
+.resumeSection {
+break-inside: auto !important;
+page-break-inside: auto !important;
+}
+
+.builderTopRow,
+.siteButtons,
+.flashMessage {
+display: none !important;
+}
+}
+`}</style>
+
+<div className="container" style={styles.container}>
+<div className="topBar" style={styles.topBar}>
+<div>
+<p style={styles.kicker}>NEW OPPORTUNITIES RESUME GENERATOR</p>
+<h1 style={styles.pageTitle}>Create a fully guided resume draft.</h1>
 </div>
+
+<div style={styles.topSelectors}>
+<div style={styles.topSelectGroup}>
+<label style={styles.topSelectLabel}>Resume Font</label>
+<select
+value={fontFamily}
+onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
+style={styles.select}
+>
+<option>Times New Roman</option>
+<option>Arial</option>
+<option>Calibri</option>
+</select>
+</div>
+</div>
+</div>
+
+<div className="builderShell layout" style={styles.layout}>
+<div className="builderLeft" style={styles.leftCol}>
+<section style={styles.card}>
+<p style={styles.cardKicker}>NEW OPPORTUNITIES</p>
+<h2 style={styles.cardTitle}>Build a stronger resume with guidance</h2>
+<p style={styles.previewHelp}>
+This builder is designed for veterans, stay-at-home parents /
+homemakers / caregivers, career restarts, reentry, and people building
+from little to no experience. It helps strengthen wording, generate a
+guided summary, and turn simple bullet points into more professional
+resume language.
+</p>
 </section>
 
-<div style={styles.layout}>
-<section style={styles.formCard}>
-<p style={styles.sectionKicker}>Your Starting Point</p>
-<h2 style={styles.sectionTitle}>Build stronger resume language</h2>
+<section style={styles.card}>
+<p style={styles.cardKicker}>PATH</p>
+<h2 style={styles.cardTitle}>Choose the background that fits you best</h2>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Which best describes you right now?</label>
+<label style={styles.inputLabel}>
+Which path best reflects your current experience?
+</label>
 <select
 value={pathType}
-onChange={(e) => setPathType(e.target.value as OpportunityType)}
+onChange={(e) => setPathType(e.target.value as OpportunityPath)}
 style={styles.input}
 >
-<option value="reentry">Reentry</option>
-<option value="career-gap">Career Gap</option>
-<option value="stay-at-home-parent">Stay-at-Home Parent / Homemaker</option>
 <option value="veteran">Veteran</option>
-<option value="no-experience">Little-to-No Work Experience</option>
-<option value="recent-graduate">Recent Graduate</option>
-<option value="training-program">Finished Training / Certification</option>
-<option value="caregiver">Caregiver</option>
+<option value="caregiver">
+Stay-at-Home Parent / Homemaker / Caregiver
+</option>
 <option value="career-restart">Career Restart</option>
+<option value="reentry">Reentry</option>
+<option value="little-no-experience">Little to No Experience</option>
 </select>
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Target Role</label>
+<label style={styles.inputLabel}>Target Role</label>
 <input
 value={targetRole}
 onChange={(e) => setTargetRole(e.target.value)}
+style={styles.input}
 placeholder="Example: Customer Service Representative"
-style={styles.input}
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Goal / What are you trying to move into?</label>
-<input
-value={headlineGoal}
-onChange={(e) => setHeadlineGoal(e.target.value)}
-placeholder="Example: Seeking an entry-level role with growth opportunities"
-style={styles.input}
+<label style={styles.inputLabel}>What are you moving toward?</label>
+<textarea
+value={supportNeedsText}
+onChange={(e) => setSupportNeedsText(e.target.value)}
+style={styles.textarea}
+placeholder="Example: Looking for a stable role with growth potential where I can use communication, organization, and reliability."
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Strengths or qualities</label>
+<label style={styles.inputLabel}>Your strengths or qualities</label>
 <textarea
 value={strengthsText}
 onChange={(e) => setStrengthsText(e.target.value)}
-placeholder="Example: dependable, patient, organized, good with people, quick learner"
 style={styles.textarea}
+placeholder="Example: dependable, organized, patient, good communicator, quick learner"
 />
 </div>
 
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Education / training / program details</label>
+<div style={styles.guidanceActions}>
+<button type="button" onClick={handleGenerateSummary} style={styles.smallButton}>
+Generate Guided Summary
+</button>
+<button type="button" onClick={handleGenerateSkills} style={styles.smallButton}>
+Generate Suggested Skills
+</button>
+</div>
+</section>
+
+<section style={styles.card}>
+<p style={styles.cardKicker}>RESUME TYPE</p>
+<h2 style={styles.cardTitle}>
+You’re currently building a {detectedResumeType} Resume
+</h2>
+<p style={styles.previewHelp}>
+This updates automatically based on how you move your sections around.
+</p>
+</section>
+
+<section style={styles.card}>
+<p style={styles.cardKicker}>HEADER</p>
+<h2 style={styles.cardTitle}>Resume Header</h2>
+
+<div style={styles.twoColForm}>
+<div>
+<label style={styles.inputLabel}>Full Name</label>
+<input
+value={fullName}
+onChange={(e) => setFullName(e.target.value)}
+style={styles.input}
+placeholder="Full Name"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>Phone Number</label>
+<input
+value={phone}
+onChange={(e) => setPhone(e.target.value)}
+style={styles.input}
+placeholder="Phone Number"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>City (optional)</label>
+<input
+value={city}
+onChange={(e) => setCity(e.target.value)}
+style={styles.input}
+placeholder="City"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>State (optional)</label>
+<input
+value={stateName}
+onChange={(e) => setStateName(e.target.value)}
+style={styles.input}
+placeholder="State"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>Email</label>
+<input
+value={email}
+onChange={(e) => setEmail(e.target.value)}
+style={styles.input}
+placeholder="Email"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>LinkedIn (optional)</label>
+<input
+value={linkedinUrl}
+onChange={(e) => setLinkedinUrl(e.target.value)}
+style={styles.input}
+placeholder="LinkedIn URL"
+/>
+</div>
+</div>
+</section>
+
+<section style={styles.card}>
+<p style={styles.cardKicker}>SUMMARY</p>
+<h2 style={styles.cardTitle}>Guided Summary + Skills</h2>
+
+<label style={styles.inputLabel}>
+Summary Heading (optional, can be blank or "Professional Summary")
+</label>
+<input
+value={summaryHeading}
+onChange={(e) => setSummaryHeading(e.target.value)}
+style={styles.input}
+placeholder="Professional Summary"
+/>
+
+<p style={styles.helper}>
+Leave this blank if you want the tool to guide the summary for you. You
+can also edit the generated version after it fills in.
+</p>
+
+<label style={styles.inputLabel}>Summary</label>
 <textarea
-value={educationText}
-onChange={(e) => setEducationText(e.target.value)}
-placeholder="Example: completed CNA training, finished workforce program, recent business graduate"
+value={summaryText}
+onChange={(e) => setSummaryText(e.target.value)}
 style={styles.textarea}
+placeholder="Example: Dependable and adaptable candidate with strong transferable skills, communication strengths, and readiness for a new opportunity."
+/>
+
+<label style={styles.inputLabel}>Skills (comma separated, up to 9)</label>
+<input
+value={skillsInput}
+onChange={(e) => setSkillsInput(e.target.value)}
+style={styles.input}
+placeholder="Communication, Time Management, Dependability"
+/>
+
+<p style={styles.helper}>
+Tip: if you are not sure what to enter, use the “Generate Suggested
+Skills” button above.
+</p>
+</section>
+
+<section style={styles.card}>
+<p style={styles.cardKicker}>EXPERIENCE</p>
+<h2 style={styles.cardTitle}>Experience / Transferable Experience</h2>
+
+{experiences.map((item, index) => (
+<div key={index} style={styles.sectionGroup}>
+<div style={styles.twoColForm}>
+<div>
+<label style={styles.inputLabel}>Organization / Setting</label>
+<input
+value={item.companyName}
+onChange={(e) =>
+updateExperience(index, "companyName", e.target.value)
+}
+style={styles.input}
+placeholder="Example: Home-Based Care, Community Program, Volunteer Setting"
 />
 </div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>What did you actually do? One item per line</label>
-<textarea
-value={experienceText}
-onChange={(e) => setExperienceText(e.target.value)}
-placeholder={"Examples:\nManaged household schedules\nHelped care for a family member\nCompleted training assignments\nVolunteered at community events"}
-style={styles.largeTextarea}
+<div>
+<label style={styles.inputLabel}>Role / Experience Title</label>
+<input
+value={item.roleTitle}
+onChange={(e) => updateExperience(index, "roleTitle", e.target.value)}
+style={styles.input}
+placeholder="Example: Caregiver, Household Manager, Volunteer Support"
 />
 </div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Summary tone</label>
+<div>
+<label style={styles.inputLabel}>City</label>
+<input
+value={item.city}
+onChange={(e) => updateExperience(index, "city", e.target.value)}
+style={styles.input}
+placeholder="City"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>State</label>
+<input
+value={item.state}
+onChange={(e) => updateExperience(index, "state", e.target.value)}
+style={styles.input}
+placeholder="State"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>From Month</label>
 <select
-value={summaryTone}
-onChange={(e) => setSummaryTone(e.target.value)}
+value={item.startMonth}
+onChange={(e) =>
+updateExperience(index, "startMonth", e.target.value)
+}
 style={styles.input}
 >
-<option value="professional">Professional</option>
-<option value="bold">Bold</option>
-<option value="entry">Entry-Level</option>
+{MONTHS.map((month) => (
+<option key={month} value={month}>
+{month || "Select"}
+</option>
+))}
 </select>
 </div>
+<div>
+<label style={styles.inputLabel}>From Year</label>
+<input
+value={item.startYear}
+onChange={(e) =>
+updateExperience(index, "startYear", e.target.value)
+}
+style={styles.input}
+placeholder="2022"
+/>
+</div>
+</div>
+
+<label style={styles.checkboxRow}>
+<input
+type="checkbox"
+checked={item.isPresent}
+onChange={(e) => updateExperience(index, "isPresent", e.target.checked)}
+/>
+<span>I currently do this</span>
+</label>
+
+{!item.isPresent && (
+<div style={styles.twoColForm}>
+<div>
+<label style={styles.inputLabel}>To Month</label>
+<select
+value={item.endMonth}
+onChange={(e) =>
+updateExperience(index, "endMonth", e.target.value)
+}
+style={styles.input}
+>
+{MONTHS.map((month) => (
+<option key={month} value={month}>
+{month || "Select"}
+</option>
+))}
+</select>
+</div>
+<div>
+<label style={styles.inputLabel}>To Year</label>
+<input
+value={item.endYear}
+onChange={(e) =>
+updateExperience(index, "endYear", e.target.value)
+}
+style={styles.input}
+placeholder="2024"
+/>
+</div>
+</div>
+)}
+
+<p style={styles.helper}>
+Add simple bullet points. This tool will strengthen the wording in the
+live preview and printed resume. Example: customer service, scheduled
+appointments, took care of family member, handled cash.
+</p>
+
+{item.bullets.map((bullet, bulletIndex) => (
+<div key={bulletIndex}>
+<label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
+<input
+value={bullet.text}
+onChange={(e) =>
+updateExperienceBullet(index, bulletIndex, e.target.value)
+}
+style={styles.input}
+placeholder="Describe what you did in simple words"
+/>
+{bullet.text.trim() ? (
+<p style={styles.guidedPreviewText}>
+Guided version:{" "}
+{improveBulletText(
+bullet.text,
+pathType,
+item.roleTitle,
+targetRole
+)}
+</p>
+) : null}
+</div>
+))}
+
+<button
+type="button"
+onClick={() => addExperienceBullet(index)}
+style={styles.smallButton}
+>
++ Add Bullet
+</button>
+</div>
+))}
+
+<button type="button" onClick={addExperience} style={styles.smallButton}>
++ Add Experience
+</button>
 </section>
 
-<section style={styles.previewCard}>
-<p style={styles.sectionKicker}>Live Preview</p>
-<h2 style={styles.sectionTitle}>Resume Preview</h2>
+<section style={styles.card}>
+<p style={styles.cardKicker}>EDUCATION + CERTIFICATIONS</p>
+<h2 style={styles.cardTitle}>Education, training, and credentials</h2>
 
-<div style={styles.resumePaper}>
-<h3 style={styles.resumeName}>{suggestedTitle}</h3>
-
-<div style={styles.resumeSection}>
-<p style={styles.resumeSectionHeading}>{summaryHeading}</p>
-<p style={styles.resumeText}>{generatedSummary}</p>
+{credentialItems.map((item, index) => (
+<div key={index} style={styles.sectionGroup}>
+<div style={styles.twoColForm}>
+<div>
+<label style={styles.inputLabel}>School / Program / Organization</label>
+<input
+value={item.organizationName}
+onChange={(e) =>
+updateCredential(index, "organizationName", e.target.value)
+}
+style={styles.input}
+placeholder="School, training program, certification provider"
+/>
 </div>
-
-<div style={styles.resumeSection}>
-<p style={styles.resumeSectionHeading}>Suggested Resume Bullet Points</p>
-<ul style={styles.bulletList}>
-{generatedBullets.map((bullet, index) => (
-<li key={index} style={styles.bulletItem}>
-{bullet}
-</li>
+<div>
+<label style={styles.inputLabel}>Credential / Degree / Certificate</label>
+<input
+value={item.credentialName}
+onChange={(e) =>
+updateCredential(index, "credentialName", e.target.value)
+}
+style={styles.input}
+placeholder="CNA Training, GED, Certificate, Degree"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>City</label>
+<input
+value={item.city}
+onChange={(e) => updateCredential(index, "city", e.target.value)}
+style={styles.input}
+placeholder="City"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>State</label>
+<input
+value={item.state}
+onChange={(e) => updateCredential(index, "state", e.target.value)}
+style={styles.input}
+placeholder="State"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>From Month</label>
+<select
+value={item.startMonth}
+onChange={(e) =>
+updateCredential(index, "startMonth", e.target.value)
+}
+style={styles.input}
+>
+{MONTHS.map((month) => (
+<option key={month} value={month}>
+{month || "Select"}
+</option>
 ))}
-</ul>
+</select>
+</div>
+<div>
+<label style={styles.inputLabel}>From Year</label>
+<input
+value={item.startYear}
+onChange={(e) =>
+updateCredential(index, "startYear", e.target.value)
+}
+style={styles.input}
+placeholder="2022"
+/>
+</div>
 </div>
 
-<div style={styles.resumeSection}>
-<p style={styles.resumeSectionHeading}>Best Fit Description Focus</p>
-<p style={styles.resumeText}>
-This version is best for highlighting transferable strengths, resilience,
-responsibility, and readiness for a new opportunity.
+<label style={styles.checkboxRow}>
+<input
+type="checkbox"
+checked={item.isPresent}
+onChange={(e) => updateCredential(index, "isPresent", e.target.checked)}
+/>
+<span>I am currently completing this</span>
+</label>
+
+{!item.isPresent && (
+<div style={styles.twoColForm}>
+<div>
+<label style={styles.inputLabel}>To Month</label>
+<select
+value={item.endMonth}
+onChange={(e) =>
+updateCredential(index, "endMonth", e.target.value)
+}
+style={styles.input}
+>
+{MONTHS.map((month) => (
+<option key={month} value={month}>
+{month || "Select"}
+</option>
+))}
+</select>
+</div>
+<div>
+<label style={styles.inputLabel}>To Year</label>
+<input
+value={item.endYear}
+onChange={(e) =>
+updateCredential(index, "endYear", e.target.value)
+}
+style={styles.input}
+placeholder="2024"
+/>
+</div>
+</div>
+)}
+
+<label style={styles.inputLabel}>Extra Details (optional)</label>
+<input
+value={item.details}
+onChange={(e) => updateCredential(index, "details", e.target.value)}
+style={styles.input}
+placeholder="Example: clinical practice, coursework, workforce readiness program"
+/>
+</div>
+))}
+
+<button type="button" onClick={addCredential} style={styles.smallButton}>
++ Add Education / Certification
+</button>
+</section>
+
+<section style={styles.card}>
+<p style={styles.cardKicker}>VOLUNTEER</p>
+<h2 style={styles.cardTitle}>Volunteer Work</h2>
+
+{volunteerItems.map((item, index) => (
+<div key={index} style={styles.sectionGroup}>
+<div style={styles.twoColForm}>
+<div>
+<label style={styles.inputLabel}>Organization</label>
+<input
+value={item.organizationName}
+onChange={(e) =>
+updateVolunteer(index, "organizationName", e.target.value)
+}
+style={styles.input}
+placeholder="Organization Name"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>Role</label>
+<input
+value={item.roleTitle}
+onChange={(e) => updateVolunteer(index, "roleTitle", e.target.value)}
+style={styles.input}
+placeholder="Role Title"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>City</label>
+<input
+value={item.city}
+onChange={(e) => updateVolunteer(index, "city", e.target.value)}
+style={styles.input}
+placeholder="City"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>State</label>
+<input
+value={item.state}
+onChange={(e) => updateVolunteer(index, "state", e.target.value)}
+style={styles.input}
+placeholder="State"
+/>
+</div>
+<div>
+<label style={styles.inputLabel}>From Month</label>
+<select
+value={item.startMonth}
+onChange={(e) =>
+updateVolunteer(index, "startMonth", e.target.value)
+}
+style={styles.input}
+>
+{MONTHS.map((month) => (
+<option key={month} value={month}>
+{month || "Select"}
+</option>
+))}
+</select>
+</div>
+<div>
+<label style={styles.inputLabel}>From Year</label>
+<input
+value={item.startYear}
+onChange={(e) =>
+updateVolunteer(index, "startYear", e.target.value)
+}
+style={styles.input}
+placeholder="2020"
+/>
+</div>
+</div>
+
+<label style={styles.checkboxRow}>
+<input
+type="checkbox"
+checked={item.isPresent}
+onChange={(e) => updateVolunteer(index, "isPresent", e.target.checked)}
+/>
+<span>I currently volunteer here</span>
+</label>
+
+{!item.isPresent && (
+<div style={styles.twoColForm}>
+<div>
+<label style={styles.inputLabel}>To Month</label>
+<select
+value={item.endMonth}
+onChange={(e) =>
+updateVolunteer(index, "endMonth", e.target.value)
+}
+style={styles.input}
+>
+{MONTHS.map((month) => (
+<option key={month} value={month}>
+{month || "Select"}
+</option>
+))}
+</select>
+</div>
+<div>
+<label style={styles.inputLabel}>To Year</label>
+<input
+value={item.endYear}
+onChange={(e) =>
+updateVolunteer(index, "endYear", e.target.value)
+}
+style={styles.input}
+placeholder="2022"
+/>
+</div>
+</div>
+)}
+
+<p style={styles.helper}>
+Add simple bullets here too. This tool will strengthen the wording in
+the preview.
+</p>
+
+{item.bullets.map((bullet, bulletIndex) => (
+<div key={bulletIndex}>
+<label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
+<input
+value={bullet.text}
+onChange={(e) =>
+updateVolunteerBullet(index, bulletIndex, e.target.value)
+}
+style={styles.input}
+placeholder="Describe your volunteer work"
+/>
+{bullet.text.trim() ? (
+<p style={styles.guidedPreviewText}>
+Guided version:{" "}
+{improveBulletText(
+bullet.text,
+pathType,
+item.roleTitle,
+targetRole
+)}
+</p>
+) : null}
+</div>
+))}
+
+<button
+type="button"
+onClick={() => addVolunteerBullet(index)}
+style={styles.smallButton}
+>
++ Add Bullet
+</button>
+</div>
+))}
+
+<button type="button" onClick={addVolunteer} style={styles.smallButton}>
++ Add Volunteer Work
+</button>
+</section>
+
+<section style={styles.card}>
+<p style={styles.cardKicker}>ACCOMPLISHMENTS</p>
+<h2 style={styles.cardTitle}>Accomplishments</h2>
+<label style={styles.inputLabel}>Accomplishments</label>
+<textarea
+value={accomplishments}
+onChange={(e) => setAccomplishments(e.target.value)}
+style={styles.textarea}
+placeholder="Awards, recognitions, milestones, program completions, achievements, leadership examples"
+/>
+</section>
+
+<section style={styles.card}>
+<p style={styles.cardKicker}>ORDER</p>
+<h2 style={styles.cardTitle}>Move Resume Sections</h2>
+
+{sectionOrder.map((section, index) => (
+<div key={section} style={styles.orderRow}>
+<span style={styles.orderLabel}>
+{section === "summary"
+? "Summary"
+: section === "skills"
+? "Skills"
+: section === "experience"
+? "Experience / Transferable Experience"
+: section === "credentials"
+? "Education + Certifications"
+: section === "volunteer"
+? "Volunteer"
+: "Accomplishments"}
+</span>
+<div style={styles.orderButtons}>
+<button
+type="button"
+onClick={() => moveSection(index, "up")}
+style={styles.orderButton}
+>
+Up
+</button>
+<button
+type="button"
+onClick={() => moveSection(index, "down")}
+style={styles.orderButton}
+>
+Down
+</button>
+</div>
+</div>
+))}
+</section>
+
+{message ? (
+<div className="flashMessage" style={styles.messageBox}>
+{message}
+</div>
+) : null}
+
+<div className="siteButtons" style={styles.footerButtons}>
+<button
+type="button"
+onClick={handleSaveDraft}
+disabled={saving}
+style={styles.saveButton}
+>
+{saving ? "Saving..." : "Save Draft"}
+</button>
+<button type="button" onClick={handlePrint} style={styles.printButton}>
+Print Resume
+</button>
+<a href="/career-toolkit" style={styles.backButton}>
+Back to Career ToolKit
+</a>
+</div>
+</div>
+
+<div className="resumePrintWrap rightCol" style={styles.rightCol}>
+<div className="builderTopRow previewCard" style={styles.previewCard}>
+<p style={styles.cardKicker}>LIVE PREVIEW</p>
+<h2 style={styles.cardTitle}>Resume Preview</h2>
+<p style={styles.previewHelp}>
+The preview stays visible while you build and strengthens simple
+summary and bullet language as you type.
+</p>
+<p style={styles.resumeTypePreview}>
+Current layout: <strong>{detectedResumeType}</strong>
 </p>
 </div>
+
+<div
+ref={resumePrintRef}
+className="resumePaper"
+style={{
+...styles.resumePaper,
+fontFamily,
+}}
+>
+<div className="resumeHeader" style={styles.resumeHeader}>
+<h1 className="resumeName" style={styles.resumeName}>
+{fullName || "Your Name"}
+</h1>
+<p className="resumeContact" style={styles.resumeContact}>
+{[phone, email, [city, stateName].filter(Boolean).join(", ")]
+.filter(Boolean)
+.join(" • ")}
+</p>
+{linkedinUrl ? (
+<p className="resumeLinkedin" style={styles.resumeLinkedin}>
+{linkedinUrl}
+</p>
+) : null}
 </div>
-</section>
+
+{sectionOrder.map((section) => (
+<div key={section}>{renderResumeSection(section)}</div>
+))}
+</div>
+</div>
 </div>
 </div>
 </main>
@@ -329,194 +2074,389 @@ const styles: Record<string, CSSProperties> = {
 page: {
 minHeight: "100vh",
 background:
-"radial-gradient(circle at top, rgba(59,130,246,0.12) 0%, rgba(5,5,5,1) 34%, rgba(13,13,15,1) 100%)",
-color: "#e7e7e7",
-padding: "32px 24px 56px",
+"radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)",
+color: "#f5f5f5",
+padding: "24px",
 fontFamily:
 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 },
-shell: {
-maxWidth: "1360px",
+container: {
+maxWidth: "1380px",
 margin: "0 auto",
-display: "grid",
-gap: "24px",
 },
-heroCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
-borderRadius: "32px",
-padding: "32px",
-boxShadow: "0 30px 80px rgba(0,0,0,0.32)",
+centerWrap: {
+minHeight: "70vh",
+display: "flex",
+alignItems: "center",
+justifyContent: "center",
+fontSize: "18px",
+color: "#e5e7eb",
+},
+topBar: {
+display: "flex",
+justifyContent: "space-between",
+alignItems: "flex-start",
+gap: "20px",
+marginBottom: "20px",
+flexWrap: "wrap",
+},
+topSelectors: {
+display: "flex",
+gap: "16px",
+flexWrap: "wrap",
+},
+topSelectGroup: {
+display: "flex",
+flexDirection: "column",
+gap: "8px",
+minWidth: "180px",
+},
+topSelectLabel: {
+fontSize: "13px",
+color: "#d1d5db",
+fontWeight: 600,
 },
 kicker: {
 margin: "0 0 8px",
-color: "#a1a1aa",
+color: "#c4b5fd",
 fontSize: "12px",
-letterSpacing: "0.18em",
+letterSpacing: "0.22em",
 textTransform: "uppercase",
 },
-title: {
-margin: "0 0 12px",
-fontSize: "42px",
-lineHeight: 1.08,
+pageTitle: {
+margin: 0,
+fontSize: "44px",
+lineHeight: 1.06,
 letterSpacing: "-0.04em",
 fontWeight: 700,
-color: "#f5f5f5",
-},
-subtitle: {
-margin: 0,
-color: "#d4d4d8",
-fontSize: "16px",
-lineHeight: 1.75,
-maxWidth: "900px",
-},
-heroButtons: {
-display: "flex",
-gap: "12px",
-marginTop: "18px",
-flexWrap: "wrap",
+color: "#fafafa",
+maxWidth: "820px",
 },
 layout: {
 display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "20px",
+gridTemplateColumns: "minmax(0, 1fr) 520px",
+gap: "24px",
 alignItems: "start",
 },
-formCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
+leftCol: {
+minWidth: 0,
+},
+rightCol: {
+position: "sticky",
+top: "20px",
+alignSelf: "start",
+},
+card: {
+background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+border: "1px solid #262626",
 borderRadius: "28px",
-padding: "24px",
-boxShadow: "0 22px 60px rgba(0,0,0,0.28)",
+padding: "20px",
+boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+marginBottom: "18px",
 },
 previewCard: {
-background:
-"linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
-border: "1px solid rgba(255,255,255,0.07)",
+background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+border: "1px solid #262626",
 borderRadius: "28px",
-padding: "24px",
-boxShadow: "0 22px 60px rgba(0,0,0,0.28)",
-position: "sticky",
-top: "24px",
+padding: "20px",
+boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+marginBottom: "18px",
 },
-sectionKicker: {
+cardKicker: {
 margin: "0 0 8px",
-color: "#9ca3af",
+color: "#d4d4d8",
 fontSize: "12px",
 letterSpacing: "0.18em",
 textTransform: "uppercase",
 },
-sectionTitle: {
-margin: "0 0 18px",
+cardTitle: {
+margin: "0 0 10px",
 fontSize: "28px",
 lineHeight: 1.1,
+color: "#fafafa",
 fontWeight: 700,
-color: "#f5f5f5",
 },
-fieldWrap: {
-display: "grid",
-gap: "8px",
-marginBottom: "14px",
-},
-label: {
+previewHelp: {
+margin: 0,
 color: "#d4d4d8",
-fontSize: "13px",
+fontSize: "15px",
+lineHeight: 1.5,
+},
+resumeTypePreview: {
+margin: "12px 0 0",
+color: "#e5e7eb",
+fontSize: "15px",
+lineHeight: 1.6,
+},
+select: {
+background: "#0b0f19",
+color: "#fff",
+border: "1px solid rgba(255,255,255,0.18)",
+borderRadius: "16px",
+padding: "12px 14px",
+fontSize: "15px",
+},
+twoColForm: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "14px 16px",
+},
+inputLabel: {
+display: "block",
+margin: "0 0 6px",
+fontSize: "15px",
+color: "#f5f5f5",
 fontWeight: 600,
 },
 input: {
 width: "100%",
+background: "#05070c",
+color: "#fff",
+border: "1px solid #2f3541",
+borderRadius: "18px",
 padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-boxSizing: "border-box",
+fontSize: "16px",
 outline: "none",
+boxSizing: "border-box",
 },
 textarea: {
 width: "100%",
-minHeight: "90px",
-padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
+minHeight: "110px",
 resize: "vertical",
-boxSizing: "border-box",
-outline: "none",
-},
-largeTextarea: {
-width: "100%",
-minHeight: "160px",
+background: "#05070c",
+color: "#fff",
+border: "1px solid #2f3541",
+borderRadius: "18px",
 padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-resize: "vertical",
-boxSizing: "border-box",
+fontSize: "16px",
 outline: "none",
-whiteSpace: "pre-wrap",
+boxSizing: "border-box",
+marginBottom: "14px",
 },
-linkButton: {
-display: "inline-flex",
+helper: {
+margin: "10px 0 12px",
+color: "#cbd5e1",
+fontSize: "14px",
+lineHeight: 1.65,
+},
+checkboxRow: {
+display: "flex",
+alignItems: "center",
+gap: "10px",
+margin: "12px 0",
+color: "#f5f5f5",
+fontSize: "15px",
+},
+sectionGroup: {
+border: "1px solid rgba(255,255,255,0.08)",
+borderRadius: "22px",
+padding: "16px",
+marginBottom: "14px",
+},
+smallButton: {
+marginTop: "12px",
+background: "linear-gradient(180deg, #5b84c7 0%, #456aa8 100%)",
+color: "#fff",
+border: "1px solid rgba(255,255,255,0.16)",
+borderRadius: "14px",
+padding: "10px 14px",
+fontSize: "15px",
+fontWeight: 600,
+cursor: "pointer",
+},
+guidanceActions: {
+display: "flex",
+flexWrap: "wrap",
+gap: "12px",
+marginTop: "6px",
+},
+guidedPreviewText: {
+margin: "8px 0 0",
+color: "#cbd5e1",
+fontSize: "14px",
+lineHeight: 1.65,
+},
+orderRow: {
+display: "flex",
+justifyContent: "space-between",
+alignItems: "center",
+gap: "12px",
+padding: "12px 0",
+borderBottom: "1px solid rgba(255,255,255,0.08)",
+},
+orderLabel: {
+fontSize: "18px",
+color: "#f8fafc",
+fontWeight: 600,
+},
+orderButtons: {
+display: "flex",
+gap: "8px",
+},
+orderButton: {
+background: "#0f244d",
+color: "#fff",
+border: "1px solid rgba(148,163,184,0.35)",
+borderRadius: "12px",
+padding: "8px 12px",
+fontSize: "14px",
+cursor: "pointer",
+},
+footerButtons: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr 1fr",
+gap: "12px",
+marginTop: "12px",
+marginBottom: "32px",
+},
+saveButton: {
+background: "linear-gradient(180deg, #f5f5f5 0%, #d4d4d8 100%)",
+color: "#09090b",
+border: "none",
+borderRadius: "18px",
+padding: "16px",
+fontSize: "20px",
+fontWeight: 700,
+cursor: "pointer",
+},
+printButton: {
+background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+color: "#fff",
+border: "1px solid rgba(148,163,184,0.28)",
+borderRadius: "18px",
+padding: "16px",
+fontSize: "20px",
+fontWeight: 700,
+cursor: "pointer",
+},
+backButton: {
+background: "transparent",
+color: "#fff",
+border: "1px solid rgba(148,163,184,0.28)",
+borderRadius: "18px",
+padding: "16px",
+fontSize: "20px",
+fontWeight: 700,
+textAlign: "center",
+textDecoration: "none",
+display: "flex",
 alignItems: "center",
 justifyContent: "center",
-width: "fit-content",
-textDecoration: "none",
-padding: "12px 15px",
-borderRadius: "16px",
-border: "1px solid rgba(255,255,255,0.14)",
-background: "#111111",
-color: "#f5f5f5",
-fontWeight: 700,
-fontSize: "14px",
+},
+messageBox: {
+background: "rgba(59,130,246,0.12)",
+border: "1px solid rgba(59,130,246,0.28)",
+color: "#dbeafe",
+borderRadius: "18px",
+padding: "14px 16px",
+marginBottom: "16px",
+fontSize: "15px",
 },
 resumePaper: {
-background: "#ffffff",
-color: "#111827",
+width: "100%",
+minHeight: "1120px",
+height: "auto",
+overflow: "visible",
+background: "#fff",
 borderRadius: "18px",
-padding: "28px",
-minHeight: "780px",
+border: "1px solid #e5e7eb",
 boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
+padding: "34px 32px 42px",
+color: "#111827",
+boxSizing: "border-box",
+},
+resumeHeader: {
+textAlign: "center",
+marginBottom: "20px",
+paddingBottom: "8px",
 },
 resumeName: {
-margin: "0 0 20px",
+margin: "0 0 8px",
 fontSize: "28px",
 fontWeight: 700,
 color: "#111827",
 },
-resumeSection: {
-marginBottom: "22px",
+resumeContact: {
+margin: "0 0 6px",
+fontSize: "14px",
+lineHeight: 1.5,
+color: "#374151",
+wordBreak: "break-word",
 },
-resumeSectionHeading: {
+resumeLinkedin: {
+margin: 0,
+fontSize: "14px",
+lineHeight: 1.5,
+color: "#1d4ed8",
+wordBreak: "break-word",
+},
+resumeSectionBlock: {
+marginBottom: "20px",
+},
+resumeSectionTitle: {
 margin: "0 0 10px",
+textAlign: "center",
+fontSize: "22px",
+fontWeight: 700,
+color: "#111827",
+},
+resumeParagraph: {
+margin: 0,
+fontSize: "15px",
+lineHeight: 1.7,
+color: "#111827",
+whiteSpace: "pre-wrap",
+wordBreak: "break-word",
+},
+skillsGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr 1fr",
+gap: "10px 24px",
+},
+skillColumn: {
+minWidth: 0,
+},
+skillItem: {
+margin: "0 0 8px",
+fontSize: "15px",
+lineHeight: 1.5,
+color: "#111827",
+wordBreak: "break-word",
+},
+resumeEntry: {
+marginBottom: "16px",
+},
+resumeEntryTop: {
+display: "flex",
+justifyContent: "space-between",
+alignItems: "flex-start",
+gap: "16px",
+marginBottom: "6px",
+},
+resumeEntryHeading: {
+margin: 0,
 fontSize: "16px",
 fontWeight: 700,
 color: "#111827",
-textTransform: "uppercase",
-letterSpacing: "0.04em",
 },
-resumeText: {
-margin: 0,
+resumeEntrySubheading: {
+margin: "4px 0 0",
 fontSize: "15px",
-lineHeight: 1.75,
+fontWeight: 600,
+color: "#111827",
+},
+resumeEntryDates: {
+margin: 0,
+fontSize: "14px",
+color: "#374151",
+whiteSpace: "nowrap",
+},
+resumeBullet: {
+margin: "4px 0",
+fontSize: "15px",
+lineHeight: 1.65,
 color: "#111827",
 whiteSpace: "pre-wrap",
-},
-bulletList: {
-margin: 0,
-paddingLeft: "18px",
-},
-bulletItem: {
-marginBottom: "10px",
-color: "#111827",
-fontSize: "15px",
-lineHeight: 1.7,
+wordBreak: "break-word",
 },
 };
