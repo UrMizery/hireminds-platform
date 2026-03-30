@@ -306,7 +306,7 @@ Open Industry Core Skills
 <section style={styles.supportSection}>
 <div style={styles.sectionHeader}>
 <p style={styles.sectionKicker}>Career Support</p>
-<h2 style={styles.sectionTitle}>Guidance, video support, and preparation</h2>
+<h2 style={styles.sectionTitle}>Guidance and preparation</h2>
 </div>
 
 <div style={styles.supportList}>
