@@ -174,7 +174,7 @@ Open Career Goal Generator
 </a>
 </div>
 
-<div style={{ ...styles.featureCard, gridColumn: "1 / -1" }}>
+<div style={{ ...styles.featureCard, gridColumn: "span 1" }}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Budget Generator</h3>
 <span style={styles.liveTag}>New</span>
@@ -187,6 +187,25 @@ what may be left over each month.
 Open Budget Generator
 </a>
 </div>
+
+<div style={{ ...styles.featureCard, gridColumn: "span 1" }}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>Distance &amp; Commute Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Enter a starting location and destination to estimate drive time, walking
+time, commute distance, and whether the route appears to be on a bus line.
+</p>
+<a
+href="/career-toolkit/distance-commute-generator"
+style={styles.linkButton}
+>
+Open Distance &amp; Commute Generator
+</a>
+</div>
+
+<div style={styles.placeholderCard} aria-hidden="true" />
 </div>
 </section>
 
@@ -493,6 +512,9 @@ gridTwo: {
 display: "grid",
 gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
 gap: "18px",
+},
+  placeholderCard: {
+visibility: "hidden",
 },
 featureCard: {
 background:
