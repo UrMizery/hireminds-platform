@@ -1,5 +1,129 @@
 "use client";
 
+export const youtubeVideoCards = [
+{
+title: "Indeed vs LinkedIn vs Company Website",
+duration: "2 min",
+category: "job-search",
+style: "live-backup",
+featured: true,
+description:
+"Compare job boards with direct company applications and understand when applying on a company website may help.",
+youtubeUrl: "https://www.youtube.com/watch?v=ay2o7yEnq9g",
+buttonLabel: "Watch on YouTube",
+tags: ["indeed", "linkedin", "company website", "job boards"],
+},
+{
+title: "Interview Prep Basics",
+duration: "2 min",
+category: "interview",
+style: "whiteboard",
+featured: true,
+description:
+"Whiteboard-style interview prep video covering what to prepare, what to expect, and how to answer with confidence.",
+youtubeUrl: "https://www.youtube.com/watch?v=KoY59gzjnVs",
+buttonLabel: "Watch on YouTube",
+tags: ["interview prep", "whiteboard", "job interview"],
+},
+{
+title: "Funny Interview Tips",
+duration: "3 min",
+category: "interview",
+style: "funny-animation",
+featured: true,
+description:
+"Animated and lighthearted interview tips that still support confidence-building and practice.",
+youtubeUrl: "https://www.youtube.com/watch?v=dExbjul6R7g",
+buttonLabel: "Watch on YouTube",
+tags: ["interview", "funny", "animation"],
+},
+{
+title: "How to Dress for an Interview",
+duration: "2 min",
+category: "interview",
+style: "funny-animation",
+featured: true,
+description:
+"Funny animated-style example focused on what not to wear and how presentation affects first impressions.",
+youtubeUrl: "https://www.youtube.com/watch?v=uQMd2rjAoZI",
+buttonLabel: "Watch on YouTube",
+tags: ["interview outfit", "what not to wear", "funny"],
+},
+{
+title: "How to Dress for an Interview (Backup)",
+duration: "6 min",
+category: "interview",
+style: "live-backup",
+featured: false,
+description:
+"Backup option with clearer practical outfit guidance for different interview dress codes.",
+youtubeUrl: "https://www.youtube.com/watch?v=iaQvQ6VuTSY",
+buttonLabel: "Watch on YouTube",
+tags: ["interview outfit", "dress code", "backup"],
+},
+{
+title: "How to Apply for a Job",
+duration: "3 min",
+category: "job-search",
+style: "live-backup",
+featured: true,
+description:
+"Walk through the basics of applying carefully, following directions, and checking information before submitting.",
+youtubeUrl: "https://www.youtube.com/watch?v=A3BZHkRf-34",
+buttonLabel: "Watch on YouTube",
+tags: ["apply for jobs", "job application", "job search"],
+},
+{
+title: "Chronological Resume Format",
+duration: "3 min",
+category: "resume",
+style: "live-backup",
+featured: true,
+description:
+"Overview of resume structure with extra focus on chronological format and when to use it.",
+youtubeUrl: "https://www.youtube.com/watch?v=M0jocD7bKLI",
+buttonLabel: "Watch on YouTube",
+tags: ["resume", "chronological", "resume format"],
+},
+{
+title: "Resume Formats Explained",
+duration: "1 min",
+category: "resume",
+style: "short-backup",
+featured: false,
+description:
+"Short explainer comparing chronological, functional, and hybrid resume styles.",
+youtubeUrl: "https://www.youtube.com/shorts/yo2Zoa3TRz8",
+buttonLabel: "Watch on YouTube",
+tags: ["resume formats", "chronological", "shorts"],
+},
+
+// extra support videos
+{
+title: "Should I Apply on a Company Website or Job Board?",
+duration: "2 min",
+category: "job-search",
+style: "live-backup",
+featured: false,
+description:
+"Helpful support video for explaining direct apply versus job board apply.",
+youtubeUrl: "https://www.youtube.com/watch?v=ay2o7yEnq9g",
+buttonLabel: "Watch on YouTube",
+tags: ["direct apply", "company website", "job board"],
+},
+{
+title: "What NOT to Wear to an Interview",
+duration: "1 min",
+category: "interview",
+style: "funny-animation",
+featured: false,
+description:
+"Quick and simple support video that works well for a short-form content card.",
+youtubeUrl: "https://www.youtube.com/shorts/7Dn4kQj_kik",
+buttonLabel: "Watch on YouTube",
+tags: ["shorts", "interview outfit", "quick tips"],
+}
+];
 type VideoItem = {
 id: number;
 title: string;
