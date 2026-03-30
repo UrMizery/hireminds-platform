@@ -9,7 +9,7 @@ category: string;
 description: string;
 youtubeUrl?: string;
 locked?: boolean;
-buttonLabel?: string;
+buttonLabel: string;
 };
 
 const youtubeVideoCards: VideoCard[] = [
@@ -184,9 +184,9 @@ return (
 <p style={styles.kicker}>Career ToolKit</p>
 <h1 style={styles.title}>Video Library</h1>
 <p style={styles.subtitle}>
-Explore practical video support around job searching, applying,
-resume formats, interview preparation, LinkedIn, O*NET, and career
-readiness topics that help users move forward with more confidence.
+Explore practical video support around job searching, applying, resume
+formats, interview preparation, LinkedIn, O*NET, and career readiness
+topics that help users move forward with more confidence.
 </p>
 
 <div style={styles.heroButtons}>
@@ -205,32 +205,16 @@ style={{
 ...(video.locked ? styles.lockedCard : {}),
 }}
 >
-<div
+<div style={styles.cardBody}>
+<p
 style={{
-...styles.thumbnail,
-...(video.locked ? styles.lockedThumbnail : {}),
-}}
->
-<span
-style={{
-...styles.topicBadge,
-...(video.locked ? styles.lockedTopicBadge : {}),
+...styles.categoryLabel,
+...(video.locked ? styles.lockedCategoryLabel : {}),
 }}
 >
 {video.category}
-</span>
+</p>
 
-<span
-style={{
-...styles.typeBadge,
-...(video.locked ? styles.lockedTypeBadge : {}),
-}}
->
-{video.locked ? "Locked" : "Video"}
-</span>
-</div>
-
-<div style={styles.cardBody}>
 <h2 style={styles.cardTitle}>{video.title}</h2>
 <p style={styles.cardDescription}>{video.description}</p>
 </div>
@@ -330,68 +314,33 @@ alignItems: "stretch",
 card: {
 display: "flex",
 flexDirection: "column",
-minHeight: "285px",
-padding: "16px",
+minHeight: "250px",
+padding: "18px",
 borderRadius: "24px",
 background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
 border: "1px solid rgba(255,255,255,0.08)",
 boxShadow: "0 18px 40px rgba(0,0,0,0.2)",
+boxSizing: "border-box",
+overflow: "hidden",
 },
 lockedCard: {
 background: "linear-gradient(180deg, #101010 0%, #151515 100%)",
-},
-thumbnail: {
-minHeight: "82px",
-borderRadius: "18px",
-border: "1px solid rgba(255,255,255,0.08)",
-background:
-"linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-padding: "12px",
-display: "flex",
-justifyContent: "space-between",
-alignItems: "flex-start",
-marginBottom: "14px",
-},
-lockedThumbnail: {
-background:
-"linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)",
-},
-topicBadge: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-padding: "7px 10px",
-borderRadius: "999px",
-background: "rgba(59,130,246,0.12)",
-border: "1px solid rgba(59,130,246,0.24)",
-color: "#dbeafe",
-fontSize: "12px",
-fontWeight: 700,
-},
-lockedTopicBadge: {
-background: "rgba(255,255,255,0.06)",
-border: "1px solid rgba(255,255,255,0.1)",
-color: "#d4d4d8",
-},
-typeBadge: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-padding: "7px 10px",
-borderRadius: "999px",
-background: "rgba(255,255,255,0.05)",
-border: "1px solid rgba(255,255,255,0.1)",
-color: "#d4d4d8",
-fontSize: "12px",
-fontWeight: 700,
-},
-lockedTypeBadge: {
-color: "#a1a1aa",
 },
 cardBody: {
 display: "grid",
 gap: "10px",
 marginBottom: "16px",
+},
+categoryLabel: {
+margin: 0,
+color: "#9ca3af",
+fontSize: "12px",
+fontWeight: 700,
+letterSpacing: "0.08em",
+textTransform: "uppercase",
+},
+lockedCategoryLabel: {
+color: "#a1a1aa",
 },
 cardTitle: {
 margin: 0,
@@ -413,7 +362,8 @@ alignItems: "center",
 justifyContent: "center",
 marginTop: "auto",
 width: "100%",
-minHeight: "48px",
+maxWidth: "100%",
+minHeight: "46px",
 borderRadius: "16px",
 border: "1px solid rgba(255,255,255,0.12)",
 background: "#0d0d0d",
@@ -423,6 +373,7 @@ fontWeight: 700,
 textDecoration: "none",
 textAlign: "center",
 padding: "12px 14px",
+boxSizing: "border-box",
 },
 lockedButton: {
 display: "inline-flex",
@@ -430,7 +381,8 @@ alignItems: "center",
 justifyContent: "center",
 marginTop: "auto",
 width: "100%",
-minHeight: "48px",
+maxWidth: "100%",
+minHeight: "46px",
 borderRadius: "16px",
 border: "1px solid rgba(255,255,255,0.08)",
 background: "rgba(255,255,255,0.04)",
@@ -439,5 +391,6 @@ fontSize: "14px",
 fontWeight: 700,
 textAlign: "center",
 padding: "12px 14px",
+boxSizing: "border-box",
 },
 };
