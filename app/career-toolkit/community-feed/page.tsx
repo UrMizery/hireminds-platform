@@ -1,17 +1,187 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { supabase } from "../../lib/supabase";
+
+type VideoCard = {
+title: string;
+duration: string;
+category: string;
+description: string;
+youtubeUrl: string;
+};
+
+const youtubeVideoCards: VideoCard[] = [
+{
+title: "How to Read and Understand Job Posting",
+duration: "Video",
+category: "Job Search",
+description:
+"Learn how to break down a job posting, understand what employers are asking for, and spot the details that matter before applying.",
+youtubeUrl: "https://youtu.be/IfTr8CsTnuo?si=Hgz_1n2Ra-mDIK9L",
+},
+{
+title: "Job Search on Indeed & Applying",
+duration: "Video",
+category: "Job Search",
+description:
+"Walk through using Indeed more effectively and understand how to move from searching to applying with more confidence.",
+youtubeUrl: "https://youtu.be/F6eAQvj_5qA?si=w62uKMLsQ5rfLVMY",
+},
+{
+title: "Apply on Company Site via Indeed",
+duration: "Video",
+category: "Applications",
+description:
+"See how to move from a job board listing to the company site and understand when direct application may be the better route.",
+youtubeUrl: "https://youtu.be/i-dsitWNL9k?si=HXZDTU5M1S81xPlc",
+},
+{
+title: "Job Hunting with No Experience - The Catch 22",
+duration: "Video",
+category: "Job Search",
+description:
+"Explore practical perspective on job searching when you have little to no experience and how to keep moving forward.",
+youtubeUrl: "https://youtu.be/xS9mHUvi9xA?si=PV7CszF9d0b8oOc0",
+},
+{
+title: "Applying for a Job with a Criminal Record",
+duration: "Video",
+category: "Reentry",
+description:
+"Helpful guidance for navigating applications, confidence, and next steps when applying with a criminal record.",
+youtubeUrl: "https://youtu.be/NgmqTsBi92A?si=DmxOkRwZpGXK2Xzy",
+},
+{
+title: 'How to Answer the "Weakness and Strength" Question in Interviews',
+duration: "Video",
+category: "Interview",
+description:
+"Learn how to answer one of the most common interview questions with more confidence, honesty, and professionalism.",
+youtubeUrl: "https://youtu.be/NQrUJBOcgJc?si=CN6LGNqxZPUI_TYv",
+},
+{
+title: "Choosing the Right Resume Format",
+duration: "Video",
+category: "Resume",
+description:
+"Understand how to choose a resume format that fits your background, strengths, and the kind of opportunity you want next.",
+youtubeUrl: "https://youtu.be/_qWi6vp_0t4?si=tyV-XL6tIjAJiNMw",
+},
+{
+title: "How to Dress for Any Kind of Job Interview",
+duration: "Video",
+category: "Interview",
+description:
+"Get practical interview outfit guidance that helps you look prepared, polished, and appropriate for different work settings.",
+youtubeUrl: "https://youtu.be/UbcLJjxIpyU?si=prft2ECQV7VCdQzT",
+},
+{
+title: "How to Use LinkedIn",
+duration: "Video",
+category: "Career Tools",
+description:
+"Learn how LinkedIn can support visibility, networking, and job search efforts as part of your professional presence.",
+youtubeUrl: "https://youtu.be/UCkgBTmAb9E?si=lgOyPysh8mh6Wmo7",
+},
+{
+title: "O*NET",
+duration: "Video",
+category: "Career Exploration",
+description:
+"Explore how O*NET can help you research careers, job duties, skills, and pathways when planning your next move.",
+youtubeUrl: "https://youtu.be/7Jk94AQ8c3o?si=3UAtMG0qrGcRlLtP",
+},
+{
+title: "Never Say These 5 Things in Any Interview",
+duration: "Video",
+category: "Interview",
+description:
+"Avoid common interview mistakes by learning what not to say and how to present yourself more effectively.",
+youtubeUrl: "https://youtu.be/wIjK-6Do6lg?si=ZR8gSmfuoa98PIx1",
+},
+];
 
 export default function CommunityFeedPage() {
+const [userId, setUserId] = useState("");
+const [fullName, setFullName] = useState<string | null>(null);
+const [email, setEmail] = useState<string | null>(null);
+const [referralCode, setReferralCode] = useState<string | null>(null);
+const openTrackedRef = useRef(false);
+
+useEffect(() => {
+async function loadUserAndTrack() {
+const { data, error } = await supabase.auth.getUser();
+if (error || !data.user || openTrackedRef.current) return;
+
+openTrackedRef.current = true;
+setUserId(data.user.id);
+
+const { data: profile } = await supabase
+.from("candidate_profiles")
+.select("full_name, email, referral_code")
+.eq("user_id", data.user.id)
+.maybeSingle();
+
+setFullName(profile?.full_name || null);
+setEmail(profile?.email || data.user.email || null);
+setReferralCode(profile?.referral_code || null);
+
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: data.user.id,
+full_name: profile?.full_name || null,
+email: profile?.email || data.user.email || null,
+referral_code: profile?.referral_code || null,
+event_type: "tool_opened",
+tool_name: "video_library",
+page_name: "/career-toolkit/community-feed",
+});
+
+if (activityError) {
+console.error("Video library tracking error:", activityError);
+}
+}
+
+loadUserAndTrack();
+}, []);
+
+async function handleVideoClick(video: VideoCard) {
+try {
+if (userId) {
+const { error: activityError } = await supabase
+.from("user_activity")
+.insert({
+user_id: userId,
+full_name: fullName,
+email,
+referral_code: referralCode,
+event_type: "tool_completed",
+tool_name: "video_library",
+page_name: "/career-toolkit/community-feed",
+action_label: `video_opened:${video.title}`,
+});
+
+if (activityError) {
+console.error("Video click tracking error:", activityError);
+}
+}
+} catch (error) {
+console.error("Video click tracking failed:", error);
+}
+}
+
 return (
 <main style={styles.page}>
 <div style={styles.shell}>
 <section style={styles.heroCard}>
 <p style={styles.kicker}>Career ToolKit</p>
-<h1 style={styles.title}>Video Library 🔒</h1>
+<h1 style={styles.title}>Video Library</h1>
 <p style={styles.subtitle}>
-This section is being refreshed with more aligned, modern, and practical
-HireMinds video content. The new library is coming soon.
+Explore practical video support around job searching, applying,
+resume formats, interview preparation, LinkedIn, O*NET, and career
+readiness topics that help users move forward with more confidence.
 </p>
 
 <div style={styles.heroButtons}>
@@ -21,30 +191,30 @@ Back to Career ToolKit
 </div>
 </section>
 
-<section style={styles.lockCard}>
-<div style={styles.lockIconWrap}>
-<span style={styles.lockIcon}>🔒</span>
+<section style={styles.grid}>
+{youtubeVideoCards.map((video) => (
+<article key={`${video.title}-${video.youtubeUrl}`} style={styles.card}>
+<div style={styles.thumbnail}>
+<span style={styles.topicBadge}>{video.category}</span>
+<span style={styles.durationBadge}>{video.duration}</span>
 </div>
 
-<h2 style={styles.lockTitle}>Coming Soon</h2>
-<p style={styles.lockText}>
-The Video Library is being updated to better match HireMinds. Future
-topics will include job descriptions, applying, interview prep, resume
-formats, Career Passport walkthroughs, and Career ToolKit how-tos.
-</p>
-
-<div style={styles.topicGrid}>
-<div style={styles.topicPill}>How to Read a Job Description</div>
-<div style={styles.topicPill}>Direct Apply vs Job Boards</div>
-<div style={styles.topicPill}>How to Apply</div>
-<div style={styles.topicPill}>What to Wear to an Interview</div>
-<div style={styles.topicPill}>Resume Formats Explained</div>
-<div style={styles.topicPill}>Interviewing Tips and Prep</div>
-<div style={styles.topicPill}>Career Passport Walkthrough</div>
-<div style={styles.topicPill}>Career ToolKit How-Tos</div>
+<div style={styles.cardBody}>
+<h2 style={styles.cardTitle}>{video.title}</h2>
+<p style={styles.cardDescription}>{video.description}</p>
 </div>
 
-<span style={styles.lockedButton}>Video Library Coming Soon 🔒</span>
+<a
+href={video.youtubeUrl}
+target="_blank"
+rel="noreferrer"
+style={styles.button}
+onClick={() => handleVideoClick(video)}
+>
+Watch on YouTube
+</a>
+</article>
+))}
 </section>
 </div>
 </main>
@@ -63,7 +233,7 @@ fontFamily:
 },
 shell: {
 width: "100%",
-maxWidth: "1200px",
+maxWidth: "1280px",
 margin: "0 auto",
 display: "grid",
 gap: "24px",
@@ -87,15 +257,15 @@ margin: "0 0 10px",
 fontSize: "42px",
 fontWeight: 700,
 color: "#f5f5f5",
-letterSpacing: "-0.04em",
 lineHeight: 1.04,
+letterSpacing: "-0.04em",
 },
 subtitle: {
 margin: 0,
 color: "#c8c8c8",
 fontSize: "16px",
 lineHeight: 1.75,
-maxWidth: "820px",
+maxWidth: "900px",
 },
 heroButtons: {
 display: "flex",
@@ -116,72 +286,92 @@ color: "#f5f5f5",
 fontWeight: 700,
 fontSize: "14px",
 },
-lockCard: {
+grid: {
+display: "grid",
+gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+gap: "20px",
+alignItems: "stretch",
+},
+card: {
+display: "flex",
+flexDirection: "column",
+minHeight: "320px",
+padding: "16px",
+borderRadius: "26px",
 background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
 border: "1px solid rgba(255,255,255,0.08)",
-borderRadius: "32px",
-padding: "40px 28px",
-boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
-display: "grid",
-gap: "18px",
-textAlign: "center",
+boxShadow: "0 18px 40px rgba(0,0,0,0.22)",
 },
-lockIconWrap: {
-display: "flex",
-justifyContent: "center",
-},
-lockIcon: {
-fontSize: "52px",
-lineHeight: 1,
-},
-lockTitle: {
-margin: 0,
-fontSize: "34px",
-lineHeight: 1.08,
-fontWeight: 700,
-color: "#f5f5f5",
-letterSpacing: "-0.03em",
-},
-lockText: {
-margin: "0 auto",
-maxWidth: "820px",
-color: "#d4d4d8",
-fontSize: "16px",
-lineHeight: 1.8,
-},
-topicGrid: {
-display: "grid",
-gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-gap: "12px",
-marginTop: "6px",
-},
-topicPill: {
-display: "flex",
-alignItems: "center",
-justifyContent: "center",
-minHeight: "58px",
-padding: "12px 16px",
-borderRadius: "18px",
-background: "rgba(255,255,255,0.04)",
+thumbnail: {
+minHeight: "110px",
+borderRadius: "20px",
 border: "1px solid rgba(255,255,255,0.08)",
-color: "#e5e7eb",
-fontSize: "14px",
-fontWeight: 600,
-textAlign: "center",
+background:
+"linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+padding: "14px",
+display: "flex",
+justifyContent: "space-between",
+alignItems: "flex-start",
+marginBottom: "16px",
 },
-lockedButton: {
+topicBadge: {
 display: "inline-flex",
 alignItems: "center",
 justifyContent: "center",
-width: "fit-content",
-justifySelf: "center",
-marginTop: "8px",
-padding: "14px 18px",
-borderRadius: "18px",
-border: "1px solid rgba(255,255,255,0.08)",
-background: "rgba(255,255,255,0.04)",
-color: "#9ca3af",
+padding: "8px 10px",
+borderRadius: "999px",
+background: "rgba(59,130,246,0.12)",
+border: "1px solid rgba(59,130,246,0.24)",
+color: "#dbeafe",
+fontSize: "12px",
 fontWeight: 700,
-fontSize: "14px",
+},
+durationBadge: {
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+padding: "8px 10px",
+borderRadius: "999px",
+background: "rgba(255,255,255,0.05)",
+border: "1px solid rgba(255,255,255,0.1)",
+color: "#d4d4d8",
+fontSize: "12px",
+fontWeight: 700,
+},
+cardBody: {
+display: "grid",
+gap: "10px",
+marginBottom: "18px",
+},
+cardTitle: {
+margin: 0,
+fontSize: "24px",
+fontWeight: 800,
+lineHeight: 1.06,
+letterSpacing: "-0.03em",
+color: "#fafafa",
+},
+cardDescription: {
+margin: 0,
+fontSize: "15px",
+lineHeight: 1.7,
+color: "#d4d4d8",
+},
+button: {
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+marginTop: "auto",
+width: "100%",
+minHeight: "56px",
+borderRadius: "18px",
+border: "1px solid rgba(255,255,255,0.14)",
+background: "#0d0d0d",
+color: "#ffffff",
+fontSize: "15px",
+fontWeight: 700,
+textDecoration: "none",
+textAlign: "center",
+padding: "14px 16px",
 },
 };
