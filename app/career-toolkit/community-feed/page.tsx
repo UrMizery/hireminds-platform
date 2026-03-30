@@ -5,123 +5,75 @@ import type { CSSProperties } from "react";
 type VideoCard = {
 title: string;
 duration: string;
-category: string;
-style: string;
-featured: boolean;
 description: string;
 youtubeUrl: string;
-buttonLabel: string;
-tags: string[];
+topic: string;
 };
 
 const youtubeVideoCards: VideoCard[] = [
 {
-title: "Indeed vs LinkedIn vs Company Website",
+title: "How to Read a Job Description",
 duration: "2 min",
-category: "Job Search",
-style: "explainer",
-featured: true,
+topic: "Job Search",
 description:
-"Understand the difference between major job platforms and when applying directly may help.",
-youtubeUrl: "https://www.youtube.com/watch?v=ay2o7yEnq9g",
-buttonLabel: "Watch on YouTube",
-tags: ["Indeed", "LinkedIn", "Company Website", "Job Boards"],
-},
-{
-title: "Interview Prep Basics",
-duration: "2 min",
-category: "Interview",
-style: "whiteboard",
-featured: true,
-description:
-"Short guidance on how to prepare, what to expect, and how to answer with confidence.",
+"Learn how to spot requirements, skills, keywords, and what matters most before applying.",
 youtubeUrl: "https://www.youtube.com/watch?v=KoY59gzjnVs",
-buttonLabel: "Watch on YouTube",
-tags: ["Interview Prep", "Whiteboard", "Confidence"],
-},
-{
-title: "How to Dress for an Interview",
-duration: "1 min",
-category: "Interview",
-style: "funny-animation",
-featured: true,
-description:
-"Simple tips on looking clean, prepared, and professional for different interview settings.",
-youtubeUrl: "https://www.youtube.com/watch?v=uQMd2rjAoZI",
-buttonLabel: "Watch on YouTube",
-tags: ["Interview Outfit", "First Impression", "Funny"],
-},
-{
-title: "How to Apply for a Job",
-duration: "3 min",
-category: "Job Search",
-style: "explainer",
-featured: true,
-description:
-"Walk through the basics of applying carefully, following directions, and checking information.",
-youtubeUrl: "https://www.youtube.com/watch?v=A3BZHkRf-34",
-buttonLabel: "Watch on YouTube",
-tags: ["Applications", "Job Search", "Steps"],
-},
-{
-title: "Chronological Resume Format",
-duration: "3 min",
-category: "Resume",
-style: "explainer",
-featured: true,
-description:
-"Overview of resume structure with extra focus on chronological format and when to use it.",
-youtubeUrl: "https://www.youtube.com/watch?v=M0jocD7bKLI",
-buttonLabel: "Watch on YouTube",
-tags: ["Resume", "Chronological", "Format"],
-},
-{
-title: "Funny Interview Tips",
-duration: "3 min",
-category: "Interview",
-style: "funny-animation",
-featured: false,
-description:
-"Animated-style interview tips that support confidence-building and practicing strong answers.",
-youtubeUrl: "https://www.youtube.com/watch?v=dExbjul6R7g",
-buttonLabel: "Watch on YouTube",
-tags: ["Interview", "Animation", "Practice"],
-},
-{
-title: "Resume Formats Explained",
-duration: "1 min",
-category: "Resume",
-style: "short-explainer",
-featured: false,
-description:
-"Quick overview of chronological, functional, and hybrid resume styles.",
-youtubeUrl: "https://www.youtube.com/shorts/yo2Zoa3TRz8",
-buttonLabel: "Watch on YouTube",
-tags: ["Resume Formats", "Short", "Chronological"],
 },
 {
 title: "Direct Apply vs Job Boards",
 duration: "2 min",
-category: "Job Search",
-style: "explainer",
-featured: false,
+topic: "Job Search",
 description:
-"Helpful support video for understanding direct company applications versus job board submissions.",
+"Understand when to apply on a company website and when a job board may still be useful.",
 youtubeUrl: "https://www.youtube.com/watch?v=ay2o7yEnq9g",
-buttonLabel: "Watch on YouTube",
-tags: ["Direct Apply", "Company Site", "Job Boards"],
 },
 {
-title: "What Not to Wear to an Interview",
-duration: "1 min",
-category: "Interview",
-style: "funny-short",
-featured: false,
+title: "How to Apply for a Job",
+duration: "3 min",
+topic: "Applications",
 description:
-"Quick visual reminder of what to avoid and how presentation affects first impressions.",
+"Follow the right steps before submitting your application and avoid common mistakes.",
+youtubeUrl: "https://www.youtube.com/watch?v=A3BZHkRf-34",
+},
+{
+title: "What to Wear to an Interview",
+duration: "1 min",
+topic: "Interview",
+description:
+"Simple guidance on looking clean, prepared, and professional for interview settings.",
 youtubeUrl: "https://www.youtube.com/watch?v=uQMd2rjAoZI",
-buttonLabel: "Watch on YouTube",
-tags: ["Interview Outfit", "Quick Tips", "Presentation"],
+},
+{
+title: "Resume Formats Explained",
+duration: "2 min",
+topic: "Resume",
+description:
+"Learn the difference between chronological, functional, combination, and hybrid resumes.",
+youtubeUrl: "https://www.youtube.com/watch?v=M0jocD7bKLI",
+},
+{
+title: "Interviewing Tips and Prep",
+duration: "2 min",
+topic: "Interview",
+description:
+"Build confidence with practical interview prep, common questions, and stronger answers.",
+youtubeUrl: "https://www.youtube.com/watch?v=dExbjul6R7g",
+},
+{
+title: "Career Passport Walkthrough",
+duration: "2 min",
+topic: "Platform",
+description:
+"See how to set up and use your Career Passport inside HireMinds step by step.",
+youtubeUrl: "https://www.youtube.com/watch?v=A3BZHkRf-34",
+},
+{
+title: "Career ToolKit How-Tos",
+duration: "2 min",
+topic: "Platform",
+description:
+"Learn how to use the generators and tools inside HireMinds with more confidence.",
+youtubeUrl: "https://www.youtube.com/watch?v=KoY59gzjnVs",
 },
 ];
 
@@ -133,28 +85,22 @@ return (
 <p style={styles.kicker}>Career ToolKit</p>
 <h1 style={styles.title}>Video Library</h1>
 <p style={styles.subtitle}>
-Explore short videos that support job searching, interviewing,
-resume building, and workplace readiness. Animated, whiteboard, and
-simple explainer content is featured where possible.
+Explore practical video support focused on job searching, applying,
+interviewing, resume formats, and how to use HireMinds with confidence.
 </p>
 </section>
 
 <section style={styles.grid}>
 {youtubeVideoCards.map((video) => (
 <article key={`${video.title}-${video.youtubeUrl}`} style={styles.card}>
-<div style={styles.cardTopRow}>
-<h2 style={styles.cardTitle}>{video.title}</h2>
-<span style={styles.duration}>{video.duration}</span>
+<div style={styles.thumbnail}>
+<span style={styles.topicBadge}>{video.topic}</span>
+<span style={styles.durationBadge}>{video.duration}</span>
 </div>
 
+<div style={styles.cardBody}>
+<h2 style={styles.cardTitle}>{video.title}</h2>
 <p style={styles.cardDescription}>{video.description}</p>
-
-<div style={styles.tagWrap}>
-{video.tags.map((tag) => (
-<span key={`${video.title}-${tag}`} style={styles.tag}>
-{tag}
-</span>
-))}
 </div>
 
 <a
@@ -163,7 +109,7 @@ target="_blank"
 rel="noreferrer"
 style={styles.button}
 >
-{video.buttonLabel}
+Watch Video
 </a>
 </article>
 ))}
@@ -177,33 +123,36 @@ const styles: Record<string, CSSProperties> = {
 page: {
 minHeight: "100vh",
 background:
-"linear-gradient(180deg, #0a0a0a 0%, #111111 45%, #151515 100%)",
+"radial-gradient(circle at top, rgba(59,130,246,0.08) 0%, rgba(5,5,5,1) 32%, rgba(13,13,15,1) 100%)",
 color: "#f5f5f5",
-padding: "32px 16px 64px",
+padding: "32px 20px 64px",
+fontFamily:
+'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 },
 shell: {
 width: "100%",
-maxWidth: "1200px",
+maxWidth: "1280px",
 margin: "0 auto",
 },
 headerSection: {
-marginBottom: "32px",
+marginBottom: "28px",
 },
 kicker: {
 margin: 0,
 marginBottom: "10px",
-fontSize: "0.85rem",
+fontSize: "12px",
 fontWeight: 700,
-letterSpacing: "0.14em",
+letterSpacing: "0.16em",
 textTransform: "uppercase",
 color: "#9ca3af",
 },
 title: {
 margin: 0,
-fontSize: "clamp(2rem, 4vw, 3.2rem)",
+fontSize: "clamp(2.2rem, 4vw, 3.4rem)",
 fontWeight: 800,
-lineHeight: 1.05,
-letterSpacing: "-0.03em",
+lineHeight: 1.02,
+letterSpacing: "-0.04em",
+color: "#fafafa",
 },
 subtitle: {
 marginTop: "14px",
@@ -215,81 +164,90 @@ color: "#c7c7c7",
 },
 grid: {
 display: "grid",
-gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-gap: "22px",
+gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+gap: "20px",
 alignItems: "stretch",
 },
 card: {
 display: "flex",
 flexDirection: "column",
-justifyContent: "space-between",
-minHeight: "420px",
-padding: "24px",
-borderRadius: "28px",
-background: "#050505",
-border: "1px solid rgba(255,255,255,0.12)",
-boxShadow: "0 0 0 1px rgba(255,255,255,0.02) inset",
+minHeight: "320px",
+padding: "16px",
+borderRadius: "26px",
+background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+border: "1px solid rgba(255,255,255,0.08)",
+boxShadow: "0 18px 40px rgba(0,0,0,0.22)",
 },
-cardTopRow: {
+thumbnail: {
+minHeight: "120px",
+borderRadius: "20px",
+border: "1px solid rgba(255,255,255,0.08)",
+background:
+"linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+padding: "14px",
 display: "flex",
 justifyContent: "space-between",
 alignItems: "flex-start",
-gap: "12px",
+marginBottom: "16px",
 },
-cardTitle: {
-margin: 0,
-fontSize: "2rem",
-fontWeight: 750,
-lineHeight: 1.08,
-letterSpacing: "-0.03em",
-color: "#fafafa",
-},
-duration: {
-flexShrink: 0,
-fontSize: "0.95rem",
-color: "#a1a1aa",
-fontWeight: 500,
-paddingTop: "4px",
-},
-cardDescription: {
-marginTop: "26px",
-marginBottom: "20px",
-fontSize: "1rem",
-lineHeight: 1.75,
-color: "#d4d4d8",
-},
-tagWrap: {
-display: "flex",
-flexWrap: "wrap",
-gap: "8px",
-marginBottom: "24px",
-},
-tag: {
+topicBadge: {
 display: "inline-flex",
 alignItems: "center",
-padding: "8px 12px",
+justifyContent: "center",
+padding: "8px 10px",
+borderRadius: "999px",
+background: "rgba(59,130,246,0.12)",
+border: "1px solid rgba(59,130,246,0.24)",
+color: "#dbeafe",
+fontSize: "12px",
+fontWeight: 700,
+},
+durationBadge: {
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+padding: "8px 10px",
 borderRadius: "999px",
 background: "rgba(255,255,255,0.05)",
 border: "1px solid rgba(255,255,255,0.1)",
-fontSize: "0.8rem",
+color: "#d4d4d8",
+fontSize: "12px",
+fontWeight: 700,
+},
+cardBody: {
+display: "grid",
+gap: "10px",
+marginBottom: "18px",
+},
+cardTitle: {
+margin: 0,
+fontSize: "28px",
+fontWeight: 800,
+lineHeight: 1.04,
+letterSpacing: "-0.03em",
+color: "#fafafa",
+},
+cardDescription: {
+margin: 0,
+fontSize: "15px",
+lineHeight: 1.7,
 color: "#d4d4d8",
 },
 button: {
 display: "inline-flex",
 alignItems: "center",
 justifyContent: "center",
-minHeight: "88px",
-width: "100%",
 marginTop: "auto",
-borderRadius: "28px",
+width: "100%",
+minHeight: "56px",
+borderRadius: "18px",
 border: "1px solid rgba(255,255,255,0.14)",
-background: "#090909",
+background: "#0d0d0d",
 color: "#ffffff",
-fontSize: "1.05rem",
+fontSize: "15px",
 fontWeight: 700,
 textDecoration: "none",
 textAlign: "center",
-lineHeight: 1.3,
-padding: "20px",
+padding: "14px 16px",
 },
 };
