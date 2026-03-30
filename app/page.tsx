@@ -1,10 +1,67 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLanguage } from "./lib/language-context";
+import { supabase } from "./lib/supabase";
 
 export default function HomePage() {
 const { t } = useLanguage();
 const isRTL = false;
+
+const [visitCount, setVisitCount] = useState<number | null>(null);
+
+useEffect(() => {
+async function trackHomeVisit() {
+try {
+const sessionKey = "hireminds-home-visit-counted";
+const alreadyCounted = sessionStorage.getItem(sessionKey);
+
+if (!alreadyCounted) {
+const { data: currentRow, error: readError } = await supabase
+.from("page_visits")
+.select("visit_count")
+.eq("page_key", "home")
+.single();
+
+if (readError) {
+console.error("Error reading home page visit count:", readError);
+} else {
+const currentCount = currentRow?.visit_count ?? 0;
+
+const { error: updateError } = await supabase
+.from("page_visits")
+.update({
+visit_count: currentCount + 1,
+updated_at: new Date().toISOString(),
+})
+.eq("page_key", "home");
+
+if (updateError) {
+console.error("Error updating home page visit count:", updateError);
+} else {
+sessionStorage.setItem(sessionKey, "true");
+}
+}
+}
+
+const { data: latestRow, error: latestError } = await supabase
+.from("page_visits")
+.select("visit_count")
+.eq("page_key", "home")
+.single();
+
+if (latestError) {
+console.error("Error fetching latest home page visit count:", latestError);
+} else {
+setVisitCount(latestRow?.visit_count ?? 0);
+}
+} catch (error) {
+console.error("Home page visitor counter error:", error);
+}
+}
+
+trackHomeVisit();
+}, []);
 
 return (
 <main style={styles.page}>
@@ -79,20 +136,32 @@ increases visibility, and creates stronger employment connections.
 <section style={styles.statsSection}>
 <div style={styles.statsRow}>
 <div style={styles.statItem}>
-<p style={styles.statNumber}>Visitor Counter</p>
-<p style={styles.statLabel}>Tracking platform reach and visibility</p>
+<p style={styles.statNumber}>
+{visitCount !== null ? visitCount.toLocaleString() : "--"}
+</p>
+<p style={styles.statLabel}>Visitors</p>
 </div>
 
 <div style={styles.statItem}>
 <p style={styles.statNumber}>New Users</p>
-<p style={styles.statLabel}>Welcoming fresh talent and opportunity</p>
+<p style={styles.statLabel}>
+Fresh talent discovering new opportunities
+</p>
 </div>
 
 <div style={styles.statItem}>
-<p style={styles.statNumber}>5-Star Platform</p>
-<p style={styles.statLabel}>Empowering talent, readiness, and career momentum</p>
+<p style={styles.statNumber}>Active Users</p>
+<p style={styles.statLabel}>
+Signed up and building career momentum
+</p>
 </div>
 </div>
+
+<p style={styles.platformLine}>
+5-Star Platform built to elevate visibility, strengthen readiness, and
+empower talent through smarter career tools, stronger branding, and
+more meaningful employment connections.
+</p>
 
 <p style={styles.footerText}>A product of RicanNECT</p>
 </section>
@@ -114,13 +183,6 @@ hero: {
 maxWidth: "1100px",
 margin: "0 auto 34px",
 padding: "24px 12px 12px",
-},
-kicker: {
-margin: "0 0 14px",
-color: "#a3a3a3",
-fontSize: "12px",
-letterSpacing: "0.22em",
-textTransform: "uppercase",
 },
 title: {
 margin: "0 0 16px",
@@ -226,6 +288,16 @@ margin: 0,
 color: "#a1a1aa",
 fontSize: "14px",
 lineHeight: 1.7,
+},
+platformLine: {
+margin: "0 0 10px",
+textAlign: "center",
+color: "#d4d4d8",
+fontSize: "15px",
+lineHeight: 1.8,
+maxWidth: "920px",
+marginLeft: "auto",
+marginRight: "auto",
 },
 footerText: {
 margin: 0,
