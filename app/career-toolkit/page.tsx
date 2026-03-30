@@ -191,19 +191,16 @@ Open Budget Generator
 
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
-<h3 style={styles.featureTitle}>Distance &amp; Commute Generator</h3>
-<span style={styles.liveTag}>New</span>
+<h3 style={styles.featureTitle}>Distance &amp; Commute Generator 🔒</h3>
+<span style={styles.liveTag}>Coming Soon</span>
 </div>
 <p style={styles.featureText}>
-Enter a starting location and destination to estimate drive time, walking
-time, commute distance, and whether the route appears to be on a bus line.
+Estimate drive time, walking time, commute distance, and whether a route is
+on a bus line. This feature is coming soon.
 </p>
-<a
-href="/career-toolkit/distance-commute-generator"
-style={styles.linkButton}
->
-Open Distance &amp; Commute Generator
-</a>
+<span style={styles.lockedToolButton}>
+Coming Soon 🔒
+</span>
 </div>
 </div>
 
@@ -574,6 +571,19 @@ borderRadius: "16px",
 border: "1px solid rgba(255,255,255,0.14)",
 background: "#111111",
 color: "#f5f5f5",
+fontWeight: 700,
+fontSize: "14px",
+},
+  lockedToolButton: {
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+width: "fit-content",
+padding: "12px 15px",
+borderRadius: "16px",
+border: "1px solid rgba(255,255,255,0.08)",
+background: "rgba(255,255,255,0.04)",
+color: "#9ca3af",
 fontWeight: 700,
 fontSize: "14px",
 },
