@@ -80,7 +80,21 @@ support, and live preview.
 Open Cover Letter Generator
 </a>
 </div>
-
+<div style={styles.featureCard}>
+<div style={styles.featureTop}>
+<h3 style={styles.featureTitle}>New Opportunities Resume Generator</h3>
+<span style={styles.liveTag}>New</span>
+</div>
+<p style={styles.featureText}>
+Created for those rebuilding, restarting, reentering, and stepping boldly into new opportunities. Designed for people turning life experience, resilience, and determination into career-ready momentum.
+</p>
+<a
+href="/career-toolkit/new-opportunities-resume-generator"
+style={styles.linkButton}
+>
+Open New Opportunities Resume Generator
+</a>
+</div>
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Professional Branding Generator</h3>
