@@ -105,7 +105,7 @@ Open New Opportunities Resume Generator
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-You Are Your Brand. Build It With Intention.
+You Are Your Brand. Build It With Intention. Create stronger professional summaries, bios, and enhanced resume bullet points with polished wording, stronger action verbs, and career-ready branding language.
 </p>
 <a
 href="/career-toolkit/professional-branding-generator"
@@ -121,8 +121,7 @@ Open Professional Branding Generator
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-From thank-you notes to resignation letters, create the words that move
-your career forward.
+Create polished letters for career moves, workplace communication, follow-ups, requests, resignations, and other professional moments that matter.
 </p>
 <a
 href="/career-toolkit/employer-follow-up-generator"
