@@ -8,6 +8,7 @@ const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [message, setMessage] = useState("");
 const [loading, setLoading] = useState(false);
+const [showPassword, setShowPassword] = useState(false);
 
 async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
 e.preventDefault();
@@ -87,14 +88,26 @@ required
 
 <div style={styles.fieldWrap}>
 <label style={styles.label}>Password</label>
+
+<div style={styles.passwordWrap}>
 <input
-type="password"
+type={showPassword ? "text" : "password"}
 value={password}
 onChange={(e) => setPassword(e.target.value)}
 placeholder="Enter password"
-style={styles.input}
+style={styles.passwordInput}
 required
 />
+
+<button
+type="button"
+onClick={() => setShowPassword((prev) => !prev)}
+style={styles.eyeButton}
+aria-label={showPassword ? "Hide password" : "Show password"}
+>
+{showPassword ? "🙈" : "👁"}
+</button>
+</div>
 </div>
 
 {message ? <p style={styles.message}>{message}</p> : null}
@@ -167,6 +180,33 @@ color: "#f4f4f5",
 fontSize: "15px",
 boxSizing: "border-box",
 outline: "none",
+},
+passwordWrap: {
+position: "relative",
+display: "flex",
+alignItems: "center",
+},
+passwordInput: {
+width: "100%",
+padding: "14px 46px 14px 16px",
+borderRadius: "16px",
+border: "1px solid #313131",
+background: "#0f0f10",
+color: "#f4f4f5",
+fontSize: "15px",
+boxSizing: "border-box",
+outline: "none",
+},
+eyeButton: {
+position: "absolute",
+right: "14px",
+border: "none",
+background: "transparent",
+color: "#d4d4d8",
+fontSize: "18px",
+cursor: "pointer",
+padding: 0,
+lineHeight: 1,
 },
 button: {
 width: "100%",
