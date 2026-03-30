@@ -169,14 +169,14 @@ supported by a platform focused on readiness and opportunity.
 <p style={styles.statNumber}>
 {newUsersCount !== null ? newUsersCount.toLocaleString() : "--"}
 </p>
-<p style={styles.statLabel}>New Users</p>
+<p style={styles.statLabel}>Active Users</p>
 </div>
 
 <div style={styles.statItem}>
 <p style={styles.statNumber}>
 {activeUsersCount !== null ? activeUsersCount.toLocaleString() : "--"}
 </p>
-<p style={styles.statLabel}>Active Users</p>
+<p style={styles.statLabel}>Activity Counter</p>
 </div>
 </div>
 
