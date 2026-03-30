@@ -80,13 +80,16 @@ support, and live preview.
 Open Cover Letter Generator
 </a>
 </div>
+
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>New Opportunities Resume Generator</h3>
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-Created for those rebuilding, restarting, reentering, and stepping boldly into new opportunities. Designed for people turning life experience, resilience, and determination into career-ready momentum.
+Created for those rebuilding, restarting, reentering, and stepping boldly
+into new opportunities. Designed for people turning life experience,
+resilience, and determination into career-ready momentum.
 </p>
 <a
 href="/career-toolkit/new-opportunities-resume-generator"
@@ -95,16 +98,15 @@ style={styles.linkButton}
 Open New Opportunities Resume Generator
 </a>
 </div>
+
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Professional Branding Generator</h3>
 <span style={styles.liveTag}>New</span>
 </div>
-
 <p style={styles.featureText}>
 You Are Your Brand. Build It With Intention.
 </p>
-
 <a
 href="/career-toolkit/professional-branding-generator"
 style={styles.linkButton}
@@ -113,13 +115,14 @@ Open Professional Branding Generator
 </a>
 </div>
 
-  <div style={styles.featureCard}>
+<div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>The House of Letters</h3>
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-From thank-you notes to resignation letters, create the words that move your career forward.
+From thank-you notes to resignation letters, create the words that move
+your career forward.
 </p>
 <a
 href="/career-toolkit/employer-follow-up-generator"
@@ -188,7 +191,6 @@ Open Career Goal Generator
 </a>
 </div>
 
-<div style={styles.bottomTwoCardRow}>
 <div style={styles.featureCard}>
 <div style={styles.featureTop}>
 <h3 style={styles.featureTitle}>Budget Generator</h3>
@@ -209,16 +211,13 @@ Open Budget Generator
 <span style={styles.liveTag}>Coming Soon</span>
 </div>
 <p style={styles.featureText}>
-Estimate drive time, walking time, commute distance, and whether a route is
-on a bus line. This feature is coming soon.
+Estimate drive time, walking time, commute distance, and whether a route
+is on a bus line. This feature is coming soon.
 </p>
 <span style={styles.lockedToolButton}>
 Coming Soon 🔒
 </span>
 </div>
-</div>
-
-<div style={styles.placeholderCard} aria-hidden="true" />
 </div>
 </section>
 
@@ -526,12 +525,6 @@ display: "grid",
 gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
 gap: "18px",
 },
-bottomTwoCardRow: {
-gridColumn: "1 / -1",
-display: "grid",
-gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-gap: "18px",
-},
 featureCard: {
 background:
 "linear-gradient(135deg, rgba(19,19,21,0.96) 0%, rgba(10,10,12,0.98) 100%)",
@@ -588,7 +581,7 @@ color: "#f5f5f5",
 fontWeight: 700,
 fontSize: "14px",
 },
-  lockedToolButton: {
+ lockedToolButton: {
 display: "inline-flex",
 alignItems: "center",
 justifyContent: "center",
