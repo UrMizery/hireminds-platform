@@ -97,8 +97,7 @@ direction: isRTL ? "rtl" : "ltr",
 
 <p style={styles.subtitle}>
 HireMinds helps strengthen talent readiness, expand visibility, and
-create stronger employment connections for job seekers, partners, and
-employers.
+create stronger employment connections for job seekers.
 </p>
 
 <div
@@ -122,9 +121,7 @@ direction: isRTL ? "rtl" : "ltr",
 >
 <h2 style={styles.sectionTitle}>Built for Talent, Partners, and Employers</h2>
 <p style={styles.sectionIntro}>
-HireMinds combines career tools, visibility, and workforce support into
-one platform designed to help people move forward with stronger
-readiness and opportunity.
+HireMinds is a workforce infrastructure platform designed to strengthen talent readiness, expand visibility, support partner reporting, and create stronger employment connections.
 </p>
 
 <div
