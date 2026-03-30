@@ -15,7 +15,6 @@ textAlign: isRTL ? "right" : "center",
 direction: isRTL ? "rtl" : "ltr",
 }}
 >
-<p style={styles.kicker}>HIREMINDS</p>
 <h1 style={styles.title}>{t.title}</h1>
 <p style={styles.subtitle}>{t.subtitle}</p>
 
