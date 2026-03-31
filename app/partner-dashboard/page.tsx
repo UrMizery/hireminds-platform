@@ -329,7 +329,7 @@ if (!silent) setLoading(false);
 return;
 }
 
-if (!partnerRow || partnerRow.account_type !== "partner" || !partnerRow.referral_code) {
+if (!partnerRow || !partnerRow.referral_code) {
 if (mountedRef.current) {
 setMessage("This account does not have partner dashboard access.");
 if (!silent) setLoading(false);
@@ -353,7 +353,9 @@ return;
 
 const { data: activityRows, error: activityError } = await supabase
 .from("user_activity")
-.select("id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at")
+.select(
+"id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at"
+)
 .eq("referral_code", partnerRow.referral_code)
 .order("created_at", { ascending: false })
 .limit(1000);
@@ -372,6 +374,7 @@ setPartner(partnerRow);
 setParticipants((participantRows as ParticipantRow[]) || []);
 setActivity((activityRows as ActivityRow[]) || []);
 setLastUpdated(new Date().toLocaleTimeString());
+
 if (!silent) setLoading(false);
 }
 
@@ -705,6 +708,43 @@ disabled={loadingLogout}
 </section>
 
 {message ? <div style={styles.notice}>{message}</div> : null}
+
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<p style={styles.sectionKicker}>Partner Resources</p>
+<h2 style={styles.sectionTitle}>Workshop Presentation</h2>
+</div>
+</div>
+
+<div style={styles.presentationCard}>
+<h3 style={styles.presentationTitle}>YWCA Resume Workshop Presentation</h3>
+<p style={styles.presentationText}>
+View or download the HireMinds workshop presentation created for YWCA,
+including training flow, Career Passport setup, resume guidance,
+analyzers, and workshop support content.
+</p>
+
+<div style={styles.presentationActions}>
+<a
+href="/ywca-resume-workshop.pdf"
+target="_blank"
+rel="noreferrer"
+style={styles.secondaryButtonLink}
+>
+View PDF
+</a>
+
+<a
+href="/ywca-resume-workshop.pptx"
+download
+style={styles.secondaryButtonLink}
+>
+Download PowerPoint
+</a>
+</div>
+</div>
+</section>
 
 <section style={styles.card}>
 <div style={styles.sectionTop}>
@@ -1148,9 +1188,7 @@ style={styles.textarea}
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>
-Were any outside referrals made?
-</label>
+<label style={styles.label}>Were any outside referrals made?</label>
 <textarea
 value={outsideReferralQ}
 onChange={(e) => setOutsideReferralQ(e.target.value)}
@@ -1385,6 +1423,42 @@ color: "#d4d4d8",
 fontSize: "12px",
 lineHeight: 1.6,
 },
+presentationCard: {
+border: "1px solid #2c2c2c",
+borderRadius: "18px",
+padding: "18px",
+background: "#101010",
+},
+presentationTitle: {
+margin: "0 0 10px",
+color: "#f5f5f5",
+fontSize: "20px",
+fontWeight: 700,
+},
+presentationText: {
+margin: "0 0 16px",
+color: "#d4d4d8",
+fontSize: "15px",
+lineHeight: 1.75,
+},
+presentationActions: {
+display: "flex",
+gap: "12px",
+flexWrap: "wrap",
+},
+secondaryButtonLink: {
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+padding: "12px 16px",
+borderRadius: "16px",
+border: "1px solid rgba(255,255,255,0.12)",
+background: "#111111",
+color: "#f5f5f5",
+fontWeight: 700,
+cursor: "pointer",
+textDecoration: "none",
+},
 liveMetaRow: {
 display: "flex",
 alignItems: "center",
@@ -1615,8 +1689,7 @@ overflow: "hidden",
 verticalBarInnerBlue: {
 width: "100%",
 borderRadius: "16px 16px 0 0",
-background:
-"linear-gradient(180deg, #60a5fa 0%, #2563eb 70%, #1d4ed8 100%)",
+background: "linear-gradient(180deg, #60a5fa 0%, #2563eb 70%, #1d4ed8 100%)",
 transformOrigin: "bottom",
 animation: "riseIn 700ms ease-out",
 },
