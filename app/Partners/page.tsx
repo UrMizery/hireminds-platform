@@ -20,9 +20,8 @@ career tools, stronger visibility into participant engagement, and
 a clearer path from readiness to opportunity.
 </p>
 
-<div className="mt-8 flex flex-wrap gap-4">
 <Link
-href="/contact"
+href="/partner-with-hireminds"
 className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
 >
 Book a Demo
