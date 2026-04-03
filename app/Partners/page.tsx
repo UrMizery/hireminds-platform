@@ -20,6 +20,7 @@ career tools, stronger visibility into participant engagement, and
 a clearer path from readiness to opportunity.
 </p>
 
+<div className="mt-8 flex flex-wrap gap-4">
 <Link
 href="/partner-with-hireminds"
 className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -87,7 +88,9 @@ className="rounded-2xl border border-gray-200 p-6 shadow-sm"
 <section className="border-t border-gray-200 px-6 py-14 md:px-12 lg:px-20">
 <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-2">
 <div>
-<h2 className="text-2xl font-bold">How HireMinds supports participants</h2>
+<h2 className="text-2xl font-bold">
+How HireMinds supports participants
+</h2>
 <p className="mt-4 leading-8 text-gray-700">
 Through HireMinds, participants can create a Career Passport,
 build or update resumes, explore career readiness tools, and
@@ -110,7 +113,9 @@ into engagement and progress.
 
 <section className="border-t border-gray-200 px-6 py-16 md:px-12 lg:px-20">
 <div className="mx-auto max-w-4xl rounded-3xl bg-blue-50 p-8 text-center md:p-12">
-<h2 className="text-3xl font-bold">Ready to explore HireMinds for your organization?</h2>
+<h2 className="text-3xl font-bold">
+Ready to explore HireMinds for your organization?
+</h2>
 <p className="mt-4 text-lg leading-8 text-gray-700">
 See how HireMinds can support your participants, strengthen
 visibility, and help your program extend workforce support beyond
@@ -119,7 +124,7 @@ static resources.
 
 <div className="mt-8">
 <Link
-href="/contact"
+href="/partner-with-hireminds"
 className="inline-flex rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
 >
 Book a Partner Demo
