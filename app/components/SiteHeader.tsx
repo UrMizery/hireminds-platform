@@ -143,7 +143,7 @@ HireMinds
 </a>
 ) : null}
 
-<a href="/partners" style={styles.link}>
+<a href="/partner-with-hireminds" style={styles.link}>
 {t.partner}
 </a>
 
