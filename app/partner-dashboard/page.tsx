@@ -22,7 +22,6 @@ id?: string | null;
 user_id?: string | null;
 full_name?: string | null;
 email?: string | null;
-phone?: string | null;
 referral_code?: string | null;
 event_type?: string | null;
 tool_name?: string | null;
@@ -37,6 +36,10 @@ full_name?: string | null;
 email?: string | null;
 phone?: string | null;
 created_at?: string | null;
+};
+
+type DisplayActivityRow = ActivityRow & {
+phone?: string | null;
 };
 
 type SupportAction = {
@@ -56,6 +59,13 @@ if (!value) return "—";
 const date = new Date(value);
 if (Number.isNaN(date.getTime())) return value;
 return date.toLocaleString();
+}
+
+function formatShortDate(value?: string | null) {
+if (!value) return "—";
+const date = new Date(value);
+if (Number.isNaN(date.getTime())) return value;
+return date.toLocaleDateString();
 }
 
 function toDate(value?: string | null) {
@@ -285,7 +295,7 @@ return;
 
 const { data: activityRows, error: activityError } = await supabase
 .from("user_activity")
-.select("id, user_id, full_name, email, phone, referral_code, event_type, tool_name, page_name, created_at")
+.select("id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at")
 .eq("referral_code", partnerRow.referral_code)
 .order("created_at", { ascending: false })
 .limit(5000);
@@ -330,6 +340,32 @@ return true;
 });
 }, [participants]);
 
+const participantPhoneMap = useMemo(() => {
+const map = new Map<string, string>();
+uniqueParticipants.forEach((row) => {
+const phone = row.phone || "";
+if (!phone) return;
+
+if (row.user_id) map.set(`uid:${row.user_id}`, phone);
+if (row.email) map.set(`email:${row.email.toLowerCase()}`, phone);
+});
+return map;
+}, [uniqueParticipants]);
+
+const activityWithPhone = useMemo<DisplayActivityRow[]>(() => {
+return activity.map((row) => {
+const phone =
+(row.user_id ? participantPhoneMap.get(`uid:${row.user_id}`) : undefined) ||
+(row.email ? participantPhoneMap.get(`email:${row.email.toLowerCase()}`) : undefined) ||
+null;
+
+return {
+...row,
+phone,
+};
+});
+}, [activity, participantPhoneMap]);
+
 const periodStart = useMemo(() => getPeriodStart(period), [period]);
 const usePeriodStart = useMemo(() => getPeriodStart(platformUseView), [platformUseView]);
 
@@ -363,17 +399,17 @@ return date >= periodStart;
 };
 
 const filteredActivity = useMemo(() => {
-return activity.filter((row) => inSelectedRange(row.created_at));
-}, [activity, rangeMode, customStart, customEnd, periodStart]);
+return activityWithPhone.filter((row) => inSelectedRange(row.created_at));
+}, [activityWithPhone, rangeMode, customStart, customEnd, periodStart]);
 
 const usesBySelectedView = useMemo(() => {
-return activity.filter((row) => {
+return activityWithPhone.filter((row) => {
 const date = toDate(row.created_at);
 return date ? date >= usePeriodStart : false;
 }).length;
-}, [activity, usePeriodStart]);
+}, [activityWithPhone, usePeriodStart]);
 
-const totalHireMindsUsesReference = activity.length;
+const totalHireMindsUsesReference = activityWithPhone.length;
 
 const newUsers = useMemo(() => {
 const monthStart = startOfMonth();
@@ -382,15 +418,6 @@ const date = toDate(row.created_at);
 return date ? date >= monthStart : false;
 });
 }, [uniqueParticipants]);
-
-const activeUserIds = useMemo(() => {
-const set = new Set<string>();
-filteredActivity.forEach((row) => {
-const key = row.user_id || row.email || row.phone || "";
-if (key) set.add(key);
-});
-return set;
-}, [filteredActivity]);
 
 const totalParticipants = useMemo(() => uniqueParticipants.length, [uniqueParticipants]);
 
@@ -510,7 +537,7 @@ const liveFeed = useMemo(() => displayActivity.slice(0, 100), [displayActivity])
 const historyFeed = useMemo(() => {
 const search = historyParticipantSearch.trim().toLowerCase();
 
-return activity.filter((row) => {
+return activityWithPhone.filter((row) => {
 const participant = (row.full_name || "").toLowerCase();
 const email = (row.email || "").toLowerCase();
 const phone = (row.phone || "").toLowerCase();
@@ -531,7 +558,7 @@ const matchesDate =
 
 return matchesSearch && matchesTool && matchesDate;
 });
-}, [activity, historyParticipantSearch, historyToolFilter, historyStart, historyEnd]);
+}, [activityWithPhone, historyParticipantSearch, historyToolFilter, historyStart, historyEnd]);
 
 const dailyTrend = useMemo(() => {
 const bucket = new Map<string, number>();
@@ -631,7 +658,7 @@ const next = supportActions.filter((item) => item.id !== id);
 persistSupportActions(next);
 }
 
-function printFeed(rows: ActivityRow[], title: string) {
+function printFeed(rows: DisplayActivityRow[], title: string) {
 const printWindow = window.open("", "_blank", "width=1100,height=1400");
 if (!printWindow) {
 alert("Pop-up blocked. Please allow pop-ups and try again.");
@@ -1315,7 +1342,7 @@ Save Support Action
 <h3 style={styles.supportTitle}>{item.title}</h3>
 <p style={styles.supportMeta}>
 {item.participantName} • Created {formatDate(item.createdAt)} • Due{" "}
-{item.dueDate ? formatDate(item.dueDate) : "—"}
+{item.dueDate ? formatShortDate(item.dueDate) : "—"}
 </p>
 </div>
 <span style={item.status === "Open" ? styles.statusOpen : styles.statusDone}>
@@ -1537,7 +1564,7 @@ gap: "16px",
 },
 historyFilterGrid: {
 display: "grid",
-gridTemplateColumns: "1.2fr 1fr 1fr 1fr",
+gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
 gap: "16px",
 marginBottom: "18px",
 },
