@@ -215,13 +215,12 @@ activity and presentation support as part of the broader implementation experien
 <li>Create a Career Passport account and sign in</li>
 <li>Complete core profile information</li>
 <li>Build a resume using HireMinds</li>
-<li>Understand how to use generators for job-search tasks</li>
-<li>Identify soft skills and industry core skills to strengthen applications</li>
-<li>Navigate the homepage and profile editor</li>
 <li>Use interview question and follow-up tools</li>
-<li>Save skills and goals that support target roles</li>
+<li>Understand how to use all generators and guides</li>
+<li>Navigate Resume Match and Job Description Analyzer</li>
+<li>Explore the video library with career tips and tricks</li>
 <li>Use the job log and budget tools for planning</li>
-<li>Find community support and next-step resources</li>
+<li>Identify soft skills and industry core skills to strengthen applications</li>
 </ul>
 
 <p style={styles.paragraph}>
