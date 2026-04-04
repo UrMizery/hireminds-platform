@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
@@ -41,18 +40,29 @@ return "candidate";
 
 export default function SiteHeader() {
 const { t } = useLanguage();
-const pathname = usePathname();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
+const [isPartnerAccount, setIsPartnerAccount] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
 let mounted = true;
+
+async function resolvePartnerAccount(email: string) {
+const { data } = await supabase
+.from("partners")
+.select("contact_email")
+.eq("contact_email", email)
+.maybeSingle();
+
+if (!mounted) return;
+setIsPartnerAccount(!!data);
+}
 
 async function checkAuth() {
 const { data } = await supabase.auth.getSession();
@@ -63,17 +73,27 @@ if (!mounted) return;
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setIsPartnerAccount(false);
 setCheckingAuth(false);
 return;
 }
 
 setIsLoggedIn(true);
 
+const email = sessionUser.email || "";
+if (email) {
+await resolvePartnerAccount(email);
+} else {
+setIsPartnerAccount(false);
+}
+
 const rawRole =
 sessionUser.app_metadata?.role ||
 sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "";
+
+if (!mounted) return;
 
 setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
@@ -83,7 +103,7 @@ checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange((_event, session) => {
+} = supabase.auth.onAuthStateChange(async (_event, session) => {
 const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
@@ -91,17 +111,27 @@ if (!mounted) return;
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setIsPartnerAccount(false);
 setCheckingAuth(false);
 return;
 }
 
 setIsLoggedIn(true);
 
+const email = sessionUser.email || "";
+if (email) {
+await resolvePartnerAccount(email);
+} else {
+setIsPartnerAccount(false);
+}
+
 const rawRole =
 sessionUser.app_metadata?.role ||
 sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "";
+
+if (!mounted) return;
 
 setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
@@ -142,12 +172,7 @@ const isAdmin = role === "admin";
 const isEmployer = role === "employer";
 const isCandidate = role === "candidate";
 
-const isPartnerRoute = pathname?.startsWith("/partner-dashboard");
-const isToolkitRoute = pathname === "/career-toolkit";
-const isMessagesRoute = pathname?.startsWith("/messages");
-
-const showPartnerNav =
-isLoggedIn && (role === "partner" || isPartnerRoute || isToolkitRoute || isMessagesRoute);
+const showPartnerNav = isLoggedIn && (role === "partner" || isPartnerAccount);
 
 return (
 <header style={styles.header}>
