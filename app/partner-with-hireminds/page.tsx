@@ -218,7 +218,7 @@ activity and presentation support as part of the broader implementation experien
 <li>Use interview question and follow-up tools</li>
 <li>Understand how to use all generators and guides</li>
 <li>Navigate Resume Match and Job Description Analyzer</li>
-<li>Explore the video library with career tips and tricks</li>
+<li>Explore the video library full of career tips and tricks</li>
 <li>Use the job log and budget tools for planning</li>
 <li>Identify soft skills and industry core skills to strengthen applications</li>
 </ul>
