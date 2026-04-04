@@ -27,7 +27,12 @@ className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white t
 >
 Book a Demo
 </Link>
-
+<Link
+href="/partner-with-hireminds"
+className="inline-flex rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+>
+Book a Partner Demo
+</Link>
 <Link
 href="/"
 className="rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold text-black transition hover:bg-gray-100"
