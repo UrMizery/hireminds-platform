@@ -22,6 +22,7 @@ id?: string | null;
 user_id?: string | null;
 full_name?: string | null;
 email?: string | null;
+phone?: string | null;
 referral_code?: string | null;
 event_type?: string | null;
 tool_name?: string | null;
@@ -34,6 +35,7 @@ id?: string | null;
 user_id?: string | null;
 full_name?: string | null;
 email?: string | null;
+phone?: string | null;
 created_at?: string | null;
 };
 
@@ -54,13 +56,6 @@ if (!value) return "—";
 const date = new Date(value);
 if (Number.isNaN(date.getTime())) return value;
 return date.toLocaleString();
-}
-
-function formatShortDate(value?: string | null) {
-if (!value) return "—";
-const date = new Date(value);
-if (Number.isNaN(date.getTime())) return value;
-return date.toLocaleDateString();
 }
 
 function toDate(value?: string | null) {
@@ -184,9 +179,11 @@ const [rangeMode, setRangeMode] = useState<RangeMode>("period");
 const [customStartDate, setCustomStartDate] = useState("");
 const [customEndDate, setCustomEndDate] = useState("");
 const [participantSearch, setParticipantSearch] = useState("");
-const [historySearch, setHistorySearch] = useState("");
+
+const [historyParticipantSearch, setHistoryParticipantSearch] = useState("");
 const [historyToolFilter, setHistoryToolFilter] = useState("all");
-const [historyEventFilter, setHistoryEventFilter] = useState("all");
+const [historyStartDate, setHistoryStartDate] = useState("");
+const [historyEndDate, setHistoryEndDate] = useState("");
 
 const [supportActions, setSupportActions] = useState<SupportAction[]>([]);
 const [supportType, setSupportType] = useState<SupportActionType>("task");
@@ -274,7 +271,7 @@ return;
 
 const { data: participantRows, error: participantError } = await supabase
 .from("candidate_profiles")
-.select("id, user_id, full_name, email, created_at")
+.select("id, user_id, full_name, email, phone, created_at")
 .eq("referral_code", partnerRow.referral_code)
 .order("created_at", { ascending: false });
 
@@ -288,7 +285,7 @@ return;
 
 const { data: activityRows, error: activityError } = await supabase
 .from("user_activity")
-.select("id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at")
+.select("id, user_id, full_name, email, phone, referral_code, event_type, tool_name, page_name, created_at")
 .eq("referral_code", partnerRow.referral_code)
 .order("created_at", { ascending: false })
 .limit(5000);
@@ -326,7 +323,7 @@ return () => clearInterval(interval);
 const uniqueParticipants = useMemo(() => {
 const seen = new Set<string>();
 return participants.filter((row) => {
-const key = row.user_id || row.email || row.id || "";
+const key = row.user_id || row.email || row.phone || row.id || "";
 if (!key || seen.has(key)) return false;
 seen.add(key);
 return true;
@@ -343,6 +340,15 @@ const customStart = useMemo(
 const customEnd = useMemo(
 () => (customEndDate ? new Date(`${customEndDate}T23:59:59`) : null),
 [customEndDate]
+);
+
+const historyStart = useMemo(
+() => (historyStartDate ? new Date(`${historyStartDate}T00:00:00`) : null),
+[historyStartDate]
+);
+const historyEnd = useMemo(
+() => (historyEndDate ? new Date(`${historyEndDate}T23:59:59`) : null),
+[historyEndDate]
 );
 
 const inSelectedRange = (value?: string | null) => {
@@ -370,35 +376,23 @@ return date ? date >= usePeriodStart : false;
 const totalHireMindsUsesReference = activity.length;
 
 const newUsers = useMemo(() => {
+const monthStart = startOfMonth();
 return uniqueParticipants.filter((row) => {
 const date = toDate(row.created_at);
-if (!date) return false;
-if (rangeMode === "custom" && customStart && customEnd) {
-return date >= customStart && date <= customEnd;
-}
-return date >= periodStart;
+return date ? date >= monthStart : false;
 });
-}, [uniqueParticipants, rangeMode, customStart, customEnd, periodStart]);
+}, [uniqueParticipants]);
 
 const activeUserIds = useMemo(() => {
 const set = new Set<string>();
 filteredActivity.forEach((row) => {
-const key = row.user_id || row.email || "";
+const key = row.user_id || row.email || row.phone || "";
 if (key) set.add(key);
 });
 return set;
 }, [filteredActivity]);
 
-const activeParticipants = useMemo(() => {
-return uniqueParticipants.filter((row) => {
-const key = row.user_id || row.email || "";
-return key ? activeUserIds.has(key) : false;
-});
-}, [uniqueParticipants, activeUserIds]);
-
-const totalReferralParticipants = useMemo(() => {
-return uniqueParticipants.length;
-}, [uniqueParticipants]);
+const totalParticipants = useMemo(() => uniqueParticipants.length, [uniqueParticipants]);
 
 const filteredParticipants = useMemo(() => {
 const q = participantSearch.trim().toLowerCase();
@@ -406,14 +400,15 @@ if (!q) return uniqueParticipants;
 return uniqueParticipants.filter((row) => {
 const name = (row.full_name || "").toLowerCase();
 const email = (row.email || "").toLowerCase();
-return name.includes(q) || email.includes(q);
+const phone = (row.phone || "").toLowerCase();
+return name.includes(q) || email.includes(q) || phone.includes(q);
 });
 }, [uniqueParticipants, participantSearch]);
 
 const filteredParticipantKeys = useMemo(() => {
 const set = new Set<string>();
 filteredParticipants.forEach((row) => {
-const key = row.user_id || row.email || row.id || "";
+const key = row.user_id || row.email || row.phone || row.id || "";
 if (key) set.add(key);
 });
 return set;
@@ -422,22 +417,12 @@ return set;
 const displayActivity = useMemo(() => {
 if (!participantSearch.trim()) return filteredActivity;
 return filteredActivity.filter((row) => {
-const key = row.user_id || row.email || row.id || "";
+const key = row.user_id || row.email || row.phone || row.id || "";
 return key ? filteredParticipantKeys.has(key) : false;
 });
 }, [filteredActivity, filteredParticipantKeys, participantSearch]);
 
-const totalParticipants = totalReferralParticipants;
-const totalActiveParticipants = activeParticipants.length;
-
-const totalNewUsers = participantSearch.trim()
-? filteredParticipants.filter((row) =>
-newUsers.some(
-(n) => (n.user_id || n.email || n.id) === (row.user_id || row.email || row.id)
-)
-).length
-: newUsers.length;
-
+const totalNewUsers = newUsers.length;
 const totalActivity = displayActivity.length;
 
 const eventTypeGroups = useMemo(() => {
@@ -471,7 +456,7 @@ if (tool) counts.generatorUses += 1;
 return counts;
 }, [displayActivity]);
 
-const totalCompletions = eventTypeGroups.completions;
+const totalActivitiesCompleted = eventTypeGroups.completions;
 
 const trackedTools = useMemo(
 () => [
@@ -513,18 +498,6 @@ if (match) counts[match.key] += 1;
 return counts;
 }, [displayActivity, trackedTools]);
 
-const resumesCompleted =
-displayActivity.filter(
-(row) =>
-(row.tool_name || "").toLowerCase() === "resume_generator" &&
-(row.event_type || "").toLowerCase().includes("complete")
-).length +
-displayActivity.filter(
-(row) =>
-(row.tool_name || "").toLowerCase() === "guided_resume_generator" &&
-(row.event_type || "").toLowerCase().includes("complete")
-).length;
-
 const participantLogins = useMemo(() => {
 return displayActivity.filter((row) => {
 const event = (row.event_type || "").toLowerCase();
@@ -532,37 +505,33 @@ return event.includes("login") || event === "signed_in";
 }).length;
 }, [displayActivity]);
 
-const participantToolUsers = useMemo(() => {
-const set = new Set<string>();
-displayActivity.forEach((row) => {
-if (row.tool_name) {
-const key = row.user_id || row.email || "";
-if (key) set.add(key);
-}
-});
-return set.size;
-}, [displayActivity]);
-
 const liveFeed = useMemo(() => displayActivity.slice(0, 100), [displayActivity]);
 
 const historyFeed = useMemo(() => {
-const search = historySearch.trim().toLowerCase();
-return displayActivity.filter((row) => {
-const participant = (row.full_name || row.email || "").toLowerCase();
-const eventType = (row.event_type || "").toLowerCase();
+const search = historyParticipantSearch.trim().toLowerCase();
+
+return activity.filter((row) => {
+const participant = (row.full_name || "").toLowerCase();
+const email = (row.email || "").toLowerCase();
+const phone = (row.phone || "").toLowerCase();
 const toolName = (row.tool_name || "").toLowerCase();
+const rowDate = toDate(row.created_at);
 
 const matchesSearch =
 !search ||
 participant.includes(search) ||
-eventType.includes(search) ||
-toolName.includes(search);
-const matchesTool = historyToolFilter === "all" || toolName === historyToolFilter;
-const matchesEvent = historyEventFilter === "all" || eventType === historyEventFilter;
+email.includes(search) ||
+phone.includes(search);
 
-return matchesSearch && matchesTool && matchesEvent;
+const matchesTool = historyToolFilter === "all" || toolName === historyToolFilter;
+
+const matchesDate =
+(!historyStart || (rowDate && rowDate >= historyStart)) &&
+(!historyEnd || (rowDate && rowDate <= historyEnd));
+
+return matchesSearch && matchesTool && matchesDate;
 });
-}, [displayActivity, historySearch, historyToolFilter, historyEventFilter]);
+}, [activity, historyParticipantSearch, historyToolFilter, historyStart, historyEnd]);
 
 const dailyTrend = useMemo(() => {
 const bucket = new Map<string, number>();
@@ -597,8 +566,8 @@ const maxTrendCount = dailyTrend.length ? Math.max(...dailyTrend.map((d) => d.co
 const maxToolCount = toolBreakdown.length ? Math.max(...toolBreakdown.map((d) => d.count)) : 1;
 
 const selectedParticipantOptions = uniqueParticipants.map((row) => ({
-key: row.user_id || row.email || row.id || "",
-name: row.full_name || row.email || "Participant",
+key: row.user_id || row.email || row.phone || row.id || "",
+name: row.full_name || row.email || row.phone || "Participant",
 }));
 
 const supportActionsFiltered = useMemo(() => {
@@ -698,8 +667,10 @@ rangeMode === "custom" && customStartDate && customEndDate
 <tr>
 <th>Date</th>
 <th>Participant</th>
-<th>Event</th>
+<th>Email</th>
+<th>Phone</th>
 <th>Tool</th>
+<th>Event</th>
 <th>Page</th>
 </tr>
 </thead>
@@ -711,14 +682,16 @@ rows.length
 (row) => `
 <tr>
 <td>${formatDate(row.created_at)}</td>
-<td>${row.full_name || row.email || "—"}</td>
-<td>${row.event_type || "—"}</td>
+<td>${row.full_name || "—"}</td>
+<td>${row.email || "—"}</td>
+<td>${row.phone || "—"}</td>
 <td>${row.tool_name || "—"}</td>
+<td>${row.event_type || "—"}</td>
 <td>${row.page_name || "—"}</td>
 </tr>`
 )
 .join("")
-: `<tr><td colspan="5">No activity found.</td></tr>`
+: `<tr><td colspan="7">No activity found.</td></tr>`
 }
 </tbody>
 </table>
@@ -880,7 +853,7 @@ style={{
 <p style={styles.sectionKicker}>Participant Filters</p>
 <InfoBubble
 title="Participant Filters"
-text="Search participants tied to this referral code. Total Participants is the lifetime referral-code count and does not reset. Active Participants reflects activity in the selected reporting range."
+text="Search participants tied to this referral code by name, email, or phone number. Total Participants is the lifetime referral-code count and does not reset."
 />
 </div>
 <h2 style={styles.sectionTitle}>Participant lookup</h2>
@@ -893,7 +866,7 @@ text="Search participants tied to this referral code. Total Participants is the 
 <input
 value={participantSearch}
 onChange={(e) => setParticipantSearch(e.target.value)}
-placeholder="Search by name or email"
+placeholder="Search by name, email, or phone number"
 style={styles.input}
 />
 </div>
@@ -912,30 +885,16 @@ style={styles.input}
 
 <div style={styles.metricCardGreen}>
 <div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Active Participants</p>
-</div>
-<p style={styles.summaryValue}>{totalActiveParticipants}</p>
-</div>
-
-<div style={styles.metricCardGreen}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>New Active Users</p>
+<p style={styles.summaryLabel}>New Users</p>
 </div>
 <p style={styles.summaryValue}>{totalNewUsers}</p>
 </div>
 
-<div style={styles.metricCardPurple}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Total Activity</p>
-</div>
-<p style={styles.summaryValue}>{totalActivity}</p>
-</div>
-
 <div style={styles.metricCardNeutral}>
 <div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Total Completions</p>
+<p style={styles.summaryLabel}>Total Activities Completed</p>
 </div>
-<p style={styles.summaryValue}>{totalCompletions}</p>
+<p style={styles.summaryValue}>{totalActivitiesCompleted}</p>
 </div>
 
 <div style={styles.metricCardGreen}>
@@ -945,25 +904,18 @@ style={styles.input}
 <p style={styles.summaryValue}>{participantLogins}</p>
 </div>
 
-<div style={styles.metricCardAmber}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Tool Users</p>
-</div>
-<p style={styles.summaryValue}>{participantToolUsers}</p>
-</div>
-
-<div style={styles.metricCardBlue}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Resumes Completed</p>
-</div>
-<p style={styles.summaryValue}>{resumesCompleted}</p>
-</div>
-
 <div style={styles.metricCardPurple}>
 <div style={styles.metricTop}>
 <p style={styles.summaryLabel}>HireMinds Total Uses</p>
 </div>
 <p style={styles.summaryValue}>{totalHireMindsUsesReference}</p>
+</div>
+
+<div style={styles.metricCardAmber}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Page Views</p>
+</div>
+<p style={styles.summaryValue}>{eventTypeGroups.pageViews}</p>
 </div>
 </section>
 
@@ -1001,8 +953,8 @@ height: `${Math.max((item.count / maxTrendCount) * 100, 6)}%`,
 <div style={styles.cardInset}>
 <div style={styles.titleRow}>
 <div>
-<p style={styles.sectionKicker}>Platform Uses</p>
-<h2 style={styles.sectionTitle}>Current view</h2>
+<p style={styles.sectionKicker}>Total Activity</p>
+<h2 style={styles.sectionTitle}>Selected period view</h2>
 </div>
 </div>
 
@@ -1078,20 +1030,24 @@ Print Feed
 <tr>
 <th style={styles.th}>Date</th>
 <th style={styles.th}>Participant</th>
-<th style={styles.th}>Event</th>
+<th style={styles.th}>Email</th>
+<th style={styles.th}>Phone</th>
 <th style={styles.th}>Tool</th>
+<th style={styles.th}>Event</th>
 <th style={styles.th}>Page</th>
 </tr>
 </thead>
 <tbody>
 {liveFeed.map((row, index) => {
-const rowKey = row.id || `${row.user_id || row.email || "activity"}-${index}`;
+const rowKey = row.id || `${row.user_id || row.email || row.phone || "activity"}-${index}`;
 return (
 <tr key={rowKey}>
 <td style={styles.td}>{formatDate(row.created_at)}</td>
-<td style={styles.td}>{row.full_name || row.email || "—"}</td>
-<td style={styles.td}>{row.event_type || "—"}</td>
+<td style={styles.td}>{row.full_name || "—"}</td>
+<td style={styles.td}>{row.email || "—"}</td>
+<td style={styles.td}>{row.phone || "—"}</td>
 <td style={styles.td}>{row.tool_name || "—"}</td>
+<td style={styles.td}>{row.event_type || "—"}</td>
 <td style={styles.td}>{row.page_name || "—"}</td>
 </tr>
 );
@@ -1124,11 +1080,11 @@ Print Feed
 
 <div style={styles.historyFilterGrid}>
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Search Activity</label>
+<label style={styles.label}>Search by Name, Email, or Phone</label>
 <input
-value={historySearch}
-onChange={(e) => setHistorySearch(e.target.value)}
-placeholder="Search name, event, or tool"
+value={historyParticipantSearch}
+onChange={(e) => setHistoryParticipantSearch(e.target.value)}
+placeholder="Search by name, email, or phone number"
 style={styles.input}
 />
 </div>
@@ -1150,21 +1106,23 @@ style={styles.select}
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Event Filter</label>
-<select
-value={historyEventFilter}
-onChange={(e) => setHistoryEventFilter(e.target.value)}
-style={styles.select}
->
-<option value="all">All Events</option>
-{[...new Set(displayActivity.map((row) => (row.event_type || "").toLowerCase()).filter(Boolean))].map(
-(event) => (
-<option key={event} value={event}>
-{event}
-</option>
-)
-)}
-</select>
+<label style={styles.label}>Start Date</label>
+<input
+type="date"
+value={historyStartDate}
+onChange={(e) => setHistoryStartDate(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>End Date</label>
+<input
+type="date"
+value={historyEndDate}
+onChange={(e) => setHistoryEndDate(e.target.value)}
+style={styles.input}
+/>
 </div>
 </div>
 
@@ -1174,28 +1132,32 @@ style={styles.select}
 <tr>
 <th style={styles.th}>Date</th>
 <th style={styles.th}>Participant</th>
-<th style={styles.th}>Event</th>
+<th style={styles.th}>Email</th>
+<th style={styles.th}>Phone</th>
 <th style={styles.th}>Tool</th>
+<th style={styles.th}>Event</th>
 <th style={styles.th}>Page</th>
 </tr>
 </thead>
 <tbody>
 {historyFeed.length ? (
 historyFeed.map((row, index) => {
-const rowKey = row.id || `${row.user_id || row.email || "history"}-${index}`;
+const rowKey = row.id || `${row.user_id || row.email || row.phone || "history"}-${index}`;
 return (
 <tr key={rowKey}>
 <td style={styles.td}>{formatDate(row.created_at)}</td>
-<td style={styles.td}>{row.full_name || row.email || "—"}</td>
-<td style={styles.td}>{row.event_type || "—"}</td>
+<td style={styles.td}>{row.full_name || "—"}</td>
+<td style={styles.td}>{row.email || "—"}</td>
+<td style={styles.td}>{row.phone || "—"}</td>
 <td style={styles.td}>{row.tool_name || "—"}</td>
+<td style={styles.td}>{row.event_type || "—"}</td>
 <td style={styles.td}>{row.page_name || "—"}</td>
 </tr>
 );
 })
 ) : (
 <tr>
-<td style={styles.td} colSpan={5}>
+<td style={styles.td} colSpan={7}>
 No historical activity matched the current filters.
 </td>
 </tr>
@@ -1353,7 +1315,7 @@ Save Support Action
 <h3 style={styles.supportTitle}>{item.title}</h3>
 <p style={styles.supportMeta}>
 {item.participantName} • Created {formatDate(item.createdAt)} • Due{" "}
-{item.dueDate ? formatShortDate(item.dueDate) : "—"}
+{item.dueDate ? formatDate(item.dueDate) : "—"}
 </p>
 </div>
 <span style={item.status === "Open" ? styles.statusOpen : styles.statusDone}>
@@ -1575,7 +1537,7 @@ gap: "16px",
 },
 historyFilterGrid: {
 display: "grid",
-gridTemplateColumns: "1.2fr 1fr 1fr",
+gridTemplateColumns: "1.2fr 1fr 1fr 1fr",
 gap: "16px",
 marginBottom: "18px",
 },
