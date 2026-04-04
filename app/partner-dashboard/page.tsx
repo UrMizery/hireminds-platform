@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -99,7 +98,7 @@ return new Date(now.getFullYear(), quarterStartMonth, 1);
 
 function startOfFiscalYear() {
 const now = new Date();
-const fiscalStartMonth = 6; // July 1
+const fiscalStartMonth = 6;
 const year = now.getMonth() >= fiscalStartMonth ? now.getFullYear() : now.getFullYear() - 1;
 return new Date(year, fiscalStartMonth, 1);
 }
@@ -576,17 +575,8 @@ label: tool.label,
 key: tool.key,
 count: toolCounts[tool.key] || 0,
 }))
-.filter((item) => item.count > 0)
 .sort((a, b) => b.count - a.count);
 }, [trackedTools, toolCounts]);
-
-const topToolsText = useMemo(() => {
-if (toolBreakdown.length === 0) return "No tracked tool activity was recorded during the selected reporting window.";
-return toolBreakdown
-.slice(0, 5)
-.map((item) => `${item.label} (${item.count})`)
-.join(", ");
-}, [toolBreakdown]);
 
 const maxTrendCount = dailyTrend.length ? Math.max(...dailyTrend.map((d) => d.count)) : 1;
 const maxToolCount = toolBreakdown.length ? Math.max(...toolBreakdown.map((d) => d.count)) : 1;
@@ -871,31 +861,6 @@ style={{
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
-<p style={styles.sectionKicker}>Quick Access</p>
-<h2 style={styles.sectionTitle}>Partner tools and resources</h2>
-</div>
-</div>
-
-<div style={styles.quickGrid}>
-<Link href="/partner-dashboard/workshop-resources" style={styles.quickCard}>
-<span style={styles.quickLabel}>Workshop Resources</span>
-<span style={styles.quickText}>
-PDF presentations, PowerPoints, printable forms, assessments, and support docs.
-</span>
-</Link>
-
-<Link href="/partner-dashboard/report-summary" style={styles.quickCard}>
-<span style={styles.quickLabel}>Summary Generator</span>
-<span style={styles.quickText}>
-Build and print the longer analytical report with tracked metrics and manual outcomes.
-</span>
-</Link>
-</div>
-</section>
-
-<section style={styles.card}>
-<div style={styles.sectionTop}>
-<div>
 <div style={styles.titleRow}>
 <p style={styles.sectionKicker}>Participant Filters</p>
 <InfoBubble
@@ -963,27 +928,6 @@ style={styles.input}
 <p style={styles.summaryLabel}>Tool Users</p>
 </div>
 <p style={styles.summaryValue}>{participantToolUsers}</p>
-</div>
-
-<div style={styles.metricCardBlue}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Resumes Completed</p>
-</div>
-<p style={styles.summaryValue}>{resumesCompleted}</p>
-</div>
-
-<div style={styles.metricCardPurple}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Top Tools</p>
-</div>
-<p style={styles.metricText}>{topToolsText}</p>
-</div>
-
-<div style={styles.metricCardPurple}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>HireMinds Total Uses</p>
-</div>
-<p style={styles.summaryValue}>{totalHireMindsUsesReference}</p>
 </div>
 </section>
 
@@ -1231,14 +1175,10 @@ No historical activity matched the current filters.
 <div style={styles.sectionTop}>
 <div>
 <p style={styles.sectionKicker}>Tool Monitoring</p>
-<h2 style={styles.sectionTitle}>Tracked tool usage</h2>
+<h2 style={styles.sectionTitle}>All tracked tools</h2>
 </div>
 </div>
 
-{toolBreakdown.length === 0 ? (
-<p style={styles.emptyText}>No tracked tool usage yet for this reporting range.</p>
-) : (
-<>
 <div style={styles.horizontalChart}>
 {toolBreakdown.map((item, index) => {
 const colors = [
@@ -1256,7 +1196,7 @@ return (
 <div
 style={{
 ...colors[index % colors.length],
-width: `${Math.max((item.count / maxToolCount) * 100, 8)}%`,
+width: `${maxToolCount === 0 ? 8 : Math.max((item.count / maxToolCount) * 100, 8)}%`,
 }}
 />
 </div>
@@ -1274,8 +1214,6 @@ width: `${Math.max((item.count / maxToolCount) * 100, 8)}%`,
 </div>
 ))}
 </div>
-</>
-)}
 </section>
 ) : null}
 
@@ -1623,30 +1561,6 @@ tabButtonActive: {
 background: "#f5f5f5",
 color: "#111111",
 },
-quickGrid: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "16px",
-},
-quickCard: {
-display: "grid",
-gap: "10px",
-border: "1px solid #2c2c2c",
-borderRadius: "18px",
-padding: "18px",
-background: "#101010",
-textDecoration: "none",
-},
-quickLabel: {
-color: "#f5f5f5",
-fontSize: "18px",
-fontWeight: 700,
-},
-quickText: {
-color: "#d4d4d8",
-fontSize: "14px",
-lineHeight: 1.7,
-},
 liveMetaRow: {
 display: "flex",
 alignItems: "center",
@@ -1817,12 +1731,6 @@ color: "#ffffff",
 fontSize: "34px",
 fontWeight: 700,
 lineHeight: 1,
-},
-metricText: {
-margin: 0,
-color: "#e5e7eb",
-fontSize: "14px",
-lineHeight: 1.7,
 },
 graphGrid: {
 display: "grid",
