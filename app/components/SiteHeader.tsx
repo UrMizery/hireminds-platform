@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
@@ -12,7 +13,6 @@ href: string;
 };
 
 const partnerNavItems: PartnerNavItem[] = [
-{ label: "Partner Dashboard", href: "/partner-dashboard" },
 { label: "Career Map", href: "/partner-dashboard/career-map" },
 { label: "Reports", href: "/partner-dashboard/reports" },
 { label: "Job Logs", href: "/partner-dashboard/job-logs" },
@@ -20,8 +20,26 @@ const partnerNavItems: PartnerNavItem[] = [
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
+function normalizeRole(rawRole: unknown): UserRole {
+const normalizedRole = String(rawRole || "").toLowerCase().trim();
+
+if (normalizedRole === "admin") return "admin";
+if (normalizedRole === "partner") return "partner";
+if (normalizedRole === "employer") return "employer";
+if (
+normalizedRole === "candidate" ||
+normalizedRole === "career_passport" ||
+normalizedRole === "career-passport"
+) {
+return "candidate";
+}
+
+return "candidate";
+}
+
 export default function SiteHeader() {
 const { t } = useLanguage();
+const pathname = usePathname();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [checkingAuth, setCheckingAuth] = useState(true);
@@ -55,24 +73,7 @@ sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "";
 
-const normalizedRole = String(rawRole).toLowerCase().trim();
-
-if (normalizedRole === "admin") {
-setRole("admin");
-} else if (normalizedRole === "partner") {
-setRole("partner");
-} else if (normalizedRole === "employer") {
-setRole("employer");
-} else if (
-normalizedRole === "candidate" ||
-normalizedRole === "career_passport" ||
-normalizedRole === "career-passport"
-) {
-setRole("candidate");
-} else {
-setRole("candidate");
-}
-
+setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
 }
 
@@ -100,24 +101,7 @@ sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "";
 
-const normalizedRole = String(rawRole).toLowerCase().trim();
-
-if (normalizedRole === "admin") {
-setRole("admin");
-} else if (normalizedRole === "partner") {
-setRole("partner");
-} else if (normalizedRole === "employer") {
-setRole("employer");
-} else if (
-normalizedRole === "candidate" ||
-normalizedRole === "career_passport" ||
-normalizedRole === "career-passport"
-) {
-setRole("candidate");
-} else {
-setRole("candidate");
-}
-
+setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
 });
 
@@ -152,9 +136,11 @@ setLoadingLogout(false);
 }
 
 const isAdmin = role === "admin";
-const isPartner = role === "partner";
 const isEmployer = role === "employer";
 const isCandidate = role === "candidate";
+
+const isOnPartnerRoute = pathname?.startsWith("/partner-dashboard");
+const showPartnerNav = isLoggedIn && (role === "partner" || isOnPartnerRoute);
 
 return (
 <header style={styles.header}>
@@ -192,7 +178,12 @@ My Profile
 </a>
 ) : null}
 
-{isPartner ? (
+{showPartnerNav ? (
+<>
+<a href="/partner-dashboard" style={styles.link}>
+Partner Dashboard
+</a>
+
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
@@ -201,7 +192,7 @@ style={styles.dropdownTrigger}
 aria-haspopup="menu"
 aria-expanded={partnersOpen}
 >
-Partners
+More
 <span
 style={{
 ...styles.dropdownChevron,
@@ -227,6 +218,7 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 </div>
+</>
 ) : null}
 
 {isEmployer ? (
@@ -241,13 +233,13 @@ Admin Dashboard
 </a>
 ) : null}
 
-{isCandidate || isPartner || isAdmin ? (
+{(isCandidate || showPartnerNav || isAdmin) ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
 ) : null}
 
-{isCandidate || isPartner || isAdmin ? (
+{(isCandidate || showPartnerNav || isAdmin) ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
@@ -328,31 +320,19 @@ fontSize: "15px",
 cursor: "pointer",
 whiteSpace: "nowrap",
 },
-linkButtonLike: {
-border: "none",
-background: "transparent",
-color: "#d4d4d8",
-textDecoration: "none",
+notesButtonLike: {
+border: "1px solid #a1a1aa",
+background: "#ffffff",
+color: "#111111",
 fontSize: "15px",
 fontWeight: 700,
 cursor: "pointer",
-padding: 0,
 whiteSpace: "nowrap",
+borderRadius: "999px",
+padding: "8px 22px",
 appearance: "none",
 WebkitAppearance: "none",
-},
-notesButtonLike: {
-border: "none",
-background: "transparent",
-color: "#d4d4d8",
-textDecoration: "none",
-fontSize: "14px",
-fontWeight: 700,
-cursor: "pointer",
-padding: 0,
-whiteSpace: "nowrap",
-appearance: "none",
-WebkitAppearance: "none",
+boxShadow: "0 0 0 1px rgba(255,255,255,0.15) inset",
 },
 dropdownWrap: {
 position: "relative",
