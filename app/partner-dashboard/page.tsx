@@ -839,12 +839,19 @@ setSupportDueDate("");
 setMessage("Support action saved.");
 }
 
-function toggleSupportActionStatus(id: string) {
-const next = supportActions.map((item) =>
-item.id === id
-? { ...item, status: item.status === "Open" ? "Completed" : "Open" }
-: item
-);
+unction toggleSupportActionStatus(id: string) {
+const next: SupportAction[] = supportActions.map((item) => {
+if (item.id !== id) return item;
+
+const nextStatus: SupportAction["status"] =
+item.status === "Open" ? "Completed" : "Open";
+
+return {
+...item,
+status: nextStatus,
+};
+});
+
 persistSupportActions(next);
 }
 
