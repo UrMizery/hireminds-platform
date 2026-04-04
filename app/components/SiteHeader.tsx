@@ -13,10 +13,12 @@ href: string;
 };
 
 const partnerNavItems: PartnerNavItem[] = [
+{ label: "Messages", href: "/messages" },
 { label: "Career Map", href: "/partner-dashboard/career-map" },
 { label: "Reports", href: "/partner-dashboard/reports" },
 { label: "Job Logs", href: "/partner-dashboard/job-logs" },
 { label: "Activity", href: "/partner-dashboard/activity" },
+{ label: "Workshop Resources", href: "/partner-dashboard/workshop-resources" },
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
@@ -233,13 +235,13 @@ Admin Dashboard
 </a>
 ) : null}
 
-{(isCandidate || showPartnerNav || isAdmin) ? (
+{isCandidate || showPartnerNav || isAdmin ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
 ) : null}
 
-{(isCandidate || showPartnerNav || isAdmin) ? (
+{isCandidate || showPartnerNav || isAdmin ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
