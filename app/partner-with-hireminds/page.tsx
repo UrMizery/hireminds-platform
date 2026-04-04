@@ -286,7 +286,7 @@ placeholder="Share how you'd like to partner, what populations you serve, whethe
 
 <div style={styles.actionRow}>
 <button type="submit" style={styles.primaryButton} disabled={submitting}>
-{submitting ? "Submitting..." : "Submit Inquiry"}
+{submitting ? "Submitting..." : "Book a Demo"}
 </button>
 </div>
 
