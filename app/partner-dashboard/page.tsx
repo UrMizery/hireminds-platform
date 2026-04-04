@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
 type PeriodKey = "day" | "week" | "month" | "quarter" | "fiscal";
 type RangeMode = "period" | "custom";
 type SupportActionType = "task" | "nudge" | "reminder";
+type DashboardTab = "overview" | "live" | "history" | "tools" | "support";
 
 type PartnerRow = {
 organization_name?: string | null;
@@ -136,18 +138,6 @@ return "This Month";
 }
 }
 
-function downloadText(filename: string, text: string) {
-const blob = new Blob([text], { type: "text/plain;charset=utf-8;" });
-const url = window.URL.createObjectURL(blob);
-const link = document.createElement("a");
-link.href = url;
-link.setAttribute("download", filename);
-document.body.appendChild(link);
-link.click();
-document.body.removeChild(link);
-window.URL.revokeObjectURL(url);
-}
-
 function InfoBubble({
 title,
 text,
@@ -182,6 +172,7 @@ export default function PartnerDashboardPage() {
 const [loading, setLoading] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [message, setMessage] = useState("");
+const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
 
 const [partner, setPartner] = useState<PartnerRow | null>(null);
 const [participants, setParticipants] = useState<ParticipantRow[]>([]);
@@ -194,25 +185,9 @@ const [rangeMode, setRangeMode] = useState<RangeMode>("period");
 const [customStartDate, setCustomStartDate] = useState("");
 const [customEndDate, setCustomEndDate] = useState("");
 const [participantSearch, setParticipantSearch] = useState("");
-
-const [workshopQ, setWorkshopQ] = useState("");
-const [jobFairQ, setJobFairQ] = useState("");
-const [meetingQ, setMeetingQ] = useState("");
-const [hireMindsReferralQ, setHireMindsReferralQ] = useState("");
-const [outsideReferralQ, setOutsideReferralQ] = useState("");
-const [interviewQ, setInterviewQ] = useState("");
-const [resumeSupportQ, setResumeSupportQ] = useState("");
-const [analyzerSupportQ, setAnalyzerSupportQ] = useState("");
-const [successStoryQ, setSuccessStoryQ] = useState("");
-const [manualCandidatesServed, setManualCandidatesServed] = useState("");
-const [manualNewUsers, setManualNewUsers] = useState("");
-const [manualResumesCompleted, setManualResumesCompleted] = useState("");
-const [manualApplicationsSubmitted, setManualApplicationsSubmitted] = useState("");
-const [manualEmployerContacts, setManualEmployerContacts] = useState("");
-const [manualInterviews, setManualInterviews] = useState("");
-const [manualJobsLanded, setManualJobsLanded] = useState("");
-const [manualHireMindsReferrals, setManualHireMindsReferrals] = useState("");
-const [manualOutsideReferrals, setManualOutsideReferrals] = useState("");
+const [historySearch, setHistorySearch] = useState("");
+const [historyToolFilter, setHistoryToolFilter] = useState("all");
+const [historyEventFilter, setHistoryEventFilter] = useState("all");
 
 const [supportActions, setSupportActions] = useState<SupportAction[]>([]);
 const [supportType, setSupportType] = useState<SupportActionType>("task");
@@ -223,11 +198,6 @@ const [supportMessage, setSupportMessage] = useState("");
 const [supportDueDate, setSupportDueDate] = useState("");
 
 const mountedRef = useRef(true);
-
-const notesStorageKey = useMemo(() => {
-const code = partner?.referral_code || "partner";
-return `hireminds-partner-report-generator-${code}-${period}`;
-}, [partner?.referral_code, period]);
 
 const supportStorageKey = useMemo(() => {
 const code = partner?.referral_code || "partner";
@@ -240,71 +210,6 @@ return () => {
 mountedRef.current = false;
 };
 }, []);
-
-useEffect(() => {
-try {
-const raw = window.localStorage.getItem(notesStorageKey);
-if (raw) {
-const parsed = JSON.parse(raw);
-setWorkshopQ(parsed.workshopQ || "");
-setJobFairQ(parsed.jobFairQ || "");
-setMeetingQ(parsed.meetingQ || "");
-setHireMindsReferralQ(parsed.hireMindsReferralQ || "");
-setOutsideReferralQ(parsed.outsideReferralQ || "");
-setInterviewQ(parsed.interviewQ || "");
-setResumeSupportQ(parsed.resumeSupportQ || "");
-setAnalyzerSupportQ(parsed.analyzerSupportQ || "");
-setSuccessStoryQ(parsed.successStoryQ || "");
-setManualCandidatesServed(parsed.manualCandidatesServed || "");
-setManualNewUsers(parsed.manualNewUsers || "");
-setManualResumesCompleted(parsed.manualResumesCompleted || "");
-setManualApplicationsSubmitted(parsed.manualApplicationsSubmitted || "");
-setManualEmployerContacts(parsed.manualEmployerContacts || "");
-setManualInterviews(parsed.manualInterviews || "");
-setManualJobsLanded(parsed.manualJobsLanded || "");
-setManualHireMindsReferrals(parsed.manualHireMindsReferrals || "");
-setManualOutsideReferrals(parsed.manualOutsideReferrals || "");
-} else {
-setWorkshopQ("");
-setJobFairQ("");
-setMeetingQ("");
-setHireMindsReferralQ("");
-setOutsideReferralQ("");
-setInterviewQ("");
-setResumeSupportQ("");
-setAnalyzerSupportQ("");
-setSuccessStoryQ("");
-setManualCandidatesServed("");
-setManualNewUsers("");
-setManualResumesCompleted("");
-setManualApplicationsSubmitted("");
-setManualEmployerContacts("");
-setManualInterviews("");
-setManualJobsLanded("");
-setManualHireMindsReferrals("");
-setManualOutsideReferrals("");
-}
-} catch {
-setWorkshopQ("");
-setJobFairQ("");
-setMeetingQ("");
-setHireMindsReferralQ("");
-setOutsideReferralQ("");
-setInterviewQ("");
-setResumeSupportQ("");
-setAnalyzerSupportQ("");
-setSuccessStoryQ("");
-setManualCandidatesServed("");
-setManualNewUsers("");
-setManualResumesCompleted("");
-setManualApplicationsSubmitted("");
-setManualEmployerContacts("");
-setManualInterviews("");
-setManualJobsLanded("");
-setManualHireMindsReferrals("");
-setManualOutsideReferrals("");
-}
-}, [notesStorageKey]);
 
 useEffect(() => {
 try {
@@ -326,37 +231,6 @@ try {
 window.localStorage.setItem(supportStorageKey, JSON.stringify(next));
 } catch {
 setMessage("Unable to save support actions in this browser.");
-}
-}
-
-function saveQuestions() {
-try {
-window.localStorage.setItem(
-notesStorageKey,
-JSON.stringify({
-workshopQ,
-jobFairQ,
-meetingQ,
-hireMindsReferralQ,
-outsideReferralQ,
-interviewQ,
-resumeSupportQ,
-analyzerSupportQ,
-successStoryQ,
-manualCandidatesServed,
-manualNewUsers,
-manualResumesCompleted,
-manualApplicationsSubmitted,
-manualEmployerContacts,
-manualInterviews,
-manualJobsLanded,
-manualHireMindsReferrals,
-manualOutsideReferrals,
-})
-);
-setMessage("Report responses saved in this browser.");
-} catch {
-setMessage("Unable to save report responses in this browser.");
 }
 }
 
@@ -463,8 +337,14 @@ return true;
 const periodStart = useMemo(() => getPeriodStart(period), [period]);
 const usePeriodStart = useMemo(() => getPeriodStart(platformUseView), [platformUseView]);
 
-const customStart = useMemo(() => (customStartDate ? new Date(`${customStartDate}T00:00:00`) : null), [customStartDate]);
-const customEnd = useMemo(() => (customEndDate ? new Date(`${customEndDate}T23:59:59`) : null), [customEndDate]);
+const customStart = useMemo(
+() => (customStartDate ? new Date(`${customStartDate}T00:00:00`) : null),
+[customStartDate]
+);
+const customEnd = useMemo(
+() => (customEndDate ? new Date(`${customEndDate}T23:59:59`) : null),
+[customEndDate]
+);
 
 const inSelectedRange = (value?: string | null) => {
 const date = toDate(value);
@@ -546,7 +426,11 @@ return key ? filteredParticipantKeys.has(key) : false;
 
 const totalParticipants = filteredParticipants.length;
 const totalNewUsers = participantSearch.trim()
-? filteredParticipants.filter((row) => newUsers.some((n) => (n.user_id || n.email || n.id) === (row.user_id || row.email || row.id))).length
+? filteredParticipants.filter((row) =>
+newUsers.some(
+(n) => (n.user_id || n.email || n.id) === (row.user_id || row.email || row.id)
+)
+).length
 : newUsers.length;
 
 const totalActivity = displayActivity.length;
@@ -568,12 +452,7 @@ const page = (row.page_name || "").toLowerCase();
 if (event.includes("login") || event === "signed_in") counts.logins += 1;
 if (event.includes("page") || event === "page_view") counts.pageViews += 1;
 if (event.includes("complete")) counts.completions += 1;
-if (
-tool.includes("guide") ||
-tool.includes("video") ||
-page.includes("guide") ||
-page.includes("video")
-) {
+if (tool.includes("guide") || tool.includes("video") || page.includes("guide") || page.includes("video")) {
 counts.guides += 1;
 }
 if (tool) counts.generatorUses += 1;
@@ -636,21 +515,11 @@ displayActivity.filter(
 (row.event_type || "").toLowerCase().includes("complete")
 ).length;
 
-const jobDescriptionAnalyzerUses = toolCounts["job_description_analyzer"] || 0;
-const resumeMatchAnalyzerUses = toolCounts["resume_match_analyzer"] || 0;
-const jobLogUses = toolCounts["job_log_generator"] || 0;
-const interviewGeneratorUses = toolCounts["interview_question_generator"] || 0;
-const budgetToolUses = toolCounts["budget_generator"] || 0;
-const coverLetterUses = toolCounts["cover_letter_generator"] || 0;
-const videoLibraryUses = toolCounts["video_library"] || 0;
-const careerMapUses = toolCounts["career_map"] || 0;
-
 const participantLogins = useMemo(() => {
-const loginEvents = displayActivity.filter((row) => {
+return displayActivity.filter((row) => {
 const event = (row.event_type || "").toLowerCase();
 return event.includes("login") || event === "signed_in";
-});
-return loginEvents.length;
+}).length;
 }, [displayActivity]);
 
 const participantToolUsers = useMemo(() => {
@@ -665,6 +534,21 @@ return set.size;
 }, [displayActivity]);
 
 const liveFeed = useMemo(() => displayActivity.slice(0, 100), [displayActivity]);
+
+const historyFeed = useMemo(() => {
+const search = historySearch.trim().toLowerCase();
+return displayActivity.filter((row) => {
+const participant = (row.full_name || row.email || "").toLowerCase();
+const eventType = (row.event_type || "").toLowerCase();
+const toolName = (row.tool_name || "").toLowerCase();
+
+const matchesSearch = !search || participant.includes(search) || eventType.includes(search) || toolName.includes(search);
+const matchesTool = historyToolFilter === "all" || toolName === historyToolFilter;
+const matchesEvent = historyEventFilter === "all" || eventType === historyEventFilter;
+
+return matchesSearch && matchesTool && matchesEvent;
+});
+}, [displayActivity, historySearch, historyToolFilter, historyEventFilter]);
 
 const dailyTrend = useMemo(() => {
 const bucket = new Map<string, number>();
@@ -707,103 +591,16 @@ return toolBreakdown
 const maxTrendCount = dailyTrend.length ? Math.max(...dailyTrend.map((d) => d.count)) : 1;
 const maxToolCount = toolBreakdown.length ? Math.max(...toolBreakdown.map((d) => d.count)) : 1;
 
-const supportActionsFiltered = useMemo(() => {
-const q = participantSearch.trim().toLowerCase();
-if (!q) return supportActions;
-return supportActions.filter((item) => item.participantName.toLowerCase().includes(q));
-}, [supportActions, participantSearch]);
-
 const selectedParticipantOptions = filteredParticipants.map((row) => ({
 key: row.user_id || row.email || row.id || "",
 name: row.full_name || row.email || "Participant",
 }));
 
-const supportOpenCount = supportActions.filter((item) => item.status === "Open").length;
-
-const summaryText = useMemo(() => {
-const manualStats: string[] = [];
-if (manualCandidatesServed.trim()) manualStats.push(`Candidates served reported outside the platform: ${manualCandidatesServed.trim()}.`);
-if (manualNewUsers.trim()) manualStats.push(`Additional new users reported outside the platform: ${manualNewUsers.trim()}.`);
-if (manualResumesCompleted.trim()) manualStats.push(`Additional resumes completed outside tracked platform events: ${manualResumesCompleted.trim()}.`);
-if (manualApplicationsSubmitted.trim()) manualStats.push(`Applications submitted outside tracked platform events: ${manualApplicationsSubmitted.trim()}.`);
-if (manualEmployerContacts.trim()) manualStats.push(`Employer contacts reported for this period: ${manualEmployerContacts.trim()}.`);
-if (manualInterviews.trim()) manualStats.push(`Interviews reported for this period: ${manualInterviews.trim()}.`);
-if (manualJobsLanded.trim()) manualStats.push(`Jobs landed reported for this period: ${manualJobsLanded.trim()}.`);
-if (manualHireMindsReferrals.trim()) manualStats.push(`Additional HireMinds referrals reported: ${manualHireMindsReferrals.trim()}.`);
-if (manualOutsideReferrals.trim()) manualStats.push(`Additional outside referrals reported: ${manualOutsideReferrals.trim()}.`);
-
-const narrative: string[] = [];
-if (workshopQ.trim()) narrative.push(`Workshops and trainings: ${workshopQ.trim()}.`);
-if (jobFairQ.trim()) narrative.push(`Job fairs and hiring events: ${jobFairQ.trim()}.`);
-if (meetingQ.trim()) narrative.push(`Participant meetings and touch points: ${meetingQ.trim()}.`);
-if (hireMindsReferralQ.trim()) narrative.push(`HireMinds referrals: ${hireMindsReferralQ.trim()}.`);
-if (outsideReferralQ.trim()) narrative.push(`Outside referrals: ${outsideReferralQ.trim()}.`);
-if (interviewQ.trim()) narrative.push(`Interview activity and interview support: ${interviewQ.trim()}.`);
-if (resumeSupportQ.trim()) narrative.push(`Resume support and document development notes: ${resumeSupportQ.trim()}.`);
-if (analyzerSupportQ.trim()) narrative.push(`Analyzer support and job-matching notes: ${analyzerSupportQ.trim()}.`);
-if (successStoryQ.trim()) narrative.push(`Additional outcomes, success stories, or implementation notes: ${successStoryQ.trim()}.`);
-
-const rangeText =
-rangeMode === "custom" && customStart && customEnd
-? `${formatShortDate(customStartDate)} through ${formatShortDate(customEndDate)}`
-: periodLabel(period);
-
-return [
-`Reporting Summary (${rangeText}): HireMinds recorded ${totalActivity} tracked activity events across ${totalParticipants} active participant${totalParticipants === 1 ? "" : "s"} associated with referral code ${partner?.referral_code || "—"}. Dashboard totals in this view exclude inactive users and focus on participants who demonstrated measurable platform engagement during the selected reporting window.`,
-`User engagement remained anchored in core workforce preparation activity, including ${participantLogins} platform login${participantLogins === 1 ? "" : "s"}, ${eventTypeGroups.pageViews} tracked page view${eventTypeGroups.pageViews === 1 ? "" : "s"}, ${eventTypeGroups.generatorUses} recorded tool interaction${eventTypeGroups.generatorUses === 1 ? "" : "s"}, and ${totalCompletions} completed action${totalCompletions === 1 ? "" : "s"}. ${participantToolUsers} participant${participantToolUsers === 1 ? "" : "s"} actively used at least one tracked HireMinds tool during this reporting period.`,
-`The strongest tool activity during this period came from: ${topToolsText}. Resume-focused activity remained a key area of engagement, with ${resumesCompleted} completed resume action${resumesCompleted === 1 ? "" : "s"}, ${coverLetterUses} cover letter tool use${coverLetterUses === 1 ? "" : "s"}, ${interviewGeneratorUses} interview preparation tool use${interviewGeneratorUses === 1 ? "" : "s"}, ${jobDescriptionAnalyzerUses} Job Description Analyzer use${jobDescriptionAnalyzerUses === 1 ? "" : "s"}, and ${resumeMatchAnalyzerUses} Resume Match Analyzer use${resumeMatchAnalyzerUses === 1 ? "" : "s"}.`,
-`Additional workforce readiness and planning activity included ${jobLogUses} Job Log Generator use${jobLogUses === 1 ? "" : "s"}, ${budgetToolUses} Budget Generator use${budgetToolUses === 1 ? "" : "s"}, ${videoLibraryUses} Video Library engagement event${videoLibraryUses === 1 ? "" : "s"}, and ${careerMapUses} Career Map-related event${careerMapUses === 1 ? "" : "s"}. This reporting view can support nonprofit, state, municipal, and grant-funded program documentation by emphasizing active participation, documented service interaction, and measurable completion behavior.`,
-supportOpenCount > 0
-? `Partner support remained active during this period, with ${supportOpenCount} open assigned support item${supportOpenCount === 1 ? "" : "s"} currently saved in the dashboard across tasks, nudges, and reminders.`
-: `No open partner support items are currently saved in the dashboard for this reporting period.`,
-...manualStats,
-...narrative,
-].join(" ");
-}, [
-rangeMode,
-customStart,
-customEnd,
-customStartDate,
-customEndDate,
-period,
-partner?.referral_code,
-totalActivity,
-totalParticipants,
-participantLogins,
-eventTypeGroups.pageViews,
-eventTypeGroups.generatorUses,
-totalCompletions,
-participantToolUsers,
-topToolsText,
-resumesCompleted,
-coverLetterUses,
-interviewGeneratorUses,
-jobDescriptionAnalyzerUses,
-resumeMatchAnalyzerUses,
-jobLogUses,
-budgetToolUses,
-videoLibraryUses,
-careerMapUses,
-supportOpenCount,
-workshopQ,
-jobFairQ,
-meetingQ,
-hireMindsReferralQ,
-outsideReferralQ,
-interviewQ,
-resumeSupportQ,
-analyzerSupportQ,
-successStoryQ,
-manualCandidatesServed,
-manualNewUsers,
-manualResumesCompleted,
-manualApplicationsSubmitted,
-manualEmployerContacts,
-manualInterviews,
-manualJobsLanded,
-manualHireMindsReferrals,
-manualOutsideReferrals,
-]);
+const supportActionsFiltered = useMemo(() => {
+const q = participantSearch.trim().toLowerCase();
+if (!q) return supportActions;
+return supportActions.filter((item) => item.participantName.toLowerCase().includes(q));
+}, [supportActions, participantSearch]);
 
 async function handleLogout() {
 setLoadingLogout(true);
@@ -826,7 +623,7 @@ participantName: supportParticipantName,
 title: supportTitle.trim(),
 message: supportMessage.trim(),
 dueDate: supportDueDate || undefined,
-status: "Open" as SupportAction["status"],
+status: "Open",
 createdAt: new Date().toISOString(),
 },
 ...supportActions,
@@ -860,123 +657,37 @@ const next = supportActions.filter((item) => item.id !== id);
 persistSupportActions(next);
 }
 
-function exportSummaryReport() {
-const reportText = `
-PARTNER REPORT
-Organization: ${partner?.organization_name || "—"}
-Contact Name: ${partner?.contact_name || "—"}
-Contact Title: ${partner?.contact_title || "—"}
-Contact Email: ${partner?.contact_email || "—"}
-Referral Code: ${partner?.referral_code || "—"}
-Reporting Period: ${rangeMode === "custom" && customStartDate && customEndDate ? `${customStartDate} to ${customEndDate}` : periodLabel(period)}
-
-ACTIVE PARTICIPANT TOTAL
-${totalParticipants}
-
-TRACKED ACTIVITY TOTAL
-${totalActivity}
-
-SUMMARY
-${summaryText}
-`.trim();
-
-downloadText(`partner-summary-report-${period}.txt`, reportText);
-}
-
-function printSummaryReport() {
-const printWindow = window.open("", "_blank", "width=900,height=1200");
-if (!printWindow) {
-alert("Pop-up blocked. Please allow pop-ups and try again.");
-return;
-}
-
-const html = `
-<!doctype html>
-<html>
-<head>
-<title>Partner Summary Report</title>
-<style>
-body { font-family: Arial, sans-serif; padding: 40px; color: #111827; line-height: 1.7; }
-h1 { margin: 0 0 12px; font-size: 28px; }
-h2 { margin: 24px 0 8px; font-size: 18px; }
-p { margin: 0 0 10px; }
-.meta { margin-bottom: 18px; }
-.summary { margin-top: 24px; white-space: pre-wrap; }
-ul { padding-left: 20px; }
-</style>
-</head>
-<body>
-<h1>${partner?.organization_name || "Partner"} Summary Report</h1>
-<div class="meta">
-<p><strong>Contact Name:</strong> ${partner?.contact_name || "—"}</p>
-<p><strong>Contact Title:</strong> ${partner?.contact_title || "—"}</p>
-<p><strong>Contact Email:</strong> ${partner?.contact_email || "—"}</p>
-<p><strong>Referral Code:</strong> ${partner?.referral_code || "—"}</p>
-<p><strong>Reporting Period:</strong> ${rangeMode === "custom" && customStartDate && customEndDate ? `${customStartDate} to ${customEndDate}` : periodLabel(period)}</p>
-</div>
-<h2>Summary</h2>
-<div class="summary">${summaryText}</div>
-</body>
-</html>
-`;
-
-printWindow.document.open();
-printWindow.document.write(html);
-printWindow.document.close();
-printWindow.focus();
-printWindow.print();
-}
-
-function printDashboardSnapshot() {
+function printFeed(rows: ActivityRow[], title: string) {
 const printWindow = window.open("", "_blank", "width=1100,height=1400");
 if (!printWindow) {
 alert("Pop-up blocked. Please allow pop-ups and try again.");
 return;
 }
 
-const topToolsHtml = toolBreakdown
-.slice(0, 10)
-.map((item) => `<li>${item.label}: ${item.count}</li>`)
-.join("");
-
 const html = `
 <!doctype html>
 <html>
 <head>
-<title>Partner Dashboard Snapshot</title>
+<title>${title}</title>
 <style>
 body { font-family: Arial, sans-serif; padding: 32px; color: #111827; line-height: 1.6; }
-h1 { margin: 0 0 8px; font-size: 30px; }
-h2 { margin: 24px 0 8px; font-size: 18px; }
-.grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 16px; }
-.card { border: 1px solid #d1d5db; border-radius: 14px; padding: 14px; }
-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+h1 { margin: 0 0 8px; font-size: 28px; }
+p { margin: 0 0 8px; }
+table { width: 100%; border-collapse: collapse; margin-top: 18px; }
 th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; vertical-align: top; }
 th { background: #f3f4f6; }
-ul { padding-left: 20px; }
 </style>
 </head>
 <body>
-<h1>${partner?.organization_name || "Partner"} Dashboard Snapshot</h1>
+<h1>${title}</h1>
+<p><strong>Organization:</strong> ${partner?.organization_name || "—"}</p>
 <p><strong>Referral Code:</strong> ${partner?.referral_code || "—"}</p>
-<p><strong>Reporting Window:</strong> ${rangeMode === "custom" && customStartDate && customEndDate ? `${customStartDate} to ${customEndDate}` : periodLabel(period)}</p>
+<p><strong>Reporting Window:</strong> ${
+rangeMode === "custom" && customStartDate && customEndDate
+? `${customStartDate} to ${customEndDate}`
+: periodLabel(period)
+}</p>
 
-<div class="grid">
-<div class="card"><strong>Active Participants</strong><br/>${totalParticipants}</div>
-<div class="card"><strong>New Active Users</strong><br/>${totalNewUsers}</div>
-<div class="card"><strong>Total Activity</strong><br/>${totalActivity}</div>
-<div class="card"><strong>Total Completions</strong><br/>${totalCompletions}</div>
-<div class="card"><strong>Logins</strong><br/>${participantLogins}</div>
-<div class="card"><strong>Tool Users</strong><br/>${participantToolUsers}</div>
-</div>
-
-<h2>Top Tool Usage</h2>
-<ul>${topToolsHtml || "<li>No tracked tools in this period.</li>"}</ul>
-
-<h2>Summary</h2>
-<p>${summaryText}</p>
-
-<h2>Recent Activity</h2>
 <table>
 <thead>
 <tr>
@@ -989,9 +700,8 @@ ul { padding-left: 20px; }
 </thead>
 <tbody>
 ${
-liveFeed.length
-? liveFeed
-.slice(0, 40)
+rows.length
+? rows
 .map(
 (row) => `
 <tr>
@@ -1000,18 +710,16 @@ liveFeed.length
 <td>${row.event_type || "—"}</td>
 <td>${row.tool_name || "—"}</td>
 <td>${row.page_name || "—"}</td>
-</tr>
-`
+</tr>`
 )
 .join("")
-: `<tr><td colspan="5">No activity found for the selected range.</td></tr>`
+: `<tr><td colspan="5">No activity found.</td></tr>`
 }
 </tbody>
 </table>
 </body>
 </html>
 `;
-
 printWindow.document.open();
 printWindow.document.write(html);
 printWindow.document.close();
@@ -1049,9 +757,7 @@ to { transform: scaleY(1); opacity: 1; }
 <section style={styles.headerCard}>
 <div>
 <p style={styles.kicker}>Partner Reporting</p>
-<h1 style={styles.title}>
-{partner?.organization_name || "Partner"} Live Reporting
-</h1>
+<h1 style={styles.title}>{partner?.organization_name || "Partner"} Live Reporting</h1>
 <p style={styles.subtitle}>
 Account Holder: <strong>{partner?.contact_name || "—"}</strong>
 </p>
@@ -1083,10 +789,6 @@ style={styles.secondaryButton}
 
 <button type="button" onClick={() => loadDashboard()} style={styles.secondaryButton}>
 Refresh
-</button>
-
-<button type="button" onClick={printDashboardSnapshot} style={styles.secondaryButton}>
-Print Dashboard
 </button>
 
 <button
@@ -1138,38 +840,56 @@ style={styles.input}
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
-<p style={styles.sectionKicker}>Partner Resources</p>
-<h2 style={styles.sectionTitle}>Workshop Presentation</h2>
+<p style={styles.sectionKicker}>Dashboard Navigation</p>
+<h2 style={styles.sectionTitle}>Overview and reporting sections</h2>
 </div>
 </div>
 
-<div style={styles.presentationCard}>
-<h3 style={styles.presentationTitle}>YWCA Resume Workshop Presentation</h3>
-<p style={styles.presentationText}>
-View or download the HireMinds workshop presentation created for YWCA,
-including training flow, Career Passport setup, resume guidance,
-analyzers, workshop support content, and materials that can be used if
-your organization is facilitating a HireMinds workshop.
-</p>
-
-<div style={styles.presentationActions}>
-<a
-href="/ywca-resume-workshop.pdf"
-target="_blank"
-rel="noreferrer"
-style={styles.secondaryButtonLink}
+<div style={styles.tabRow}>
+{[
+{ key: "overview", label: "Overview" },
+{ key: "live", label: "Live Feed" },
+{ key: "history", label: "Past Activity" },
+{ key: "tools", label: "Tool Monitoring" },
+{ key: "support", label: "Support Actions" },
+].map((tab) => (
+<button
+key={tab.key}
+type="button"
+onClick={() => setActiveTab(tab.key as DashboardTab)}
+style={{
+...styles.tabButton,
+...(activeTab === tab.key ? styles.tabButtonActive : {}),
+}}
 >
-View PDF
-</a>
-
-<a
-href="/ywca-resume-workshop.pptx"
-download
-style={styles.secondaryButtonLink}
->
-Download PowerPoint
-</a>
+{tab.label}
+</button>
+))}
 </div>
+</section>
+
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<p style={styles.sectionKicker}>Quick Access</p>
+<h2 style={styles.sectionTitle}>Partner tools and resources</h2>
+</div>
+</div>
+
+<div style={styles.quickGrid}>
+<Link href="/partner-dashboard/workshop-resources" style={styles.quickCard}>
+<span style={styles.quickLabel}>Workshop Resources</span>
+<span style={styles.quickText}>
+PDF presentations, PowerPoints, printable forms, assessments, and support docs.
+</span>
+</Link>
+
+<Link href="/partner-dashboard/report-summary" style={styles.quickCard}>
+<span style={styles.quickLabel}>Summary Generator</span>
+<span style={styles.quickText}>
+Build and print the longer analytical report with tracked metrics and manual outcomes.
+</span>
+</Link>
 </div>
 </section>
 
@@ -1200,34 +920,110 @@ style={styles.input}
 </div>
 </section>
 
-<section style={styles.card}>
-<div style={styles.sectionTop}>
-<div>
-<div style={styles.titleRow}>
-<p style={styles.sectionKicker}>Current Activity</p>
-<InfoBubble
-title="Live Reporting Feed"
-text="This stream shows the most recent tracked participant activity for this partner referral code and selected reporting range. It refreshes automatically every 15 seconds."
-/>
+{activeTab === "overview" ? (
+<>
+<section style={styles.summaryGrid}>
+<div style={styles.metricCardBlue}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Active Participants</p>
 </div>
-<h2 style={styles.sectionTitle}>Live reporting feed</h2>
-<div style={styles.liveMetaRow}>
-<span style={styles.liveBadge}>
-<span style={styles.liveDot} />
-Live
-</span>
-<span style={styles.lastUpdated}>Last updated: {lastUpdated || "—"}</span>
+<p style={styles.summaryValue}>{totalParticipants}</p>
+</div>
+
+<div style={styles.metricCardGreen}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>New Active Users</p>
+</div>
+<p style={styles.summaryValue}>{totalNewUsers}</p>
+</div>
+
+<div style={styles.metricCardPurple}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Total Activity</p>
+</div>
+<p style={styles.summaryValue}>{totalActivity}</p>
+</div>
+
+<div style={styles.metricCardNeutral}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Total Completions</p>
+</div>
+<p style={styles.summaryValue}>{totalCompletions}</p>
+</div>
+
+<div style={styles.metricCardGreen}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Login Events</p>
+</div>
+<p style={styles.summaryValue}>{participantLogins}</p>
+</div>
+
+<div style={styles.metricCardAmber}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Tool Users</p>
+</div>
+<p style={styles.summaryValue}>{participantToolUsers}</p>
+</div>
+
+<div style={styles.metricCardBlue}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Resumes Completed</p>
+</div>
+<p style={styles.summaryValue}>{resumesCompleted}</p>
+</div>
+
+<div style={styles.metricCardPurple}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Top Tools</p>
+</div>
+<p style={styles.metricText}>{topToolsText}</p>
+</div>
+
+<div style={styles.metricCardPurple}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>HireMinds Total Uses</p>
+</div>
+<p style={styles.summaryValue}>{totalHireMindsUsesReference}</p>
+</div>
+</section>
+
+<section style={styles.graphGrid}>
+<div style={styles.cardInset}>
+<div style={styles.titleRow}>
+<div>
+<p style={styles.sectionKicker}>Trend View</p>
+<h2 style={styles.sectionTitle}>Activity over time</h2>
 </div>
 </div>
 
-<div style={styles.sectionActions}>
-<div style={styles.usagePanel}>
-<div style={styles.usagePanelTop}>
-<span style={styles.usageChipLabel}>Platform Uses</span>
-<InfoBubble
-title="Platform Uses"
-text="Counts tracked activity events. This can include repeat uses by the same participant."
+{dailyTrend.length === 0 ? (
+<p style={styles.emptyText}>No trend data yet for this reporting range.</p>
+) : (
+<div style={styles.verticalChart}>
+{dailyTrend.map((item) => (
+<div key={item.label} style={styles.verticalBarCol}>
+<div style={styles.verticalBarOuter}>
+<div
+style={{
+...styles.verticalBarInnerBlue,
+height: `${Math.max((item.count / maxTrendCount) * 100, 6)}%`,
+}}
 />
+</div>
+<span style={styles.verticalBarCount}>{item.count}</span>
+<span style={styles.verticalBarLabel}>{item.label}</span>
+</div>
+))}
+</div>
+)}
+</div>
+
+<div style={styles.cardInset}>
+<div style={styles.titleRow}>
+<div>
+<p style={styles.sectionKicker}>Platform Uses</p>
+<h2 style={styles.sectionTitle}>Current view</h2>
+</div>
 </div>
 
 <div style={styles.toggleRow}>
@@ -1252,11 +1048,44 @@ style={{
 <p style={styles.usageSubValue}>{periodLabel(platformUseView)}</p>
 </div>
 <div style={styles.referenceBox}>
-<p style={styles.referenceLabel}>HireMinds Total</p>
-<p style={styles.referenceValue}>{totalHireMindsUsesReference}</p>
+<p style={styles.referenceLabel}>Last updated</p>
+<p style={styles.referenceValueSmall}>{lastUpdated || "—"}</p>
 </div>
 </div>
 </div>
+</section>
+</>
+) : null}
+
+{activeTab === "live" ? (
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<div style={styles.titleRow}>
+<p style={styles.sectionKicker}>Current Activity</p>
+<InfoBubble
+title="Live Reporting Feed"
+text="This stream shows the most recent tracked participant activity for this partner referral code and selected reporting range."
+/>
+</div>
+<h2 style={styles.sectionTitle}>Live reporting feed</h2>
+<div style={styles.liveMetaRow}>
+<span style={styles.liveBadge}>
+<span style={styles.liveDot} />
+Live
+</span>
+<span style={styles.lastUpdated}>Last updated: {lastUpdated || "—"}</span>
+</div>
+</div>
+
+<div style={styles.sectionActions}>
+<button
+type="button"
+onClick={() => printFeed(liveFeed.slice(0, 100), "Live Reporting Feed")}
+style={styles.secondaryButton}
+>
+Print Feed
+</button>
 </div>
 </div>
 
@@ -1292,160 +1121,126 @@ return (
 </div>
 )}
 </section>
+) : null}
 
-<section style={styles.summaryGrid}>
-<div style={styles.metricCardBlue}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Active Participants</p>
-<InfoBubble
-title="Active Participants"
-text="Unique active participants tied to this partner referral code and selected reporting range. Inactive users are excluded from these totals."
-/>
-</div>
-<p style={styles.summaryValue}>{totalParticipants}</p>
+{activeTab === "history" ? (
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<p style={styles.sectionKicker}>Past Activities</p>
+<h2 style={styles.sectionTitle}>Historical activity reference</h2>
 </div>
 
-<div style={styles.metricCardGreen}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>New Active Users</p>
-<InfoBubble
-title="New Active Users"
-text="Participants whose signup date falls inside the selected reporting range and who also show tracked activity."
-/>
+<div style={styles.sectionActions}>
+<button
+type="button"
+onClick={() => printFeed(historyFeed, "Past Activity Feed")}
+style={styles.secondaryButton}
+>
+Print Feed
+</button>
 </div>
-<p style={styles.summaryValue}>{totalNewUsers}</p>
-</div>
-
-<div style={styles.metricCardPurple}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Total Activity</p>
-<InfoBubble
-title="Total Activity"
-text="All tracked activity events for active participants during the selected reporting range."
-/>
-</div>
-<p style={styles.summaryValue}>{totalActivity}</p>
 </div>
 
-<div style={styles.metricCardNeutral}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Total Completions</p>
-<InfoBubble
-title="Total Completions"
-text="Counts all tracked completed actions across HireMinds tools and generators."
+<div style={styles.historyFilterGrid}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Search Activity</label>
+<input
+value={historySearch}
+onChange={(e) => setHistorySearch(e.target.value)}
+placeholder="Search name, event, or tool"
+style={styles.input}
 />
-</div>
-<p style={styles.summaryValue}>{totalCompletions}</p>
 </div>
 
-<div style={styles.metricCardGreen}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Login Events</p>
-<InfoBubble
-title="Login Events"
-text="Counts tracked login events for active participants."
-/>
-</div>
-<p style={styles.summaryValue}>{participantLogins}</p>
-</div>
-
-<div style={styles.metricCardAmber}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Tool Users</p>
-<InfoBubble
-title="Tool Users"
-text="Unique active participants who used at least one tracked HireMinds tool during the selected range."
-/>
-</div>
-<p style={styles.summaryValue}>{participantToolUsers}</p>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Tool Filter</label>
+<select
+value={historyToolFilter}
+onChange={(e) => setHistoryToolFilter(e.target.value)}
+style={styles.select}
+>
+<option value="all">All Tools</option>
+{trackedTools.map((tool) => (
+<option key={tool.key} value={tool.key}>
+{tool.label}
+</option>
+))}
+</select>
 </div>
 
-<div style={styles.metricCardBlue}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Resumes Completed</p>
-<InfoBubble
-title="Resumes Completed"
-text="Tracked completed actions in the Resume Generator and Guided Resume Generator."
-/>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Event Filter</label>
+<select
+value={historyEventFilter}
+onChange={(e) => setHistoryEventFilter(e.target.value)}
+style={styles.select}
+>
+<option value="all">All Events</option>
+{[...new Set(displayActivity.map((row) => (row.event_type || "").toLowerCase()).filter(Boolean))].map(
+(event) => (
+<option key={event} value={event}>
+{event}
+</option>
+)
+)}
+</select>
 </div>
-<p style={styles.summaryValue}>{resumesCompleted}</p>
-</div>
-
-<div style={styles.metricCardPurple}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Job Description Analyzer Uses</p>
-<InfoBubble
-title="Job Description Analyzer Uses"
-text="All tracked uses of the Job Description Analyzer during the selected reporting range."
-/>
-</div>
-<p style={styles.summaryValue}>{jobDescriptionAnalyzerUses}</p>
 </div>
 
-<div style={styles.metricCardPurple}>
-<div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Resume Match Analyzer Uses</p>
-<InfoBubble
-title="Resume Match Analyzer Uses"
-text="All tracked uses of the Resume Match Analyzer during the selected reporting range."
-/>
-</div>
-<p style={styles.summaryValue}>{resumeMatchAnalyzerUses}</p>
+<div style={styles.liveFeedWrap}>
+<table style={styles.table}>
+<thead>
+<tr>
+<th style={styles.th}>Date</th>
+<th style={styles.th}>Participant</th>
+<th style={styles.th}>Event</th>
+<th style={styles.th}>Tool</th>
+<th style={styles.th}>Page</th>
+</tr>
+</thead>
+<tbody>
+{historyFeed.length ? (
+historyFeed.map((row, index) => {
+const rowKey = row.id || `${row.user_id || row.email || "history"}-${index}`;
+return (
+<tr key={rowKey}>
+<td style={styles.td}>{formatDate(row.created_at)}</td>
+<td style={styles.td}>{row.full_name || row.email || "—"}</td>
+<td style={styles.td}>{row.event_type || "—"}</td>
+<td style={styles.td}>{row.tool_name || "—"}</td>
+<td style={styles.td}>{row.page_name || "—"}</td>
+</tr>
+);
+})
+) : (
+<tr>
+<td style={styles.td} colSpan={5}>
+No historical activity matched the current filters.
+</td>
+</tr>
+)}
+</tbody>
+</table>
 </div>
 </section>
+) : null}
 
-<section style={styles.graphGrid}>
-<div style={styles.card}>
-<div style={styles.titleRow}>
+{activeTab === "tools" ? (
+<section style={styles.card}>
+<div style={styles.sectionTop}>
 <div>
-<p style={styles.sectionKicker}>Trend View</p>
-<h2 style={styles.sectionTitle}>Activity over time</h2>
-</div>
-<InfoBubble
-title="Activity Over Time"
-text="Shows how many tracked events occurred across the selected reporting range."
-/>
-</div>
-
-{dailyTrend.length === 0 ? (
-<p style={styles.emptyText}>No trend data yet for this reporting range.</p>
-) : (
-<div style={styles.verticalChart}>
-{dailyTrend.map((item) => (
-<div key={item.label} style={styles.verticalBarCol}>
-<div style={styles.verticalBarOuter}>
-<div
-style={{
-...styles.verticalBarInnerBlue,
-height: `${Math.max((item.count / maxTrendCount) * 100, 6)}%`,
-}}
-/>
-</div>
-<span style={styles.verticalBarCount}>{item.count}</span>
-<span style={styles.verticalBarLabel}>{item.label}</span>
-</div>
-))}
-</div>
-)}
-</div>
-
-<div style={styles.card}>
-<div style={styles.titleRow}>
-<div>
-<p style={styles.sectionKicker}>Tool Breakdown</p>
+<p style={styles.sectionKicker}>Tool Monitoring</p>
 <h2 style={styles.sectionTitle}>Tracked tool usage</h2>
 </div>
-<InfoBubble
-title="Tracked Tool Usage"
-text="Shows tracked use across current generators, analyzers, planning tools, guides, and newer HireMinds tools."
-/>
 </div>
 
 {toolBreakdown.length === 0 ? (
 <p style={styles.emptyText}>No tracked tool usage yet for this reporting range.</p>
 ) : (
+<>
 <div style={styles.horizontalChart}>
-{toolBreakdown.slice(0, 12).map((item, index) => {
+{toolBreakdown.map((item, index) => {
 const colors = [
 styles.horizontalBarBlue,
 styles.horizontalBarGreen,
@@ -1470,10 +1265,21 @@ width: `${Math.max((item.count / maxToolCount) * 100, 8)}%`,
 );
 })}
 </div>
-)}
-</div>
-</section>
 
+<div style={styles.toolGrid}>
+{toolBreakdown.map((item) => (
+<div key={item.key} style={styles.toolCard}>
+<p style={styles.toolCardLabel}>{item.label}</p>
+<p style={styles.toolCardValue}>{item.count}</p>
+</div>
+))}
+</div>
+</>
+)}
+</section>
+) : null}
+
+{activeTab === "support" ? (
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div style={styles.titleRow}>
@@ -1572,7 +1378,8 @@ Save Support Action
 <p style={styles.supportType}>{item.type.toUpperCase()}</p>
 <h3 style={styles.supportTitle}>{item.title}</h3>
 <p style={styles.supportMeta}>
-{item.participantName} • Created {formatDate(item.createdAt)} • Due {item.dueDate ? formatShortDate(item.dueDate) : "—"}
+{item.participantName} • Created {formatDate(item.createdAt)} • Due{" "}
+{item.dueDate ? formatShortDate(item.dueDate) : "—"}
 </p>
 </div>
 <span style={item.status === "Open" ? styles.statusOpen : styles.statusDone}>
@@ -1604,228 +1411,7 @@ Delete
 )}
 </div>
 </section>
-
-<section style={styles.card}>
-<div style={styles.sectionTop}>
-<div style={styles.titleRow}>
-<div>
-<p style={styles.sectionKicker}>Report Builder</p>
-<h2 style={styles.sectionTitle}>Report Summary Generator</h2>
-</div>
-<InfoBubble
-title="Report Summary Generator"
-text="Use tracked HireMinds metrics plus manual outcomes to prepare richer programmatic, nonprofit, state, municipal, and grant-ready summaries."
-/>
-</div>
-<div style={styles.sectionActions}>
-<button type="button" onClick={saveQuestions} style={styles.secondaryButton}>
-Save / Update Responses
-</button>
-<button type="button" onClick={exportSummaryReport} style={styles.secondaryButton}>
-Save Report
-</button>
-<button type="button" onClick={printSummaryReport} style={styles.secondaryButton}>
-Print Report
-</button>
-</div>
-</div>
-
-<div style={styles.summaryTextBox}>
-<p style={styles.summaryParagraph}>{summaryText}</p>
-</div>
-
-<div style={styles.manualStatsCard}>
-<div style={styles.titleRow}>
-<p style={styles.manualStatsTitle}>Manual Outcome Counts</p>
-<InfoBubble
-title="Manual Outcome Counts"
-text="Enter counts tracked outside the platform here. These values are included in the generated report summary."
-/>
-</div>
-
-<div style={styles.manualStatsGrid}>
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Candidates Served</label>
-<input
-value={manualCandidatesServed}
-onChange={(e) => setManualCandidatesServed(e.target.value)}
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>New Users</label>
-<input
-value={manualNewUsers}
-onChange={(e) => setManualNewUsers(e.target.value)}
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Resumes Completed</label>
-<input
-value={manualResumesCompleted}
-onChange={(e) => setManualResumesCompleted(e.target.value)}
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Applications Submitted</label>
-<input
-value={manualApplicationsSubmitted}
-onChange={(e) => setManualApplicationsSubmitted(e.target.value)}
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Employer Contacts</label>
-<input
-value={manualEmployerContacts}
-onChange={(e) => setManualEmployerContacts(e.target.value)}
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Interviews Landed</label>
-<input
-value={manualInterviews}
-onChange={(e) => setManualInterviews(e.target.value)}
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Jobs Landed</label>
-<input
-value={manualJobsLanded}
-onChange={(e) => setManualJobsLanded(e.target.value)}
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>HireMinds Referrals</label>
-<input
-value={manualHireMindsReferrals}
-onChange={(e) => setManualHireMindsReferrals(e.target.value)}
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Outside Referrals</label>
-<input
-value={manualOutsideReferrals}
-onChange={(e) => setManualOutsideReferrals(e.target.value)}
-style={styles.input}
-/>
-</div>
-</div>
-</div>
-
-<div style={styles.notesGrid}>
-<div style={styles.fieldWrap}>
-<label style={styles.label}>
-How many workshops or trainings were held during this reporting period?
-</label>
-<textarea
-value={workshopQ}
-onChange={(e) => setWorkshopQ(e.target.value)}
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>
-How many job fairs or hiring events were attended?
-</label>
-<textarea
-value={jobFairQ}
-onChange={(e) => setJobFairQ(e.target.value)}
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>
-How many one-on-one meetings took place with participants?
-</label>
-<textarea
-value={meetingQ}
-onChange={(e) => setMeetingQ(e.target.value)}
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>
-Were any participants referred to HireMinds tools or services?
-</label>
-<textarea
-value={hireMindsReferralQ}
-onChange={(e) => setHireMindsReferralQ(e.target.value)}
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Were any outside referrals made?</label>
-<textarea
-value={outsideReferralQ}
-onChange={(e) => setOutsideReferralQ(e.target.value)}
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>
-How many participants landed interviews or received interview support?
-</label>
-<textarea
-value={interviewQ}
-onChange={(e) => setInterviewQ(e.target.value)}
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>
-What resume-related support or outcomes should be included?
-</label>
-<textarea
-value={resumeSupportQ}
-onChange={(e) => setResumeSupportQ(e.target.value)}
-style={styles.textarea}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>
-What analyzer-related support or outcomes should be included?
-</label>
-<textarea
-value={analyzerSupportQ}
-onChange={(e) => setAnalyzerSupportQ(e.target.value)}
-style={styles.textarea}
-/>
-</div>
-
-<div style={{ ...styles.fieldWrap, gridColumn: "1 / -1" }}>
-<label style={styles.label}>
-What additional outcomes, success stories, or narrative should be included?
-</label>
-<textarea
-value={successStoryQ}
-onChange={(e) => setSuccessStoryQ(e.target.value)}
-style={styles.textareaLarge}
-/>
-</div>
-</div>
-</section>
+) : null}
 </div>
 </main>
 );
@@ -1931,6 +1517,12 @@ border: "1px solid #262626",
 borderRadius: "24px",
 padding: "24px",
 },
+cardInset: {
+background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
+border: "1px solid #262626",
+borderRadius: "24px",
+padding: "24px",
+},
 sectionTop: {
 display: "flex",
 justifyContent: "space-between",
@@ -2002,46 +1594,58 @@ color: "#d4d4d8",
 fontSize: "12px",
 lineHeight: 1.6,
 },
-presentationCard: {
-border: "1px solid #2c2c2c",
-borderRadius: "18px",
-padding: "18px",
-background: "#101010",
+filterGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "16px",
 },
-presentationTitle: {
-margin: "0 0 10px",
-color: "#f5f5f5",
-fontSize: "20px",
-fontWeight: 700,
+historyFilterGrid: {
+display: "grid",
+gridTemplateColumns: "1.2fr 1fr 1fr",
+gap: "16px",
+marginBottom: "18px",
 },
-presentationText: {
-margin: "0 0 16px",
-color: "#d4d4d8",
-fontSize: "15px",
-lineHeight: 1.75,
-},
-presentationActions: {
+tabRow: {
 display: "flex",
-gap: "12px",
+gap: "10px",
 flexWrap: "wrap",
 },
-secondaryButtonLink: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-padding: "12px 16px",
-borderRadius: "16px",
+tabButton: {
+padding: "10px 14px",
+borderRadius: "999px",
 border: "1px solid rgba(255,255,255,0.12)",
 background: "#111111",
 color: "#f5f5f5",
 fontWeight: 700,
 cursor: "pointer",
-textDecoration: "none",
 },
-filterGrid: {
+tabButtonActive: {
+background: "#f5f5f5",
+color: "#111111",
+},
+quickGrid: {
 display: "grid",
 gridTemplateColumns: "1fr 1fr",
 gap: "16px",
+},
+quickCard: {
+display: "grid",
+gap: "10px",
+border: "1px solid #2c2c2c",
+borderRadius: "18px",
+padding: "18px",
+background: "#101010",
+textDecoration: "none",
+},
+quickLabel: {
+color: "#f5f5f5",
+fontSize: "18px",
+fontWeight: 700,
+},
+quickText: {
+color: "#d4d4d8",
+fontSize: "14px",
+lineHeight: 1.7,
 },
 liveMetaRow: {
 display: "flex",
@@ -2073,26 +1677,6 @@ animation: "pulseDot 1.8s infinite ease-in-out",
 lastUpdated: {
 color: "#a1a1aa",
 fontSize: "13px",
-},
-usagePanel: {
-minWidth: "320px",
-maxWidth: "420px",
-padding: "16px",
-borderRadius: "20px",
-border: "1px solid rgba(255,255,255,0.08)",
-background: "linear-gradient(135deg, rgba(22,22,25,0.96) 0%, rgba(11,11,12,0.98) 100%)",
-},
-usagePanelTop: {
-display: "flex",
-alignItems: "center",
-gap: "8px",
-marginBottom: "10px",
-},
-usageChipLabel: {
-color: "#a1a1aa",
-fontSize: "12px",
-letterSpacing: "0.08em",
-textTransform: "uppercase",
 },
 toggleRow: {
 display: "flex",
@@ -2134,7 +1718,7 @@ color: "#a1a1aa",
 fontSize: "13px",
 },
 referenceBox: {
-minWidth: "120px",
+minWidth: "160px",
 padding: "10px 12px",
 borderRadius: "16px",
 background: "rgba(59,130,246,0.09)",
@@ -2148,15 +1732,15 @@ fontSize: "12px",
 textTransform: "uppercase",
 letterSpacing: "0.06em",
 },
-referenceValue: {
+referenceValueSmall: {
 margin: 0,
 color: "#eff6ff",
-fontSize: "22px",
+fontSize: "16px",
 fontWeight: 700,
-lineHeight: 1,
+lineHeight: 1.2,
 },
 liveFeedWrap: {
-maxHeight: "420px",
+maxHeight: "480px",
 overflow: "auto",
 borderRadius: "18px",
 border: "1px solid #2b2b2e",
@@ -2233,6 +1817,12 @@ color: "#ffffff",
 fontSize: "34px",
 fontWeight: 700,
 lineHeight: 1,
+},
+metricText: {
+margin: 0,
+color: "#e5e7eb",
+fontSize: "14px",
+lineHeight: 1.7,
 },
 graphGrid: {
 display: "grid",
@@ -2353,30 +1943,27 @@ fontSize: "14px",
 fontWeight: 700,
 textAlign: "right",
 },
-summaryTextBox: {
+toolGrid: {
+marginTop: "22px",
+display: "grid",
+gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+gap: "14px",
+},
+toolCard: {
 border: "1px solid #2c2c2c",
 borderRadius: "18px",
-padding: "18px",
+padding: "14px",
 background: "#101010",
-marginBottom: "18px",
 },
-summaryParagraph: {
+toolCardLabel: {
+margin: "0 0 8px",
+color: "#d4d4d8",
+fontSize: "13px",
+},
+toolCardValue: {
 margin: 0,
-color: "#e5e7eb",
-fontSize: "15px",
-lineHeight: 1.9,
-},
-manualStatsCard: {
-border: "1px solid #2c2c2c",
-borderRadius: "18px",
-padding: "18px",
-background: "#101010",
-marginBottom: "18px",
-},
-manualStatsTitle: {
-margin: 0,
-color: "#f5f5f5",
-fontSize: "16px",
+color: "#fff",
+fontSize: "28px",
 fontWeight: 700,
 },
 manualStatsGrid: {
@@ -2384,11 +1971,6 @@ marginTop: "16px",
 display: "grid",
 gridTemplateColumns: "1fr 1fr 1fr",
 gap: "14px",
-},
-notesGrid: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "16px",
 },
 fieldWrap: {
 display: "grid",
@@ -2414,19 +1996,6 @@ outline: "none",
 textarea: {
 width: "100%",
 minHeight: "120px",
-padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-resize: "vertical",
-boxSizing: "border-box",
-outline: "none",
-},
-textareaLarge: {
-width: "100%",
-minHeight: "140px",
 padding: "14px 16px",
 borderRadius: "16px",
 border: "1px solid #313131",
