@@ -182,15 +182,51 @@ complete workforce-readiness experience with less stress and more consistency.
 <p style={styles.paragraph}>
 One of the strongest benefits of partnering with HireMinds is visibility. Partners can gain access to a live dashboard or
 monthly usage reports showing how participants are engaging with the platform, what tools they are using, and where there
-may be opportunities for stronger follow-up or support.
+may be opportunities for stronger follow-up or support. Dashboard access can also support workshop visibility by tying
+participant activity back to presentations, guided sessions, and implementation efforts.
 </p>
 <p style={styles.paragraph}>
 For organizations that prefer a more hands-off reporting experience, HireMinds can also include a designated project
 manager to help monitor usage, organize reporting, and provide structured updates on your behalf.
 </p>
 <p style={styles.paragraph}>
-This creates a stronger bridge between participant activity, staff visibility, and program outcomes without requiring your
-team to manually piece everything together.
+This creates a stronger bridge between participant activity, workshop delivery, staff visibility, and program outcomes without
+requiring your team to manually piece everything together.
+</p>
+</section>
+
+<section style={styles.infoCard}>
+<p style={styles.sectionKicker}>Workshop outcomes</p>
+<h2 style={styles.sectionTitle}>What participants can accomplish by the end of a session</h2>
+
+<p style={styles.paragraph}>
+HireMinds is designed to make every session practical, guided, and outcome-driven. By the end of a resume or career-readiness
+session, participants are not just exposed to information — they are actively building tools they can leave with and continue
+using after the workshop ends.
+</p>
+
+<p style={styles.paragraph}>
+Depending on the session format, participants will practice how to navigate the platform, build their materials, and use
+HireMinds more independently moving forward. Partners can also benefit from dashboard visibility that includes workshop-related
+activity and presentation support as part of the broader implementation experience.
+</p>
+
+<ul style={styles.list}>
+<li>Create a Career Passport account and sign in</li>
+<li>Complete core profile information</li>
+<li>Build a resume using HireMinds</li>
+<li>Understand how to use generators for job-search tasks</li>
+<li>Identify soft skills and industry core skills to strengthen applications</li>
+<li>Navigate the homepage and profile editor</li>
+<li>Use interview question and follow-up tools</li>
+<li>Save skills and goals that support target roles</li>
+<li>Use the job log and budget tools for planning</li>
+<li>Find community support and next-step resources</li>
+</ul>
+
+<p style={styles.paragraph}>
+The goal is for participants to leave with more than motivation. They leave with progress, clearer direction, stronger materials,
+and a better understanding of how to keep building on their own.
 </p>
 </section>
 
