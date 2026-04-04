@@ -192,7 +192,7 @@ style={styles.dropdownTrigger}
 aria-haspopup="menu"
 aria-expanded={partnersOpen}
 >
-More
+Tools
 <span
 style={{
 ...styles.dropdownChevron,
