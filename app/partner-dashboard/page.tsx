@@ -839,7 +839,7 @@ setSupportDueDate("");
 setMessage("Support action saved.");
 }
 
-unction toggleSupportActionStatus(id: string) {
+function toggleSupportActionStatus(id: string) {
 const next: SupportAction[] = supportActions.map((item) => {
 if (item.id !== id) return item;
 
