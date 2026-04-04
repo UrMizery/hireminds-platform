@@ -94,7 +94,7 @@ Tour HireMinds
 <li>Reentry and justice-impacted programs</li>
 <li>Veteran-serving organizations</li>
 <li>Schools, colleges, and training providers</li>
-<li>Career coaches, case teams, and program staff</li>
+<li>Career coaches, case managers, and program staff</li>
 <li>Programs running services in one or multiple locations</li>
 </ul>
 </div>
@@ -153,7 +153,7 @@ Interested in seeing the experience for yourself? Sign up to tour HireMinds usin
 </p>
 <div style={styles.heroButtons}>
 <a href="/sign-up" style={styles.primaryTourButton}>
-Sign Up to Tour HireMinds
+Sign Up to Tour HireMinds and explore the experience your participants will navigate
 </a>
 </div>
 </div>
