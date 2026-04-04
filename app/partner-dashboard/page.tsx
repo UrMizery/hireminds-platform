@@ -396,15 +396,19 @@ return key ? activeUserIds.has(key) : false;
 });
 }, [uniqueParticipants, activeUserIds]);
 
+const totalReferralParticipants = useMemo(() => {
+return uniqueParticipants.length;
+}, [uniqueParticipants]);
+
 const filteredParticipants = useMemo(() => {
 const q = participantSearch.trim().toLowerCase();
-if (!q) return activeParticipants;
-return activeParticipants.filter((row) => {
+if (!q) return uniqueParticipants;
+return uniqueParticipants.filter((row) => {
 const name = (row.full_name || "").toLowerCase();
 const email = (row.email || "").toLowerCase();
 return name.includes(q) || email.includes(q);
 });
-}, [activeParticipants, participantSearch]);
+}, [uniqueParticipants, participantSearch]);
 
 const filteredParticipantKeys = useMemo(() => {
 const set = new Set<string>();
@@ -423,7 +427,9 @@ return key ? filteredParticipantKeys.has(key) : false;
 });
 }, [filteredActivity, filteredParticipantKeys, participantSearch]);
 
-const totalParticipants = filteredParticipants.length;
+const totalParticipants = totalReferralParticipants;
+const totalActiveParticipants = activeParticipants.length;
+
 const totalNewUsers = participantSearch.trim()
 ? filteredParticipants.filter((row) =>
 newUsers.some(
@@ -451,7 +457,12 @@ const page = (row.page_name || "").toLowerCase();
 if (event.includes("login") || event === "signed_in") counts.logins += 1;
 if (event.includes("page") || event === "page_view") counts.pageViews += 1;
 if (event.includes("complete")) counts.completions += 1;
-if (tool.includes("guide") || tool.includes("video") || page.includes("guide") || page.includes("video")) {
+if (
+tool.includes("guide") ||
+tool.includes("video") ||
+page.includes("guide") ||
+page.includes("video")
+) {
 counts.guides += 1;
 }
 if (tool) counts.generatorUses += 1;
@@ -541,7 +552,11 @@ const participant = (row.full_name || row.email || "").toLowerCase();
 const eventType = (row.event_type || "").toLowerCase();
 const toolName = (row.tool_name || "").toLowerCase();
 
-const matchesSearch = !search || participant.includes(search) || eventType.includes(search) || toolName.includes(search);
+const matchesSearch =
+!search ||
+participant.includes(search) ||
+eventType.includes(search) ||
+toolName.includes(search);
 const matchesTool = historyToolFilter === "all" || toolName === historyToolFilter;
 const matchesEvent = historyEventFilter === "all" || eventType === historyEventFilter;
 
@@ -581,7 +596,7 @@ count: toolCounts[tool.key] || 0,
 const maxTrendCount = dailyTrend.length ? Math.max(...dailyTrend.map((d) => d.count)) : 1;
 const maxToolCount = toolBreakdown.length ? Math.max(...toolBreakdown.map((d) => d.count)) : 1;
 
-const selectedParticipantOptions = filteredParticipants.map((row) => ({
+const selectedParticipantOptions = uniqueParticipants.map((row) => ({
 key: row.user_id || row.email || row.id || "",
 name: row.full_name || row.email || "Participant",
 }));
@@ -865,7 +880,7 @@ style={{
 <p style={styles.sectionKicker}>Participant Filters</p>
 <InfoBubble
 title="Participant Filters"
-text="Filter active participants and related activity by participant name or email. Inactive users are excluded from primary dashboard totals."
+text="Search participants tied to this referral code. Total Participants is the lifetime referral-code count and does not reset. Active Participants reflects activity in the selected reporting range."
 />
 </div>
 <h2 style={styles.sectionTitle}>Participant lookup</h2>
@@ -874,7 +889,7 @@ text="Filter active participants and related activity by participant name or ema
 
 <div style={styles.filterGrid}>
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Search Active Participants</label>
+<label style={styles.label}>Search Participants</label>
 <input
 value={participantSearch}
 onChange={(e) => setParticipantSearch(e.target.value)}
@@ -890,9 +905,16 @@ style={styles.input}
 <section style={styles.summaryGrid}>
 <div style={styles.metricCardBlue}>
 <div style={styles.metricTop}>
-<p style={styles.summaryLabel}>Active Participants</p>
+<p style={styles.summaryLabel}>Total Participants</p>
 </div>
 <p style={styles.summaryValue}>{totalParticipants}</p>
+</div>
+
+<div style={styles.metricCardGreen}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Active Participants</p>
+</div>
+<p style={styles.summaryValue}>{totalActiveParticipants}</p>
 </div>
 
 <div style={styles.metricCardGreen}>
@@ -928,6 +950,20 @@ style={styles.input}
 <p style={styles.summaryLabel}>Tool Users</p>
 </div>
 <p style={styles.summaryValue}>{participantToolUsers}</p>
+</div>
+
+<div style={styles.metricCardBlue}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>Resumes Completed</p>
+</div>
+<p style={styles.summaryValue}>{resumesCompleted}</p>
+</div>
+
+<div style={styles.metricCardPurple}>
+<div style={styles.metricTop}>
+<p style={styles.summaryLabel}>HireMinds Total Uses</p>
+</div>
+<p style={styles.summaryValue}>{totalHireMindsUsesReference}</p>
 </div>
 </section>
 
@@ -1227,7 +1263,7 @@ width: `${maxToolCount === 0 ? 8 : Math.max((item.count / maxToolCount) * 100, 8
 </div>
 <InfoBubble
 title="Partner Support"
-text="Use this section to save partner follow-up actions for active participants. In this version, support actions are stored in the current browser until a dedicated database table is added."
+text="Use this section to save partner follow-up actions for participants attached to this referral code. In this version, support actions are stored in the current browser until a dedicated database table is added."
 />
 </div>
 </div>
