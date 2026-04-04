@@ -141,8 +141,7 @@ const isAdmin = role === "admin";
 const isEmployer = role === "employer";
 const isCandidate = role === "candidate";
 
-const isOnPartnerRoute = pathname?.startsWith("/partner-dashboard");
-const showPartnerNav = isLoggedIn && (role === "partner" || isOnPartnerRoute);
+const showPartnerNav = isLoggedIn && role === "partner";
 
 return (
 <header style={styles.header}>
