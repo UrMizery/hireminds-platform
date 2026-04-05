@@ -125,8 +125,9 @@ return (
 <p style={styles.kicker}>Partner Workshop Resources</p>
 <h1 style={styles.title}>Workshop Resources</h1>
 <p style={styles.subtitle}>
-This page is your partner-ready workshop hub. Use it to access deck files,
-prepare for resume workshops, and keep future printable materials in one place.
+This page is your partner-ready workshop hub. Use it to access the
+workshop deck, prep printable materials, and keep resume workshop
+resources in one place.
 </p>
 <p style={styles.subtleLine}>Organization: {partner?.organization_name || "—"}</p>
 <p style={styles.subtleLine}>Referral Code: {partner?.referral_code || "—"}</p>
@@ -157,7 +158,7 @@ disabled={loadingLogout}
 <p style={styles.sectionKicker}>How to Use This Page</p>
 <InfoBubble
 title="Workshop Resources"
-text="Use this page to access workshop decks, prep materials, and future printable forms for partners and facilitators."
+text="Use this page to access your workshop decks now and prepare printable materials for future partner workshops."
 />
 </div>
 <h2 style={styles.sectionTitle}>Your workshop prep center</h2>
@@ -167,19 +168,31 @@ text="Use this page to access workshop decks, prep materials, and future printab
 <div style={styles.howToGrid}>
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>1</p>
-<p style={styles.howToText}>Download or open the workshop deck before the session.</p>
+<p style={styles.howToText}>
+Open or download the workshop deck before the session.
+</p>
 </div>
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>2</p>
-<p style={styles.howToText}>Use the deck to guide participants through Career Passport and resume building.</p>
+<p style={styles.howToText}>
+Use the workshop flow to guide participants through Career
+Passport and resume-building steps.
+</p>
 </div>
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>3</p>
-<p style={styles.howToText}>Use future forms here for attendance, planning, and follow-up.</p>
+<p style={styles.howToText}>
+Print support materials like attendance sheets, password
+reminders, referral strips, and resume review handouts before
+the workshop begins.
+</p>
 </div>
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>4</p>
-<p style={styles.howToText}>Keep all partner workshop materials in one clean place.</p>
+<p style={styles.howToText}>
+Use reflection sheets after the session to track outcomes and
+next-step support.
+</p>
 </div>
 </div>
 </section>
@@ -187,7 +200,7 @@ text="Use this page to access workshop decks, prep materials, and future printab
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
-<p style={styles.sectionKicker}>Workshop Decks</p>
+<p style={styles.sectionKicker}>Workshop Decks & Printables</p>
 <h2 style={styles.sectionTitle}>Current downloadable files</h2>
 </div>
 </div>
@@ -197,7 +210,8 @@ text="Use this page to access workshop decks, prep materials, and future printab
 <p style={styles.resourceType}>PDF</p>
 <h3 style={styles.resourceTitle}>YWCA Resume Workshop PDF</h3>
 <p style={styles.resourceText}>
-Best for quick viewing, printing, or sharing with workshop facilitators.
+Best for quick viewing, printing, or sharing with workshop
+facilitators.
 </p>
 <div style={styles.resourceActions}>
 <a
@@ -218,11 +232,65 @@ Download PDF
 <p style={styles.resourceType}>POWERPOINT</p>
 <h3 style={styles.resourceTitle}>YWCA Resume Workshop PowerPoint</h3>
 <p style={styles.resourceText}>
-Best for editing, presenting live, or customizing for future partner workshops.
+Best for editing, presenting live, or customizing for future
+partner workshops.
 </p>
 <div style={styles.resourceActions}>
 <a href="/ywca-resume-workshop.pptx" download style={styles.resourceLink}>
 Download PowerPoint
+</a>
+</div>
+</div>
+
+<div style={styles.resourceCard}>
+<p style={styles.resourceType}>PRINTABLE PDF</p>
+<h3 style={styles.resourceTitle}>HireMinds Password Reminder Strips</h3>
+<p style={styles.resourceText}>
+Printable cut-apart reminder strips for participants to write
+down their HireMinds login details and tools they want to
+explore.
+</p>
+<div style={styles.resourceActions}>
+<a
+href="/hireminds_password_sheet_printable%202.pdf"
+target="_blank"
+rel="noreferrer"
+style={styles.resourceLink}
+>
+Open PDF
+</a>
+<a
+href="/hireminds_password_sheet_printable%202.pdf"
+download
+style={styles.resourceLink}
+>
+Download PDF
+</a>
+</div>
+</div>
+
+<div style={styles.resourceCard}>
+<p style={styles.resourceType}>PRINTABLE PDF</p>
+<h3 style={styles.resourceTitle}>HireMinds Referral Access Strips</h3>
+<p style={styles.resourceText}>
+Printable referral strips with the YWCA code, website, email,
+and QR for workshop participants to take with them.
+</p>
+<div style={styles.resourceActions}>
+<a
+href="/hireminds_referral_strips_ywca_printable%202.pdf"
+target="_blank"
+rel="noreferrer"
+style={styles.resourceLink}
+>
+Open PDF
+</a>
+<a
+href="/hireminds_referral_strips_ywca_printable%202.pdf"
+download
+style={styles.resourceLink}
+>
+Download PDF
 </a>
 </div>
 </div>
@@ -247,24 +315,27 @@ text="This area explains the purpose of the workshop and helps partners stay ali
 <div style={styles.overviewCard}>
 <p style={styles.overviewTitle}>Core Outcome</p>
 <p style={styles.overviewText}>
-Participants should leave with stronger visibility, a working Career Passport,
-and a resume they can continue building or using right away.
+Participants should leave with stronger visibility, a working
+Career Passport, and a resume they can continue building or use
+right away.
 </p>
 </div>
 
 <div style={styles.overviewCard}>
 <p style={styles.overviewTitle}>Partner Goal</p>
 <p style={styles.overviewText}>
-Partners should be able to guide the session clearly, connect participants to tools,
-and support next-step action after the workshop ends.
+Partners should be able to guide the session clearly, connect
+participants to tools, and support next-step action after the
+workshop ends.
 </p>
 </div>
 
 <div style={styles.overviewCard}>
 <p style={styles.overviewTitle}>Recommended Flow</p>
 <p style={styles.overviewText}>
-Start with account creation or Career Passport, move into resume building,
-then highlight toolkit tools that support job search and follow-up.
+Start with account creation or Career Passport, move into resume
+building, then highlight toolkit tools that support job search
+and follow-up.
 </p>
 </div>
 </div>
@@ -273,52 +344,86 @@ then highlight toolkit tools that support job search and follow-up.
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
-<p style={styles.sectionKicker}>Recommended Materials</p>
-<h2 style={styles.sectionTitle}>Items to prepare for resume workshops</h2>
+<p style={styles.sectionKicker}>Printable Workshop Materials</p>
+<h2 style={styles.sectionTitle}>Materials to prepare for the workshop</h2>
 </div>
 </div>
 
 <div style={styles.materialGrid}>
-{[
-"Workshop sign-in sheet",
-"Participant action plan",
-"Resume checklist",
-"Career map worksheet",
-"Follow-up tracker",
-"Partner facilitation notes",
-"Referral handout",
-"Mock interview prep sheet",
-].map((item) => (
-<div key={item} style={styles.materialCard}>
-<p style={styles.materialText}>{item}</p>
+<div style={styles.materialCard}>
+<p style={styles.materialTitle}>Attendance Sheet</p>
+<p style={styles.materialText}>
+Track who attended, date, organization, contact info, and
+workshop participation.
+</p>
 </div>
-))}
+
+<div style={styles.materialCard}>
+<p style={styles.materialTitle}>Resume Review Handout</p>
+<p style={styles.materialText}>
+Help participants put information in order so they can build a
+resume step by step.
+</p>
+</div>
+
+<div style={styles.materialCard}>
+<p style={styles.materialTitle}>Workshop Reflection Sheet</p>
+<p style={styles.materialText}>
+Capture what participants learned, what they completed, and what
+support they still need.
+</p>
+</div>
+
+<div style={styles.materialCard}>
+<p style={styles.materialTitle}>Password Reminder Strips</p>
+<p style={styles.materialText}>
+Give participants a simple place to write down their login info
+and note what tools they want to explore.
+</p>
+</div>
+
+<div style={styles.materialCard}>
+<p style={styles.materialTitle}>Referral Access Strips</p>
+<p style={styles.materialText}>
+Give participants a take-home reminder with the referral code,
+website, QR, and email.
+</p>
+</div>
 </div>
 </section>
 
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
-<p style={styles.sectionKicker}>Coming Soon</p>
-<h2 style={styles.sectionTitle}>Future printable forms and resources</h2>
+<p style={styles.sectionKicker}>Next Items to Create</p>
+<h2 style={styles.sectionTitle}>Forms to build next for workshop prep</h2>
 </div>
 </div>
 
 <div style={styles.materialGrid}>
-{[
-"Printable intake form",
-"Attendance sheet",
-"Facilitator checklist",
-"Participant follow-up form",
-"Workshop reflection sheet",
-"Employer workshop interest form",
-"Career planning worksheet",
-"Resume review handout",
-].map((item) => (
-<div key={item} style={styles.comingSoonCard}>
-<p style={styles.materialText}>{item}</p>
+<div style={styles.comingSoonCard}>
+<p style={styles.materialTitle}>Attendance Sheet</p>
+<p style={styles.materialText}>
+Printable sign-in form for workshop attendance and participant
+contact details.
+</p>
 </div>
-))}
+
+<div style={styles.comingSoonCard}>
+<p style={styles.materialTitle}>Resume Review Handout</p>
+<p style={styles.materialText}>
+Printable worksheet to help participants organize experience,
+skills, education, and goals.
+</p>
+</div>
+
+<div style={styles.comingSoonCard}>
+<p style={styles.materialTitle}>Workshop Reflection Sheet</p>
+<p style={styles.materialText}>
+Printable reflection form for takeaways, next steps, and
+confidence after the workshop.
+</p>
+</div>
 </div>
 </section>
 </div>
@@ -520,7 +625,7 @@ lineHeight: 1.7,
 },
 resourceGrid: {
 display: "grid",
-gridTemplateColumns: "1fr 1fr",
+gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
 gap: "16px",
 },
 resourceCard: {
@@ -592,32 +697,33 @@ lineHeight: 1.8,
 },
 materialGrid: {
 display: "grid",
-gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
 gap: "14px",
 },
 materialCard: {
 border: "1px solid #2c2c2c",
 borderRadius: "18px",
-padding: "16px",
+padding: "18px",
 background: "#101010",
-minHeight: "84px",
-display: "flex",
-alignItems: "center",
+minHeight: "140px",
 },
 comingSoonCard: {
 border: "1px dashed rgba(147,197,253,0.35)",
 borderRadius: "18px",
-padding: "16px",
+padding: "18px",
 background: "rgba(59,130,246,0.06)",
-minHeight: "84px",
-display: "flex",
-alignItems: "center",
+minHeight: "140px",
+},
+materialTitle: {
+margin: "0 0 10px",
+color: "#f5f5f5",
+fontSize: "18px",
+fontWeight: 700,
 },
 materialText: {
 margin: 0,
-color: "#f5f5f5",
+color: "#d4d4d8",
 fontSize: "14px",
-lineHeight: 1.6,
-fontWeight: 600,
+lineHeight: 1.7,
 },
 };
