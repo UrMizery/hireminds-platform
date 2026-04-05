@@ -1021,6 +1021,7 @@ style={{
 </div>
 </section>
 
+{activeTab !== "history" ? (
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
@@ -1047,7 +1048,7 @@ style={styles.input}
 </div>
 </div>
 </section>
-
+) : null}
 {activeTab === "overview" ? (
 <>
 <section style={styles.summaryGrid}>
