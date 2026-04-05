@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
-import { getUserAccess, type UserAccessRole } from "../lib/get-user-access";
+
+type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
 
 type PartnerNavItem = {
 label: string;
@@ -20,14 +21,30 @@ const partnerNavItems: PartnerNavItem[] = [
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
+function normalizeRole(rawRole: unknown): UserRole {
+const normalizedRole = String(rawRole || "").toLowerCase().trim();
+
+if (normalizedRole === "admin") return "admin";
+if (normalizedRole === "partner") return "partner";
+if (normalizedRole === "employer") return "employer";
+if (
+normalizedRole === "candidate" ||
+normalizedRole === "career_passport" ||
+normalizedRole === "career-passport"
+) {
+return "candidate";
+}
+
+return "guest";
+}
+
 export default function SiteHeader() {
 const { t } = useLanguage();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
-const [role, setRole] = useState<UserAccessRole>("guest");
-const [isPartner, setIsPartner] = useState(false);
+const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -35,29 +52,56 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function syncAccess() {
-const access = await getUserAccess();
+async function syncAuthState() {
+const { data, error } = await supabase.auth.getSession();
+const sessionUser = data.session?.user ?? null;
 
 if (!mounted) return;
 
-setIsLoggedIn(access.isLoggedIn);
-setRole(access.role);
-setIsPartner(access.isPartner);
+if (error || !sessionUser) {
+setIsLoggedIn(false);
+setRole("guest");
+setCheckingAuth(false);
+return;
+}
+
+setIsLoggedIn(true);
+
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"";
+
+setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
 }
 
-syncAccess();
+syncAuthState();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange(async () => {
-const access = await getUserAccess();
+} = supabase.auth.onAuthStateChange((_event, session) => {
+const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
 
-setIsLoggedIn(access.isLoggedIn);
-setRole(access.role);
-setIsPartner(access.isPartner);
+if (!sessionUser) {
+setIsLoggedIn(false);
+setRole("guest");
+setCheckingAuth(false);
+return;
+}
+
+setIsLoggedIn(true);
+
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"";
+
+setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
 });
 
@@ -93,6 +137,7 @@ window.location.href = "/";
 const isAdmin = role === "admin";
 const isEmployer = role === "employer";
 const isCandidate = role === "candidate";
+const isPartner = role === "partner";
 
 const showPartnerNav = isLoggedIn && isPartner;
 
