@@ -109,7 +109,7 @@ justifyContent: isRTL ? "flex-start" : "center",
 }}
 >
 <a href="/sign-up" style={styles.primaryButton}>
-{t.createPassport}
+Create Career Passport / Sign Up
 </a>
 </div>
 
@@ -326,17 +326,23 @@ buttonRow: {
 display: "flex",
 gap: "14px",
 flexWrap: "wrap",
-marginTop: "24px",
+marginTop: "30px",
 },
 primaryButton: {
-display: "inline-block",
-padding: "14px 18px",
-borderRadius: "18px",
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+padding: "18px 28px",
+minHeight: "64px",
+borderRadius: "22px",
 textDecoration: "none",
-background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+background: "linear-gradient(180deg, #f5f5f5 0%, #cfcfd4 100%)",
 color: "#09090b",
-fontWeight: 700,
-fontSize: "14px",
+fontWeight: 800,
+fontSize: "18px",
+letterSpacing: "-0.01em",
+boxShadow: "0 18px 40px rgba(255,255,255,0.12)",
+border: "1px solid rgba(255,255,255,0.35)",
 },
 heroHighlightWrap: {
 maxWidth: "1120px",
