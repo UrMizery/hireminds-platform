@@ -332,7 +332,7 @@ primaryButton: {
 display: "inline-flex",
 alignItems: "center",
 justifyContent: "center",
-padding: "12px 24px",
+padding: "12px 32px",
 minHeight: "46px",
 borderRadius: "16px",
 textDecoration: "none",
