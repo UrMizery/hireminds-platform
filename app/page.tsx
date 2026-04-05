@@ -61,7 +61,7 @@ setVisitCount(latestRow?.visit_count ?? 0);
 const { data: statsRows, error: statsError } = await supabase
 .from("public_stats")
 .select("stat_key, stat_value")
-.in("stat_key", ["total_users", "total_activities", "total_visitors"]);
+.in("stat_key", ["total_users", "total_activities"]);
 
 if (statsError) {
 console.error("Error fetching public stats:", statsError);
@@ -72,15 +72,8 @@ statsRows?.find((row) => row.stat_key === "total_users")?.stat_value ?? 0;
 const totalActivities =
 statsRows?.find((row) => row.stat_key === "total_activities")?.stat_value ?? 0;
 
-const totalVisitors =
-statsRows?.find((row) => row.stat_key === "total_visitors")?.stat_value ?? 0;
-
 setTotalUsersCount(totalUsers);
 setTotalActivitiesCount(totalActivities);
-
-if (totalVisitors > 0) {
-setVisitCount(totalVisitors);
-}
 }
 } catch (error) {
 console.error("Home page visitor counter error:", error);
@@ -117,9 +110,6 @@ justifyContent: isRTL ? "flex-start" : "center",
 >
 <a href="/sign-up" style={styles.primaryButton}>
 {t.createPassport}
-</a>
-<a href="/career-toolkit" style={styles.secondaryButton}>
-Explore the Toolkit
 </a>
 </div>
 
@@ -204,6 +194,12 @@ by a system designed to strengthen readiness, follow-through, and opportunity.
 <div style={styles.valueHeader}>
 <p style={styles.valueEyebrow}>Why HireMinds</p>
 <h2 style={styles.valueTitle}>A stronger experience from first step to next move</h2>
+<p style={styles.valueIntro}>
+The Career Toolkit is one of the most practical parts of the platform.
+It gives users access to guided resume help, interview preparation,
+analyzers, planning tools, and career support resources designed to
+keep momentum going beyond a single session.
+</p>
 </div>
 
 <div style={styles.valueGrid}>
@@ -216,10 +212,11 @@ stronger profile, stronger direction, and stronger next-step clarity.
 </div>
 
 <div style={styles.valueCard}>
-<h3 style={styles.valueCardTitle}>More than a partner portal</h3>
+<h3 style={styles.valueCardTitle}>A Career Toolkit with real range</h3>
 <p style={styles.valueCardText}>
-Partners gain a cleaner structure for visibility, resource delivery,
-participant progress, and long-term workforce support.
+From resumes and cover letters to interview prep, analyzers, job logs,
+budgeting, and skill-building, the Career Toolkit is built to feel useful,
+dynamic, and worth coming back to.
 </p>
 </div>
 
@@ -250,7 +247,7 @@ They are designed to show real momentum over time, not monthly resets.
 </p>
 <p style={styles.statLabel}>Total Visitors</p>
 <p style={styles.statSubtext}>
-A growing count of people exploring the HireMinds experience.
+A lifetime count of people exploring the HireMinds experience from launch to now.
 </p>
 </div>
 
@@ -338,17 +335,6 @@ borderRadius: "18px",
 textDecoration: "none",
 background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
 color: "#09090b",
-fontWeight: 700,
-fontSize: "14px",
-},
-secondaryButton: {
-display: "inline-block",
-padding: "14px 18px",
-borderRadius: "18px",
-textDecoration: "none",
-background: "transparent",
-border: "1px solid rgba(255,255,255,0.14)",
-color: "#f5f5f5",
 fontWeight: 700,
 fontSize: "14px",
 },
@@ -449,11 +435,18 @@ letterSpacing: "0.16em",
 textTransform: "uppercase",
 },
 valueTitle: {
-margin: 0,
+margin: "0 0 10px",
 color: "#f5f5f5",
 fontSize: "28px",
 fontWeight: 600,
 letterSpacing: "-0.03em",
+},
+valueIntro: {
+margin: "0 auto",
+color: "#c4c4c4",
+fontSize: "15px",
+lineHeight: 1.8,
+maxWidth: "860px",
 },
 valueGrid: {
 display: "grid",
