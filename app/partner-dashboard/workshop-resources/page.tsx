@@ -261,7 +261,7 @@ Print materials ahead of time so participants have structure, reminders, and tak
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>4</p>
 <p style={styles.howToText}>
-Keep this page as your go-to partner prep space for future workshops tools.
+Keep this page as your go-to partner prep space for future workshops too.
 </p>
 </div>
 </div>
@@ -341,7 +341,7 @@ and more confident about what to do after the workshop.
 <p style={styles.sectionKicker}>Workshop Decks, Materials & Printables</p>
 <InfoBubble
 title="Workshop Decks, Materials & Printables"
-text="This is the full workshop resource cluster, including live files and placeholder paths for files that will be created next."
+text="This is the full workshop resource cluster, including live files and items that will be created next."
 />
 </div>
 <h2 style={styles.sectionTitle}>All workshop decks, materials and printable materials</h2>
@@ -357,11 +357,6 @@ style={item.isReady ? styles.resourceCard : styles.resourceCardPending}
 <p style={styles.resourceType}>{item.type}</p>
 <h3 style={styles.resourceTitle}>{item.title}</h3>
 <p style={styles.resourceText}>{item.description}</p>
-
-<div style={styles.pathWrap}>
-<p style={styles.pathLabel}>File path</p>
-<code style={styles.pathCode}>{item.href}</code>
-</div>
 
 <div style={styles.resourceActions}>
 {item.isReady ? (
@@ -671,30 +666,6 @@ margin: 0,
 color: "#d4d4d8",
 fontSize: "14px",
 lineHeight: 1.7,
-},
-pathWrap: {
-marginTop: "16px",
-display: "grid",
-gap: "6px",
-},
-pathLabel: {
-margin: 0,
-color: "#93c5fd",
-fontSize: "12px",
-fontWeight: 700,
-textTransform: "uppercase",
-letterSpacing: "0.06em",
-},
-pathCode: {
-display: "block",
-padding: "10px 12px",
-borderRadius: "12px",
-background: "#0b0b0c",
-border: "1px solid #2c2c2c",
-color: "#e5e7eb",
-fontSize: "13px",
-whiteSpace: "pre-wrap",
-wordBreak: "break-all",
 },
 resourceActions: {
 display: "flex",
