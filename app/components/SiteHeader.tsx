@@ -15,8 +15,6 @@ href: string;
 const partnerNavItems: PartnerNavItem[] = [
 { label: "Messages", href: "/messages" },
 { label: "Career Map", href: "/partner-dashboard/career-map" },
-{ label: "Job Logs", href: "/partner-dashboard/job-logs" },
-{ label: "Activity", href: "/partner-dashboard/activity" },
 { label: "Workshop Resources", href: "/partner-dashboard/workshop-resources" },
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
