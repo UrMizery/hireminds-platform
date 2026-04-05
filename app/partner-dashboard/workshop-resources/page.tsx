@@ -88,10 +88,10 @@ openInNewTab: true,
 },
 {
 type: "PRINTABLE PDF",
-title: "HireMinds Password Reminder Strips",
+title: "HireMinds Referral Access Strips",
 description:
-"Printable cut-apart reminder strips for participants to write down their HireMinds login details and tools they want to explore.",
-href: "/hireminds-password-reminder-strips.pdf",
+"Printable referral strips with the website, email, QR, and a blank referral code line for workshop participants to take with them.",
+href: "/hireminds-referral-access-strips.pdf",
 isReady: true,
 openInNewTab: true,
 },
@@ -99,18 +99,18 @@ openInNewTab: true,
 type: "PRINTABLE PDF",
 title: "Attendance Sheet",
 description:
-"Printable sign-in form for workshop attendance, contact details, date, and organization.",
+"Printable sign-in form for workshop attendance, contact details, facilitator notes, and workshop tracking.",
 href: "/attendance-sheet.pdf",
-isReady: false,
+isReady: true,
 openInNewTab: true,
 },
 {
 type: "PRINTABLE PDF",
 title: "Resume Review Handout",
 description:
-"Printable worksheet that helps participants organize experience, skills, education, and accomplishments in the right order.",
+"Printable worksheet that helps participants organize skills, experience, education/certifications, and volunteer work in the right order.",
 href: "/resume-review-handout.pdf",
-isReady: false,
+isReady: true,
 openInNewTab: true,
 },
 {
@@ -119,7 +119,16 @@ title: "Workshop Reflection Sheet",
 description:
 "Printable reflection form for takeaways, confidence, next steps, and support still needed after the session.",
 href: "/workshop-reflection-sheet.pdf",
-isReady: false,
+isReady: true,
+openInNewTab: true,
+},
+{
+type: "PRINTABLE PDF",
+title: "Workshop Survey Sheet",
+description:
+"Printable survey form to collect participant feedback about the workshop, tools, and overall experience.",
+href: "/workshop-survey-sheet.pdf",
+isReady: true,
 openInNewTab: true,
 },
 ];
@@ -199,12 +208,17 @@ return (
 <p style={styles.kicker}>Partner Workshop Resources</p>
 <h1 style={styles.title}>Partner Workshop Resources</h1>
 <p style={styles.subtitle}>
-This is your workshop command center for partner delivery. Use it to guide
-preparation, access the main workshop deck, organize print materials, and
-create a cleaner, more confident experience for participants from start to finish.
+This is your workshop command center for partner delivery. Use it
+to guide preparation, access the main workshop deck, organize
+print materials, and create a cleaner, more confident experience
+for participants from start to finish.
 </p>
-<p style={styles.subtleLine}>Organization: {partner?.organization_name || "—"}</p>
-<p style={styles.subtleLine}>Referral Code: {partner?.referral_code || "—"}</p>
+<p style={styles.subtleLine}>
+Organization: {partner?.organization_name || "—"}
+</p>
+<p style={styles.subtleLine}>
+Referral Code: {partner?.referral_code || "—"}
+</p>
 </div>
 
 <div style={styles.headerActions}>
@@ -249,19 +263,21 @@ Start here before the workshop so everything you need is in one place.
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>2</p>
 <p style={styles.howToText}>
-Use the deck to guide the session and reinforce what participants should complete before they leave.
+Use the deck to guide the session and reinforce what participants
+should complete before they leave.
 </p>
 </div>
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>3</p>
 <p style={styles.howToText}>
-Print materials ahead of time so participants have structure, reminders, and take-home resources.
+Print materials ahead of time so participants have structure,
+reminders, and take-home resources.
 </p>
 </div>
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>4</p>
 <p style={styles.howToText}>
-Keep this page as your go-to partner prep space for future workshops tools.
+Keep this page as your go-to partner prep space for future workshops too.
 </p>
 </div>
 </div>
@@ -311,24 +327,26 @@ text="This section defines the intended outcomes and expectations so partners ca
 <div style={styles.overviewCard}>
 <p style={styles.overviewTitle}>What participants should leave with</p>
 <p style={styles.overviewText}>
-Participants should leave with stronger visibility, a working Career Passport,
-clearer direction, and resume progress they can build on immediately.
+Participants should leave with stronger visibility, a working Career
+Passport, clearer direction, and resume progress they can build on
+immediately.
 </p>
 </div>
 
 <div style={styles.overviewCard}>
 <p style={styles.overviewTitle}>What partners should guide</p>
 <p style={styles.overviewText}>
-Partners should guide participants through setup, encourage completion of core sections,
-and connect participants to the right HireMinds tools for next steps.
+Partners should guide participants through setup, encourage completion
+of core sections, and connect participants to the right HireMinds tools
+for next steps.
 </p>
 </div>
 
 <div style={styles.overviewCard}>
 <p style={styles.overviewTitle}>What success looks like</p>
 <p style={styles.overviewText}>
-A strong session ends with participants feeling more prepared, more organized,
-and more confident about what to do after the workshop.
+A strong session ends with participants feeling more prepared, more
+organized, and more confident about what to do after the workshop.
 </p>
 </div>
 </div>
@@ -341,26 +359,23 @@ and more confident about what to do after the workshop.
 <p style={styles.sectionKicker}>Workshop Decks, Materials & Printables</p>
 <InfoBubble
 title="Workshop Decks, Materials & Printables"
-text="This is the full workshop resource cluster, including live files and items that will be created next."
+text="This is the full workshop resource cluster, including all active workshop files and printables."
 />
 </div>
-<h2 style={styles.sectionTitle}>All workshop decks, materials and printable materials</h2>
+<h2 style={styles.sectionTitle}>
+All workshop decks, materials and printable materials
+</h2>
 </div>
 </div>
 
 <div style={styles.resourceGrid}>
 {resources.map((item) => (
-<div
-key={item.title}
-style={item.isReady ? styles.resourceCard : styles.resourceCardPending}
->
+<div key={item.title} style={styles.resourceCard}>
 <p style={styles.resourceType}>{item.type}</p>
 <h3 style={styles.resourceTitle}>{item.title}</h3>
 <p style={styles.resourceText}>{item.description}</p>
 
 <div style={styles.resourceActions}>
-{item.isReady ? (
-<>
 {item.openInNewTab ? (
 <a
 href={item.href}
@@ -371,13 +386,10 @@ style={styles.resourceLink}
 Open File
 </a>
 ) : null}
+
 <a href={item.href} download style={styles.resourceLink}>
 Download File
 </a>
-</>
-) : (
-<span style={styles.comingSoonBadge}>Create this file next</span>
-)}
 </div>
 </div>
 ))}
@@ -641,12 +653,6 @@ borderRadius: "20px",
 padding: "20px",
 background: "#101010",
 },
-resourceCardPending: {
-border: "1px dashed rgba(147,197,253,0.35)",
-borderRadius: "20px",
-padding: "20px",
-background: "rgba(59,130,246,0.06)",
-},
 resourceType: {
 margin: "0 0 10px",
 color: "#93c5fd",
@@ -684,16 +690,5 @@ background: "#111111",
 color: "#f5f5f5",
 fontWeight: 700,
 textDecoration: "none",
-},
-comingSoonBadge: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-padding: "12px 16px",
-borderRadius: "16px",
-border: "1px dashed rgba(147,197,253,0.35)",
-background: "rgba(59,130,246,0.06)",
-color: "#bfdbfe",
-fontWeight: 700,
 },
 };
