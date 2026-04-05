@@ -36,7 +36,7 @@ normalizedRole === "career-passport"
 return "candidate";
 }
 
-return "candidate";
+return "guest";
 }
 
 export default function SiteHeader() {
@@ -131,18 +131,32 @@ async function handleLogout() {
 try {
 setLoadingLogout(true);
 await supabase.auth.signOut();
-window.location.href = "/";
+} catch {
+// ignore and still redirect
 } finally {
-setLoadingLogout(false);
+window.location.href = "/";
 }
 }
 
 const isAdmin = role === "admin";
 const isEmployer = role === "employer";
 const isCandidate = role === "candidate";
+const isPartner = role === "partner";
 
-const isOnPartnerRoute = pathname?.startsWith("/partner-dashboard");
-const showPartnerNav = isLoggedIn && (role === "partner" || isOnPartnerRoute);
+const partnerStickyRoutes = new Set([
+"/",
+"/profile",
+"/career-toolkit",
+"/messages",
+"/contact",
+"/partner-with-hireminds",
+]);
+
+const isPartnerPage =
+pathname?.startsWith("/partner-dashboard") ||
+partnerStickyRoutes.has(pathname || "");
+
+const showPartnerNav = isLoggedIn && (isPartner || isPartnerPage);
 
 return (
 <header style={styles.header}>
