@@ -88,10 +88,10 @@ openInNewTab: true,
 },
 {
 type: "PRINTABLE PDF",
-title: "HireMinds Referral Access Strips",
+title: "HireMinds Password Reminder Strips",
 description:
-"Printable referral strips with the YWCA code, website, email, and QR for workshop participants to take with them.",
-href: "/hireminds_referral_strips_ywca_printable%202.pdf",
+"Printable cut-apart reminder strips for participants to write down their HireMinds login details and tools they want to explore.",
+href: "/hireminds-password-reminder-strips.pdf",
 isReady: true,
 openInNewTab: true,
 },
