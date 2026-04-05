@@ -82,7 +82,7 @@ type: "PRINTABLE PDF",
 title: "HireMinds Password Reminder Strips",
 description:
 "Printable cut-apart reminder strips for participants to write down their HireMinds login details and tools they want to explore.",
-href: "/hireminds-password-reminder-strips,pdf",
+href: "/hireminds-password-reminder-strips.pdf",
 isReady: true,
 openInNewTab: true,
 },
