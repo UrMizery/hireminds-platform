@@ -56,6 +56,23 @@ status: "Open" | "Completed";
 createdAt: string;
 };
 
+type ParticipantOutcome = {
+id: string;
+participantKey: string;
+participantName: string;
+participantEmail?: string;
+participantPhone?: string;
+startedWorkingDate?: string;
+company?: string;
+position?: string;
+workLocation?: string;
+startedTrainingDate?: string;
+program?: string;
+trainingLocation?: string;
+notes?: string;
+updatedAt: string;
+};
+
 function formatDate(value?: string | null) {
 if (!value) return "—";
 const date = new Date(value);
@@ -207,11 +224,30 @@ const [supportTitle, setSupportTitle] = useState("");
 const [supportMessage, setSupportMessage] = useState("");
 const [supportDueDate, setSupportDueDate] = useState("");
 
+const [participantOutcomes, setParticipantOutcomes] = useState<ParticipantOutcome[]>([]);
+const [outcomeParticipantKey, setOutcomeParticipantKey] = useState("");
+const [outcomeParticipantName, setOutcomeParticipantName] = useState("");
+const [outcomeParticipantEmail, setOutcomeParticipantEmail] = useState("");
+const [outcomeParticipantPhone, setOutcomeParticipantPhone] = useState("");
+const [startedWorkingDate, setStartedWorkingDate] = useState("");
+const [company, setCompany] = useState("");
+const [position, setPosition] = useState("");
+const [workLocation, setWorkLocation] = useState("");
+const [startedTrainingDate, setStartedTrainingDate] = useState("");
+const [program, setProgram] = useState("");
+const [trainingLocation, setTrainingLocation] = useState("");
+const [outcomeNotes, setOutcomeNotes] = useState("");
+
 const mountedRef = useRef(true);
 
 const supportStorageKey = useMemo(() => {
 const code = partner?.referral_code || "partner";
 return `hireminds-partner-support-actions-${code}`;
+}, [partner?.referral_code]);
+
+const outcomesStorageKey = useMemo(() => {
+const code = partner?.referral_code || "partner";
+return `hireminds-partner-outcomes-${code}`;
 }, [partner?.referral_code]);
 
 useEffect(() => {
@@ -235,12 +271,35 @@ setSupportActions([]);
 }
 }, [supportStorageKey]);
 
+useEffect(() => {
+try {
+const raw = window.localStorage.getItem(outcomesStorageKey);
+if (raw) {
+const parsed = JSON.parse(raw);
+setParticipantOutcomes(Array.isArray(parsed) ? parsed : []);
+} else {
+setParticipantOutcomes([]);
+}
+} catch {
+setParticipantOutcomes([]);
+}
+}, [outcomesStorageKey]);
+
 function persistSupportActions(next: SupportAction[]) {
 setSupportActions(next);
 try {
 window.localStorage.setItem(supportStorageKey, JSON.stringify(next));
 } catch {
 setMessage("Unable to save support actions in this browser.");
+}
+}
+
+function persistOutcomes(next: ParticipantOutcome[]) {
+setParticipantOutcomes(next);
+try {
+window.localStorage.setItem(outcomesStorageKey, JSON.stringify(next));
+} catch {
+setMessage("Unable to save participant outcomes in this browser.");
 }
 }
 
@@ -349,7 +408,6 @@ const map = new Map<string, string>();
 uniqueParticipants.forEach((row) => {
 const phone = row.phone || "";
 if (!phone) return;
-
 if (row.user_id) map.set(`uid:${row.user_id}`, phone);
 if (row.email) map.set(`email:${row.email.toLowerCase()}`, phone);
 });
@@ -596,12 +654,14 @@ count: toolCounts[tool.key] || 0,
 const maxTrendCount = dailyTrend.length ? Math.max(...dailyTrend.map((d) => d.count)) : 1;
 const maxToolCount = toolBreakdown.length ? Math.max(...toolBreakdown.map((d) => d.count)) : 1;
 
-const selectedParticipantOptions = uniqueParticipants.map((row) => ({
+const selectedParticipantOptions = useMemo(() => {
+return filteredParticipants.map((row) => ({
 key: row.user_id || row.email || row.phone || row.id || "",
 name: row.full_name || row.email || row.phone || "Participant",
 email: row.email || "",
 phone: row.phone || "",
 }));
+}, [filteredParticipants]);
 
 const selectedParticipantActivity = useMemo(() => {
 if (!supportParticipantKey) return [];
@@ -622,8 +682,44 @@ const selectedParticipantJobLog = selectedParticipantActivity.find(
 const supportActionsFiltered = useMemo(() => {
 const q = participantSearch.trim().toLowerCase();
 if (!q) return supportActions;
-return supportActions.filter((item) => item.participantName.toLowerCase().includes(q));
+return supportActions.filter((item) => {
+return (
+item.participantName.toLowerCase().includes(q) ||
+(item.participantEmail || "").toLowerCase().includes(q) ||
+(item.participantPhone || "").toLowerCase().includes(q)
+);
+});
 }, [supportActions, participantSearch]);
+
+const selectedOutcome = useMemo(() => {
+if (!outcomeParticipantKey) return null;
+return (
+participantOutcomes.find((item) => item.participantKey === outcomeParticipantKey) || null
+);
+}, [participantOutcomes, outcomeParticipantKey]);
+
+useEffect(() => {
+if (!selectedOutcome) {
+setStartedWorkingDate("");
+setCompany("");
+setPosition("");
+setWorkLocation("");
+setStartedTrainingDate("");
+setProgram("");
+setTrainingLocation("");
+setOutcomeNotes("");
+return;
+}
+
+setStartedWorkingDate(selectedOutcome.startedWorkingDate || "");
+setCompany(selectedOutcome.company || "");
+setPosition(selectedOutcome.position || "");
+setWorkLocation(selectedOutcome.workLocation || "");
+setStartedTrainingDate(selectedOutcome.startedTrainingDate || "");
+setProgram(selectedOutcome.program || "");
+setTrainingLocation(selectedOutcome.trainingLocation || "");
+setOutcomeNotes(selectedOutcome.notes || "");
+}, [selectedOutcome]);
 
 async function handleLogout() {
 setLoadingLogout(true);
@@ -680,6 +776,34 @@ persistSupportActions(next);
 function deleteSupportAction(id: string) {
 const next = supportActions.filter((item) => item.id !== id);
 persistSupportActions(next);
+}
+
+function saveParticipantOutcome() {
+if (!outcomeParticipantKey || !outcomeParticipantName) {
+setMessage("Please select a participant before saving outcomes.");
+return;
+}
+
+const nextRecord: ParticipantOutcome = {
+id: selectedOutcome?.id || `outcome-${Date.now()}`,
+participantKey: outcomeParticipantKey,
+participantName: outcomeParticipantName,
+participantEmail: outcomeParticipantEmail,
+participantPhone: outcomeParticipantPhone,
+startedWorkingDate: startedWorkingDate || undefined,
+company: company.trim() || undefined,
+position: position.trim() || undefined,
+workLocation: workLocation.trim() || undefined,
+startedTrainingDate: startedTrainingDate || undefined,
+program: program.trim() || undefined,
+trainingLocation: trainingLocation.trim() || undefined,
+notes: outcomeNotes.trim() || undefined,
+updatedAt: new Date().toISOString(),
+};
+
+const others = participantOutcomes.filter((item) => item.participantKey !== outcomeParticipantKey);
+persistOutcomes([nextRecord, ...others]);
+setMessage("Participant outcome saved.");
 }
 
 function printFeed(rows: DisplayActivityRow[], title: string) {
@@ -1090,8 +1214,7 @@ Print Feed
 </thead>
 <tbody>
 {liveFeed.map((row, index) => {
-const rowKey =
-row.id || `${row.user_id || row.email || row.phone || "activity"}-${index}`;
+const rowKey = row.id || `${row.user_id || row.email || row.phone || "activity"}-${index}`;
 return (
 <tr key={rowKey}>
 <td style={styles.td}>{formatDate(row.created_at)}</td>
@@ -1194,8 +1317,7 @@ style={styles.input}
 <tbody>
 {historyFeed.length ? (
 historyFeed.map((row, index) => {
-const rowKey =
-row.id || `${row.user_id || row.email || row.phone || "history"}-${index}`;
+const rowKey = row.id || `${row.user_id || row.email || row.phone || "history"}-${index}`;
 return (
 <tr key={rowKey}>
 <td style={styles.td}>{formatDate(row.created_at)}</td>
@@ -1269,6 +1391,7 @@ width: `${maxToolCount === 0 ? 8 : Math.max((item.count / maxToolCount) * 100, 8
 ) : null}
 
 {activeTab === "support" ? (
+<>
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div style={styles.titleRow}>
@@ -1311,7 +1434,11 @@ setSupportParticipantPhone(match?.phone || "");
 }}
 style={styles.select}
 >
-<option value="">Select participant</option>
+<option value="">
+{selectedParticipantOptions.length
+? "Select participant"
+: "No participants match current filter"}
+</option>
 {selectedParticipantOptions.map((item) => (
 <option key={item.key} value={item.key}>
 {item.name}
@@ -1448,6 +1575,168 @@ Delete
 )}
 </div>
 </section>
+
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div style={styles.titleRow}>
+<div>
+<p style={styles.sectionKicker}>Participant Outcomes</p>
+<h2 style={styles.sectionTitle}>Employment and training outcomes</h2>
+</div>
+<InfoBubble
+title="Participant Outcomes"
+text="Track when a participant starts work, school, or training. This is stored in the current browser for this partner account until a dedicated database table is added."
+/>
+</div>
+</div>
+
+<div style={styles.manualStatsGrid}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Participant</label>
+<select
+value={outcomeParticipantKey}
+onChange={(e) => {
+const key = e.target.value;
+const match = selectedParticipantOptions.find((item) => item.key === key);
+setOutcomeParticipantKey(key);
+setOutcomeParticipantName(match?.name || "");
+setOutcomeParticipantEmail(match?.email || "");
+setOutcomeParticipantPhone(match?.phone || "");
+}}
+style={styles.select}
+>
+<option value="">
+{selectedParticipantOptions.length
+? "Select participant"
+: "No participants match current filter"}
+</option>
+{selectedParticipantOptions.map((item) => (
+<option key={item.key} value={item.key}>
+{item.name}
+</option>
+))}
+</select>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Started Working Date</label>
+<input
+type="date"
+value={startedWorkingDate}
+onChange={(e) => setStartedWorkingDate(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Company</label>
+<input
+value={company}
+onChange={(e) => setCompany(e.target.value)}
+style={styles.input}
+placeholder="Employer or company name"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Position</label>
+<input
+value={position}
+onChange={(e) => setPosition(e.target.value)}
+style={styles.input}
+placeholder="Job title or role"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Work Location</label>
+<input
+value={workLocation}
+onChange={(e) => setWorkLocation(e.target.value)}
+style={styles.input}
+placeholder="City, state, site, or employer location"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Started School / Training Date</label>
+<input
+type="date"
+value={startedTrainingDate}
+onChange={(e) => setStartedTrainingDate(e.target.value)}
+style={styles.input}
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Program / School / Training</label>
+<input
+value={program}
+onChange={(e) => setProgram(e.target.value)}
+style={styles.input}
+placeholder="Program, school, course, or credential"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Training Location</label>
+<input
+value={trainingLocation}
+onChange={(e) => setTrainingLocation(e.target.value)}
+style={styles.input}
+placeholder="Provider, campus, city, or site"
+/>
+</div>
+
+<div style={{ ...styles.fieldWrap, gridColumn: "1 / -1" }}>
+<label style={styles.label}>Notes</label>
+<textarea
+value={outcomeNotes}
+onChange={(e) => setOutcomeNotes(e.target.value)}
+style={styles.textarea}
+placeholder="Add any employment, school, or training notes here."
+/>
+</div>
+</div>
+
+<div style={styles.notesActions}>
+<button type="button" onClick={saveParticipantOutcome} style={styles.secondaryButton}>
+Save Participant Outcome
+</button>
+</div>
+
+{selectedOutcome ? (
+<div style={styles.outcomePreviewCard}>
+<div style={styles.outcomePreviewGrid}>
+<div style={styles.outcomePreviewItem}>
+<p style={styles.outcomePreviewLabel}>Participant</p>
+<p style={styles.outcomePreviewValue}>{selectedOutcome.participantName || "—"}</p>
+</div>
+<div style={styles.outcomePreviewItem}>
+<p style={styles.outcomePreviewLabel}>Employment</p>
+<p style={styles.outcomePreviewValue}>
+{selectedOutcome.startedWorkingDate || selectedOutcome.company || selectedOutcome.position
+? `${selectedOutcome.startedWorkingDate || "—"} • ${selectedOutcome.company || "—"} • ${selectedOutcome.position || "—"}`
+: "No employment outcome saved."}
+</p>
+</div>
+<div style={styles.outcomePreviewItem}>
+<p style={styles.outcomePreviewLabel}>Training / School</p>
+<p style={styles.outcomePreviewValue}>
+{selectedOutcome.startedTrainingDate || selectedOutcome.program
+? `${selectedOutcome.startedTrainingDate || "—"} • ${selectedOutcome.program || "—"}`
+: "No school or training outcome saved."}
+</p>
+</div>
+<div style={styles.outcomePreviewItem}>
+<p style={styles.outcomePreviewLabel}>Last Updated</p>
+<p style={styles.outcomePreviewValue}>{formatDate(selectedOutcome.updatedAt)}</p>
+</div>
+</div>
+</div>
+) : null}
+</section>
+</>
 ) : null}
 </div>
 </main>
@@ -2132,6 +2421,38 @@ textTransform: "uppercase",
 letterSpacing: "0.06em",
 },
 selectedParticipantValue: {
+margin: 0,
+color: "#f5f5f5",
+fontSize: "14px",
+lineHeight: 1.6,
+},
+outcomePreviewCard: {
+marginTop: "18px",
+border: "1px solid #2c2c2c",
+borderRadius: "18px",
+padding: "18px",
+background: "#101010",
+},
+outcomePreviewGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr 1fr 1fr",
+gap: "14px",
+},
+outcomePreviewItem: {
+border: "1px solid #242424",
+borderRadius: "16px",
+padding: "14px",
+background: "#0d0d0f",
+},
+outcomePreviewLabel: {
+margin: "0 0 8px",
+color: "#93c5fd",
+fontSize: "12px",
+fontWeight: 700,
+textTransform: "uppercase",
+letterSpacing: "0.06em",
+},
+outcomePreviewValue: {
 margin: 0,
 color: "#f5f5f5",
 fontSize: "14px",
