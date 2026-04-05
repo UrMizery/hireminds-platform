@@ -12,6 +12,14 @@ referral_code?: string | null;
 account_type?: string | null;
 };
 
+type ResourceItem = {
+type: string;
+title: string;
+description: string;
+href: string;
+openInNewTab?: boolean;
+};
+
 function InfoBubble({
 title,
 text,
@@ -42,15 +50,6 @@ i
 );
 }
 
-type ResourceItem = {
-type: string;
-title: string;
-description: string;
-href: string;
-isReady: boolean;
-openInNewTab?: boolean;
-};
-
 export default function PartnerWorkshopResourcesPage() {
 const [loading, setLoading] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
@@ -66,7 +65,6 @@ title: "YWCA Resume Workshop PDF",
 description:
 "Best for quick viewing, printing, or sharing with workshop facilitators.",
 href: "/ywca-resume-workshop.pdf",
-isReady: true,
 openInNewTab: true,
 },
 {
@@ -75,7 +73,6 @@ title: "YWCA Resume Workshop PowerPoint",
 description:
 "Best for editing, presenting live, or customizing for future partner workshops.",
 href: "/ywca-resume-workshop.pptx",
-isReady: true,
 },
 {
 type: "PRINTABLE PDF",
@@ -83,7 +80,6 @@ title: "HireMinds Password Reminder Strips",
 description:
 "Printable cut-apart reminder strips for participants to write down their HireMinds login details and tools they want to explore.",
 href: "/hireminds-password-reminder-strips.pdf",
-isReady: true,
 openInNewTab: true,
 },
 {
@@ -92,7 +88,6 @@ title: "HireMinds Referral Access Strips",
 description:
 "Printable referral strips with the website, email, QR, and a blank referral code line for workshop participants to take with them.",
 href: "/hireminds-referral-access-strips.pdf",
-isReady: true,
 openInNewTab: true,
 },
 {
@@ -101,7 +96,6 @@ title: "Attendance Sheet",
 description:
 "Printable sign-in form for workshop attendance, contact details, facilitator notes, and workshop tracking.",
 href: "/attendance-sheet.pdf",
-isReady: true,
 openInNewTab: true,
 },
 {
@@ -110,7 +104,6 @@ title: "Resume Review Handout",
 description:
 "Printable worksheet that helps participants organize skills, experience, education/certifications, and volunteer work in the right order.",
 href: "/resume-review-handout.pdf",
-isReady: true,
 openInNewTab: true,
 },
 {
@@ -119,7 +112,6 @@ title: "Workshop Reflection Sheet",
 description:
 "Printable reflection form for takeaways, confidence, next steps, and support still needed after the session.",
 href: "/workshop-reflection-sheet.pdf",
-isReady: true,
 openInNewTab: true,
 },
 {
@@ -128,7 +120,6 @@ title: "Workshop Survey Sheet",
 description:
 "Printable survey form to collect participant feedback about the workshop, tools, and overall experience.",
 href: "/workshop-survey-sheet.pdf",
-isReady: true,
 openInNewTab: true,
 },
 ];
@@ -209,9 +200,9 @@ return (
 <h1 style={styles.title}>Partner Workshop Resources</h1>
 <p style={styles.subtitle}>
 This is your workshop command center for partner delivery. Use it
-to guide preparation, access the main workshop deck, organize
-print materials, and create a cleaner, more confident experience
-for participants from start to finish.
+to guide preparation, access the workshop deck, organize printable
+materials, and create a cleaner, more confident experience for
+participants from start to finish.
 </p>
 <p style={styles.subtleLine}>
 Organization: {partner?.organization_name || "—"}
