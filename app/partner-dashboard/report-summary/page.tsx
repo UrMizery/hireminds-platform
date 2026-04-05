@@ -505,7 +505,7 @@ if (successStoryQ.trim()) narrative.push(`Additional outcomes, success stories, 
 return [
 `Reporting Summary (${rangeLabel}): HireMinds recorded ${totalActivity} tracked activity event${totalActivity === 1 ? "" : "s"} tied to referral code ${partner?.referral_code || "—"}. The current partner roster includes ${totalParticipants} total participant${totalParticipants === 1 ? "" : "s"}, with ${totalNewUsers} new user${totalNewUsers === 1 ? "" : "s"} added during the current month.`,
 `Within the selected reporting window, participant engagement included ${eventGroups.logins} login event${eventGroups.logins === 1 ? "" : "s"}, ${eventGroups.pageViews} tracked page view${eventGroups.pageViews === 1 ? "" : "s"}, ${eventGroups.generatorUses} tracked tool interaction${eventGroups.generatorUses === 1 ? "" : "s"}, and ${eventGroups.completions} completed action${eventGroups.completions === 1 ? "" : "s"}.`,
-`The strongest areas of measured platform use during this reporting window were: ${topToolsText}. This can support nonprofit, workforce, grant, state, municipal, or program-performance reporting by documenting active engagement, service utilization, and measurable completion behavior through the HireMinds platform.`,
+`The strongest areas of measured platform use during this reporting window were: ${topToolsText}. This report can support program-performance reporting by documenting active engagement, service utilization, and measurable completion behavior through the HireMinds platform.`,
 ...manualStats,
 ...narrative,
 ].join(" ");
