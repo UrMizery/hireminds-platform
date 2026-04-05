@@ -38,13 +38,38 @@ participantKey: string;
 participantName: string;
 participantEmail?: string;
 participantPhone?: string;
+currentPosition?: string;
 targetRole?: string;
 targetIndustry?: string;
 shortTermGoal?: string;
-longTermGoal?: string;
+oneYearGoal?: string;
+threeYearGoal?: string;
+endGoal?: string;
+strengths?: string;
+barriers?: string;
 actionSteps?: string;
+toolkitPlan?: string;
 partnerNotes?: string;
 updatedAt: string;
+};
+
+type CareerMapRequest = {
+id: string;
+participantKey: string;
+participantName: string;
+participantEmail?: string;
+participantPhone?: string;
+message: string;
+status: "Requested" | "Completed";
+createdAt: string;
+};
+
+type ManualTouchpoint = {
+id: string;
+participantKey: string;
+participantName: string;
+note: string;
+createdAt: string;
 };
 
 function formatDate(value?: string | null) {
@@ -99,18 +124,42 @@ const [selectedParticipantEmail, setSelectedParticipantEmail] = useState("");
 const [selectedParticipantPhone, setSelectedParticipantPhone] = useState("");
 
 const [careerMapNotes, setCareerMapNotes] = useState<CareerMapNote[]>([]);
+const [careerMapRequests, setCareerMapRequests] = useState<CareerMapRequest[]>([]);
+const [manualTouchpoints, setManualTouchpoints] = useState<ManualTouchpoint[]>([]);
+
+const [currentPosition, setCurrentPosition] = useState("");
 const [targetRole, setTargetRole] = useState("");
 const [targetIndustry, setTargetIndustry] = useState("");
 const [shortTermGoal, setShortTermGoal] = useState("");
-const [longTermGoal, setLongTermGoal] = useState("");
+const [oneYearGoal, setOneYearGoal] = useState("");
+const [threeYearGoal, setThreeYearGoal] = useState("");
+const [endGoal, setEndGoal] = useState("");
+const [strengths, setStrengths] = useState("");
+const [barriers, setBarriers] = useState("");
 const [actionSteps, setActionSteps] = useState("");
+const [toolkitPlan, setToolkitPlan] = useState("");
 const [partnerNotes, setPartnerNotes] = useState("");
+
+const [requestMessage, setRequestMessage] = useState(
+"Please complete your Career Map / Career Plan in HireMinds so we can review your goals, next steps, and support needs together."
+);
+const [touchpointNote, setTouchpointNote] = useState("");
 
 const mountedRef = useRef(true);
 
 const notesStorageKey = useMemo(() => {
 const code = partner?.referral_code || "partner";
 return `hireminds-career-map-notes-${code}`;
+}, [partner?.referral_code]);
+
+const requestsStorageKey = useMemo(() => {
+const code = partner?.referral_code || "partner";
+return `hireminds-career-map-requests-${code}`;
+}, [partner?.referral_code]);
+
+const touchpointsStorageKey = useMemo(() => {
+const code = partner?.referral_code || "partner";
+return `hireminds-career-map-touchpoints-${code}`;
 }, [partner?.referral_code]);
 
 useEffect(() => {
@@ -134,12 +183,58 @@ setCareerMapNotes([]);
 }
 }, [notesStorageKey]);
 
+useEffect(() => {
+try {
+const raw = window.localStorage.getItem(requestsStorageKey);
+if (raw) {
+const parsed = JSON.parse(raw);
+setCareerMapRequests(Array.isArray(parsed) ? parsed : []);
+} else {
+setCareerMapRequests([]);
+}
+} catch {
+setCareerMapRequests([]);
+}
+}, [requestsStorageKey]);
+
+useEffect(() => {
+try {
+const raw = window.localStorage.getItem(touchpointsStorageKey);
+if (raw) {
+const parsed = JSON.parse(raw);
+setManualTouchpoints(Array.isArray(parsed) ? parsed : []);
+} else {
+setManualTouchpoints([]);
+}
+} catch {
+setManualTouchpoints([]);
+}
+}, [touchpointsStorageKey]);
+
 function persistCareerMapNotes(next: CareerMapNote[]) {
 setCareerMapNotes(next);
 try {
 window.localStorage.setItem(notesStorageKey, JSON.stringify(next));
 } catch {
 setMessage("Unable to save career map notes in this browser.");
+}
+}
+
+function persistRequests(next: CareerMapRequest[]) {
+setCareerMapRequests(next);
+try {
+window.localStorage.setItem(requestsStorageKey, JSON.stringify(next));
+} catch {
+setMessage("Unable to save requests in this browser.");
+}
+}
+
+function persistTouchpoints(next: ManualTouchpoint[]) {
+setManualTouchpoints(next);
+try {
+window.localStorage.setItem(touchpointsStorageKey, JSON.stringify(next));
+} catch {
+setMessage("Unable to save touchpoints in this browser.");
 }
 }
 
@@ -250,23 +345,27 @@ phone: row.phone || "",
 }));
 }, [filteredParticipants]);
 
-const selectedParticipantCareerMapActivity = useMemo(() => {
+const selectedParticipantActivity = useMemo(() => {
 if (!selectedParticipantKey) return [];
 
 return activity.filter((row) => {
 const rowKey = row.user_id || row.email || row.id || "";
-const isParticipantMatch = rowKey === selectedParticipantKey;
+return rowKey === selectedParticipantKey;
+});
+}, [activity, selectedParticipantKey]);
+
+const selectedParticipantCareerMapActivity = useMemo(() => {
+return selectedParticipantActivity.filter((row) => {
 const toolName = (row.tool_name || "").toLowerCase();
 const pageName = (row.page_name || "").toLowerCase();
 
-const isCareerMap =
+return (
 toolName === "career_map" ||
 pageName.includes("career-map") ||
-pageName.includes("career map");
-
-return isParticipantMatch && isCareerMap;
+pageName.includes("career map")
+);
 });
-}, [activity, selectedParticipantKey]);
+}, [selectedParticipantActivity]);
 
 const latestCareerMapActivity = selectedParticipantCareerMapActivity[0] || null;
 
@@ -275,28 +374,72 @@ if (!selectedParticipantKey) return null;
 return careerMapNotes.find((item) => item.participantKey === selectedParticipantKey) || null;
 }, [careerMapNotes, selectedParticipantKey]);
 
+const selectedParticipantRequests = useMemo(() => {
+if (!selectedParticipantKey) return [];
+return careerMapRequests.filter((item) => item.participantKey === selectedParticipantKey);
+}, [careerMapRequests, selectedParticipantKey]);
+
+const selectedParticipantManualTouchpoints = useMemo(() => {
+if (!selectedParticipantKey) return [];
+return manualTouchpoints.filter((item) => item.participantKey === selectedParticipantKey);
+}, [manualTouchpoints, selectedParticipantKey]);
+
+const trackedTouchpoints = useMemo(() => {
+return selectedParticipantActivity.slice(0, 8);
+}, [selectedParticipantActivity]);
+
+const toolkitSuggestions = useMemo(
+() => [
+"Career Passport",
+"Resume Generator",
+"Guided Resume Generator",
+"Cover Letter Generator",
+"Interview Question Generator",
+"Job Description Analyzer",
+"Resume Match Analyzer",
+"Industry Core Skills",
+"Soft Skills",
+"Job Log Generator",
+"Budget Generator",
+"Video Library",
+],
+[]
+);
+
 useEffect(() => {
 if (!selectedParticipantNote) {
+setCurrentPosition("");
 setTargetRole("");
 setTargetIndustry("");
 setShortTermGoal("");
-setLongTermGoal("");
+setOneYearGoal("");
+setThreeYearGoal("");
+setEndGoal("");
+setStrengths("");
+setBarriers("");
 setActionSteps("");
+setToolkitPlan("");
 setPartnerNotes("");
 return;
 }
 
+setCurrentPosition(selectedParticipantNote.currentPosition || "");
 setTargetRole(selectedParticipantNote.targetRole || "");
 setTargetIndustry(selectedParticipantNote.targetIndustry || "");
 setShortTermGoal(selectedParticipantNote.shortTermGoal || "");
-setLongTermGoal(selectedParticipantNote.longTermGoal || "");
+setOneYearGoal(selectedParticipantNote.oneYearGoal || "");
+setThreeYearGoal(selectedParticipantNote.threeYearGoal || "");
+setEndGoal(selectedParticipantNote.endGoal || "");
+setStrengths(selectedParticipantNote.strengths || "");
+setBarriers(selectedParticipantNote.barriers || "");
 setActionSteps(selectedParticipantNote.actionSteps || "");
+setToolkitPlan(selectedParticipantNote.toolkitPlan || "");
 setPartnerNotes(selectedParticipantNote.partnerNotes || "");
 }, [selectedParticipantNote]);
 
 function saveCareerMapNote() {
 if (!selectedParticipantKey || !selectedParticipantName) {
-setMessage("Please select a participant before saving career map notes.");
+setMessage("Please select a participant before saving the career map.");
 return;
 }
 
@@ -305,18 +448,64 @@ participantKey: selectedParticipantKey,
 participantName: selectedParticipantName,
 participantEmail: selectedParticipantEmail,
 participantPhone: selectedParticipantPhone,
+currentPosition: currentPosition.trim() || undefined,
 targetRole: targetRole.trim() || undefined,
 targetIndustry: targetIndustry.trim() || undefined,
 shortTermGoal: shortTermGoal.trim() || undefined,
-longTermGoal: longTermGoal.trim() || undefined,
+oneYearGoal: oneYearGoal.trim() || undefined,
+threeYearGoal: threeYearGoal.trim() || undefined,
+endGoal: endGoal.trim() || undefined,
+strengths: strengths.trim() || undefined,
+barriers: barriers.trim() || undefined,
 actionSteps: actionSteps.trim() || undefined,
+toolkitPlan: toolkitPlan.trim() || undefined,
 partnerNotes: partnerNotes.trim() || undefined,
 updatedAt: new Date().toISOString(),
 };
 
 const others = careerMapNotes.filter((item) => item.participantKey !== selectedParticipantKey);
 persistCareerMapNotes([nextNote, ...others]);
-setMessage("Career map notes saved.");
+setMessage("Career map saved.");
+}
+
+function sendCareerMapRequest() {
+if (!selectedParticipantKey || !selectedParticipantName) {
+setMessage("Please select a participant before sending a request.");
+return;
+}
+
+const nextRequest: CareerMapRequest = {
+id: `cmr-${Date.now()}`,
+participantKey: selectedParticipantKey,
+participantName: selectedParticipantName,
+participantEmail: selectedParticipantEmail,
+participantPhone: selectedParticipantPhone,
+message: requestMessage.trim() || "Please complete your Career Map / Career Plan in HireMinds.",
+status: "Requested",
+createdAt: new Date().toISOString(),
+};
+
+persistRequests([nextRequest, ...careerMapRequests]);
+setMessage("Career map request saved.");
+}
+
+function addTouchpoint() {
+if (!selectedParticipantKey || !selectedParticipantName || !touchpointNote.trim()) {
+setMessage("Please select a participant and enter a touchpoint note.");
+return;
+}
+
+const nextTouchpoint: ManualTouchpoint = {
+id: `tp-${Date.now()}`,
+participantKey: selectedParticipantKey,
+participantName: selectedParticipantName,
+note: touchpointNote.trim(),
+createdAt: new Date().toISOString(),
+};
+
+persistTouchpoints([nextTouchpoint, ...manualTouchpoints]);
+setTouchpointNote("");
+setMessage("Touchpoint saved.");
 }
 
 async function handleLogout() {
@@ -339,32 +528,24 @@ return (
 return (
 <main style={styles.page}>
 <div style={styles.shell}>
-<section style={styles.headerCard}>
-<div>
-<p style={styles.kicker}>Partner Career Map</p>
-<h1 style={styles.title}>Career Map</h1>
+<section style={styles.heroCard}>
+<div style={styles.heroTextWrap}>
+<p style={styles.kicker}>Partner Career Planning</p>
+<h1 style={styles.title}>Career Map & Career Plan</h1>
 <p style={styles.subtitle}>
-Organization: <strong>{partner?.organization_name || "—"}</strong>
+This page is designed like an intake + planning center. Partners can review touchpoints,
+request that participants complete their own career plan, build a roadmap together, and connect the plan to HireMinds tools like resumes, interview prep, analyzers, and more.
 </p>
+<p style={styles.subtleLine}>Organization: {partner?.organization_name || "—"}</p>
 <p style={styles.subtleLine}>Referral Code: {partner?.referral_code || "—"}</p>
-<p style={styles.subtleLine}>
-This page shows tracked Career Map activity and partner notes until a dedicated career map table is connected.
-</p>
 </div>
 
-<div style={styles.headerActions}>
-<button type="button" onClick={loadPage} style={styles.secondaryButton}>
-Refresh
-</button>
-
-<button
-type="button"
-onClick={handleLogout}
-style={styles.logoutButton}
-disabled={loadingLogout}
->
-{loadingLogout ? "Logging Off..." : "Log Off"}
-</button>
+<div style={styles.heroImageWrap}>
+<img
+src="/career-lightbulb.png"
+alt="Career planning"
+style={styles.heroImage}
+/>
 </div>
 </section>
 
@@ -374,10 +555,44 @@ disabled={loadingLogout}
 <div style={styles.sectionTop}>
 <div>
 <div style={styles.titleRow}>
+<p style={styles.sectionKicker}>How to Use This Page</p>
+<InfoBubble
+title="Career Map Page"
+text="Use this page to select a participant, review activity and touchpoints, request they complete their own career plan, and build a roadmap using HireMinds tools."
+/>
+</div>
+<h2 style={styles.sectionTitle}>Career map intake + planning workflow</h2>
+</div>
+</div>
+
+<div style={styles.howToGrid}>
+<div style={styles.howToCard}>
+<p style={styles.howToStep}>1</p>
+<p style={styles.howToText}>Select a participant and review their snapshot.</p>
+</div>
+<div style={styles.howToCard}>
+<p style={styles.howToStep}>2</p>
+<p style={styles.howToText}>Check touchpoints, activity, and previous planning notes.</p>
+</div>
+<div style={styles.howToCard}>
+<p style={styles.howToStep}>3</p>
+<p style={styles.howToText}>Request that they complete their own career map/plan in HireMinds.</p>
+</div>
+<div style={styles.howToCard}>
+<p style={styles.howToStep}>4</p>
+<p style={styles.howToText}>Build the roadmap together and connect it to toolkit resources.</p>
+</div>
+</div>
+</section>
+
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<div style={styles.titleRow}>
 <p style={styles.sectionKicker}>Participant Search</p>
 <InfoBubble
-title="Career Map Search"
-text="Search by participant name, email, or phone number and then select the participant to review Career Map activity and partner notes."
+title="Participant Search"
+text="Search by participant name, email, or phone number and then select the participant to review and build the career plan."
 />
 </div>
 <h2 style={styles.sectionTitle}>Select participant</h2>
@@ -459,18 +674,108 @@ style={styles.select}
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
-<div style={styles.titleRow}>
-<p style={styles.sectionKicker}>Partner Career Map Notes</p>
-<InfoBubble
-title="Partner Career Map Notes"
-text="Use this section to capture partner-facing career map notes, goals, and next steps for the selected participant."
+<p style={styles.sectionKicker}>Participant Request</p>
+<h2 style={styles.sectionTitle}>Request participant to complete the career map</h2>
+</div>
+</div>
+
+<div style={styles.requestGrid}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Request Message</label>
+<textarea
+value={requestMessage}
+onChange={(e) => setRequestMessage(e.target.value)}
+style={styles.textarea}
 />
 </div>
-<h2 style={styles.sectionTitle}>Goals and next steps</h2>
+</div>
+
+<div style={styles.notesActions}>
+<button type="button" onClick={sendCareerMapRequest} style={styles.secondaryButton}>
+Save Career Map Request
+</button>
+</div>
+
+<div style={styles.subSection}>
+<p style={styles.subSectionTitle}>Request History</p>
+{selectedParticipantRequests.length ? (
+<div style={styles.requestList}>
+{selectedParticipantRequests.map((item) => (
+<div key={item.id} style={styles.requestCard}>
+<p style={styles.requestMeta}>
+{item.status} • {formatDate(item.createdAt)}
+</p>
+<p style={styles.requestBody}>{item.message}</p>
+</div>
+))}
+</div>
+) : (
+<p style={styles.emptyText}>No saved requests yet.</p>
+)}
+</div>
+</section>
+
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<p style={styles.sectionKicker}>Career Roadmap</p>
+<h2 style={styles.sectionTitle}>Build the plan visually</h2>
+</div>
+</div>
+
+<div style={styles.roadmapWrap}>
+<div style={styles.roadmapStep}>
+<span style={styles.roadmapStepLabel}>Current Position</span>
+<span style={styles.roadmapStepValue}>{currentPosition || "Not set"}</span>
+</div>
+<div style={styles.roadmapArrow}>→</div>
+<div style={styles.roadmapStep}>
+<span style={styles.roadmapStepLabel}>Short-Term</span>
+<span style={styles.roadmapStepValue}>{shortTermGoal || "Not set"}</span>
+</div>
+<div style={styles.roadmapArrow}>→</div>
+<div style={styles.roadmapStep}>
+<span style={styles.roadmapStepLabel}>1-Year</span>
+<span style={styles.roadmapStepValue}>{oneYearGoal || "Not set"}</span>
+</div>
+<div style={styles.roadmapArrow}>→</div>
+<div style={styles.roadmapStep}>
+<span style={styles.roadmapStepLabel}>3-Year</span>
+<span style={styles.roadmapStepValue}>{threeYearGoal || "Not set"}</span>
+</div>
+<div style={styles.roadmapArrow}>→</div>
+<div style={styles.roadmapStep}>
+<span style={styles.roadmapStepLabel}>End Goal</span>
+<span style={styles.roadmapStepValue}>{endGoal || "Not set"}</span>
+</div>
+</div>
+</section>
+
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<div style={styles.titleRow}>
+<p style={styles.sectionKicker}>Career Plan Builder</p>
+<InfoBubble
+title="Career Plan Builder"
+text="Use this section to build a plan with the participant. Connect goals to resumes, interview prep, analyzers, skills, and other HireMinds tools."
+/>
+</div>
+<h2 style={styles.sectionTitle}>Build the plan</h2>
 </div>
 </div>
 
 <div style={styles.noteGrid}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Current Position</label>
+<input
+value={currentPosition}
+onChange={(e) => setCurrentPosition(e.target.value)}
+style={styles.input}
+placeholder="Example: Warehouse Associate"
+/>
+</div>
+
 <div style={styles.fieldWrap}>
 <label style={styles.label}>Target Role</label>
 <input
@@ -497,17 +802,57 @@ placeholder="Example: Healthcare"
 value={shortTermGoal}
 onChange={(e) => setShortTermGoal(e.target.value)}
 style={styles.textarea}
-placeholder="Add short-term goal"
+placeholder="What should happen first?"
 />
 </div>
 
 <div style={styles.fieldWrap}>
-<label style={styles.label}>Long-Term Goal</label>
+<label style={styles.label}>1-Year Goal</label>
 <textarea
-value={longTermGoal}
-onChange={(e) => setLongTermGoal(e.target.value)}
+value={oneYearGoal}
+onChange={(e) => setOneYearGoal(e.target.value)}
 style={styles.textarea}
-placeholder="Add long-term goal"
+placeholder="What should be true within 1 year?"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>3-Year Goal</label>
+<textarea
+value={threeYearGoal}
+onChange={(e) => setThreeYearGoal(e.target.value)}
+style={styles.textarea}
+placeholder="What should be true within 3 years?"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>End Goal</label>
+<textarea
+value={endGoal}
+onChange={(e) => setEndGoal(e.target.value)}
+style={styles.textarea}
+placeholder="What is the big end goal?"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Strengths</label>
+<textarea
+value={strengths}
+onChange={(e) => setStrengths(e.target.value)}
+style={styles.textarea}
+placeholder="What strengths can help this participant move forward?"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Barriers / Challenges</label>
+<textarea
+value={barriers}
+onChange={(e) => setBarriers(e.target.value)}
+style={styles.textarea}
+placeholder="What may slow down progress?"
 />
 </div>
 
@@ -517,7 +862,17 @@ placeholder="Add long-term goal"
 value={actionSteps}
 onChange={(e) => setActionSteps(e.target.value)}
 style={styles.textarea}
-placeholder="List next steps, checkpoints, or action items"
+placeholder="List next steps, checkpoints, or tasks"
+/>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>HireMinds Toolkit Plan</label>
+<textarea
+value={toolkitPlan}
+onChange={(e) => setToolkitPlan(e.target.value)}
+style={styles.textarea}
+placeholder="Which HireMinds tools should this participant use as part of the plan?"
 />
 </div>
 
@@ -527,73 +882,100 @@ placeholder="List next steps, checkpoints, or action items"
 value={partnerNotes}
 onChange={(e) => setPartnerNotes(e.target.value)}
 style={styles.textarea}
-placeholder="Add partner observations, notes, or follow-up details"
+placeholder="Add observations, follow-up details, and planning notes"
 />
 </div>
 </div>
 
 <div style={styles.notesActions}>
 <button type="button" onClick={saveCareerMapNote} style={styles.secondaryButton}>
-Save Career Map Notes
+Save Career Map
 </button>
 </div>
-
-{selectedParticipantNote ? (
-<div style={styles.savedNoteCard}>
-<p style={styles.savedNoteLabel}>Last Saved</p>
-<p style={styles.savedNoteValue}>{formatDate(selectedParticipantNote.updatedAt)}</p>
-</div>
-) : null}
 </section>
 
 <section style={styles.card}>
 <div style={styles.sectionTop}>
 <div>
-<p style={styles.sectionKicker}>Tracked Career Map Activity</p>
-<h2 style={styles.sectionTitle}>Career Map history</h2>
+<p style={styles.sectionKicker}>Toolkit Support</p>
+<h2 style={styles.sectionTitle}>HireMinds tools that can support the plan</h2>
 </div>
 </div>
 
-<div style={styles.tableWrap}>
-<table style={styles.table}>
-<thead>
-<tr>
-<th style={styles.th}>Date</th>
-<th style={styles.th}>Participant</th>
-<th style={styles.th}>Event</th>
-<th style={styles.th}>Tool</th>
-<th style={styles.th}>Page</th>
-</tr>
-</thead>
-<tbody>
-{selectedParticipantCareerMapActivity.length ? (
-selectedParticipantCareerMapActivity.map((row, index) => {
-const rowKey = row.id || `${row.user_id || row.email || "career-map"}-${index}`;
+<div style={styles.toolkitGrid}>
+{toolkitSuggestions.map((tool) => (
+<div key={tool} style={styles.toolkitCard}>
+<p style={styles.toolkitCardText}>{tool}</p>
+</div>
+))}
+</div>
+</section>
+
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<p style={styles.sectionKicker}>Touchpoints</p>
+<h2 style={styles.sectionTitle}>Partner interaction history</h2>
+</div>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Add Manual Touchpoint</label>
+<textarea
+value={touchpointNote}
+onChange={(e) => setTouchpointNote(e.target.value)}
+style={styles.textarea}
+placeholder="Example: Reviewed resume goals, discussed healthcare pathway, assigned follow-up for certifications."
+/>
+</div>
+
+<div style={styles.notesActions}>
+<button type="button" onClick={addTouchpoint} style={styles.secondaryButton}>
+Save Touchpoint
+</button>
+</div>
+
+<div style={styles.touchpointGrid}>
+<div style={styles.touchpointColumn}>
+<p style={styles.subSectionTitle}>Tracked Activity Touchpoints</p>
+{trackedTouchpoints.length ? (
+trackedTouchpoints.map((row, index) => {
+const key = row.id || `${row.user_id || row.email || "tracked"}-${index}`;
 return (
-<tr key={rowKey}>
-<td style={styles.td}>{formatDate(row.created_at)}</td>
-<td style={styles.td}>{row.full_name || row.email || "—"}</td>
-<td style={styles.td}>{row.event_type || "—"}</td>
-<td style={styles.td}>{row.tool_name || "—"}</td>
-<td style={styles.td}>{row.page_name || "—"}</td>
-</tr>
+<div key={key} style={styles.touchpointCard}>
+<p style={styles.touchpointMeta}>{formatDate(row.created_at)}</p>
+<p style={styles.touchpointBody}>
+{(row.tool_name || "Activity")} • {(row.event_type || "—")} • {(row.page_name || "—")}
+</p>
+</div>
 );
 })
 ) : (
-<tr>
-<td style={styles.td} colSpan={5}>
-No Career Map activity found for this participant.
-</td>
-</tr>
+<p style={styles.emptyText}>No tracked touchpoints found.</p>
 )}
-</tbody>
-</table>
+</div>
+
+<div style={styles.touchpointColumn}>
+<p style={styles.subSectionTitle}>Manual Partner Touchpoints</p>
+{selectedParticipantManualTouchpoints.length ? (
+selectedParticipantManualTouchpoints.map((item) => (
+<div key={item.id} style={styles.touchpointCard}>
+<p style={styles.touchpointMeta}>{formatDate(item.createdAt)}</p>
+<p style={styles.touchpointBody}>{item.note}</p>
+</div>
+))
+) : (
+<p style={styles.emptyText}>No manual touchpoints saved yet.</p>
+)}
+</div>
 </div>
 </section>
 </>
 ) : (
 <section style={styles.card}>
-<p style={styles.emptyText}>Select a participant to view Career Map details.</p>
+<p style={styles.emptyText}>
+Select a participant to open their Career Map intake, roadmap, touchpoints, and toolkit planning area.
+</p>
 </section>
 )}
 </div>
@@ -624,16 +1006,34 @@ margin: "0 auto",
 display: "grid",
 gap: "24px",
 },
-headerCard: {
-display: "flex",
-justifyContent: "space-between",
-alignItems: "flex-start",
-gap: "18px",
-flexWrap: "wrap",
+heroCard: {
+display: "grid",
+gridTemplateColumns: "1.4fr 0.8fr",
+gap: "24px",
+alignItems: "center",
 background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
 border: "1px solid #262626",
 borderRadius: "24px",
-padding: "24px",
+padding: "28px",
+},
+heroTextWrap: {
+display: "grid",
+gap: "8px",
+},
+heroImageWrap: {
+display: "flex",
+justifyContent: "center",
+alignItems: "center",
+},
+heroImage: {
+width: "100%",
+maxWidth: "420px",
+maxHeight: "240px",
+objectFit: "contain",
+borderRadius: "18px",
+border: "1px solid #2c2c2c",
+background: "#ffffff",
+padding: "10px",
 },
 kicker: {
 margin: "0 0 8px",
@@ -652,10 +1052,10 @@ subtitle: {
 margin: 0,
 color: "#d4d4d8",
 fontSize: "16px",
-lineHeight: 1.7,
+lineHeight: 1.8,
 },
 subtleLine: {
-margin: "6px 0 0",
+margin: "4px 0 0",
 color: "#a1a1aa",
 fontSize: "14px",
 },
@@ -721,7 +1121,7 @@ textTransform: "uppercase",
 sectionTitle: {
 margin: 0,
 fontSize: "28px",
-lineHeight: 1.1,
+lineHeight: 1.15,
 fontWeight: 700,
 color: "#f5f5f5",
 },
@@ -768,6 +1168,29 @@ margin: 0,
 color: "#d4d4d8",
 fontSize: "12px",
 lineHeight: 1.6,
+},
+howToGrid: {
+display: "grid",
+gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+gap: "14px",
+},
+howToCard: {
+border: "1px solid #2c2c2c",
+borderRadius: "18px",
+padding: "18px",
+background: "#101010",
+},
+howToStep: {
+margin: "0 0 10px",
+color: "#60a5fa",
+fontSize: "26px",
+fontWeight: 800,
+},
+howToText: {
+margin: 0,
+color: "#e5e7eb",
+fontSize: "14px",
+lineHeight: 1.7,
 },
 filterGrid: {
 display: "grid",
@@ -841,64 +1264,136 @@ color: "#f5f5f5",
 fontSize: "14px",
 lineHeight: 1.6,
 },
-noteGrid: {
+requestGrid: {
 display: "grid",
-gridTemplateColumns: "1fr 1fr",
+gridTemplateColumns: "1fr",
 gap: "16px",
 },
 notesActions: {
 marginTop: "16px",
 },
-savedNoteCard: {
-marginTop: "18px",
+subSection: {
+marginTop: "22px",
+},
+subSectionTitle: {
+margin: "0 0 12px",
+color: "#ffffff",
+fontSize: "18px",
+fontWeight: 700,
+},
+requestList: {
+display: "grid",
+gap: "12px",
+},
+requestCard: {
 border: "1px solid #2c2c2c",
 borderRadius: "18px",
 padding: "16px",
 background: "#101010",
-display: "inline-block",
 },
-savedNoteLabel: {
+requestMeta: {
 margin: "0 0 8px",
+color: "#93c5fd",
+fontSize: "13px",
+fontWeight: 700,
+},
+requestBody: {
+margin: 0,
+color: "#e5e7eb",
+fontSize: "14px",
+lineHeight: 1.7,
+},
+roadmapWrap: {
+display: "grid",
+gridTemplateColumns: "repeat(9, minmax(0, 1fr))",
+gap: "10px",
+alignItems: "center",
+},
+roadmapStep: {
+minHeight: "110px",
+border: "1px solid #2c2c2c",
+borderRadius: "20px",
+padding: "16px",
+background: "linear-gradient(180deg, rgba(59,130,246,0.14) 0%, #101010 100%)",
+display: "flex",
+flexDirection: "column",
+justifyContent: "center",
+},
+roadmapStepLabel: {
 color: "#93c5fd",
 fontSize: "12px",
 fontWeight: 700,
 textTransform: "uppercase",
 letterSpacing: "0.06em",
+marginBottom: "8px",
 },
-savedNoteValue: {
-margin: 0,
+roadmapStepValue: {
 color: "#f5f5f5",
 fontSize: "14px",
+lineHeight: 1.6,
 },
-tableWrap: {
-maxHeight: "520px",
-overflow: "auto",
+roadmapArrow: {
+color: "#60a5fa",
+fontSize: "28px",
+fontWeight: 800,
+textAlign: "center",
+},
+noteGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "16px",
+},
+toolkitGrid: {
+display: "grid",
+gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+gap: "14px",
+},
+toolkitCard: {
+border: "1px solid #2c2c2c",
 borderRadius: "18px",
-border: "1px solid #2b2b2e",
+padding: "16px",
+background: "#101010",
+minHeight: "90px",
+display: "flex",
+alignItems: "center",
+justifyContent: "center",
+textAlign: "center",
 },
-table: {
-width: "100%",
-borderCollapse: "collapse",
+toolkitCardText: {
+margin: 0,
+color: "#f5f5f5",
+fontSize: "15px",
+fontWeight: 700,
+lineHeight: 1.5,
 },
-th: {
-textAlign: "left",
-padding: "12px 10px",
-borderBottom: "1px solid #2c2c2c",
-color: "#a1a1aa",
+touchpointGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "18px",
+marginTop: "20px",
+},
+touchpointColumn: {
+display: "grid",
+gap: "12px",
+alignContent: "start",
+},
+touchpointCard: {
+border: "1px solid #2c2c2c",
+borderRadius: "18px",
+padding: "16px",
+background: "#101010",
+},
+touchpointMeta: {
+margin: "0 0 8px",
+color: "#93c5fd",
 fontSize: "13px",
 fontWeight: 700,
-background: "#121214",
-position: "sticky",
-top: 0,
-zIndex: 1,
 },
-td: {
-padding: "12px 10px",
-borderBottom: "1px solid #232323",
-color: "#f1f5f9",
+touchpointBody: {
+margin: 0,
+color: "#e5e7eb",
 fontSize: "14px",
-verticalAlign: "top",
-background: "#171719",
+lineHeight: 1.7,
 },
 emptyText: {
 margin: 0,
