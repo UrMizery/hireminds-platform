@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
@@ -35,11 +36,12 @@ normalizedRole === "career-passport"
 return "candidate";
 }
 
-return "guest";
+return "candidate";
 }
 
 export default function SiteHeader() {
 const { t } = useLanguage();
+const pathname = usePathname();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [checkingAuth, setCheckingAuth] = useState(true);
@@ -52,13 +54,13 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function syncAuthState() {
-const { data, error } = await supabase.auth.getSession();
+async function checkAuth() {
+const { data } = await supabase.auth.getSession();
 const sessionUser = data.session?.user ?? null;
 
 if (!mounted) return;
 
-if (error || !sessionUser) {
+if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
 setCheckingAuth(false);
@@ -77,7 +79,7 @@ setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
 }
 
-syncAuthState();
+checkAuth();
 
 const {
 data: { subscription },
@@ -129,17 +131,18 @@ async function handleLogout() {
 try {
 setLoadingLogout(true);
 await supabase.auth.signOut();
-} finally {
 window.location.href = "/";
+} finally {
+setLoadingLogout(false);
 }
 }
 
 const isAdmin = role === "admin";
 const isEmployer = role === "employer";
 const isCandidate = role === "candidate";
-const isPartner = role === "partner";
 
-const showPartnerNav = isLoggedIn && isPartner;
+const isOnPartnerRoute = pathname?.startsWith("/partner-dashboard");
+const showPartnerNav = isLoggedIn && (role === "partner" || isOnPartnerRoute);
 
 return (
 <header style={styles.header}>
