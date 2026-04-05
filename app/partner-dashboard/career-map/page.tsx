@@ -54,6 +54,36 @@ if (Number.isNaN(date.getTime())) return value;
 return date.toLocaleString();
 }
 
+function InfoBubble({
+title,
+text,
+}: {
+title: string;
+text: string;
+}) {
+const [open, setOpen] = useState(false);
+
+return (
+<span style={styles.infoWrap}>
+<button
+type="button"
+onClick={() => setOpen((prev) => !prev)}
+style={styles.infoButton}
+aria-label={`About ${title}`}
+title={`About ${title}`}
+>
+i
+</button>
+{open ? (
+<div style={styles.infoPopup}>
+<p style={styles.infoTitle}>{title}</p>
+<p style={styles.infoText}>{text}</p>
+</div>
+) : null}
+</span>
+);
+}
+
 export default function PartnerCareerMapPage() {
 const [loading, setLoading] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
@@ -226,10 +256,13 @@ if (!selectedParticipantKey) return [];
 return activity.filter((row) => {
 const rowKey = row.user_id || row.email || row.id || "";
 const isParticipantMatch = rowKey === selectedParticipantKey;
+const toolName = (row.tool_name || "").toLowerCase();
+const pageName = (row.page_name || "").toLowerCase();
+
 const isCareerMap =
-(row.tool_name || "").toLowerCase() === "career_map" ||
-(row.page_name || "").toLowerCase().includes("career-map") ||
-(row.page_name || "").toLowerCase().includes("career map");
+toolName === "career_map" ||
+pageName.includes("career-map") ||
+pageName.includes("career map");
 
 return isParticipantMatch && isCareerMap;
 });
