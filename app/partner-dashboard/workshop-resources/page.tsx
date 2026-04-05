@@ -261,7 +261,7 @@ Print materials ahead of time so participants have structure, reminders, and tak
 <div style={styles.howToCard}>
 <p style={styles.howToStep}>4</p>
 <p style={styles.howToText}>
-Keep this page as your go-to partner prep space for future workshops too.
+Keep this page as your go-to partner prep space for future workshops tools.
 </p>
 </div>
 </div>
