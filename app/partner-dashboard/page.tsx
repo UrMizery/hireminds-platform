@@ -47,6 +47,8 @@ id: string;
 type: SupportActionType;
 participantKey: string;
 participantName: string;
+participantEmail?: string;
+participantPhone?: string;
 title: string;
 message: string;
 dueDate?: string;
@@ -199,6 +201,8 @@ const [supportActions, setSupportActions] = useState<SupportAction[]>([]);
 const [supportType, setSupportType] = useState<SupportActionType>("task");
 const [supportParticipantKey, setSupportParticipantKey] = useState("");
 const [supportParticipantName, setSupportParticipantName] = useState("");
+const [supportParticipantEmail, setSupportParticipantEmail] = useState("");
+const [supportParticipantPhone, setSupportParticipantPhone] = useState("");
 const [supportTitle, setSupportTitle] = useState("");
 const [supportMessage, setSupportMessage] = useState("");
 const [supportDueDate, setSupportDueDate] = useState("");
@@ -595,7 +599,25 @@ const maxToolCount = toolBreakdown.length ? Math.max(...toolBreakdown.map((d) =>
 const selectedParticipantOptions = uniqueParticipants.map((row) => ({
 key: row.user_id || row.email || row.phone || row.id || "",
 name: row.full_name || row.email || row.phone || "Participant",
+email: row.email || "",
+phone: row.phone || "",
 }));
+
+const selectedParticipantActivity = useMemo(() => {
+if (!supportParticipantKey) return [];
+return activityWithPhone.filter((row) => {
+const key = row.user_id || row.email || row.phone || row.id || "";
+return key === supportParticipantKey;
+});
+}, [activityWithPhone, supportParticipantKey]);
+
+const selectedParticipantLatestActivity = selectedParticipantActivity[0] || null;
+const selectedParticipantCareerMap = selectedParticipantActivity.find(
+(row) => (row.tool_name || "").toLowerCase() === "career_map"
+);
+const selectedParticipantJobLog = selectedParticipantActivity.find(
+(row) => (row.tool_name || "").toLowerCase() === "job_log_generator"
+);
 
 const supportActionsFiltered = useMemo(() => {
 const q = participantSearch.trim().toLowerCase();
@@ -621,6 +643,8 @@ id: `sa-${Date.now()}`,
 type: supportType,
 participantKey: supportParticipantKey,
 participantName: supportParticipantName,
+participantEmail: supportParticipantEmail,
+participantPhone: supportParticipantPhone,
 title: supportTitle.trim(),
 message: supportMessage.trim(),
 dueDate: supportDueDate || undefined,
@@ -1066,7 +1090,8 @@ Print Feed
 </thead>
 <tbody>
 {liveFeed.map((row, index) => {
-const rowKey = row.id || `${row.user_id || row.email || row.phone || "activity"}-${index}`;
+const rowKey =
+row.id || `${row.user_id || row.email || row.phone || "activity"}-${index}`;
 return (
 <tr key={rowKey}>
 <td style={styles.td}>{formatDate(row.created_at)}</td>
@@ -1169,7 +1194,8 @@ style={styles.input}
 <tbody>
 {historyFeed.length ? (
 historyFeed.map((row, index) => {
-const rowKey = row.id || `${row.user_id || row.email || row.phone || "history"}-${index}`;
+const rowKey =
+row.id || `${row.user_id || row.email || row.phone || "history"}-${index}`;
 return (
 <tr key={rowKey}>
 <td style={styles.td}>{formatDate(row.created_at)}</td>
@@ -1280,6 +1306,8 @@ const key = e.target.value;
 const match = selectedParticipantOptions.find((item) => item.key === key);
 setSupportParticipantKey(key);
 setSupportParticipantName(match?.name || "");
+setSupportParticipantEmail(match?.email || "");
+setSupportParticipantPhone(match?.phone || "");
 }}
 style={styles.select}
 >
@@ -1323,6 +1351,49 @@ placeholder="Add details, encouragement, or next steps."
 </div>
 </div>
 
+{supportParticipantKey ? (
+<div style={styles.selectedParticipantCard}>
+<div style={styles.selectedParticipantGrid}>
+<div style={styles.selectedParticipantItem}>
+<p style={styles.selectedParticipantLabel}>Selected Participant</p>
+<p style={styles.selectedParticipantValue}>{supportParticipantName || "—"}</p>
+</div>
+<div style={styles.selectedParticipantItem}>
+<p style={styles.selectedParticipantLabel}>Email</p>
+<p style={styles.selectedParticipantValue}>{supportParticipantEmail || "—"}</p>
+</div>
+<div style={styles.selectedParticipantItem}>
+<p style={styles.selectedParticipantLabel}>Phone</p>
+<p style={styles.selectedParticipantValue}>{supportParticipantPhone || "—"}</p>
+</div>
+<div style={styles.selectedParticipantItem}>
+<p style={styles.selectedParticipantLabel}>Latest Activity</p>
+<p style={styles.selectedParticipantValue}>
+{selectedParticipantLatestActivity
+? `${selectedParticipantLatestActivity.tool_name || "—"} • ${selectedParticipantLatestActivity.event_type || "—"} • ${formatDate(selectedParticipantLatestActivity.created_at)}`
+: "No tracked activity yet."}
+</p>
+</div>
+<div style={styles.selectedParticipantItem}>
+<p style={styles.selectedParticipantLabel}>Latest Career Map Activity</p>
+<p style={styles.selectedParticipantValue}>
+{selectedParticipantCareerMap
+? `${selectedParticipantCareerMap.event_type || "—"} • ${formatDate(selectedParticipantCareerMap.created_at)}`
+: "No Career Map activity found."}
+</p>
+</div>
+<div style={styles.selectedParticipantItem}>
+<p style={styles.selectedParticipantLabel}>Latest Job Log Activity</p>
+<p style={styles.selectedParticipantValue}>
+{selectedParticipantJobLog
+? `${selectedParticipantJobLog.event_type || "—"} • ${formatDate(selectedParticipantJobLog.created_at)}`
+: "No Job Log activity found."}
+</p>
+</div>
+</div>
+</div>
+) : null}
+
 <div style={styles.notesActions}>
 <button type="button" onClick={addSupportAction} style={styles.secondaryButton}>
 Save Support Action
@@ -1341,7 +1412,10 @@ Save Support Action
 <p style={styles.supportType}>{item.type.toUpperCase()}</p>
 <h3 style={styles.supportTitle}>{item.title}</h3>
 <p style={styles.supportMeta}>
-{item.participantName} • Created {formatDate(item.createdAt)} • Due{" "}
+{item.participantName}
+{item.participantEmail ? ` • ${item.participantEmail}` : ""}
+{item.participantPhone ? ` • ${item.participantPhone}` : ""}
+{" • "}Created {formatDate(item.createdAt)} • Due{" "}
 {item.dueDate ? formatShortDate(item.dueDate) : "—"}
 </p>
 </div>
@@ -2030,5 +2104,37 @@ fontWeight: 700,
 color: "#e5e7eb",
 background: "rgba(115,115,115,0.16)",
 border: "1px solid rgba(255,255,255,0.12)",
+},
+selectedParticipantCard: {
+marginTop: "18px",
+border: "1px solid #2c2c2c",
+borderRadius: "18px",
+padding: "18px",
+background: "#101010",
+},
+selectedParticipantGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr 1fr",
+gap: "14px",
+},
+selectedParticipantItem: {
+border: "1px solid #242424",
+borderRadius: "16px",
+padding: "14px",
+background: "#0d0d0f",
+},
+selectedParticipantLabel: {
+margin: "0 0 8px",
+color: "#93c5fd",
+fontSize: "12px",
+fontWeight: 700,
+textTransform: "uppercase",
+letterSpacing: "0.06em",
+},
+selectedParticipantValue: {
+margin: 0,
+color: "#f5f5f5",
+fontSize: "14px",
+lineHeight: 1.6,
 },
 };
