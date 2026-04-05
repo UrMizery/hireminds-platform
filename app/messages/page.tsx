@@ -1,26 +1,61 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
-type MessageType = "message" | "task" | "nudge" | "reminder";
-
-type MessageRow = {
-id?: string | null;
-sender_user_id?: string | null;
-sender_name?: string | null;
-sender_role?: string | null;
-recipient_user_id?: string | null;
-recipient_email?: string | null;
-recipient_name?: string | null;
+type PartnerRow = {
+organization_name?: string | null;
+contact_name?: string | null;
+contact_title?: string | null;
+contact_email?: string | null;
 referral_code?: string | null;
-subject?: string | null;
-body?: string | null;
-message_type?: string | null;
-related_tool?: string | null;
-is_read?: boolean | null;
+account_type?: string | null;
+};
+
+type ParticipantRow = {
+id?: string | null;
+user_id?: string | null;
+full_name?: string | null;
+email?: string | null;
+phone?: string | null;
 created_at?: string | null;
 };
+
+type SupportActionType = "task" | "nudge" | "reminder";
+
+type SupportAction = {
+id: string;
+type: SupportActionType;
+participantKey: string;
+participantName: string;
+participantEmail?: string;
+participantPhone?: string;
+title: string;
+message: string;
+dueDate?: string;
+status: "Open" | "Completed";
+createdAt: string;
+};
+
+type MessageStatus = "draft" | "sent";
+
+type MessageRecord = {
+id: string;
+participantKey: string;
+participantName: string;
+participantEmail?: string;
+participantPhone?: string;
+subject: string;
+body: string;
+status: MessageStatus;
+source: "manual" | "support_action";
+sourceActionId?: string;
+createdAt: string;
+updatedAt: string;
+sentAt?: string;
+};
+
+type MessageTab = "drafts" | "sent" | "compose";
 
 function formatDate(value?: string | null) {
 if (!value) return "—";
@@ -29,104 +64,348 @@ if (Number.isNaN(date.getTime())) return value;
 return date.toLocaleString();
 }
 
+function buildSupportActionSubject(action: SupportAction) {
+if (action.type === "task") return `Task: ${action.title}`;
+if (action.type === "reminder") return `Reminder: ${action.title}`;
+return `Nudge: ${action.title}`;
+}
+
+function buildSupportActionBody(action: SupportAction) {
+const lines = [
+`Hi ${action.participantName || "there"},`,
+"",
+action.type === "task"
+? "You have a new task from your HireMinds partner team."
+: action.type === "reminder"
+? "You have a new reminder from your HireMinds partner team."
+: "You have a new nudge from your HireMinds partner team.",
+"",
+`Title: ${action.title}`,
+];
+
+if (action.dueDate) {
+lines.push(`Due Date: ${action.dueDate}`);
+}
+
+if (action.message?.trim()) {
+lines.push("", action.message.trim());
+}
+
+lines.push("", "Please review this in HireMinds.", "", "— HireMinds");
+return lines.join("\n");
+}
+
 export default function MessagesPage() {
 const [loading, setLoading] = useState(true);
+const [loadingLogout, setLoadingLogout] = useState(false);
 const [message, setMessage] = useState("");
-const [userId, setUserId] = useState("");
-const [userEmail, setUserEmail] = useState("");
-const [rows, setRows] = useState<MessageRow[]>([]);
-const [activeFilter, setActiveFilter] = useState<"all" | "unread" | MessageType>("all");
+const [partner, setPartner] = useState<PartnerRow | null>(null);
+const [participants, setParticipants] = useState<ParticipantRow[]>([]);
+const [supportActions, setSupportActions] = useState<SupportAction[]>([]);
+const [messages, setMessages] = useState<MessageRecord[]>([]);
+const [activeTab, setActiveTab] = useState<MessageTab>("drafts");
+const [search, setSearch] = useState("");
+const [selectedMessageId, setSelectedMessageId] = useState("");
+
+const [composeParticipantKey, setComposeParticipantKey] = useState("");
+const [composeParticipantName, setComposeParticipantName] = useState("");
+const [composeParticipantEmail, setComposeParticipantEmail] = useState("");
+const [composeParticipantPhone, setComposeParticipantPhone] = useState("");
+const [composeSubject, setComposeSubject] = useState("");
+const [composeBody, setComposeBody] = useState("");
+
+const mountedRef = useRef(true);
+
+const supportStorageKey = useMemo(() => {
+const code = partner?.referral_code || "partner";
+return `hireminds-partner-support-actions-${code}`;
+}, [partner?.referral_code]);
+
+const messagesStorageKey = useMemo(() => {
+const code = partner?.referral_code || "partner";
+return `hireminds-partner-messages-${code}`;
+}, [partner?.referral_code]);
 
 useEffect(() => {
-let mounted = true;
+mountedRef.current = true;
+return () => {
+mountedRef.current = false;
+};
+}, []);
 
-async function loadMessages() {
+useEffect(() => {
+if (!partner?.referral_code) return;
+
+try {
+const rawSupport = window.localStorage.getItem(supportStorageKey);
+if (rawSupport) {
+const parsed = JSON.parse(rawSupport);
+setSupportActions(Array.isArray(parsed) ? parsed : []);
+} else {
+setSupportActions([]);
+}
+} catch {
+setSupportActions([]);
+}
+
+try {
+const rawMessages = window.localStorage.getItem(messagesStorageKey);
+if (rawMessages) {
+const parsed = JSON.parse(rawMessages);
+setMessages(Array.isArray(parsed) ? parsed : []);
+} else {
+setMessages([]);
+}
+} catch {
+setMessages([]);
+}
+}, [partner?.referral_code, supportStorageKey, messagesStorageKey]);
+
+function persistMessages(next: MessageRecord[]) {
+setMessages(next);
+try {
+window.localStorage.setItem(messagesStorageKey, JSON.stringify(next));
+} catch {
+setMessage("Unable to save messages in this browser.");
+}
+}
+
+async function loadPage() {
 setLoading(true);
 setMessage("");
 
 const { data: authData, error: authError } = await supabase.auth.getUser();
 
-if (authError || !authData.user) {
-window.location.href = "/sign-in";
+if (authError || !authData.user?.email) {
+window.location.href = "/employer-partner-login";
 return;
 }
 
-const nextUserId = authData.user.id || "";
-const nextEmail = authData.user.email || "";
+const email = authData.user.email;
 
-if (!mounted) return;
+const { data: partnerRow, error: partnerError } = await supabase
+.from("partners")
+.select("*")
+.eq("contact_email", email)
+.maybeSingle<PartnerRow>();
 
-setUserId(nextUserId);
-setUserEmail(nextEmail);
+if (partnerError) {
+if (mountedRef.current) {
+setMessage(partnerError.message);
+setLoading(false);
+}
+return;
+}
 
-const filters = [
-nextUserId ? `recipient_user_id.eq.${nextUserId}` : "",
-nextEmail ? `recipient_email.eq.${nextEmail}` : "",
-]
-.filter(Boolean)
-.join(",");
+if (!partnerRow || !partnerRow.referral_code) {
+if (mountedRef.current) {
+setMessage("This account does not have partner messages access.");
+setLoading(false);
+}
+return;
+}
 
-const { data, error } = await supabase
-.from("messages")
-.select(
-"id, sender_user_id, sender_name, sender_role, recipient_user_id, recipient_email, recipient_name, referral_code, subject, body, message_type, related_tool, is_read, created_at"
-)
-.or(filters)
+const { data: participantRows, error: participantError } = await supabase
+.from("candidate_profiles")
+.select("id, user_id, full_name, email, phone, created_at")
+.eq("referral_code", partnerRow.referral_code)
 .order("created_at", { ascending: false });
 
-if (!mounted) return;
-
-if (error) {
-setMessage(
-"Messages page is ready, but the messages table is not connected yet. Once the Supabase table is created, messages will appear here."
-);
-setRows([]);
+if (participantError) {
+if (mountedRef.current) {
+setMessage(participantError.message);
 setLoading(false);
+}
 return;
 }
 
-setRows((data as MessageRow[]) || []);
+if (!mountedRef.current) return;
+
+setPartner(partnerRow);
+setParticipants((participantRows as ParticipantRow[]) || []);
 setLoading(false);
 }
 
-loadMessages();
-
-const interval = setInterval(() => {
-loadMessages();
-}, 15000);
-
-return () => {
-mounted = false;
-clearInterval(interval);
-};
+useEffect(() => {
+loadPage();
 }, []);
 
-async function markAsRead(id?: string | null) {
-if (!id) return;
+const uniqueParticipants = useMemo(() => {
+const seen = new Set<string>();
+return participants.filter((row) => {
+const key = row.user_id || row.email || row.phone || row.id || "";
+if (!key || seen.has(key)) return false;
+seen.add(key);
+return true;
+});
+}, [participants]);
 
-const previous = rows;
-setRows((current) =>
-current.map((item) => (item.id === id ? { ...item, is_read: true } : item))
+const participantOptions = useMemo(() => {
+return uniqueParticipants.map((row) => ({
+key: row.user_id || row.email || row.phone || row.id || "",
+name: row.full_name || row.email || row.phone || "Participant",
+email: row.email || "",
+phone: row.phone || "",
+}));
+}, [uniqueParticipants]);
+
+const existingSupportDraftIds = useMemo(() => {
+return new Set(
+messages
+.filter((item) => item.source === "support_action" && item.sourceActionId)
+.map((item) => item.sourceActionId as string)
 );
+}, [messages]);
 
-const { error } = await supabase
-.from("messages")
-.update({ is_read: true })
-.eq("id", id);
+const availableSupportDrafts = useMemo(() => {
+return supportActions.filter((item) => !existingSupportDraftIds.has(item.id));
+}, [supportActions, existingSupportDraftIds]);
 
-if (error) {
-setRows(previous);
-setMessage("Unable to update this message yet.");
+const filteredMessages = useMemo(() => {
+const q = search.trim().toLowerCase();
+
+return messages.filter((item) => {
+const matchesTab =
+activeTab === "compose"
+? true
+: activeTab === "drafts"
+? item.status === "draft"
+: item.status === "sent";
+
+const matchesSearch =
+!q ||
+item.participantName.toLowerCase().includes(q) ||
+(item.participantEmail || "").toLowerCase().includes(q) ||
+(item.participantPhone || "").toLowerCase().includes(q) ||
+item.subject.toLowerCase().includes(q) ||
+item.body.toLowerCase().includes(q);
+
+return matchesTab && matchesSearch;
+});
+}, [messages, search, activeTab]);
+
+const selectedMessage = useMemo(() => {
+if (!selectedMessageId) return filteredMessages[0] || null;
+return filteredMessages.find((item) => item.id === selectedMessageId) || filteredMessages[0] || null;
+}, [filteredMessages, selectedMessageId]);
+
+useEffect(() => {
+if (activeTab === "compose") return;
+if (!filteredMessages.length) {
+setSelectedMessageId("");
+return;
+}
+if (!selectedMessageId || !filteredMessages.some((item) => item.id === selectedMessageId)) {
+setSelectedMessageId(filteredMessages[0].id);
+}
+}, [filteredMessages, selectedMessageId, activeTab]);
+
+function createDraftFromSupportAction(action: SupportAction) {
+const nextDraft: MessageRecord = {
+id: `msg-${Date.now()}-${action.id}`,
+participantKey: action.participantKey,
+participantName: action.participantName,
+participantEmail: action.participantEmail,
+participantPhone: action.participantPhone,
+subject: buildSupportActionSubject(action),
+body: buildSupportActionBody(action),
+status: "draft",
+source: "support_action",
+sourceActionId: action.id,
+createdAt: new Date().toISOString(),
+updatedAt: new Date().toISOString(),
+};
+
+const next = [nextDraft, ...messages];
+persistMessages(next);
+setActiveTab("drafts");
+setSelectedMessageId(nextDraft.id);
+setMessage("Draft created from support action.");
+}
+
+function saveManualDraft() {
+if (!composeParticipantKey || !composeParticipantName || !composeSubject.trim() || !composeBody.trim()) {
+setMessage("Please select a participant and enter both a subject and message body.");
+return;
+}
+
+const nextDraft: MessageRecord = {
+id: `msg-${Date.now()}`,
+participantKey: composeParticipantKey,
+participantName: composeParticipantName,
+participantEmail: composeParticipantEmail,
+participantPhone: composeParticipantPhone,
+subject: composeSubject.trim(),
+body: composeBody.trim(),
+status: "draft",
+source: "manual",
+createdAt: new Date().toISOString(),
+updatedAt: new Date().toISOString(),
+};
+
+const next = [nextDraft, ...messages];
+persistMessages(next);
+
+setComposeParticipantKey("");
+setComposeParticipantName("");
+setComposeParticipantEmail("");
+setComposeParticipantPhone("");
+setComposeSubject("");
+setComposeBody("");
+setActiveTab("drafts");
+setSelectedMessageId(nextDraft.id);
+setMessage("Draft saved.");
+}
+
+function updateDraft(id: string, subject: string, body: string) {
+const next = messages.map((item) =>
+item.id === id
+? {
+...item,
+subject,
+body,
+updatedAt: new Date().toISOString(),
+}
+: item
+);
+persistMessages(next);
+setMessage("Draft updated.");
+}
+
+function sendDraft(id: string) {
+const next = messages.map((item) =>
+item.id === id
+? {
+...item,
+status: "sent" as MessageStatus,
+sentAt: new Date().toISOString(),
+updatedAt: new Date().toISOString(),
+}
+: item
+);
+persistMessages(next);
+setActiveTab("sent");
+setSelectedMessageId(id);
+setMessage("Message marked as sent in HireMinds.");
+}
+
+function deleteMessage(id: string) {
+const next = messages.filter((item) => item.id !== id);
+persistMessages(next);
+if (selectedMessageId === id) {
+setSelectedMessageId("");
+}
+setMessage("Message deleted.");
+}
+
+async function handleLogout() {
+try {
+setLoadingLogout(true);
+await supabase.auth.signOut();
+} finally {
+window.location.href = "/employer-partner-login";
 }
 }
-
-const filteredRows = useMemo(() => {
-if (activeFilter === "all") return rows;
-if (activeFilter === "unread") return rows.filter((item) => !item.is_read);
-return rows.filter((item) => (item.message_type || "").toLowerCase() === activeFilter);
-}, [rows, activeFilter]);
-
-const unreadCount = useMemo(() => rows.filter((item) => !item.is_read).length, [rows]);
 
 if (loading) {
 return (
@@ -139,116 +418,307 @@ return (
 return (
 <main style={styles.page}>
 <div style={styles.shell}>
-<section style={styles.heroCard}>
+<section style={styles.headerCard}>
 <div>
-<p style={styles.kicker}>HireMinds Inbox</p>
+<p style={styles.kicker}>Partner Messages</p>
 <h1 style={styles.title}>Messages</h1>
 <p style={styles.subtitle}>
-View messages, tasks, nudges, and reminders sent through HireMinds.
+Organization: <strong>{partner?.organization_name || "—"}</strong>
 </p>
-<p style={styles.subtleLine}>Signed in as: {userEmail || userId || "—"}</p>
+<p style={styles.subtleLine}>Referral Code: {partner?.referral_code || "—"}</p>
+<p style={styles.subtleLine}>Drafts created from support actions appear here.</p>
 </div>
 
-<div style={styles.heroStats}>
-<div style={styles.statCard}>
-<p style={styles.statLabel}>Total Messages</p>
-<p style={styles.statValue}>{rows.length}</p>
-</div>
+<div style={styles.headerActions}>
+<button
+type="button"
+onClick={() => setActiveTab("drafts")}
+style={{
+...styles.tabButton,
+...(activeTab === "drafts" ? styles.tabButtonActive : {}),
+}}
+>
+Drafts
+</button>
 
-<div style={styles.statCard}>
-<p style={styles.statLabel}>Unread</p>
-<p style={styles.statValue}>{unreadCount}</p>
-</div>
+<button
+type="button"
+onClick={() => setActiveTab("sent")}
+style={{
+...styles.tabButton,
+...(activeTab === "sent" ? styles.tabButtonActive : {}),
+}}
+>
+Sent
+</button>
+
+<button
+type="button"
+onClick={() => setActiveTab("compose")}
+style={{
+...styles.tabButton,
+...(activeTab === "compose" ? styles.tabButtonActive : {}),
+}}
+>
+Compose
+</button>
+
+<button
+type="button"
+onClick={handleLogout}
+style={styles.logoutButton}
+disabled={loadingLogout}
+>
+{loadingLogout ? "Logging Off..." : "Log Off"}
+</button>
 </div>
 </section>
 
 {message ? <div style={styles.notice}>{message}</div> : null}
 
 <section style={styles.card}>
-<div style={styles.filterRow}>
-{[
-{ key: "all", label: "All" },
-{ key: "unread", label: "Unread" },
-{ key: "message", label: "Messages" },
-{ key: "task", label: "Tasks" },
-{ key: "nudge", label: "Nudges" },
-{ key: "reminder", label: "Reminders" },
-].map((item) => (
-<button
-key={item.key}
-type="button"
-onClick={() => setActiveFilter(item.key as typeof activeFilter)}
-style={{
-...styles.filterButton,
-...(activeFilter === item.key ? styles.filterButtonActive : {}),
-}}
->
-{item.label}
-</button>
-))}
+<div style={styles.sectionTop}>
+<div>
+<p style={styles.sectionKicker}>Support Action Drafts</p>
+<h2 style={styles.sectionTitle}>Create drafts from saved support actions</h2>
 </div>
-</section>
+</div>
 
-<section style={styles.card}>
-{filteredRows.length === 0 ? (
-<div style={styles.emptyWrap}>
-<p style={styles.emptyTitle}>No messages yet</p>
-<p style={styles.emptyText}>
-When a partner sends a message, task, nudge, or reminder, it will appear here.
-</p>
-</div>
+{availableSupportDrafts.length === 0 ? (
+<p style={styles.emptyText}>No undrafted support actions found right now.</p>
 ) : (
-<div style={styles.messageList}>
-{filteredRows.map((row) => {
-const type = (row.message_type || "message").toLowerCase();
-const unread = !row.is_read;
-
-return (
-<article
-key={row.id || `${row.subject}-${row.created_at}`}
-style={{
-...styles.messageCard,
-...(unread ? styles.messageCardUnread : {}),
-}}
->
-<div style={styles.messageTop}>
-<div style={styles.messageTopLeft}>
-<div style={styles.badgeRow}>
-<span style={styles.typeBadge}>{type}</span>
-{unread ? <span style={styles.unreadBadge}>Unread</span> : null}
-</div>
-
-<h2 style={styles.messageSubject}>{row.subject || "No subject"}</h2>
-
-<p style={styles.messageMeta}>
-From: {row.sender_name || row.sender_role || "HireMinds"} • {formatDate(row.created_at)}
+<div style={styles.supportActionList}>
+{availableSupportDrafts.map((action) => (
+<div key={action.id} style={styles.supportActionCard}>
+<div>
+<p style={styles.supportType}>{action.type.toUpperCase()}</p>
+<h3 style={styles.supportTitle}>{action.title}</h3>
+<p style={styles.supportMeta}>
+{action.participantName}
+{action.participantEmail ? ` • ${action.participantEmail}` : ""}
+{action.participantPhone ? ` • ${action.participantPhone}` : ""}
+{action.dueDate ? ` • Due ${action.dueDate}` : ""}
 </p>
+{action.message ? <p style={styles.supportBody}>{action.message}</p> : null}
 </div>
 
-{unread ? (
 <button
 type="button"
-onClick={() => markAsRead(row.id)}
-style={styles.readButton}
+onClick={() => createDraftFromSupportAction(action)}
+style={styles.secondaryButton}
 >
-Mark Read
+Create Draft
 </button>
-) : null}
 </div>
-
-<p style={styles.messageBody}>{row.body || "No message content."}</p>
-
-{row.related_tool ? (
-<p style={styles.relatedTool}>Related Tool: {row.related_tool}</p>
-) : null}
-</article>
-);
-})}
+))}
 </div>
 )}
 </section>
+
+{activeTab === "compose" ? (
+<section style={styles.card}>
+<div style={styles.sectionTop}>
+<div>
+<p style={styles.sectionKicker}>Compose</p>
+<h2 style={styles.sectionTitle}>Create a new message draft</h2>
+</div>
+</div>
+
+<div style={styles.composeGrid}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Participant</label>
+<select
+value={composeParticipantKey}
+onChange={(e) => {
+const key = e.target.value;
+const match = participantOptions.find((item) => item.key === key);
+setComposeParticipantKey(key);
+setComposeParticipantName(match?.name || "");
+setComposeParticipantEmail(match?.email || "");
+setComposeParticipantPhone(match?.phone || "");
+}}
+style={styles.select}
+>
+<option value="">Select participant</option>
+{participantOptions.map((item) => (
+<option key={item.key} value={item.key}>
+{item.name}
+</option>
+))}
+</select>
+</div>
+
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Subject</label>
+<input
+value={composeSubject}
+onChange={(e) => setComposeSubject(e.target.value)}
+style={styles.input}
+placeholder="Enter subject"
+/>
+</div>
+
+<div style={{ ...styles.fieldWrap, gridColumn: "1 / -1" }}>
+<label style={styles.label}>Message</label>
+<textarea
+value={composeBody}
+onChange={(e) => setComposeBody(e.target.value)}
+style={styles.textarea}
+placeholder="Write your message"
+/>
+</div>
+</div>
+
+<div style={styles.notesActions}>
+<button type="button" onClick={saveManualDraft} style={styles.secondaryButton}>
+Save Draft
+</button>
+</div>
+</section>
+) : (
+<section style={styles.messageLayout}>
+<div style={styles.sidebarCard}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Search Messages</label>
+<input
+value={search}
+onChange={(e) => setSearch(e.target.value)}
+style={styles.input}
+placeholder="Search by person, email, subject, or content"
+/>
+</div>
+
+<div style={styles.messageList}>
+{filteredMessages.length === 0 ? (
+<p style={styles.emptyText}>No messages found for this view.</p>
+) : (
+filteredMessages.map((item) => (
+<button
+key={item.id}
+type="button"
+onClick={() => setSelectedMessageId(item.id)}
+style={{
+...styles.messageListCard,
+...(selectedMessage?.id === item.id ? styles.messageListCardActive : {}),
+}}
+>
+<p style={styles.messageListStatus}>{item.status.toUpperCase()}</p>
+<h3 style={styles.messageListTitle}>{item.subject}</h3>
+<p style={styles.messageListMeta}>{item.participantName}</p>
+<p style={styles.messageListMeta}>{formatDate(item.updatedAt)}</p>
+</button>
+))
+)}
+</div>
+</div>
+
+<div style={styles.previewCard}>
+{selectedMessage ? (
+<MessageEditor
+key={selectedMessage.id}
+message={selectedMessage}
+onSave={updateDraft}
+onSend={sendDraft}
+onDelete={deleteMessage}
+/>
+) : (
+<p style={styles.emptyText}>Select a message to view it.</p>
+)}
+</div>
+</section>
+)}
 </div>
 </main>
+);
+}
+
+function MessageEditor({
+message,
+onSave,
+onSend,
+onDelete,
+}: {
+message: MessageRecord;
+onSave: (id: string, subject: string, body: string) => void;
+onSend: (id: string) => void;
+onDelete: (id: string) => void;
+}) {
+const [subject, setSubject] = useState(message.subject);
+const [body, setBody] = useState(message.body);
+
+useEffect(() => {
+setSubject(message.subject);
+setBody(message.body);
+}, [message.id, message.subject, message.body]);
+
+return (
+<div style={styles.previewInner}>
+<div style={styles.previewTop}>
+<div>
+<p style={styles.previewType}>{message.source === "support_action" ? "FROM SUPPORT ACTION" : "MANUAL DRAFT"}</p>
+<h2 style={styles.previewTitle}>{message.participantName}</h2>
+<p style={styles.previewMeta}>
+{message.participantEmail || "—"}
+{message.participantPhone ? ` • ${message.participantPhone}` : ""}
+</p>
+<p style={styles.previewMeta}>
+Created {formatDate(message.createdAt)}
+{message.sentAt ? ` • Sent ${formatDate(message.sentAt)}` : ""}
+</p>
+</div>
+
+<div style={styles.previewActions}>
+{message.status === "draft" ? (
+<>
+<button
+type="button"
+onClick={() => onSave(message.id, subject.trim(), body.trim())}
+style={styles.secondaryButton}
+>
+Save Changes
+</button>
+<button
+type="button"
+onClick={() => onSend(message.id)}
+style={styles.secondaryButton}
+>
+Send
+</button>
+</>
+) : null}
+
+<button
+type="button"
+onClick={() => onDelete(message.id)}
+style={styles.secondaryButton}
+>
+Delete
+</button>
+</div>
+</div>
+
+<div style={styles.composeGrid}>
+<div style={styles.fieldWrap}>
+<label style={styles.label}>Subject</label>
+<input
+value={subject}
+onChange={(e) => setSubject(e.target.value)}
+style={styles.input}
+disabled={message.status === "sent"}
+/>
+</div>
+
+<div style={{ ...styles.fieldWrap, gridColumn: "1 / -1" }}>
+<label style={styles.label}>Message</label>
+<textarea
+value={body}
+onChange={(e) => setBody(e.target.value)}
+style={styles.textareaLarge}
+disabled={message.status === "sent"}
+/>
+</div>
+</div>
+</div>
 );
 }
 
@@ -270,12 +740,12 @@ justifyContent: "center",
 fontSize: "18px",
 },
 shell: {
-maxWidth: "1100px",
+maxWidth: "1480px",
 margin: "0 auto",
 display: "grid",
 gap: "24px",
 },
-heroCard: {
+headerCard: {
 display: "flex",
 justifyContent: "space-between",
 alignItems: "flex-start",
@@ -306,32 +776,37 @@ fontSize: "16px",
 lineHeight: 1.7,
 },
 subtleLine: {
-margin: "8px 0 0",
+margin: "6px 0 0",
 color: "#a1a1aa",
 fontSize: "14px",
 },
-heroStats: {
+headerActions: {
 display: "flex",
-gap: "14px",
+gap: "12px",
 flexWrap: "wrap",
+alignItems: "center",
 },
-statCard: {
-minWidth: "150px",
-borderRadius: "18px",
-padding: "16px",
-border: "1px solid #2c2c2c",
-background: "#101010",
-},
-statLabel: {
-margin: "0 0 8px",
-color: "#a1a1aa",
-fontSize: "13px",
-},
-statValue: {
-margin: 0,
-color: "#ffffff",
-fontSize: "28px",
+tabButton: {
+padding: "12px 16px",
+borderRadius: "16px",
+border: "1px solid rgba(255,255,255,0.12)",
+background: "#111111",
+color: "#f5f5f5",
 fontWeight: 700,
+cursor: "pointer",
+},
+tabButtonActive: {
+background: "#f5f5f5",
+color: "#111111",
+},
+logoutButton: {
+padding: "12px 16px",
+borderRadius: "16px",
+border: "1px solid rgba(148,163,184,0.28)",
+background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+color: "#fff",
+fontWeight: 700,
+cursor: "pointer",
 },
 notice: {
 background: "rgba(250,204,21,0.08)",
@@ -348,124 +823,237 @@ border: "1px solid #262626",
 borderRadius: "24px",
 padding: "24px",
 },
-filterRow: {
+sectionTop: {
 display: "flex",
-gap: "10px",
+justifyContent: "space-between",
+alignItems: "flex-start",
+gap: "16px",
+flexWrap: "wrap",
+marginBottom: "18px",
+},
+sectionKicker: {
+margin: "0 0 8px",
+color: "#9ca3af",
+fontSize: "12px",
+letterSpacing: "0.18em",
+textTransform: "uppercase",
+},
+sectionTitle: {
+margin: 0,
+fontSize: "28px",
+lineHeight: 1.1,
+fontWeight: 700,
+color: "#f5f5f5",
+},
+supportActionList: {
+display: "grid",
+gap: "14px",
+},
+supportActionCard: {
+border: "1px solid #2c2c2c",
+borderRadius: "18px",
+padding: "16px",
+background: "#101010",
+display: "flex",
+justifyContent: "space-between",
+gap: "16px",
+alignItems: "flex-start",
 flexWrap: "wrap",
 },
-filterButton: {
-padding: "10px 14px",
-borderRadius: "999px",
+supportType: {
+margin: "0 0 6px",
+color: "#93c5fd",
+fontSize: "11px",
+letterSpacing: "0.14em",
+textTransform: "uppercase",
+},
+supportTitle: {
+margin: "0 0 8px",
+color: "#f5f5f5",
+fontSize: "18px",
+fontWeight: 700,
+},
+supportMeta: {
+margin: 0,
+color: "#a1a1aa",
+fontSize: "13px",
+},
+supportBody: {
+margin: "12px 0 0",
+color: "#e5e7eb",
+fontSize: "14px",
+lineHeight: 1.7,
+},
+secondaryButton: {
+padding: "12px 16px",
+borderRadius: "16px",
 border: "1px solid rgba(255,255,255,0.12)",
 background: "#111111",
 color: "#f5f5f5",
 fontWeight: 700,
 cursor: "pointer",
 },
-filterButtonActive: {
-background: "#f5f5f5",
-color: "#111111",
+composeGrid: {
+display: "grid",
+gridTemplateColumns: "1fr 1fr",
+gap: "16px",
 },
-emptyWrap: {
-padding: "24px 4px",
+fieldWrap: {
+display: "grid",
+gap: "8px",
 },
-emptyTitle: {
-margin: "0 0 10px",
-color: "#fff",
-fontSize: "22px",
-fontWeight: 700,
+label: {
+color: "#d4d4d8",
+fontSize: "13px",
+fontWeight: 600,
+lineHeight: 1.5,
 },
-emptyText: {
-margin: 0,
-color: "#c8c8c8",
+select: {
+padding: "12px 14px",
+borderRadius: "16px",
+border: "1px solid #313131",
+background: "#0f0f10",
+color: "#f4f4f5",
+fontSize: "14px",
+},
+input: {
+width: "100%",
+padding: "14px 16px",
+borderRadius: "16px",
+border: "1px solid #313131",
+background: "#0f0f10",
+color: "#f4f4f5",
 fontSize: "15px",
-lineHeight: 1.7,
+boxSizing: "border-box",
+outline: "none",
+},
+textarea: {
+width: "100%",
+minHeight: "140px",
+padding: "14px 16px",
+borderRadius: "16px",
+border: "1px solid #313131",
+background: "#0f0f10",
+color: "#f4f4f5",
+fontSize: "15px",
+resize: "vertical",
+boxSizing: "border-box",
+outline: "none",
+},
+textareaLarge: {
+width: "100%",
+minHeight: "260px",
+padding: "14px 16px",
+borderRadius: "16px",
+border: "1px solid #313131",
+background: "#0f0f10",
+color: "#f4f4f5",
+fontSize: "15px",
+resize: "vertical",
+boxSizing: "border-box",
+outline: "none",
+},
+notesActions: {
+marginTop: "16px",
+},
+messageLayout: {
+display: "grid",
+gridTemplateColumns: "360px 1fr",
+gap: "24px",
+},
+sidebarCard: {
+background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
+border: "1px solid #262626",
+borderRadius: "24px",
+padding: "24px",
+display: "grid",
+gap: "18px",
+alignSelf: "start",
 },
 messageList: {
 display: "grid",
-gap: "16px",
+gap: "12px",
+maxHeight: "720px",
+overflow: "auto",
 },
-messageCard: {
+messageListCard: {
 border: "1px solid #2c2c2c",
 borderRadius: "18px",
-padding: "18px",
+padding: "14px",
 background: "#101010",
+textAlign: "left",
+cursor: "pointer",
 },
-messageCardUnread: {
-border: "1px solid rgba(59,130,246,0.45)",
-boxShadow: "0 0 0 1px rgba(59,130,246,0.12) inset",
+messageListCardActive: {
+border: "1px solid rgba(147,197,253,0.45)",
+background: "rgba(59,130,246,0.09)",
 },
-messageTop: {
+messageListStatus: {
+margin: "0 0 6px",
+color: "#93c5fd",
+fontSize: "11px",
+letterSpacing: "0.14em",
+textTransform: "uppercase",
+},
+messageListTitle: {
+margin: "0 0 8px",
+color: "#f5f5f5",
+fontSize: "16px",
+fontWeight: 700,
+lineHeight: 1.4,
+},
+messageListMeta: {
+margin: "4px 0 0",
+color: "#a1a1aa",
+fontSize: "13px",
+lineHeight: 1.5,
+},
+previewCard: {
+background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
+border: "1px solid #262626",
+borderRadius: "24px",
+padding: "24px",
+minHeight: "400px",
+},
+previewInner: {
+display: "grid",
+gap: "18px",
+},
+previewTop: {
 display: "flex",
 justifyContent: "space-between",
 alignItems: "flex-start",
 gap: "16px",
 flexWrap: "wrap",
 },
-messageTopLeft: {
-display: "grid",
-gap: "8px",
+previewType: {
+margin: "0 0 6px",
+color: "#93c5fd",
+fontSize: "11px",
+letterSpacing: "0.14em",
+textTransform: "uppercase",
 },
-badgeRow: {
+previewTitle: {
+margin: "0 0 8px",
+color: "#f5f5f5",
+fontSize: "26px",
+fontWeight: 700,
+},
+previewMeta: {
+margin: "4px 0 0",
+color: "#a1a1aa",
+fontSize: "14px",
+lineHeight: 1.6,
+},
+previewActions: {
 display: "flex",
-gap: "8px",
+gap: "10px",
 flexWrap: "wrap",
 },
-typeBadge: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-padding: "6px 10px",
-borderRadius: "999px",
-fontSize: "12px",
-fontWeight: 700,
-color: "#dbeafe",
-background: "rgba(59,130,246,0.14)",
-border: "1px solid rgba(59,130,246,0.26)",
-textTransform: "capitalize",
-},
-unreadBadge: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-padding: "6px 10px",
-borderRadius: "999px",
-fontSize: "12px",
-fontWeight: 700,
-color: "#bbf7d0",
-background: "rgba(34,197,94,0.12)",
-border: "1px solid rgba(34,197,94,0.22)",
-},
-messageSubject: {
+emptyText: {
 margin: 0,
-color: "#fff",
-fontSize: "22px",
-fontWeight: 700,
-},
-messageMeta: {
-margin: 0,
-color: "#a1a1aa",
-fontSize: "13px",
-},
-readButton: {
-padding: "10px 14px",
-borderRadius: "12px",
-border: "1px solid rgba(255,255,255,0.12)",
-background: "#111111",
-color: "#f5f5f5",
-fontWeight: 700,
-cursor: "pointer",
-},
-messageBody: {
-margin: "14px 0 0",
-color: "#e5e7eb",
+color: "#c8c8c8",
 fontSize: "15px",
-lineHeight: 1.8,
-},
-relatedTool: {
-margin: "14px 0 0",
-color: "#93c5fd",
-fontSize: "13px",
-fontWeight: 600,
+lineHeight: 1.7,
 },
 };
