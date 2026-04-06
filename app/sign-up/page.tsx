@@ -134,7 +134,7 @@ window.location.href = "/profile";
 return;
 }
 
-window.location.href = "/profile?access=limited";
+window.location.href = "/subscribe";
 }
 
 return (
