@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
+type UserRole = "guest" | "candidate" | "partner"  | "admin";
 
 type PartnerNavItem = {
 label: string;
