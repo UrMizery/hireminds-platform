@@ -79,7 +79,21 @@ sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "candidate";
 
-setRole(normalizeRole(rawRole));
+let resolvedRole = normalizeRole(rawRole);
+
+if (sessionUser.email) {
+const { data: partnerRow } = await supabase
+.from("partners")
+.select("contact_email")
+.ilike("contact_email", sessionUser.email)
+.maybeSingle();
+
+if (partnerRow?.contact_email) {
+resolvedRole = "partner";
+}
+}
+
+setRole(resolvedRole);
 setCheckingAuth(false);
 }
 
@@ -87,7 +101,7 @@ checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange((_event, session) => {
+} = supabase.auth.onAuthStateChange(async (_event, session) => {
 const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
@@ -107,7 +121,21 @@ sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "candidate";
 
-setRole(normalizeRole(rawRole));
+let resolvedRole = normalizeRole(rawRole);
+
+if (sessionUser.email) {
+const { data: partnerRow } = await supabase
+.from("partners")
+.select("contact_email")
+.ilike("contact_email", sessionUser.email)
+.maybeSingle();
+
+if (partnerRow?.contact_email) {
+resolvedRole = "partner";
+}
+}
+
+setRole(resolvedRole);
 setCheckingAuth(false);
 });
 
