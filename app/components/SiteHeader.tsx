@@ -104,7 +104,7 @@ checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange((_event, session) => {
+} = supabase.auth.onAuthStateChange(async (_event, session) => {
 const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
