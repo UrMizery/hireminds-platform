@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
+type Role = "guest" | "user" | "partner";
 
 type PartnerNavItem = {
 label: string;
@@ -22,35 +22,12 @@ const partnerNavItems: PartnerNavItem[] = [
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
-function normalizeRole(rawRole: unknown): UserRole | null {
-const normalized = String(rawRole || "").toLowerCase().trim();
-
-if (!normalized) return null;
-if (normalized === "admin") return "admin";
-if (normalized === "partner") return "partner";
-if (normalized === "employer") return "employer";
-
-if (
-normalized === "candidate" ||
-normalized === "career_passport" ||
-normalized === "career-passport" ||
-normalized === "user" ||
-normalized === "jobseeker" ||
-normalized === "job_seeker"
-) {
-return "candidate";
-}
-
-return null;
-}
-
 export default function SiteHeader() {
 const { t } = useLanguage();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
-const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
-const [role, setRole] = useState<UserRole>("guest");
+const [role, setRole] = useState<Role>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -58,28 +35,27 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function resolveSessionUser(sessionUser: any) {
+async function resolveHeaderState() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
+
 if (!mounted) return;
 
-if (!sessionUser) {
+const user = session?.user ?? null;
+
+if (!user) {
 setIsLoggedIn(false);
 setRole("guest");
-setCheckingAuth(false);
 return;
 }
 
 setIsLoggedIn(true);
 
-let nextRole: UserRole =
-normalizeRole(sessionUser.app_metadata?.role) ||
-normalizeRole(sessionUser.user_metadata?.role) ||
-normalizeRole(sessionUser.user_metadata?.account_type) ||
-"candidate";
-
-const email = sessionUser.email || "";
+const email = user.email || "";
+let nextRole: Role = "user";
 
 if (email) {
-try {
 const { data: partnerRow } = await supabase
 .from("partners")
 .select("contact_email")
@@ -91,30 +67,46 @@ if (!mounted) return;
 if (partnerRow?.contact_email) {
 nextRole = "partner";
 }
-} catch {
-// keep detected/default role
-}
 }
 
-if (!mounted) return;
 setRole(nextRole);
-setCheckingAuth(false);
 }
 
-async function init() {
-const {
-data: { session },
-} = await supabase.auth.getSession();
-
-await resolveSessionUser(session?.user ?? null);
-}
-
-init();
+resolveHeaderState();
 
 const {
 data: { subscription },
 } = supabase.auth.onAuthStateChange(async (_event, session) => {
-await resolveSessionUser(session?.user ?? null);
+if (!mounted) return;
+
+const user = session?.user ?? null;
+
+if (!user) {
+setIsLoggedIn(false);
+setRole("guest");
+return;
+}
+
+setIsLoggedIn(true);
+
+const email = user.email || "";
+let nextRole: Role = "user";
+
+if (email) {
+const { data: partnerRow } = await supabase
+.from("partners")
+.select("contact_email")
+.eq("contact_email", email)
+.maybeSingle<PartnerRow>();
+
+if (!mounted) return;
+
+if (partnerRow?.contact_email) {
+nextRole = "partner";
+}
+}
+
+setRole(nextRole);
 });
 
 return () => {
@@ -142,33 +134,16 @@ if (loadingLogout) return;
 
 try {
 setLoadingLogout(true);
-
-await supabase.auth.signOut({ scope: "global" });
-
-try {
-window.localStorage.clear();
-} catch {}
-
-try {
-window.sessionStorage.clear();
-} catch {}
+await supabase.auth.signOut();
 } catch (error) {
 console.error("Logout error:", error);
 } finally {
-window.location.replace("/");
+window.location.href = "/";
 }
 }
 
-const isCandidate = role === "candidate";
+const isUser = role === "user";
 const isPartner = role === "partner";
-const isAdmin = role === "admin";
-const isEmployer = role === "employer";
-
-const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin);
-const showCareerToolkit = isLoggedIn && (isCandidate || isAdmin);
-const showPartnerDashboard = isLoggedIn && (isPartner || isAdmin);
-const showPartnerTools = isLoggedIn && (isPartner || isAdmin);
-const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin);
 
 return (
 <header style={styles.header}>
@@ -182,7 +157,7 @@ HireMinds
 {t.home}
 </a>
 
-{!checkingAuth && !isLoggedIn ? (
+{!isLoggedIn ? (
 <a href="/sign-in" style={styles.link}>
 {t.signIn}
 </a>
@@ -202,25 +177,23 @@ HireMinds
 <div style={styles.rightNav}>
 {isLoggedIn ? (
 <>
-{showMyProfile ? (
 <a href="/profile" style={styles.link}>
 My Profile
 </a>
-) : null}
 
-{showCareerToolkit ? (
+{isUser ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
 ) : null}
 
-{showPartnerDashboard ? (
+{isPartner ? (
 <a href="/partner-dashboard" style={styles.link}>
 Partner Dashboard
 </a>
 ) : null}
 
-{showPartnerTools ? (
+{isPartner ? (
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
@@ -257,13 +230,6 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 
-{isEmployer ? (
-<a href="/employer-dashboard" style={styles.link}>
-Employer Dashboard
-</a>
-) : null}
-
-{showNotes ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
@@ -271,7 +237,6 @@ style={styles.notesButtonLike}
 >
 Notes
 </button>
-) : null}
 
 <button
 type="button"
