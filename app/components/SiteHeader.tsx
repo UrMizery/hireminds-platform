@@ -4,15 +4,15 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
+type HeaderRole = "guest" | "user" | "partner";
+
+type PartnerRow = {
+contact_email?: string | null;
+};
 
 type PartnerNavItem = {
 label: string;
 href: string;
-};
-
-type PartnerRow = {
-contact_email?: string | null;
 };
 
 const partnerNavItems: PartnerNavItem[] = [
@@ -22,140 +22,65 @@ const partnerNavItems: PartnerNavItem[] = [
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
-function normalizeRole(rawRole: unknown): UserRole {
-const normalizedRole = String(rawRole || "").toLowerCase().trim();
-
-if (normalizedRole === "admin") return "admin";
-if (normalizedRole === "partner") return "partner";
-if (normalizedRole === "employer") return "employer";
-
-if (
-normalizedRole === "candidate" ||
-normalizedRole === "career_passport" ||
-normalizedRole === "career-passport" ||
-normalizedRole === "user" ||
-normalizedRole === "jobseeker" ||
-normalizedRole === "job_seeker"
-) {
-return "candidate";
-}
-
-return "guest";
-}
-
 export default function SiteHeader() {
 const { t } = useLanguage();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
-const [checkingAuth, setCheckingAuth] = useState(true);
+const [role, setRole] = useState<HeaderRole>("guest");
 const [loadingLogout, setLoadingLogout] = useState(false);
-const [role, setRole] = useState<UserRole>("guest");
-const [partnersOpen, setPartnersOpen] = useState(false);
-
+const [toolsOpen, setToolsOpen] = useState(false);
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
 let mounted = true;
 
-async function checkAuth() {
+async function resolveHeaderState(sessionUser: { email?: string | null } | null) {
+if (!mounted) return;
+
+if (!sessionUser?.email) {
+setIsLoggedIn(false);
+setRole("guest");
+return;
+}
+
+setIsLoggedIn(true);
+
+let nextRole: HeaderRole = "user";
+
+try {
+const { data: partnerRow } = await supabase
+.from("partners")
+.select("contact_email")
+.ilike("contact_email", sessionUser.email)
+.maybeSingle<PartnerRow>();
+
+if (!mounted) return;
+
+if (partnerRow?.contact_email) {
+nextRole = "partner";
+}
+} catch {
+// keep default "user"
+}
+
+if (!mounted) return;
+setRole(nextRole);
+}
+
+async function init() {
 const {
 data: { session },
 } = await supabase.auth.getSession();
 
-const sessionUser = session?.user ?? null;
-
-if (!mounted) return;
-
-if (!sessionUser) {
-setIsLoggedIn(false);
-setRole("guest");
-setCheckingAuth(false);
-return;
+await resolveHeaderState(session?.user ?? null);
 }
 
-setIsLoggedIn(true);
-
-const rawRole =
-sessionUser.app_metadata?.role ||
-sessionUser.user_metadata?.role ||
-sessionUser.user_metadata?.account_type ||
-"candidate";
-
-let nextRole = normalizeRole(rawRole);
-
-// Only override to partner if the email exists in partners table.
-const email = sessionUser.email || "";
-
-if (email) {
-try {
-const { data: partnerRow } = await supabase
-.from("partners")
-.select("contact_email")
-.eq("contact_email", email)
-.maybeSingle<PartnerRow>();
-
-if (partnerRow?.contact_email) {
-nextRole = "partner";
-}
-} catch {
-// leave role as-is
-}
-}
-
-if (!mounted) return;
-
-setRole(nextRole);
-setCheckingAuth(false);
-}
-
-checkAuth();
+init();
 
 const {
 data: { subscription },
 } = supabase.auth.onAuthStateChange(async (_event, session) => {
-const sessionUser = session?.user ?? null;
-
-if (!mounted) return;
-
-if (!sessionUser) {
-setIsLoggedIn(false);
-setRole("guest");
-setCheckingAuth(false);
-return;
-}
-
-setIsLoggedIn(true);
-
-const rawRole =
-sessionUser.app_metadata?.role ||
-sessionUser.user_metadata?.role ||
-sessionUser.user_metadata?.account_type ||
-"candidate";
-
-let nextRole = normalizeRole(rawRole);
-
-const email = sessionUser.email || "";
-
-if (email) {
-try {
-const { data: partnerRow } = await supabase
-.from("partners")
-.select("contact_email")
-.eq("contact_email", email)
-.maybeSingle<PartnerRow>();
-
-if (partnerRow?.contact_email) {
-nextRole = "partner";
-}
-} catch {
-// leave role as-is
-}
-}
-
-if (!mounted) return;
-
-setRole(nextRole);
-setCheckingAuth(false);
+await resolveHeaderState(session?.user ?? null);
 });
 
 return () => {
@@ -168,7 +93,7 @@ useEffect(() => {
 function handleClickOutside(event: MouseEvent) {
 if (!dropdownRef.current) return;
 if (!dropdownRef.current.contains(event.target as Node)) {
-setPartnersOpen(false);
+setToolsOpen(false);
 }
 }
 
@@ -179,26 +104,20 @@ document.removeEventListener("mousedown", handleClickOutside);
 }, []);
 
 async function handleLogout() {
+if (loadingLogout) return;
+
 try {
 setLoadingLogout(true);
 await supabase.auth.signOut();
-} catch {
-// ignore
+} catch (error) {
+console.error("Logout error:", error);
 } finally {
 window.location.href = "/";
 }
 }
 
-const isCandidate = role === "candidate";
+const isUser = role === "user";
 const isPartner = role === "partner";
-const isAdmin = role === "admin";
-const isEmployer = role === "employer";
-
-const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin);
-const showCareerToolkit = isLoggedIn && (isCandidate || isAdmin);
-const showPartnerDashboard = isLoggedIn && (isPartner || isAdmin);
-const showPartnerTools = isLoggedIn && (isPartner || isAdmin);
-const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin);
 
 return (
 <header style={styles.header}>
@@ -207,18 +126,18 @@ return (
 HireMinds
 </a>
 
-<div style={styles.centerNav}>
+<nav style={styles.centerNav}>
 <a href="/" style={styles.link}>
 {t.home}
 </a>
 
-{!checkingAuth && !isLoggedIn ? (
+{!isLoggedIn ? (
 <a href="/sign-in" style={styles.link}>
 {t.signIn}
 </a>
 ) : null}
 
-{!checkingAuth && !isLoggedIn ? (
+{!isLoggedIn ? (
 <a href="/partner-with-hireminds" style={styles.link}>
 {t.partner}
 </a>
@@ -227,57 +146,55 @@ HireMinds
 <a href="/contact" style={styles.link}>
 {t.contact}
 </a>
-</div>
+</nav>
 
 <div style={styles.rightNav}>
 {isLoggedIn ? (
 <>
-{showMyProfile ? (
 <a href="/profile" style={styles.link}>
 My Profile
 </a>
-) : null}
 
-{showCareerToolkit ? (
+{isUser ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
 ) : null}
 
-{showPartnerDashboard ? (
+{isPartner ? (
 <a href="/partner-dashboard" style={styles.link}>
 Partner Dashboard
 </a>
 ) : null}
 
-{showPartnerTools ? (
+{isPartner ? (
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
-onClick={() => setPartnersOpen((prev) => !prev)}
+onClick={() => setToolsOpen((prev) => !prev)}
 style={styles.dropdownTrigger}
 aria-haspopup="menu"
-aria-expanded={partnersOpen}
+aria-expanded={toolsOpen}
 >
 Tools
 <span
 style={{
 ...styles.dropdownChevron,
-transform: partnersOpen ? "rotate(180deg)" : "rotate(0deg)",
+transform: toolsOpen ? "rotate(180deg)" : "rotate(0deg)",
 }}
 >
 ▼
 </span>
 </button>
 
-{partnersOpen ? (
+{toolsOpen ? (
 <div style={styles.dropdownMenu}>
 {partnerNavItems.map((item) => (
 <a
 key={item.href}
 href={item.href}
 style={styles.dropdownItem}
-onClick={() => setPartnersOpen(false)}
+onClick={() => setToolsOpen(false)}
 >
 {item.label}
 </a>
@@ -287,21 +204,13 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 
-{isEmployer ? (
-<a href="/employer-dashboard" style={styles.link}>
-Employer Dashboard
-</a>
-) : null}
-
-{showNotes ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
-style={styles.notesButtonLike}
+style={styles.notesButton}
 >
 Notes
 </button>
-) : null}
 
 <button
 type="button"
@@ -316,7 +225,7 @@ disabled={loadingLogout}
 
 <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
 
-{!checkingAuth && !isLoggedIn ? (
+{!isLoggedIn ? (
 <a href="/employer-partner-login" style={styles.link}>
 {t.employerPartnerSignIn}
 </a>
@@ -374,20 +283,6 @@ fontSize: "15px",
 cursor: "pointer",
 whiteSpace: "nowrap",
 },
-notesButtonLike: {
-border: "1px solid #a1a1aa",
-background: "#ffffff",
-color: "#111111",
-fontSize: "15px",
-fontWeight: 700,
-cursor: "pointer",
-whiteSpace: "nowrap",
-borderRadius: "999px",
-padding: "8px 22px",
-appearance: "none",
-WebkitAppearance: "none",
-boxShadow: "0 0 0 1px rgba(255,255,255,0.15) inset",
-},
 dropdownWrap: {
 position: "relative",
 display: "inline-flex",
@@ -435,10 +330,19 @@ borderRadius: "10px",
 whiteSpace: "nowrap",
 background: "transparent",
 },
-lockedLink: {
-color: "#7c7c85",
+notesButton: {
+border: "1px solid #a1a1aa",
+background: "#ffffff",
+color: "#111111",
 fontSize: "15px",
+fontWeight: 700,
+cursor: "pointer",
 whiteSpace: "nowrap",
+borderRadius: "999px",
+padding: "8px 22px",
+appearance: "none",
+WebkitAppearance: "none",
+boxShadow: "0 0 0 1px rgba(255,255,255,0.15) inset",
 },
 logoutButton: {
 background: "transparent",
@@ -449,5 +353,10 @@ cursor: "pointer",
 whiteSpace: "nowrap",
 borderRadius: "10px",
 padding: "8px 12px",
+},
+lockedLink: {
+color: "#7c7c85",
+fontSize: "15px",
+whiteSpace: "nowrap",
 },
 };
