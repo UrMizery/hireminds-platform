@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-type UserRole = "guest" | "candidate" | "partner"  | "admin";
+type UserRole = "guest" | "candidate" | "partner";
 
 type PartnerNavItem = {
 label: string;
@@ -22,9 +22,7 @@ const partnerNavItems: PartnerNavItem[] = [
 function normalizeRole(rawRole: unknown): UserRole {
 const normalizedRole = String(rawRole || "").toLowerCase().trim();
 
-if (normalizedRole === "admin") return "admin";
 if (normalizedRole === "partner") return "partner";
-if (normalizedRole === "employer") return "employer";
 
 if (
 normalizedRole === "candidate" ||
@@ -144,7 +142,6 @@ window.location.href = "/";
 
 const isCandidate = role === "candidate";
 const isPartner = role === "partner";
-const isAdmin = role === "admin";
 
 const partnerStickyRoutes = new Set([
 "/messages",
@@ -158,15 +155,11 @@ pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
 const showMyProfile = isLoggedIn && isCandidate;
-
 const showCareerToolkit = isLoggedIn && (isCandidate || isPartner);
-
 const showPartnerDashboard = isLoggedIn && (isPartner || isPartnerPage);
-
 const showPartnerTools = isLoggedIn && (isPartner || isPartnerPage);
-
 const showNotes = isLoggedIn && (isCandidate || isPartner || isPartnerPage);
- 
+
 return (
 <header style={styles.header}>
 <div style={styles.inner}>
