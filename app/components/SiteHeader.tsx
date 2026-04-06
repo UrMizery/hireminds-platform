@@ -148,6 +148,7 @@ const partnerStickyRoutes = new Set([
 "/partner-dashboard/career-map",
 "/partner-dashboard/workshop-resources",
 "/career-toolkit",
+"/profile",
 "/partner-dashboard/report-summary",
 ]);
 
