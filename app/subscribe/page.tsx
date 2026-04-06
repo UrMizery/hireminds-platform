@@ -143,11 +143,34 @@ setLoadingCheckout(false);
 async function handleLeave() {
 try {
 setLoadingLeave(true);
-await supabase.auth.signOut({scope: "global"});
+
+await supabase.auth.signOut();
+
+try {
+const keysToRemove: string[] = [];
+
+for (let i = 0; i < window.localStorage.length; i += 1) {
+const key = window.localStorage.key(i);
+if (key && key.includes("auth-token")) {
+keysToRemove.push(key);
+}
+}
+
+keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+} catch (storageError) {
+console.error("Local storage clear error:", storageError);
+}
+
+try {
+window.sessionStorage.clear();
+} catch (sessionError) {
+console.error("Session storage clear error:", sessionError);
+}
 } catch (error) {
 console.error("Leave error:", error);
 } finally {
 window.location.replace("/");
+}
 }
 }
 
