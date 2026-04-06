@@ -49,18 +49,49 @@ const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
+const [partnerEmailMatch, setPartnerEmailMatch] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
 let mounted = true;
 
-async function resolveUser(sessionUser: { id: string; email?: string | null; app_metadata?: any; user_metadata?: any } | null) {
+async function checkPartnerEmail(email?: string | null) {
+if (!email) {
+if (!mounted) return;
+setPartnerEmailMatch(false);
+return;
+}
+
+try {
+const { data: partnerRow } = await supabase
+.from("partners")
+.select("contact_email")
+.ilike("contact_email", email)
+.maybeSingle();
+
+if (!mounted) return;
+setPartnerEmailMatch(!!partnerRow?.contact_email);
+} catch (error) {
+console.error("Partner email check error:", error);
+if (!mounted) return;
+setPartnerEmailMatch(false);
+}
+}
+
+async function checkAuth() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
+
+const sessionUser = session?.user ?? null;
+
 if (!mounted) return;
 
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setPartnerEmailMatch(false);
 setCheckingAuth(false);
 return;
 }
@@ -73,31 +104,10 @@ sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "candidate";
 
-let resolvedRole = normalizeRole(rawRole);
-
-if (sessionUser.email) {
-const { data: partnerRow, error: partnerError } = await supabase
-.from("partners")
-.select("contact_email")
-.ilike("contact_email", sessionUser.email)
-.maybeSingle();
-
-if (!partnerError && partnerRow?.contact_email) {
-resolvedRole = "partner";
-}
-}
-
+setRole(normalizeRole(rawRole));
+await checkPartnerEmail(sessionUser.email);
 if (!mounted) return;
-setRole(resolvedRole);
 setCheckingAuth(false);
-}
-
-async function checkAuth() {
-const {
-data: { session },
-} = await supabase.auth.getSession();
-
-await resolveUser(session?.user ?? null);
 }
 
 checkAuth();
@@ -105,7 +115,30 @@ checkAuth();
 const {
 data: { subscription },
 } = supabase.auth.onAuthStateChange(async (_event, session) => {
-await resolveUser(session?.user ?? null);
+const sessionUser = session?.user ?? null;
+
+if (!mounted) return;
+
+if (!sessionUser) {
+setIsLoggedIn(false);
+setRole("guest");
+setPartnerEmailMatch(false);
+setCheckingAuth(false);
+return;
+}
+
+setIsLoggedIn(true);
+
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"candidate";
+
+setRole(normalizeRole(rawRole));
+await checkPartnerEmail(sessionUser.email);
+if (!mounted) return;
+setCheckingAuth(false);
 });
 
 return () => {
@@ -162,7 +195,7 @@ window.location.replace("/");
 }
 
 const isCandidate = role === "candidate";
-const isPartner = role === "partner";
+const isPartner = role === "partner" || partnerEmailMatch;
 const isAdmin = role === "admin";
 const isEmployer = role === "employer";
 
