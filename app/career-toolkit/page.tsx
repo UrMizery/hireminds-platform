@@ -3,11 +3,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
-type ProfileRow = {
-has_referral_access?: boolean | null;
-has_paid_access?: boolean | null;
-};
-
 export default function CareerToolkitPage() {
 const [checkingAccess, setCheckingAccess] = useState(true);
 
@@ -22,8 +17,6 @@ data: { session },
 if (!session?.user) {
 window.location.href = "/sign-in";
 return;
-}
-
 }
 
 if (!mounted) return;
@@ -143,7 +136,9 @@ Open New Opportunities Resume Generator
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-You Are Your Brand. Build It With Intention. Create stronger professional summaries, bios, and enhanced resume bullet points with polished wording, stronger action verbs, and career-ready branding language.
+You Are Your Brand. Build It With Intention. Create stronger professional
+summaries, bios, and enhanced resume bullet points with polished wording,
+stronger action verbs, and career-ready branding language.
 </p>
 <a
 href="/career-toolkit/professional-branding-generator"
@@ -159,7 +154,9 @@ Open Professional Branding Generator
 <span style={styles.liveTag}>New</span>
 </div>
 <p style={styles.featureText}>
-Create polished letters for career moves, workplace communication, follow-ups, requests, resignations, and other professional moments that matter.
+Create polished letters for career moves, workplace communication,
+follow-ups, requests, resignations, and other professional moments that
+matter.
 </p>
 <a
 href="/career-toolkit/employer-follow-up-generator"
@@ -251,9 +248,7 @@ Open Budget Generator
 Estimate drive time, walking time, commute distance, and whether a route
 is on a bus line. This feature is coming soon.
 </p>
-<span style={styles.lockedToolButton}>
-Coming Soon 🔒
-</span>
+<span style={styles.lockedToolButton}>Coming Soon 🔒</span>
 </div>
 </div>
 </section>
