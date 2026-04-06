@@ -22,6 +22,37 @@ e.preventDefault();
 setLoading(true);
 setMessage("");
 
+const trimmedReferralCode = referralCode.trim();
+
+let hasReferralAccess = false;
+let accessTier: "referral" | "limited" = "limited";
+let normalizedReferralCode: string | null = null;
+
+if (trimmedReferralCode) {
+const { data: referralRow, error: referralError } = await supabase
+.from("referral_codes")
+.select("code, is_active")
+.ilike("code", trimmedReferralCode)
+.eq("is_active", true)
+.maybeSingle();
+
+if (referralError) {
+setMessage(referralError.message);
+setLoading(false);
+return;
+}
+
+if (referralRow?.code) {
+hasReferralAccess = true;
+accessTier = "referral";
+normalizedReferralCode = referralRow.code;
+} else {
+hasReferralAccess = false;
+accessTier = "limited";
+normalizedReferralCode = trimmedReferralCode;
+}
+}
+
 const { data, error } = await supabase.auth.signUp({
 email,
 password,
@@ -31,9 +62,12 @@ full_name: fullName,
 phone: phone || null,
 city: city || null,
 state_name: stateName || null,
-referral_code: referralCode || null,
+referral_code: normalizedReferralCode || null,
 heard_about_us: heardAboutUs || null,
 heard_about_us_other: heardAboutUsOther || null,
+has_referral_access: hasReferralAccess,
+has_paid_access: false,
+access_tier: accessTier,
 },
 },
 });
@@ -61,9 +95,13 @@ phone: phone || null,
 email: email,
 city: city || null,
 state: stateName || null,
-referral_code: referralCode || null,
+referral_code: normalizedReferralCode || null,
 heard_about_us: heardAboutUs || null,
 heard_about_us_other: heardAboutUsOther || null,
+has_referral_access: hasReferralAccess,
+has_paid_access: false,
+access_tier: accessTier,
+subscription_status: null,
 });
 
 if (profileError) {
@@ -72,13 +110,11 @@ setLoading(false);
 return;
 }
 
-const { error: activityError } = await supabase
-.from("user_activity")
-.insert({
+const { error: activityError } = await supabase.from("user_activity").insert({
 user_id: user.id,
 full_name: fullName,
 email: email,
-referral_code: referralCode || null,
+referral_code: normalizedReferralCode || null,
 event_type: "signup",
 tool_name: null,
 page_name: "sign-up",
@@ -92,13 +128,38 @@ return;
 }
 
 setLoading(false);
+
+if (hasReferralAccess) {
 window.location.href = "/profile";
+return;
+}
+
+window.location.href = "/profile?access=limited";
 }
 
 return (
 <main style={styles.page}>
 <form onSubmit={handleSignUp} style={styles.card}>
 <h1 style={styles.title}>Create Career Passport / Sign Up</h1>
+
+<p style={styles.introText}>
+Create your HireMinds account to begin building your Career Passport,
+exploring the Career Toolkit, and accessing guided career support tools.
+</p>
+
+<div style={styles.noticeBox}>
+<p style={styles.noticeTitle}>Access Options</p>
+<p style={styles.noticeText}>
+Have a referral code? Enter it below for sponsored access. No referral
+code? You can still create your account and explore HireMinds.
+Full access is <strong>$24.99/month</strong>.
+</p>
+<p style={styles.noticeText}>
+Without sponsored or paid access, you may explore tools, but saving,
+printing, exporting, and finalizing premium generators, analyzers,
+guides, and outputs will be locked until you upgrade.
+</p>
+</div>
 
 <input
 placeholder="Full Name"
@@ -158,15 +219,15 @@ style={styles.passwordToggle}
 </div>
 
 <input
-placeholder="Referral Code (Optional)"
+placeholder="Referral Code"
 value={referralCode}
 onChange={(e) => setReferralCode(e.target.value)}
 style={styles.input}
 />
 
 <p style={styles.helperText}>
-Enter a code if one was provided by your organization, employer,
-school, or program.
+Enter a referral code if one was provided by your organization, employer,
+school, workshop, or program for sponsored access.
 </p>
 
 <select
@@ -174,15 +235,11 @@ value={heardAboutUs}
 onChange={(e) => setHeardAboutUs(e.target.value)}
 style={styles.input}
 >
-<option value="">How did you hear about us? (Optional)</option>
+<option value="">How did you hear about us?</option>
 <option value="found_on_my_own">I found HireMinds on my own</option>
-<option value="ricannect_direct_staffing">
-RicanNECT Direct Staffing
-</option>
+<option value="ricannect_direct_staffing">RicanNECT Direct Staffing</option>
 <option value="job_fair">Job Fair</option>
-<option value="organization_or_program">
-Organization or Program
-</option>
+<option value="organization_or_program">Organization or Program</option>
 <option value="employer">Employer</option>
 <option value="friend_or_family">Friend or Family</option>
 <option value="social_media">Social Media</option>
@@ -202,6 +259,11 @@ style={styles.input}
 {loading ? "Creating Account..." : "Create Career Passport"}
 </button>
 
+<p style={styles.bottomText}>
+Sponsored access is unlocked with a valid referral code. Full access is
+also available through monthly subscription.
+</p>
+
 {message ? <p style={styles.message}>{message}</p> : null}
 </form>
 </main>
@@ -219,7 +281,7 @@ backgroundColor: "#000000",
 },
 card: {
 width: "100%",
-maxWidth: "520px",
+maxWidth: "560px",
 backgroundColor: "#111111",
 padding: "32px",
 borderRadius: "20px",
@@ -234,7 +296,34 @@ fontSize: "28px",
 fontWeight: 700,
 color: "#ffffff",
 textAlign: "center",
-marginBottom: "8px",
+marginBottom: "4px",
+},
+introText: {
+fontSize: "14px",
+color: "#d1d5db",
+textAlign: "center",
+lineHeight: 1.6,
+margin: "0 0 4px",
+},
+noticeBox: {
+background: "linear-gradient(180deg, #161616 0%, #1b1b1b 100%)",
+border: "1px solid #2f2f2f",
+borderRadius: "16px",
+padding: "16px",
+display: "grid",
+gap: "8px",
+},
+noticeTitle: {
+margin: 0,
+fontSize: "14px",
+fontWeight: 700,
+color: "#ffffff",
+},
+noticeText: {
+margin: 0,
+fontSize: "13px",
+color: "#d1d5db",
+lineHeight: 1.6,
 },
 input: {
 width: "100%",
@@ -252,7 +341,7 @@ fontSize: "13px",
 color: "#d1d5db",
 marginTop: "-8px",
 marginBottom: "4px",
-lineHeight: 1.4,
+lineHeight: 1.5,
 },
 passwordWrap: {
 position: "relative",
@@ -295,6 +384,13 @@ fontSize: "15px",
 fontWeight: 700,
 cursor: "pointer",
 marginTop: "8px",
+},
+bottomText: {
+margin: 0,
+fontSize: "12px",
+color: "#9ca3af",
+textAlign: "center",
+lineHeight: 1.5,
 },
 message: {
 marginTop: "8px",
