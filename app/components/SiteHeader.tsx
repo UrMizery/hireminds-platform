@@ -158,7 +158,7 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
-const showMyProfile = isLoggedIn && (isCandidat);
+const showMyProfile = isLoggedIn && (isCandidat || idAdmin);
 
 const showCareerToolkit =
 isLoggedIn && !isEmployer && (isCandidate || isPartner);
