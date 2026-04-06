@@ -24,11 +24,16 @@ setMessage("");
 
 const trimmedReferralCode = referralCode.trim();
 
+if (!trimmedReferralCode) {
+setMessage("A valid referral code is required to access HireMinds.");
+setLoading(false);
+return;
+}
+
 let hasReferralAccess = false;
 let accessTier: "referral" | "limited" = "limited";
 let normalizedReferralCode: string | null = null;
 
-if (trimmedReferralCode) {
 const { data: referralRow, error: referralError } = await supabase
 .from("referral_codes")
 .select("code, is_active")
@@ -42,16 +47,17 @@ setLoading(false);
 return;
 }
 
-if (referralRow?.code) {
+if (!referralRow?.code) {
+setMessage(
+"This referral code is not active or is not recognized. Please use a valid referral code. For subscription questions, please use the contact form."
+);
+setLoading(false);
+return;
+}
+
 hasReferralAccess = true;
 accessTier = "referral";
 normalizedReferralCode = referralRow.code;
-} else {
-hasReferralAccess = false;
-accessTier = "limited";
-normalizedReferralCode = trimmedReferralCode;
-}
-}
 
 const { data, error } = await supabase.auth.signUp({
 email,
@@ -128,13 +134,7 @@ return;
 }
 
 setLoading(false);
-
-if (hasReferralAccess) {
 window.location.href = "/profile";
-return;
-}
-
-window.location.href = "/subscribe";
 }
 
 return (
@@ -143,21 +143,18 @@ return (
 <h1 style={styles.title}>Create Career Passport / Sign Up</h1>
 
 <p style={styles.introText}>
-Create your HireMinds account to begin building your Career Passport,
-exploring the Career Toolkit, and accessing guided career support tools.
+Access to HireMinds is currently available by valid referral code only.
+If you have questions about subscription access, please use the contact form.
 </p>
 
 <div style={styles.noticeBox}>
-<p style={styles.noticeTitle}>Access Options</p>
+<p style={styles.noticeTitle}>Referral Access Required</p>
 <p style={styles.noticeText}>
-Have a referral code? Enter it below for sponsored access. No referral
-code? You can still create your account and explore HireMinds.
-Full access is <strong>$24.99/month</strong>.
+A valid referral code is required to create an account and access HireMinds.
 </p>
 <p style={styles.noticeText}>
-Without sponsored or paid access, you may explore tools, but saving,
-printing, exporting, and finalizing premium generators, analyzers,
-guides, and outputs will be locked until you upgrade.
+If you do not have an active referral code and want to ask about subscription
+access, please use the contact form.
 </p>
 </div>
 
@@ -223,11 +220,12 @@ placeholder="Referral Code"
 value={referralCode}
 onChange={(e) => setReferralCode(e.target.value)}
 style={styles.input}
+required
 />
 
 <p style={styles.helperText}>
-Enter a referral code if one was provided by your organization, employer,
-school, workshop, or program for sponsored access.
+Enter the valid referral code provided by your organization, employer,
+school, workshop, or program.
 </p>
 
 <select
@@ -260,8 +258,8 @@ style={styles.input}
 </button>
 
 <p style={styles.bottomText}>
-Sponsored access is unlocked with a valid referral code. Full access is
-also available through monthly subscription.
+Access is available with a valid referral code. For subscription questions,
+please use the contact form.
 </p>
 
 {message ? <p style={styles.message}>{message}</p> : null}
