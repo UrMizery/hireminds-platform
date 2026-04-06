@@ -24,7 +24,7 @@ export default function SiteHeader() {
 const { t } = useLanguage();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
-const [isPartner, setIsPartner] = useState(false);
+const [isPartnerAccount, setIsPartnerAccount] = useState(false);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [toolsOpen, setToolsOpen] = useState(false);
 
@@ -33,68 +33,54 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function loadHeaderState() {
+async function resolveHeaderState(sessionUser: { email?: string | null } | null) {
+if (!mounted) return;
+
+if (!sessionUser?.email) {
+setIsLoggedIn(false);
+setIsPartnerAccount(false);
+return;
+}
+
+setIsLoggedIn(true);
+
+try {
+const { data: partnerRow, error } = await supabase
+.from("partners")
+.select("contact_email")
+.ilike("contact_email", sessionUser.email)
+.maybeSingle<PartnerRow>();
+
+if (!mounted) return;
+
+if (error) {
+console.error("Partner lookup error:", error);
+setIsPartnerAccount(false);
+return;
+}
+
+setIsPartnerAccount(!!partnerRow?.contact_email);
+} catch (error) {
+console.error("Header state error:", error);
+if (!mounted) return;
+setIsPartnerAccount(false);
+}
+}
+
+async function init() {
 const {
 data: { session },
 } = await supabase.auth.getSession();
 
-const user = session?.user ?? null;
-
-if (!mounted) return;
-
-if (!user?.email) {
-setIsLoggedIn(false);
-setIsPartner(false);
-return;
+await resolveHeaderState(session?.user ?? null);
 }
 
-setIsLoggedIn(true);
-
-try {
-const { data: partnerRow } = await supabase
-.from("partners")
-.select("contact_email")
-.ilike("contact_email", user.email)
-.maybeSingle<PartnerRow>();
-
-if (!mounted) return;
-setIsPartner(!!partnerRow?.contact_email);
-} catch {
-if (!mounted) return;
-setIsPartner(false);
-}
-}
-
-loadHeaderState();
+init();
 
 const {
 data: { subscription },
 } = supabase.auth.onAuthStateChange(async (_event, session) => {
-const user = session?.user ?? null;
-
-if (!mounted) return;
-
-if (!user?.email) {
-setIsLoggedIn(false);
-setIsPartner(false);
-return;
-}
-
-setIsLoggedIn(true);
-
-try {
-const { data: partnerRow } = await supabase
-.from("partners")
-.select("contact_email")
-.ilike("contact_email", user.email)
-.maybeSingle<PartnerRow>();
-
-if (!mounted) return;
-setIsPartner(!!partnerRow?.contact_email);
-} catch {
-if (!mounted) return;
-setIsPartner(false);
-}
+await resolveHeaderState(session?.user ?? null);
 });
 
 return () => {
@@ -166,19 +152,19 @@ HireMinds
 My Profile
 </a>
 
-{!isPartner ? (
+{!isPartnerAccount ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
 ) : null}
 
-{isPartner ? (
+{isPartnerAccount ? (
 <a href="/partner-dashboard" style={styles.link}>
 Partner Dashboard
 </a>
 ) : null}
 
-{isPartner ? (
+{isPartnerAccount ? (
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
