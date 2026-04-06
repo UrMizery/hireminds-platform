@@ -49,11 +49,35 @@ const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
+const [partnerEmailMatch, setPartnerEmailMatch] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
 let mounted = true;
+
+async function checkPartnerEmail(email?: string | null) {
+if (!email) {
+if (!mounted) return;
+setPartnerEmailMatch(false);
+return;
+}
+
+try {
+const { data: partnerRow } = await supabase
+.from("partners")
+.select("contact_email")
+.ilike("contact_email", email)
+.maybeSingle();
+
+if (!mounted) return;
+setPartnerEmailMatch(!!partnerRow?.contact_email);
+} catch (error) {
+console.error("Partner email check error:", error);
+if (!mounted) return;
+setPartnerEmailMatch(false);
+}
+}
 
 async function checkAuth() {
 const {
@@ -67,6 +91,7 @@ if (!mounted) return;
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setPartnerEmailMatch(false);
 setCheckingAuth(false);
 return;
 }
@@ -80,6 +105,7 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
+await checkPartnerEmail(sessionUser.email);
 setCheckingAuth(false);
 }
 
@@ -87,7 +113,7 @@ checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange((_event, session) => {
+} = supabase.auth.onAuthStateChange(async (_event, session) => {
 const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
@@ -95,6 +121,7 @@ if (!mounted) return;
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setPartnerEmailMatch(false);
 setCheckingAuth(false);
 return;
 }
@@ -108,6 +135,7 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
+await checkPartnerEmail(sessionUser.email);
 setCheckingAuth(false);
 });
 
@@ -143,7 +171,7 @@ window.location.href = "/";
 }
 
 const isCandidate = role === "candidate";
-const isPartner = role === "partner";
+const isPartner = role === "partner" || partnerEmailMatch;
 const isAdmin = role === "admin";
 const isEmployer = role === "employer";
 
@@ -162,7 +190,7 @@ const showMyProfile = isLoggedIn && (isCandidate || isPartner);
 
 const showCareerToolkit =
 isLoggedIn && !isEmployer && (isCandidate || isPartner);
-  
+
 const showPartnerDashboard =
 isLoggedIn && (isPartner || isAdmin || isPartnerPage);
 
