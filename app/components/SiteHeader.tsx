@@ -167,11 +167,33 @@ document.removeEventListener("mousedown", handleClickOutside);
 async function handleLogout() {
 try {
 setLoadingLogout(true);
+
 await supabase.auth.signOut();
-} catch {
-// ignore
+
+try {
+const keysToRemove: string[] = [];
+
+for (let i = 0; i < window.localStorage.length; i += 1) {
+const key = window.localStorage.key(i);
+if (key && key.includes("auth-token")) {
+keysToRemove.push(key);
+}
+}
+
+keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+} catch (storageError) {
+console.error("Local storage clear error:", storageError);
+}
+
+try {
+window.sessionStorage.clear();
+} catch (sessionError) {
+console.error("Session storage clear error:", sessionError);
+}
+} catch (error) {
+console.error("Logout error:", error);
 } finally {
-window.location.href = "/";
+window.location.replace("/");
 }
 }
 
