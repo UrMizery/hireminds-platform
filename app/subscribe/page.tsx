@@ -19,7 +19,6 @@ const [loadingLeave, setLoadingLeave] = useState(false);
 const [message, setMessage] = useState("");
 const [email, setEmail] = useState("");
 const [userId, setUserId] = useState("");
-const [fullName, setFullName] = useState("");
 
 const [demoName, setDemoName] = useState("Your Name");
 const [demoHeadline, setDemoHeadline] = useState("Career Passport Member");
@@ -41,6 +40,7 @@ async function loadPage() {
 setLoading(true);
 setMessage("");
 
+try {
 const {
 data: { session },
 error: sessionError,
@@ -75,7 +75,6 @@ return;
 }
 
 if (profileRow?.full_name) {
-setFullName(profileRow.full_name);
 setDemoName(profileRow.full_name);
 }
 
@@ -88,6 +87,12 @@ return;
 }
 
 setLoading(false);
+} catch (error) {
+console.error("Subscribe page load error:", error);
+if (!mounted) return;
+setMessage("Unable to load subscription page.");
+setLoading(false);
+}
 }
 
 loadPage();
@@ -134,7 +139,7 @@ return;
 setMessage("Checkout session could not be created.");
 setLoadingCheckout(false);
 } catch (error) {
-console.error(error);
+console.error("Checkout start error:", error);
 setMessage("Something went wrong while starting checkout.");
 setLoadingCheckout(false);
 }
@@ -170,7 +175,6 @@ console.error("Session storage clear error:", sessionError);
 console.error("Leave error:", error);
 } finally {
 window.location.replace("/");
-}
 }
 }
 
@@ -251,7 +255,7 @@ and keep your career materials organized in one place.
 </div>
 
 <div style={styles.featureCard}>
-<h3 style={styles.featureTitle}>Career Toolkit</h3>
+<h3 style={styles.featureTitle}>Career ToolKit</h3>
 <p style={styles.featureText}>
 Access resume generators, cover letter tools, interview prep,
 analyzers, guides, and practical resources built to help you move forward.
@@ -348,7 +352,9 @@ your subscription is active.
 <div style={styles.resumePreview}>
 <div style={styles.resumeSheet}>
 <p style={styles.resumeName}>{demoName || "Your Name"}</p>
-<p style={styles.resumeHeadline}>{demoHeadline || "Career Passport Member"}</p>
+<p style={styles.resumeHeadline}>
+{demoHeadline || "Career Passport Member"}
+</p>
 
 <div style={styles.resumeSection}>
 <p style={styles.resumeSectionTitle}>Skills</p>
