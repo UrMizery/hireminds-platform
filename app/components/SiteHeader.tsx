@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-type Role = "guest" | "user" | "partner";
+type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
 
 type PartnerNavItem = {
 label: string;
@@ -22,12 +22,34 @@ const partnerNavItems: PartnerNavItem[] = [
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
+function normalizeRole(rawRole: unknown): UserRole {
+const normalizedRole = String(rawRole || "").toLowerCase().trim();
+
+if (normalizedRole === "admin") return "admin";
+if (normalizedRole === "partner") return "partner";
+if (normalizedRole === "employer") return "employer";
+
+if (
+normalizedRole === "candidate" ||
+normalizedRole === "career_passport" ||
+normalizedRole === "career-passport" ||
+normalizedRole === "user" ||
+normalizedRole === "jobseeker" ||
+normalizedRole === "job_seeker"
+) {
+return "candidate";
+}
+
+return "guest";
+}
+
 export default function SiteHeader() {
 const { t } = useLanguage();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
+const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
-const [role, setRole] = useState<Role>("guest");
+const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -35,78 +57,105 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function resolveHeaderState() {
+async function checkAuth() {
 const {
 data: { session },
 } = await supabase.auth.getSession();
 
+const sessionUser = session?.user ?? null;
+
 if (!mounted) return;
 
-const user = session?.user ?? null;
-
-if (!user) {
+if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setCheckingAuth(false);
 return;
 }
 
 setIsLoggedIn(true);
 
-const email = user.email || "";
-let nextRole: Role = "user";
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"candidate";
+
+let nextRole = normalizeRole(rawRole);
+
+// Only override to partner if the email exists in partners table.
+const email = sessionUser.email || "";
 
 if (email) {
+try {
 const { data: partnerRow } = await supabase
 .from("partners")
 .select("contact_email")
 .eq("contact_email", email)
 .maybeSingle<PartnerRow>();
 
-if (!mounted) return;
-
 if (partnerRow?.contact_email) {
 nextRole = "partner";
 }
+} catch {
+// leave role as-is
 }
+}
+
+if (!mounted) return;
 
 setRole(nextRole);
+setCheckingAuth(false);
 }
 
-resolveHeaderState();
+checkAuth();
 
 const {
 data: { subscription },
 } = supabase.auth.onAuthStateChange(async (_event, session) => {
+const sessionUser = session?.user ?? null;
+
 if (!mounted) return;
 
-const user = session?.user ?? null;
-
-if (!user) {
+if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setCheckingAuth(false);
 return;
 }
 
 setIsLoggedIn(true);
 
-const email = user.email || "";
-let nextRole: Role = "user";
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"candidate";
+
+let nextRole = normalizeRole(rawRole);
+
+const email = sessionUser.email || "";
 
 if (email) {
+try {
 const { data: partnerRow } = await supabase
 .from("partners")
 .select("contact_email")
 .eq("contact_email", email)
 .maybeSingle<PartnerRow>();
 
-if (!mounted) return;
-
 if (partnerRow?.contact_email) {
 nextRole = "partner";
 }
+} catch {
+// leave role as-is
+}
 }
 
+if (!mounted) return;
+
 setRole(nextRole);
+setCheckingAuth(false);
 });
 
 return () => {
@@ -130,20 +179,26 @@ document.removeEventListener("mousedown", handleClickOutside);
 }, []);
 
 async function handleLogout() {
-if (loadingLogout) return;
-
 try {
 setLoadingLogout(true);
 await supabase.auth.signOut();
-} catch (error) {
-console.error("Logout error:", error);
+} catch {
+// ignore
 } finally {
 window.location.href = "/";
 }
 }
 
-const isUser = role === "user";
+const isCandidate = role === "candidate";
 const isPartner = role === "partner";
+const isAdmin = role === "admin";
+const isEmployer = role === "employer";
+
+const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin);
+const showCareerToolkit = isLoggedIn && (isCandidate || isAdmin);
+const showPartnerDashboard = isLoggedIn && (isPartner || isAdmin);
+const showPartnerTools = isLoggedIn && (isPartner || isAdmin);
+const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin);
 
 return (
 <header style={styles.header}>
@@ -157,13 +212,13 @@ HireMinds
 {t.home}
 </a>
 
-{!isLoggedIn ? (
+{!checkingAuth && !isLoggedIn ? (
 <a href="/sign-in" style={styles.link}>
 {t.signIn}
 </a>
 ) : null}
 
-{!isLoggedIn ? (
+{!checkingAuth && !isLoggedIn ? (
 <a href="/partner-with-hireminds" style={styles.link}>
 {t.partner}
 </a>
@@ -177,23 +232,25 @@ HireMinds
 <div style={styles.rightNav}>
 {isLoggedIn ? (
 <>
+{showMyProfile ? (
 <a href="/profile" style={styles.link}>
 My Profile
 </a>
+) : null}
 
-{isUser ? (
+{showCareerToolkit ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
 ) : null}
 
-{isPartner ? (
+{showPartnerDashboard ? (
 <a href="/partner-dashboard" style={styles.link}>
 Partner Dashboard
 </a>
 ) : null}
 
-{isPartner ? (
+{showPartnerTools ? (
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
@@ -230,6 +287,13 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 
+{isEmployer ? (
+<a href="/employer-dashboard" style={styles.link}>
+Employer Dashboard
+</a>
+) : null}
+
+{showNotes ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
@@ -237,6 +301,7 @@ style={styles.notesButtonLike}
 >
 Notes
 </button>
+) : null}
 
 <button
 type="button"
@@ -251,7 +316,7 @@ disabled={loadingLogout}
 
 <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
 
-{!isLoggedIn ? (
+{!checkingAuth && !isLoggedIn ? (
 <a href="/employer-partner-login" style={styles.link}>
 {t.employerPartnerSignIn}
 </a>
