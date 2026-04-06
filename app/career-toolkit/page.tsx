@@ -24,24 +24,6 @@ window.location.href = "/sign-in";
 return;
 }
 
-const { data: profileRow, error } = await supabase
-.from("candidate_profiles")
-.select("has_referral_access, has_paid_access")
-.eq("user_id", session.user.id)
-.maybeSingle<ProfileRow>();
-
-if (error) {
-console.error("Career Toolkit access check error:", error);
-window.location.href = "/subscribe";
-return;
-}
-
-const hasFullAccess =
-!!profileRow?.has_referral_access || !!profileRow?.has_paid_access;
-
-if (!hasFullAccess) {
-window.location.href = "/subscribe";
-return;
 }
 
 if (!mounted) return;
