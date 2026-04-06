@@ -236,7 +236,7 @@ they can revisit, refine, and grow with over time.
 <h2 style={styles.statsTitle}>A growing platform built for real movement</h2>
 <p style={styles.statsIntro}>
 These numbers reflect ongoing platform reach, engagement, and user growth.
-They are designed to show real momentum over time, not monthly resets.
+They are designed to show real momentum.
 </p>
 </div>
 
