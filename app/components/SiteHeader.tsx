@@ -4,8 +4,6 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-type HeaderRole = "guest" | "user" | "partner";
-
 type PartnerRow = {
 contact_email?: string | null;
 };
@@ -26,61 +24,77 @@ export default function SiteHeader() {
 const { t } = useLanguage();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
-const [role, setRole] = useState<HeaderRole>("guest");
+const [isPartner, setIsPartner] = useState(false);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [toolsOpen, setToolsOpen] = useState(false);
+
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
 let mounted = true;
 
-async function resolveHeaderState(sessionUser: { email?: string | null } | null) {
+async function loadHeaderState() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
+
+const user = session?.user ?? null;
+
 if (!mounted) return;
 
-if (!sessionUser?.email) {
+if (!user?.email) {
 setIsLoggedIn(false);
-setRole("guest");
+setIsPartner(false);
 return;
 }
 
 setIsLoggedIn(true);
 
-let nextRole: HeaderRole = "user";
+try {
+const { data: partnerRow } = await supabase
+.from("partners")
+.select("contact_email")
+.ilike("contact_email", user.email)
+.maybeSingle<PartnerRow>();
+
+if (!mounted) return;
+setIsPartner(!!partnerRow?.contact_email);
+} catch {
+if (!mounted) return;
+setIsPartner(false);
+}
+}
+
+loadHeaderState();
+
+const {
+data: { subscription },
+} = supabase.auth.onAuthStateChange(async (_event, session) => {
+const user = session?.user ?? null;
+
+if (!mounted) return;
+
+if (!user?.email) {
+setIsLoggedIn(false);
+setIsPartner(false);
+return;
+}
+
+setIsLoggedIn(true);
 
 try {
 const { data: partnerRow } = await supabase
 .from("partners")
 .select("contact_email")
-.ilike("contact_email", sessionUser.email)
+.ilike("contact_email", user.email)
 .maybeSingle<PartnerRow>();
 
 if (!mounted) return;
-
-if (partnerRow?.contact_email) {
-nextRole = "partner";
-}
+setIsPartner(!!partnerRow?.contact_email);
 } catch {
-// keep default "user"
-}
-
 if (!mounted) return;
-setRole(nextRole);
+setIsPartner(false);
 }
-
-async function init() {
-const {
-data: { session },
-} = await supabase.auth.getSession();
-
-await resolveHeaderState(session?.user ?? null);
-}
-
-init();
-
-const {
-data: { subscription },
-} = supabase.auth.onAuthStateChange(async (_event, session) => {
-await resolveHeaderState(session?.user ?? null);
 });
 
 return () => {
@@ -116,9 +130,6 @@ window.location.href = "/";
 }
 }
 
-const isUser = role === "user";
-const isPartner = role === "partner";
-
 return (
 <header style={styles.header}>
 <div style={styles.inner}>
@@ -126,7 +137,7 @@ return (
 HireMinds
 </a>
 
-<nav style={styles.centerNav}>
+<div style={styles.centerNav}>
 <a href="/" style={styles.link}>
 {t.home}
 </a>
@@ -146,7 +157,7 @@ HireMinds
 <a href="/contact" style={styles.link}>
 {t.contact}
 </a>
-</nav>
+</div>
 
 <div style={styles.rightNav}>
 {isLoggedIn ? (
@@ -155,7 +166,7 @@ HireMinds
 My Profile
 </a>
 
-{isUser ? (
+{!isPartner ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
@@ -299,8 +310,6 @@ whiteSpace: "nowrap",
 display: "inline-flex",
 alignItems: "center",
 gap: "6px",
-appearance: "none",
-WebkitAppearance: "none",
 },
 dropdownChevron: {
 fontSize: "10px",
@@ -340,9 +349,6 @@ cursor: "pointer",
 whiteSpace: "nowrap",
 borderRadius: "999px",
 padding: "8px 22px",
-appearance: "none",
-WebkitAppearance: "none",
-boxShadow: "0 0 0 1px rgba(255,255,255,0.15) inset",
 },
 logoutButton: {
 background: "transparent",
