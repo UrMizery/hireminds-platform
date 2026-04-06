@@ -49,21 +49,18 @@ error: sessionError,
 if (!mounted) return;
 
 if (sessionError || !session?.user) {
-setLoading(false);
+window.location.href = "/sign-in";
 return;
 }
 
 const sessionUser = session.user;
-const sessionEmail = sessionUser.email || "";
-const sessionUserId = sessionUser.id;
-
-setEmail(sessionEmail);
-setUserId(sessionUserId);
+setEmail(sessionUser.email || "");
+setUserId(sessionUser.id);
 
 const { data: profileRow, error: profileError } = await supabase
 .from("candidate_profiles")
 .select("user_id, full_name, email, has_referral_access, has_paid_access, access_tier")
-.eq("user_id", sessionUserId)
+.eq("user_id", sessionUser.id)
 .maybeSingle<ProfileRow>();
 
 if (!mounted) return;
@@ -148,29 +145,7 @@ setLoadingCheckout(false);
 async function handleLeave() {
 try {
 setLoadingLeave(true);
-
 await supabase.auth.signOut();
-
-try {
-const keysToRemove: string[] = [];
-
-for (let i = 0; i < window.localStorage.length; i += 1) {
-const key = window.localStorage.key(i);
-if (key && key.includes("auth-token")) {
-keysToRemove.push(key);
-}
-}
-
-keysToRemove.forEach((key) => window.localStorage.removeItem(key));
-} catch (storageError) {
-console.error("Local storage clear error:", storageError);
-}
-
-try {
-window.sessionStorage.clear();
-} catch (sessionError) {
-console.error("Session storage clear error:", sessionError);
-}
 } catch (error) {
 console.error("Leave error:", error);
 } finally {
@@ -194,7 +169,7 @@ return (
 <p style={styles.kicker}>Unlock Full HireMinds Access</p>
 <h1 style={styles.title}>Complete your subscription to continue</h1>
 <p style={styles.subtitle}>
-Build your Career Passport, unlock the Career Toolkit, save your work,
+Build your Career Passport, unlock the Career ToolKit, save your work,
 and access the full HireMinds experience designed to support stronger
 visibility, readiness, and career momentum.
 </p>
