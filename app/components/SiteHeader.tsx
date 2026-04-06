@@ -11,6 +11,10 @@ label: string;
 href: string;
 };
 
+type PartnerRow = {
+contact_email?: string | null;
+};
+
 const partnerNavItems: PartnerNavItem[] = [
 { label: "Messages", href: "/messages" },
 { label: "Career Map", href: "/partner-dashboard/career-map" },
@@ -18,25 +22,25 @@ const partnerNavItems: PartnerNavItem[] = [
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
-function normalizeRole(rawRole: unknown): UserRole {
-const normalizedRole = String(rawRole || "").toLowerCase().trim();
+function normalizeRole(rawRole: unknown): UserRole | null {
+const normalized = String(rawRole || "").toLowerCase().trim();
 
-if (normalizedRole === "admin") return "admin";
-if (normalizedRole === "partner") return "partner";
-if (normalizedRole === "employer") return "employer";
-
+if (!normalized) return null;
+if (normalized === "admin") return "admin";
+if (normalized === "partner") return "partner";
+if (normalized === "employer") return "employer";
 if (
-normalizedRole === "candidate" ||
-normalizedRole === "career_passport" ||
-normalizedRole === "career-passport" ||
-normalizedRole === "user" ||
-normalizedRole === "jobseeker" ||
-normalizedRole === "job_seeker"
+normalized === "candidate" ||
+normalized === "career_passport" ||
+normalized === "career-passport" ||
+normalized === "user" ||
+normalized === "jobseeker" ||
+normalized === "job_seeker"
 ) {
 return "candidate";
 }
 
-return "guest";
+return null;
 }
 
 export default function SiteHeader() {
@@ -53,10 +57,7 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function checkAuth() {
-const { data } = await supabase.auth.getSession();
-const sessionUser = data.session?.user ?? null;
-
+async function resolveRoleFromSession(sessionUser: any) {
 if (!mounted) return;
 
 if (!sessionUser) {
@@ -66,44 +67,61 @@ setCheckingAuth(false);
 return;
 }
 
+// Always keep logged-in users logged in in the nav.
 setIsLoggedIn(true);
 
-const rawRole =
-sessionUser.app_metadata?.role ||
-sessionUser.user_metadata?.role ||
-sessionUser.user_metadata?.account_type ||
-"candidate";
+// Default logged-in users to candidate so buttons do not disappear.
+let nextRole: UserRole = "candidate";
 
-setRole(normalizeRole(rawRole));
+const metadataRole =
+normalizeRole(sessionUser.app_metadata?.role) ||
+normalizeRole(sessionUser.user_metadata?.role) ||
+normalizeRole(sessionUser.user_metadata?.account_type);
+
+if (metadataRole) {
+nextRole = metadataRole;
+}
+
+// Check partners table by email. If found, override to partner.
+const email = sessionUser.email || "";
+
+if (email) {
+try {
+const { data: partnerRow } = await supabase
+.from("partners")
+.select("contact_email")
+.eq("contact_email", email)
+.maybeSingle<PartnerRow>();
+
+if (!mounted) return;
+
+if (partnerRow?.contact_email) {
+nextRole = "partner";
+}
+} catch {
+// keep default role
+}
+}
+
+if (!mounted) return;
+setRole(nextRole);
 setCheckingAuth(false);
 }
 
-checkAuth();
+async function checkInitialSession() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
+
+await resolveRoleFromSession(session?.user ?? null);
+}
+
+checkInitialSession();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange((_event, session) => {
-const sessionUser = session?.user ?? null;
-
-if (!mounted) return;
-
-if (!sessionUser) {
-setIsLoggedIn(false);
-setRole("guest");
-setCheckingAuth(false);
-return;
-}
-
-setIsLoggedIn(true);
-
-const rawRole =
-sessionUser.app_metadata?.role ||
-sessionUser.user_metadata?.role ||
-sessionUser.user_metadata?.account_type ||
-"candidate";
-
-setRole(normalizeRole(rawRole));
-setCheckingAuth(false);
+} = supabase.auth.onAuthStateChange(async (_event, session) => {
+await resolveRoleFromSession(session?.user ?? null);
 });
 
 return () => {
