@@ -158,10 +158,10 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
-const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin);
+const showMyProfile = isLoggedIn && (isCandidate || isPartner);
 
 const showCareerToolkit =
-isLoggedIn && !isEmployer && (isCandidate || isPartner || isAdmin);
+isLoggedIn && !isEmployer && (isCandidate || isPartner);
   
 const showPartnerDashboard =
 isLoggedIn && (isPartner || isAdmin || isPartnerPage);
