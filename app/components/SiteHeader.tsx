@@ -11,15 +11,6 @@ label: string;
 href: string;
 };
 
-type PartnerRow = {
-contact_email?: string | null;
-};
-
-type CandidateProfileRow = {
-user_id?: string | null;
-email?: string | null;
-};
-
 const partnerNavItems: PartnerNavItem[] = [
 { label: "Messages", href: "/messages" },
 { label: "Career Map", href: "/partner-dashboard/career-map" },
@@ -27,10 +18,9 @@ const partnerNavItems: PartnerNavItem[] = [
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
-function normalizeRole(rawRole: unknown): UserRole | null {
+function normalizeRole(rawRole: unknown): UserRole {
 const normalizedRole = String(rawRole || "").toLowerCase().trim();
 
-if (!normalizedRole) return null;
 if (normalizedRole === "admin") return "admin";
 if (normalizedRole === "partner") return "partner";
 if (normalizedRole === "employer") return "employer";
@@ -46,7 +36,7 @@ normalizedRole === "job_seeker"
 return "candidate";
 }
 
-return null;
+return "guest";
 }
 
 export default function SiteHeader() {
@@ -63,12 +53,9 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function resolveUserRole() {
-const {
-data: { session },
-} = await supabase.auth.getSession();
-
-const sessionUser = session?.user ?? null;
+async function checkAuth() {
+const { data } = await supabase.auth.getSession();
+const sessionUser = data.session?.user ?? null;
 
 if (!mounted) return;
 
@@ -81,58 +68,21 @@ return;
 
 setIsLoggedIn(true);
 
-const metadataRole =
-normalizeRole(sessionUser.app_metadata?.role) ||
-normalizeRole(sessionUser.user_metadata?.role) ||
-normalizeRole(sessionUser.user_metadata?.account_type);
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"candidate";
 
-if (metadataRole) {
-setRole(metadataRole);
-setCheckingAuth(false);
-return;
-}
-
-const email = sessionUser.email || "";
-const userId = sessionUser.id;
-
-try {
-const [{ data: partnerRow }, { data: candidateRow }] = await Promise.all([
-supabase
-.from("partners")
-.select("contact_email")
-.eq("contact_email", email)
-.maybeSingle<PartnerRow>(),
-supabase
-.from("candidate_profiles")
-.select("user_id, email")
-.or(`user_id.eq.${userId},email.eq.${email}`)
-.maybeSingle<CandidateProfileRow>(),
-]);
-
-if (!mounted) return;
-
-if (partnerRow?.contact_email) {
-setRole("partner");
-} else if (candidateRow?.user_id || candidateRow?.email) {
-setRole("candidate");
-} else {
-setRole("candidate");
-}
-} catch {
-if (!mounted) return;
-setRole("candidate");
-} finally {
-if (mounted) {
+setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
 }
-}
-}
 
-resolveUserRole();
+checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange(async (_event, session) => {
+} = supabase.auth.onAuthStateChange((_event, session) => {
 const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
@@ -144,54 +94,16 @@ setCheckingAuth(false);
 return;
 }
 
-setCheckingAuth(true);
 setIsLoggedIn(true);
 
-const metadataRole =
-normalizeRole(sessionUser.app_metadata?.role) ||
-normalizeRole(sessionUser.user_metadata?.role) ||
-normalizeRole(sessionUser.user_metadata?.account_type);
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"candidate";
 
-if (metadataRole) {
-setRole(metadataRole);
+setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
-return;
-}
-
-const email = sessionUser.email || "";
-const userId = sessionUser.id;
-
-try {
-const [{ data: partnerRow }, { data: candidateRow }] = await Promise.all([
-supabase
-.from("partners")
-.select("contact_email")
-.eq("contact_email", email)
-.maybeSingle<PartnerRow>(),
-supabase
-.from("candidate_profiles")
-.select("user_id, email")
-.or(`user_id.eq.${userId},email.eq.${email}`)
-.maybeSingle<CandidateProfileRow>(),
-]);
-
-if (!mounted) return;
-
-if (partnerRow?.contact_email) {
-setRole("partner");
-} else if (candidateRow?.user_id || candidateRow?.email) {
-setRole("candidate");
-} else {
-setRole("candidate");
-}
-} catch {
-if (!mounted) return;
-setRole("candidate");
-} finally {
-if (mounted) {
-setCheckingAuth(false);
-}
-}
 });
 
 return () => {
