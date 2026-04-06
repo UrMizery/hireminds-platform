@@ -29,6 +29,7 @@ if (!normalized) return null;
 if (normalized === "admin") return "admin";
 if (normalized === "partner") return "partner";
 if (normalized === "employer") return "employer";
+
 if (
 normalized === "candidate" ||
 normalized === "career_passport" ||
@@ -67,10 +68,9 @@ setCheckingAuth(false);
 return;
 }
 
-// Always keep logged-in users logged in in the nav.
 setIsLoggedIn(true);
 
-// Default logged-in users to candidate so buttons do not disappear.
+// Default all logged-in users to candidate first so nav does not disappear.
 let nextRole: UserRole = "candidate";
 
 const metadataRole =
@@ -82,7 +82,7 @@ if (metadataRole) {
 nextRole = metadataRole;
 }
 
-// Check partners table by email. If found, override to partner.
+// If email exists in partners table, treat as partner.
 const email = sessionUser.email || "";
 
 if (email) {
@@ -99,7 +99,7 @@ if (partnerRow?.contact_email) {
 nextRole = "partner";
 }
 } catch {
-// keep default role
+// keep current role if lookup fails
 }
 }
 
@@ -181,6 +181,12 @@ HireMinds
 {!checkingAuth && !isLoggedIn ? (
 <a href="/sign-in" style={styles.link}>
 {t.signIn}
+</a>
+) : null}
+
+{!isLoggedIn ? (
+<a href="/partner-with-hireminds" style={styles.link}>
+{t.partner}
 </a>
 ) : null}
 
