@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
@@ -15,8 +15,8 @@ href: string;
 const partnerNavItems: PartnerNavItem[] = [
 { label: "Messages", href: "/messages" },
 { label: "Career Map", href: "/partner-dashboard/career-map" },
-{ label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 { label: "Workshop Resources", href: "/partner-dashboard/workshop-resources" },
+{ label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
 function normalizeRole(rawRole: unknown): UserRole {
@@ -129,7 +129,7 @@ try {
 setLoadingLogout(true);
 await supabase.auth.signOut();
 } catch {
-// ignore and still redirect
+// ignore
 } finally {
 window.location.href = "/";
 }
@@ -140,20 +140,9 @@ const isEmployer = role === "employer";
 const isCandidate = role === "candidate";
 const isPartner = role === "partner";
 
-const partnerStickyRoutes = new Set([
-"/",
-"/profile",
-"/career-toolkit",
-"/messages",
-"/contact",
-"/partner-with-hireminds",
-]);
-
-const isPartnerPage =
-pathname?.startsWith("/partner-dashboard") ||
-partnerStickyRoutes.has(pathname || "");
-
-const showPartnerNav = isLoggedIn && (isPartner || isPartnerPage);
+const showPartnerNav = isLoggedIn && isPartner;
+const showCareerToolkit = isLoggedIn && (isCandidate || isPartner || isAdmin);
+const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin);
 
 return (
 <header style={styles.header}>
@@ -246,13 +235,13 @@ Admin Dashboard
 </a>
 ) : null}
 
-{isCandidate || showPartnerNav || isAdmin ? (
+{showCareerToolkit ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
 ) : null}
 
-{isCandidate || showPartnerNav || isAdmin ? (
+{showNotes ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
@@ -286,7 +275,7 @@ disabled={loadingLogout}
 );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
 header: {
 width: "100%",
 position: "sticky",
