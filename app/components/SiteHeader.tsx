@@ -49,54 +49,24 @@ const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
-const [partnerEmailMatch, setPartnerEmailMatch] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
 let mounted = true;
 
-async function checkPartnerEmail(email?: string | null) {
-if (!email) {
-if (!mounted) return;
-setPartnerEmailMatch(false);
-return;
-}
+async function checkAuth() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
 
-try {
-const { data: partnerRow, error } = await supabase
-.from("partners")
-.select("contact_email")
-.ilike("contact_email", email)
-.maybeSingle();
+const sessionUser = session?.user ?? null;
 
-if (!mounted) return;
-
-if (error) {
-console.error("Partner email check error:", error);
-setPartnerEmailMatch(false);
-return;
-}
-
-setPartnerEmailMatch(!!partnerRow?.contact_email);
-} catch (error) {
-console.error("Partner email check error:", error);
-if (!mounted) return;
-setPartnerEmailMatch(false);
-}
-}
-
-async function resolveUser(sessionUser: {
-email?: string | null;
-app_metadata?: Record<string, unknown>;
-user_metadata?: Record<string, unknown>;
-} | null) {
 if (!mounted) return;
 
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
-setPartnerEmailMatch(false);
 setCheckingAuth(false);
 return;
 }
@@ -110,26 +80,35 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
-await checkPartnerEmail(sessionUser.email);
-
-if (!mounted) return;
 setCheckingAuth(false);
-}
-
-async function checkAuth() {
-const {
-data: { session },
-} = await supabase.auth.getSession();
-
-await resolveUser(session?.user ?? null);
 }
 
 checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange(async (_event, session) => {
-await resolveUser(session?.user ?? null);
+} = supabase.auth.onAuthStateChange((_event, session) => {
+const sessionUser = session?.user ?? null;
+
+if (!mounted) return;
+
+if (!sessionUser) {
+setIsLoggedIn(false);
+setRole("guest");
+setCheckingAuth(false);
+return;
+}
+
+setIsLoggedIn(true);
+
+const rawRole =
+sessionUser.app_metadata?.role ||
+sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.account_type ||
+"candidate";
+
+setRole(normalizeRole(rawRole));
+setCheckingAuth(false);
 });
 
 return () => {
@@ -156,38 +135,17 @@ async function handleLogout() {
 try {
 setLoadingLogout(true);
 await supabase.auth.signOut();
-
-try {
-const keysToRemove: string[] = [];
-
-for (let i = 0; i < window.localStorage.length; i += 1) {
-const key = window.localStorage.key(i);
-if (key && key.includes("auth-token")) {
-keysToRemove.push(key);
-}
-}
-
-keysToRemove.forEach((key) => window.localStorage.removeItem(key));
-} catch (storageError) {
-console.error("Local storage clear error:", storageError);
-}
-
-try {
-window.sessionStorage.clear();
-} catch (sessionError) {
-console.error("Session storage clear error:", sessionError);
-}
-} catch (error) {
-console.error("Logout error:", error);
+} catch {
+// ignore
 } finally {
-window.location.replace("/");
+window.location.href = "/";
 }
 }
 
+const isCandidate = role === "candidate";
+const isPartner = role === "partner";
 const isAdmin = role === "admin";
 const isEmployer = role === "employer";
-const isPartner = partnerEmailMatch || role === "partner";
-const isCandidate = !isPartner && !isEmployer && role === "candidate";
 
 const partnerStickyRoutes = new Set([
 "/messages",
@@ -200,11 +158,18 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
-const showMyProfile = isLoggedIn && !isEmployer;
-const showCareerToolkit = isLoggedIn && !isEmployer && !isPartner && !isPartnerPage;
-const showPartnerDashboard = isLoggedIn && (isPartner || isAdmin || isPartnerPage);
-const showPartnerTools = isLoggedIn && (isPartner || isAdmin || isPartnerPage);
-const showNotes = isLoggedIn && !isEmployer;
+const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
+
+const showCareerToolkit =
+isLoggedIn && !isPartnerPage && (isCandidate || isAdmin || (!isPartner && !isEmployer));
+
+const showPartnerDashboard =
+isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+
+const showPartnerTools =
+isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+
+const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
 
 return (
 <header style={styles.header}>
@@ -218,10 +183,6 @@ HireMinds
 {t.home}
 </a>
 
-<a href="/contact" style={styles.link}>
-{t.contact}
-</a>
-
 {!checkingAuth && !isLoggedIn ? (
 <a href="/sign-in" style={styles.link}>
 {t.signIn}
@@ -233,6 +194,10 @@ HireMinds
 {t.partner}
 </a>
 ) : null}
+
+<a href="/contact" style={styles.link}>
+{t.contact}
+</a>
 </div>
 
 <div style={styles.rightNav}>
@@ -291,6 +256,12 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 </div>
+) : null}
+
+{isEmployer ? (
+<a href="/employer-dashboard" style={styles.link}>
+Employer Dashboard
+</a>
 ) : null}
 
 {showNotes ? (
