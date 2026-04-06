@@ -55,13 +55,7 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function checkAuth() {
-const {
-data: { session },
-} = await supabase.auth.getSession();
-
-const sessionUser = session?.user ?? null;
-
+async function resolveUser(sessionUser: { id: string; email?: string | null; app_metadata?: any; user_metadata?: any } | null) {
 if (!mounted) return;
 
 if (!sessionUser) {
@@ -79,36 +73,39 @@ sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "candidate";
 
-setRole(normalizeRole(rawRole));
+let resolvedRole = normalizeRole(rawRole);
+
+if (sessionUser.email) {
+const { data: partnerRow, error: partnerError } = await supabase
+.from("partners")
+.select("contact_email")
+.ilike("contact_email", sessionUser.email)
+.maybeSingle();
+
+if (!partnerError && partnerRow?.contact_email) {
+resolvedRole = "partner";
+}
+}
+
+if (!mounted) return;
+setRole(resolvedRole);
 setCheckingAuth(false);
+}
+
+async function checkAuth() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
+
+await resolveUser(session?.user ?? null);
 }
 
 checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange((_event, session) => {
-const sessionUser = session?.user ?? null;
-
-if (!mounted) return;
-
-if (!sessionUser) {
-setIsLoggedIn(false);
-setRole("guest");
-setCheckingAuth(false);
-return;
-}
-
-setIsLoggedIn(true);
-
-const rawRole =
-sessionUser.app_metadata?.role ||
-sessionUser.user_metadata?.role ||
-sessionUser.user_metadata?.account_type ||
-"candidate";
-
-setRole(normalizeRole(rawRole));
-setCheckingAuth(false);
+} = supabase.auth.onAuthStateChange(async (_event, session) => {
+await resolveUser(session?.user ?? null);
 });
 
 return () => {
@@ -134,11 +131,33 @@ document.removeEventListener("mousedown", handleClickOutside);
 async function handleLogout() {
 try {
 setLoadingLogout(true);
+
 await supabase.auth.signOut();
-} catch {
-// ignore
+
+try {
+const keysToRemove: string[] = [];
+
+for (let i = 0; i < window.localStorage.length; i += 1) {
+const key = window.localStorage.key(i);
+if (key && key.includes("auth-token")) {
+keysToRemove.push(key);
+}
+}
+
+keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+} catch (storageError) {
+console.error("Local storage clear error:", storageError);
+}
+
+try {
+window.sessionStorage.clear();
+} catch (sessionError) {
+console.error("Session storage clear error:", sessionError);
+}
+} catch (error) {
+console.error("Logout error:", error);
 } finally {
-window.location.href = "/";
+window.location.replace("/");
 }
 }
 
