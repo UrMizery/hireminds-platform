@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
@@ -12,6 +11,15 @@ label: string;
 href: string;
 };
 
+type PartnerRow = {
+contact_email?: string | null;
+};
+
+type CandidateProfileRow = {
+user_id?: string | null;
+email?: string | null;
+};
+
 const partnerNavItems: PartnerNavItem[] = [
 { label: "Messages", href: "/messages" },
 { label: "Career Map", href: "/partner-dashboard/career-map" },
@@ -19,26 +27,30 @@ const partnerNavItems: PartnerNavItem[] = [
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
-function normalizeRole(rawRole: unknown): UserRole {
+function normalizeRole(rawRole: unknown): UserRole | null {
 const normalizedRole = String(rawRole || "").toLowerCase().trim();
 
+if (!normalizedRole) return null;
 if (normalizedRole === "admin") return "admin";
 if (normalizedRole === "partner") return "partner";
 if (normalizedRole === "employer") return "employer";
+
 if (
 normalizedRole === "candidate" ||
 normalizedRole === "career_passport" ||
-normalizedRole === "career-passport"
+normalizedRole === "career-passport" ||
+normalizedRole === "user" ||
+normalizedRole === "jobseeker" ||
+normalizedRole === "job_seeker"
 ) {
 return "candidate";
 }
 
-return "guest";
+return null;
 }
 
 export default function SiteHeader() {
 const { t } = useLanguage();
-const pathname = usePathname();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [checkingAuth, setCheckingAuth] = useState(true);
@@ -51,36 +63,11 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function checkAuth() {
-const { data } = await supabase.auth.getSession();
-const sessionUser = data.session?.user ?? null;
-
-if (!mounted) return;
-
-if (!sessionUser) {
-setIsLoggedIn(false);
-setRole("guest");
-setCheckingAuth(false);
-return;
-}
-
-setIsLoggedIn(true);
-
-const rawRole =
-sessionUser.app_metadata?.role ||
-sessionUser.user_metadata?.role ||
-sessionUser.user_metadata?.account_type ||
-"";
-
-setRole(normalizeRole(rawRole));
-setCheckingAuth(false);
-}
-
-checkAuth();
-
+async function resolveUserRole() {
 const {
-data: { subscription },
-} = supabase.auth.onAuthStateChange((_event, session) => {
+data: { session },
+} = await supabase.auth.getSession();
+
 const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
@@ -94,14 +81,117 @@ return;
 
 setIsLoggedIn(true);
 
-const rawRole =
-sessionUser.app_metadata?.role ||
-sessionUser.user_metadata?.role ||
-sessionUser.user_metadata?.account_type ||
-"";
+const metadataRole =
+normalizeRole(sessionUser.app_metadata?.role) ||
+normalizeRole(sessionUser.user_metadata?.role) ||
+normalizeRole(sessionUser.user_metadata?.account_type);
 
-setRole(normalizeRole(rawRole));
+if (metadataRole) {
+setRole(metadataRole);
 setCheckingAuth(false);
+return;
+}
+
+const email = sessionUser.email || "";
+const userId = sessionUser.id;
+
+try {
+const [{ data: partnerRow }, { data: candidateRow }] = await Promise.all([
+supabase
+.from("partners")
+.select("contact_email")
+.eq("contact_email", email)
+.maybeSingle<PartnerRow>(),
+supabase
+.from("candidate_profiles")
+.select("user_id, email")
+.or(`user_id.eq.${userId},email.eq.${email}`)
+.maybeSingle<CandidateProfileRow>(),
+]);
+
+if (!mounted) return;
+
+if (partnerRow?.contact_email) {
+setRole("partner");
+} else if (candidateRow?.user_id || candidateRow?.email) {
+setRole("candidate");
+} else {
+setRole("candidate");
+}
+} catch {
+if (!mounted) return;
+setRole("candidate");
+} finally {
+if (mounted) {
+setCheckingAuth(false);
+}
+}
+}
+
+resolveUserRole();
+
+const {
+data: { subscription },
+} = supabase.auth.onAuthStateChange(async (_event, session) => {
+const sessionUser = session?.user ?? null;
+
+if (!mounted) return;
+
+if (!sessionUser) {
+setIsLoggedIn(false);
+setRole("guest");
+setCheckingAuth(false);
+return;
+}
+
+setCheckingAuth(true);
+setIsLoggedIn(true);
+
+const metadataRole =
+normalizeRole(sessionUser.app_metadata?.role) ||
+normalizeRole(sessionUser.user_metadata?.role) ||
+normalizeRole(sessionUser.user_metadata?.account_type);
+
+if (metadataRole) {
+setRole(metadataRole);
+setCheckingAuth(false);
+return;
+}
+
+const email = sessionUser.email || "";
+const userId = sessionUser.id;
+
+try {
+const [{ data: partnerRow }, { data: candidateRow }] = await Promise.all([
+supabase
+.from("partners")
+.select("contact_email")
+.eq("contact_email", email)
+.maybeSingle<PartnerRow>(),
+supabase
+.from("candidate_profiles")
+.select("user_id, email")
+.or(`user_id.eq.${userId},email.eq.${email}`)
+.maybeSingle<CandidateProfileRow>(),
+]);
+
+if (!mounted) return;
+
+if (partnerRow?.contact_email) {
+setRole("partner");
+} else if (candidateRow?.user_id || candidateRow?.email) {
+setRole("candidate");
+} else {
+setRole("candidate");
+}
+} catch {
+if (!mounted) return;
+setRole("candidate");
+} finally {
+if (mounted) {
+setCheckingAuth(false);
+}
+}
 });
 
 return () => {
@@ -135,13 +225,15 @@ window.location.href = "/";
 }
 }
 
-const isAdmin = role === "admin";
-const isEmployer = role === "employer";
 const isCandidate = role === "candidate";
 const isPartner = role === "partner";
+const isAdmin = role === "admin";
+const isEmployer = role === "employer";
 
-const showPartnerNav = isLoggedIn && isPartner;
-const showCareerToolkit = isLoggedIn && (isCandidate || isPartner || isAdmin);
+const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin);
+const showCareerToolkit = isLoggedIn && (isCandidate || isAdmin);
+const showPartnerDashboard = isLoggedIn && (isPartner || isAdmin);
+const showPartnerTools = isLoggedIn && (isPartner || isAdmin);
 const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin);
 
 return (
@@ -162,10 +254,6 @@ HireMinds
 </a>
 ) : null}
 
-<a href="/partner-with-hireminds" style={styles.link}>
-{t.partner}
-</a>
-
 <a href="/contact" style={styles.link}>
 {t.contact}
 </a>
@@ -174,18 +262,25 @@ HireMinds
 <div style={styles.rightNav}>
 {isLoggedIn ? (
 <>
-{isCandidate || isAdmin ? (
+{showMyProfile ? (
 <a href="/profile" style={styles.link}>
 My Profile
 </a>
 ) : null}
 
-{showPartnerNav ? (
-<>
+{showCareerToolkit ? (
+<a href="/career-toolkit" style={styles.link}>
+Career ToolKit
+</a>
+) : null}
+
+{showPartnerDashboard ? (
 <a href="/partner-dashboard" style={styles.link}>
 Partner Dashboard
 </a>
+) : null}
 
+{showPartnerTools ? (
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
@@ -220,24 +315,11 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 </div>
-</>
 ) : null}
 
 {isEmployer ? (
 <a href="/employer-dashboard" style={styles.link}>
 Employer Dashboard
-</a>
-) : null}
-
-{isAdmin ? (
-<a href="/admin-dashboard" style={styles.link}>
-Admin Dashboard
-</a>
-) : null}
-
-{showCareerToolkit ? (
-<a href="/career-toolkit" style={styles.link}>
-Career ToolKit
 </a>
 ) : null}
 
