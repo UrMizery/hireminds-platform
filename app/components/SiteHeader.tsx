@@ -145,7 +145,6 @@ window.location.href = "/";
 const isCandidate = role === "candidate";
 const isPartner = role === "partner";
 const isAdmin = role === "admin";
-const isEmployer = role === "employer";
 
 const partnerStickyRoutes = new Set([
 "/messages",
@@ -158,19 +157,16 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
-const showMyProfile = isLoggedIn && (isCandidat || isAdmin);
+const showMyProfile = isLoggedIn && isCandidate;
 
-const showCareerToolkit =
-isLoggedIn && !isEmployer && (isCandidate || isPartner);
+const showCareerToolkit = isLoggedIn && (isCandidate || isPartner);
+
+const showPartnerDashboard = isLoggedIn && (isPartner || isPartnerPage);
+
+const showPartnerTools = isLoggedIn && (isPartner || isPartnerPage);
+
+const showNotes = isLoggedIn && (isCandidate || isPartner || isPartnerPage);
  
-const showPartnerDashboard =
-isLoggedIn && (isPartner || isAdmin || isPartnerPage);
-
-const showPartnerTools =
-isLoggedIn && (isPartner || isAdmin || isPartnerPage);
-
-const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
-
 return (
 <header style={styles.header}>
 <div style={styles.inner}>
@@ -256,12 +252,6 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 </div>
-) : null}
-
-{isEmployer ? (
-<a href="/employer-dashboard" style={styles.link}>
-Employer Dashboard
-</a>
 ) : null}
 
 {showNotes ? (
