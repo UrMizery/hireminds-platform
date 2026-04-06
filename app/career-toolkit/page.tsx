@@ -1,8 +1,64 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { supabase } from "../lib/supabase";
+
+type ProfileRow = {
+has_referral_access?: boolean | null;
+has_paid_access?: boolean | null;
+};
 
 export default function CareerToolkitPage() {
+const [checkingAccess, setCheckingAccess] = useState(true);
+
+useEffect(() => {
+let mounted = true;
+
+async function checkAccess() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
+
+if (!session?.user) {
+window.location.href = "/sign-in";
+return;
+}
+
+const { data: profileRow, error } = await supabase
+.from("candidate_profiles")
+.select("has_referral_access, has_paid_access")
+.eq("user_id", session.user.id)
+.maybeSingle<ProfileRow>();
+
+if (error) {
+console.error("Career Toolkit access check error:", error);
+window.location.href = "/subscribe";
+return;
+}
+
+const hasFullAccess =
+!!profileRow?.has_referral_access || !!profileRow?.has_paid_access;
+
+if (!hasFullAccess) {
+window.location.href = "/subscribe";
+return;
+}
+
+if (!mounted) return;
+setCheckingAccess(false);
+}
+
+checkAccess();
+
+return () => {
+mounted = false;
+};
+}, []);
+
+if (checkingAccess) {
+return null;
+}
+
 return (
 <main style={styles.page}>
 <div style={styles.shell}>
@@ -309,7 +365,6 @@ Open Industry Core Skills
 </div>
 
 <div style={styles.supportList}>
-
 <a href="/career-toolkit/job-search-tips" style={styles.supportRow}>
 <div>
 <h3 style={styles.supportTitle}>Job Search Tips</h3>
@@ -580,7 +635,7 @@ color: "#f5f5f5",
 fontWeight: 700,
 fontSize: "14px",
 },
- lockedToolButton: {
+lockedToolButton: {
 display: "inline-flex",
 alignItems: "center",
 justifyContent: "center",
