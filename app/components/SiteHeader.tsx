@@ -58,7 +58,7 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function resolveRoleFromSession(sessionUser: any) {
+async function resolveSessionUser(sessionUser: any) {
 if (!mounted) return;
 
 if (!sessionUser) {
@@ -70,19 +70,12 @@ return;
 
 setIsLoggedIn(true);
 
-// Default all logged-in users to candidate first so nav does not disappear.
-let nextRole: UserRole = "candidate";
-
-const metadataRole =
+let nextRole: UserRole =
 normalizeRole(sessionUser.app_metadata?.role) ||
 normalizeRole(sessionUser.user_metadata?.role) ||
-normalizeRole(sessionUser.user_metadata?.account_type);
+normalizeRole(sessionUser.user_metadata?.account_type) ||
+"candidate";
 
-if (metadataRole) {
-nextRole = metadataRole;
-}
-
-// If email exists in partners table, treat as partner.
 const email = sessionUser.email || "";
 
 if (email) {
@@ -99,7 +92,7 @@ if (partnerRow?.contact_email) {
 nextRole = "partner";
 }
 } catch {
-// keep current role if lookup fails
+// keep detected/default role
 }
 }
 
@@ -108,20 +101,20 @@ setRole(nextRole);
 setCheckingAuth(false);
 }
 
-async function checkInitialSession() {
+async function init() {
 const {
 data: { session },
 } = await supabase.auth.getSession();
 
-await resolveRoleFromSession(session?.user ?? null);
+await resolveSessionUser(session?.user ?? null);
 }
 
-checkInitialSession();
+init();
 
 const {
 data: { subscription },
 } = supabase.auth.onAuthStateChange(async (_event, session) => {
-await resolveRoleFromSession(session?.user ?? null);
+await resolveSessionUser(session?.user ?? null);
 });
 
 return () => {
@@ -145,13 +138,24 @@ document.removeEventListener("mousedown", handleClickOutside);
 }, []);
 
 async function handleLogout() {
+if (loadingLogout) return;
+
 try {
 setLoadingLogout(true);
-await supabase.auth.signOut();
-} catch {
-// ignore
+
+await supabase.auth.signOut({ scope: "global" });
+
+try {
+window.localStorage.clear();
+} catch {}
+
+try {
+window.sessionStorage.clear();
+} catch {}
+} catch (error) {
+console.error("Logout error:", error);
 } finally {
-window.location.href = "/";
+window.location.replace("/");
 }
 }
 
