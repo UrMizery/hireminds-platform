@@ -64,13 +64,20 @@ return;
 }
 
 try {
-const { data: partnerRow } = await supabase
+const { data: partnerRow, error } = await supabase
 .from("partners")
 .select("contact_email")
 .ilike("contact_email", email)
 .maybeSingle();
 
 if (!mounted) return;
+
+if (error) {
+console.error("Partner email check error:", error);
+setPartnerEmailMatch(false);
+return;
+}
+
 setPartnerEmailMatch(!!partnerRow?.contact_email);
 } catch (error) {
 console.error("Partner email check error:", error);
@@ -79,13 +86,11 @@ setPartnerEmailMatch(false);
 }
 }
 
-async function checkAuth() {
-const {
-data: { session },
-} = await supabase.auth.getSession();
-
-const sessionUser = session?.user ?? null;
-
+async function resolveUser(sessionUser: {
+email?: string | null;
+app_metadata?: Record<string, unknown>;
+user_metadata?: Record<string, unknown>;
+} | null) {
 if (!mounted) return;
 
 if (!sessionUser) {
@@ -106,8 +111,17 @@ sessionUser.user_metadata?.account_type ||
 
 setRole(normalizeRole(rawRole));
 await checkPartnerEmail(sessionUser.email);
+
 if (!mounted) return;
 setCheckingAuth(false);
+}
+
+async function checkAuth() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
+
+await resolveUser(session?.user ?? null);
 }
 
 checkAuth();
@@ -115,30 +129,7 @@ checkAuth();
 const {
 data: { subscription },
 } = supabase.auth.onAuthStateChange(async (_event, session) => {
-const sessionUser = session?.user ?? null;
-
-if (!mounted) return;
-
-if (!sessionUser) {
-setIsLoggedIn(false);
-setRole("guest");
-setPartnerEmailMatch(false);
-setCheckingAuth(false);
-return;
-}
-
-setIsLoggedIn(true);
-
-const rawRole =
-sessionUser.app_metadata?.role ||
-sessionUser.user_metadata?.role ||
-sessionUser.user_metadata?.account_type ||
-"candidate";
-
-setRole(normalizeRole(rawRole));
-await checkPartnerEmail(sessionUser.email);
-if (!mounted) return;
-setCheckingAuth(false);
+await resolveUser(session?.user ?? null);
 });
 
 return () => {
@@ -164,7 +155,6 @@ document.removeEventListener("mousedown", handleClickOutside);
 async function handleLogout() {
 try {
 setLoadingLogout(true);
-
 await supabase.auth.signOut();
 
 try {
@@ -194,10 +184,10 @@ window.location.replace("/");
 }
 }
 
-const isCandidate = role === "candidate";
-const isPartner = role === "partner" || partnerEmailMatch;
 const isAdmin = role === "admin";
 const isEmployer = role === "employer";
+const isPartner = partnerEmailMatch || role === "partner";
+const isCandidate = !isPartner && !isEmployer && role === "candidate";
 
 const partnerStickyRoutes = new Set([
 "/messages",
@@ -210,18 +200,11 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
-const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
-
-const showCareerToolkit =
-isLoggedIn && !isPartnerPage && (isCandidate || isAdmin || (!isPartner && !isEmployer));
-
-const showPartnerDashboard =
-isLoggedIn && (isPartner || isAdmin || isPartnerPage);
-
-const showPartnerTools =
-isLoggedIn && (isPartner || isAdmin || isPartnerPage);
-
-const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
+const showMyProfile = isLoggedIn && !isEmployer;
+const showCareerToolkit = isLoggedIn && !isEmployer && !isPartner && !isPartnerPage;
+const showPartnerDashboard = isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+const showPartnerTools = isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+const showNotes = isLoggedIn && !isEmployer;
 
 return (
 <header style={styles.header}>
@@ -235,6 +218,10 @@ HireMinds
 {t.home}
 </a>
 
+<a href="/contact" style={styles.link}>
+{t.contact}
+</a>
+
 {!checkingAuth && !isLoggedIn ? (
 <a href="/sign-in" style={styles.link}>
 {t.signIn}
@@ -246,10 +233,6 @@ HireMinds
 {t.partner}
 </a>
 ) : null}
-
-<a href="/contact" style={styles.link}>
-{t.contact}
-</a>
 </div>
 
 <div style={styles.rightNav}>
@@ -308,12 +291,6 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 </div>
-) : null}
-
-{isEmployer ? (
-<a href="/employer-dashboard" style={styles.link}>
-Employer Dashboard
-</a>
 ) : null}
 
 {showNotes ? (
