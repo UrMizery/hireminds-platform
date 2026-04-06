@@ -13,76 +13,37 @@ const [totalUsersCount, setTotalUsersCount] = useState<number | null>(null);
 const [totalActivitiesCount, setTotalActivitiesCount] = useState<number | null>(null);
 
 useEffect(() => {
-async function trackHomeVisit() {
+async function loadHomepageStats() {
 try {
-const sessionKey = "hireminds-home-visit-counted";
-const alreadyCounted = sessionStorage.getItem(sessionKey);
-
-if (!alreadyCounted) {
-const { data: currentRow, error: readError } = await supabase
-.from("page_visits")
-.select("visit_count")
-.eq("page_key", "home")
-.single();
-
-if (readError) {
-console.error("Error reading home page visit count:", readError);
-} else {
-const currentCount = currentRow?.visit_count ?? 0;
-
-const { error: updateError } = await supabase
-.from("page_visits")
-.update({
-visit_count: currentCount + 1,
-updated_at: new Date().toISOString(),
-})
-.eq("page_key", "home");
-
-if (updateError) {
-console.error("Error updating home page visit count:", updateError);
-} else {
-sessionStorage.setItem(sessionKey, "true");
-}
-}
-}
-
-const { data: latestRow, error: latestError } = await supabase
-.from("page_visits")
-.select("visit_count")
-.eq("page_key", "home")
-.single();
-
-if (latestError) {
-console.error("Error fetching latest home page visit count:", latestError);
-} else {
-setVisitCount(latestRow?.visit_count ?? 0);
-}
-
 const { data: statsRows, error: statsError } = await supabase
 .from("public_stats")
 .select("stat_key, stat_value")
-.in("stat_key", ["total_users", "total_activities"]);
+.in("stat_key", ["total_visitors", "total_users", "total_activities"]);
 
 if (statsError) {
 console.error("Error fetching public stats:", statsError);
-} else {
+return;
+}
+
+const totalVisitors =
+statsRows?.find((row) => row.stat_key === "total_visitors")?.stat_value ?? 0;
+
 const totalUsers =
 statsRows?.find((row) => row.stat_key === "total_users")?.stat_value ?? 0;
 
 const totalActivities =
 statsRows?.find((row) => row.stat_key === "total_activities")?.stat_value ?? 0;
 
+setVisitCount(totalVisitors);
 setTotalUsersCount(totalUsers);
 setTotalActivitiesCount(totalActivities);
-}
 } catch (error) {
-console.error("Home page visitor counter error:", error);
+console.error("Home page stats error:", error);
 }
 }
 
-trackHomeVisit();
+loadHomepageStats();
 }, []);
-
 return (
 <main style={styles.page}>
 <section
