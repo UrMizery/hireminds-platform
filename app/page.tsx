@@ -15,6 +15,37 @@ const [totalActivitiesCount, setTotalActivitiesCount] = useState<number | null>(
 useEffect(() => {
 async function loadHomepageStats() {
 try {
+const sessionKey = "hireminds-home-visit-counted";
+const alreadyCounted = sessionStorage.getItem(sessionKey);
+
+if (!alreadyCounted) {
+const { data: currentVisitorRow, error: currentVisitorError } = await supabase
+.from("public_stats")
+.select("stat_value")
+.eq("stat_key", "total_visitors")
+.single();
+
+if (currentVisitorError) {
+console.error("Error reading total_visitors:", currentVisitorError);
+} else {
+const currentVisitors = currentVisitorRow?.stat_value ?? 0;
+
+const { error: updateVisitorError } = await supabase
+.from("public_stats")
+.update({
+stat_value: currentVisitors + 1,
+updated_at: new Date().toISOString(),
+})
+.eq("stat_key", "total_visitors");
+
+if (updateVisitorError) {
+console.error("Error updating total_visitors:", updateVisitorError);
+} else {
+sessionStorage.setItem(sessionKey, "true");
+}
+}
+}
+
 const { data: statsRows, error: statsError } = await supabase
 .from("public_stats")
 .select("stat_key, stat_value")
