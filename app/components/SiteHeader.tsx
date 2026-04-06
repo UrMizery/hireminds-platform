@@ -49,7 +49,6 @@ const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
-const [hasFullAccess, setHasFullAccess] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -67,7 +66,6 @@ if (!mounted) return;
 
 if (!sessionUser) {
 setIsLoggedIn(false);
-setHasFullAccess(false);
 setRole("guest");
 setCheckingAuth(false);
 return;
@@ -82,21 +80,6 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
-
-const { data: profileRow, error: profileError } = await supabase
-.from("candidate_profiles")
-.select("has_referral_access, has_paid_access")
-.eq("user_id", sessionUser.id)
-.maybeSingle();
-
-if (profileError) {
-console.error("Profile access lookup error:", profileError);
-} else {
-const fullAccess =
-!!profileRow?.has_referral_access || !!profileRow?.has_paid_access;
-setHasFullAccess(fullAccess);
-}
-
 setCheckingAuth(false);
 }
 
@@ -104,15 +87,13 @@ checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange(async (_event, session) => {
+} = supabase.auth.onAuthStateChange((_event, session) => {
 const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
 
 if (!sessionUser) {
 setIsLoggedIn(false);
-setHasFullAccess(false);
-setHasFullAccess(false);
 setRole("guest");
 setCheckingAuth(false);
 return;
@@ -127,22 +108,8 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
-
-const { data: profileRow, error: profileError } = await supabase
-.from("candidate_profiles")
-.select("has_referral_access, has_paid_access")
-.eq("user_id", sessionUser.id)
-.maybeSingle();
-
-if (profileError) {
-console.error("Profile access lookup error:", profileError);
-} else {
-const fullAccess =
-!!profileRow?.has_referral_access || !!profileRow?.has_paid_access;
-setHasFullAccess(fullAccess);
-}
-
-setCheckingAuth(false);});
+setCheckingAuth(false);
+});
 
 return () => {
 mounted = false;
@@ -167,33 +134,11 @@ document.removeEventListener("mousedown", handleClickOutside);
 async function handleLogout() {
 try {
 setLoadingLogout(true);
-
 await supabase.auth.signOut();
-
-try {
-const keysToRemove: string[] = [];
-
-for (let i = 0; i < window.localStorage.length; i += 1) {
-const key = window.localStorage.key(i);
-if (key && key.includes("auth-token")) {
-keysToRemove.push(key);
-}
-}
-
-keysToRemove.forEach((key) => window.localStorage.removeItem(key));
-} catch (storageError) {
-console.error("Local storage clear error:", storageError);
-}
-
-try {
-window.sessionStorage.clear();
-} catch (sessionError) {
-console.error("Session storage clear error:", sessionError);
-}
-} catch (error) {
-console.error("Logout error:", error);
+} catch {
+// ignore
 } finally {
-window.location.replace("/");
+window.location.href = "/";
 }
 }
 
@@ -213,10 +158,10 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
-const showMyProfile = isLoggedIn && (isPartner || isAdmin || hasFullAccess || isPartnerPage);
+const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
 
 const showCareerToolkit =
-isLoggedIn && !isPartnerPage && !isPartner && !isEmployer && (isAdmin || hasFullAccess);
+isLoggedIn && !isPartnerPage && (isCandidate || isAdmin || (!isPartner && !isEmployer));
 
 const showPartnerDashboard =
 isLoggedIn && (isPartner || isAdmin || isPartnerPage);
@@ -224,8 +169,8 @@ isLoggedIn && (isPartner || isAdmin || isPartnerPage);
 const showPartnerTools =
 isLoggedIn && (isPartner || isAdmin || isPartnerPage);
 
-const showNotes = isLoggedIn && (isPartner || isAdmin || hasFullAccess || isPartnerPage);
-  
+const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
+
 return (
 <header style={styles.header}>
 <div style={styles.inner}>
