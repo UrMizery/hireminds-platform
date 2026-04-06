@@ -143,11 +143,11 @@ setLoadingCheckout(false);
 async function handleLeave() {
 try {
 setLoadingLeave(true);
-await supabase.auth.signOut();
+await supabase.auth.signOut({scope: "global"});
 } catch (error) {
 console.error("Leave error:", error);
 } finally {
-window.location.href = "/";
+window.location.replace("/");
 }
 }
 
