@@ -21,7 +21,20 @@ const partnerNavItems: PartnerNavItem[] = [
 function normalizeRole(rawRole: unknown): UserRole {
 const normalizedRole = String(rawRole || "").toLowerCase().trim();
 
-if (normalizedRole === "partner") return "partner";
+if (
+normalizedRole === "partner" ||
+normalizedRole === "employer" ||
+normalizedRole === "partner_user" ||
+normalizedRole === "partner-user" ||
+normalizedRole === "partner_admin" ||
+normalizedRole === "partner-admin" ||
+normalizedRole === "partneradmin" ||
+normalizedRole === "employer_partner" ||
+normalizedRole === "employer-partner" ||
+normalizedRole === "admin"
+) {
+return "partner";
+}
 
 if (
 normalizedRole === "candidate" ||
@@ -71,8 +84,12 @@ setIsLoggedIn(true);
 
 const rawRole =
 sessionUser.app_metadata?.role ||
+sessionUser.app_metadata?.user_role ||
+sessionUser.app_metadata?.account_type ||
 sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.user_role ||
 sessionUser.user_metadata?.account_type ||
+sessionUser.user_metadata?.type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
@@ -99,8 +116,12 @@ setIsLoggedIn(true);
 
 const rawRole =
 sessionUser.app_metadata?.role ||
+sessionUser.app_metadata?.user_role ||
+sessionUser.app_metadata?.account_type ||
 sessionUser.user_metadata?.role ||
+sessionUser.user_metadata?.user_role ||
 sessionUser.user_metadata?.account_type ||
+sessionUser.user_metadata?.type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
