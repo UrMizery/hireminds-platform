@@ -147,8 +147,6 @@ const partnerStickyRoutes = new Set([
 "/messages",
 "/partner-dashboard/career-map",
 "/partner-dashboard/workshop-resources",
-"/career-toolkit",
-"/profile",
 "/partner-dashboard/report-summary",
 ]);
 
