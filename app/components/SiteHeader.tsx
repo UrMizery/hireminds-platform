@@ -51,14 +51,14 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
 useEffect(() => {
 let mounted = true;
 
-async function loadSession() {
+async function checkAuth() {
 const {
 data: { session },
 } = await supabase.auth.getSession();
 
-if (!mounted) return;
-
 const sessionUser = session?.user ?? null;
+
+if (!mounted) return;
 
 if (!sessionUser) {
 setIsLoggedIn(false);
@@ -67,25 +67,26 @@ setCheckingAuth(false);
 return;
 }
 
+setIsLoggedIn(true);
+
 const rawRole =
 sessionUser.app_metadata?.role ||
 sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "candidate";
 
-setIsLoggedIn(true);
 setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
 }
 
-loadSession();
+checkAuth();
 
 const {
 data: { subscription },
 } = supabase.auth.onAuthStateChange((_event, session) => {
-if (!mounted) return;
-
 const sessionUser = session?.user ?? null;
+
+if (!mounted) return;
 
 if (!sessionUser) {
 setIsLoggedIn(false);
@@ -94,13 +95,14 @@ setCheckingAuth(false);
 return;
 }
 
+setIsLoggedIn(true);
+
 const rawRole =
 sessionUser.app_metadata?.role ||
 sessionUser.user_metadata?.role ||
 sessionUser.user_metadata?.account_type ||
 "candidate";
 
-setIsLoggedIn(true);
 setRole(normalizeRole(rawRole));
 setCheckingAuth(false);
 });
@@ -136,9 +138,14 @@ window.location.href = "/";
 }
 }
 
-const isGuest = !checkingAuth && !isLoggedIn;
-const isCandidate = !checkingAuth && isLoggedIn && role === "candidate";
-const isPartner = !checkingAuth && isLoggedIn && role === "partner";
+const isCandidate = role === "candidate";
+const isPartner = role === "partner";
+
+const showMyProfile = isLoggedIn && isCandidate;
+const showCareerToolkit = isLoggedIn && (isCandidate || isPartner);
+const showPartnerDashboard = isLoggedIn && isPartner;
+const showPartnerTools = isLoggedIn && isPartner;
+const showNotes = isLoggedIn && (isCandidate || isPartner);
 
 return (
 <header style={styles.header}>
@@ -147,74 +154,50 @@ return (
 HireMinds
 </a>
 
-<nav style={styles.nav}>
+<div style={styles.centerNav}>
 <a href="/" style={styles.link}>
 {t.home}
 </a>
 
-<a href="/contact" style={styles.link}>
-{t.contact}
-</a>
-
-{isGuest && (
-<>
+{!checkingAuth && !isLoggedIn ? (
 <a href="/sign-in" style={styles.link}>
 {t.signIn}
 </a>
+) : null}
 
-<a href="/employer-partner-login" style={styles.link}>
-{t.employerPartnerSignIn}
-</a>
-
+{!checkingAuth && !isLoggedIn ? (
 <a href="/partner-with-hireminds" style={styles.link}>
 {t.partner}
 </a>
+) : null}
 
-<span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
-</>
-)}
+<a href="/contact" style={styles.link}>
+{t.contact}
+</a>
+</div>
 
-{isCandidate && (
+<div style={styles.rightNav}>
+{isLoggedIn ? (
 <>
+{showMyProfile ? (
 <a href="/profile" style={styles.link}>
 My Profile
 </a>
+) : null}
 
+{showCareerToolkit ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
+) : null}
 
-<button
-type="button"
-onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
-style={styles.notesButtonLike}
->
-Notes
-</button>
-
-<span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
-
-<button
-type="button"
-onClick={handleLogout}
-style={styles.logoutButton}
-disabled={loadingLogout}
->
-{loadingLogout ? "Logging Off..." : "Log Off"}
-</button>
-</>
-)}
-
-{isPartner && (
-<>
-<a href="/career-toolkit" style={styles.link}>
-Career ToolKit
-</a>
-
+{showPartnerDashboard ? (
 <a href="/partner-dashboard" style={styles.link}>
 Partner Dashboard
 </a>
+) : null}
 
+{showPartnerTools ? (
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
@@ -234,7 +217,7 @@ transform: partnersOpen ? "rotate(180deg)" : "rotate(0deg)",
 </span>
 </button>
 
-{partnersOpen && (
+{partnersOpen ? (
 <div style={styles.dropdownMenu}>
 {partnerNavItems.map((item) => (
 <a
@@ -247,9 +230,11 @@ onClick={() => setPartnersOpen(false)}
 </a>
 ))}
 </div>
-)}
+) : null}
 </div>
+) : null}
 
+{showNotes ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
@@ -257,6 +242,7 @@ style={styles.notesButtonLike}
 >
 Notes
 </button>
+) : null}
 
 <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
 
@@ -269,8 +255,18 @@ disabled={loadingLogout}
 {loadingLogout ? "Logging Off..." : "Log Off"}
 </button>
 </>
-)}
-</nav>
+) : null}
+
+{!checkingAuth && !isLoggedIn ? (
+<span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
+) : null}
+
+{!checkingAuth && !isLoggedIn ? (
+<a href="/employer-partner-login" style={styles.link}>
+{t.employerPartnerSignIn}
+</a>
+) : null}
+</div>
 </div>
 </header>
 );
@@ -290,10 +286,10 @@ inner: {
 maxWidth: "1520px",
 margin: "0 auto",
 padding: "16px 24px",
-display: "flex",
+display: "grid",
+gridTemplateColumns: "240px 1fr auto",
 alignItems: "center",
-justifyContent: "space-between",
-gap: "24px",
+gap: "20px",
 },
 logo: {
 color: "#f5f5f5",
@@ -301,9 +297,15 @@ fontSize: "26px",
 fontWeight: 700,
 textDecoration: "none",
 letterSpacing: "0.2px",
-whiteSpace: "nowrap",
 },
-nav: {
+centerNav: {
+display: "flex",
+gap: "22px",
+alignItems: "center",
+justifyContent: "center",
+flexWrap: "wrap",
+},
+rightNav: {
 display: "flex",
 gap: "18px",
 alignItems: "center",
