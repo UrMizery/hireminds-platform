@@ -286,7 +286,11 @@ return matchesTab && matchesSearch;
 
 const selectedMessage = useMemo(() => {
 if (!selectedMessageId) return filteredMessages[0] || null;
-return filteredMessages.find((item) => item.id === selectedMessageId) || filteredMessages[0] || null;
+return (
+filteredMessages.find((item) => item.id === selectedMessageId) ||
+filteredMessages[0] ||
+null
+);
 }, [filteredMessages, selectedMessageId]);
 
 useEffect(() => {
@@ -324,7 +328,12 @@ setMessage("Draft created from support action.");
 }
 
 function saveManualDraft() {
-if (!composeParticipantKey || !composeParticipantName || !composeSubject.trim() || !composeBody.trim()) {
+if (
+!composeParticipantKey ||
+!composeParticipantName ||
+!composeSubject.trim() ||
+!composeBody.trim()
+) {
 setMessage("Please select a participant and enter both a subject and message body.");
 return;
 }
@@ -372,7 +381,49 @@ persistMessages(next);
 setMessage("Draft updated.");
 }
 
-function sendDraft(id: string) {
+async function sendMessageEmail(messageRecord: MessageRecord) {
+const response = await fetch("/api/send-partner-message", {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+},
+body: JSON.stringify({
+to: messageRecord.participantEmail,
+participantName: messageRecord.participantName,
+subject: messageRecord.subject,
+body: messageRecord.body,
+partnerOrganization: partner?.organization_name || "HireMinds Partner",
+partnerEmail: partner?.contact_email || "",
+}),
+});
+
+const result = await response.json();
+
+if (!response.ok) {
+throw new Error(result?.error || "Unable to send email.");
+}
+
+return result;
+}
+
+async function sendDraft(id: string) {
+const messageToSend = messages.find((item) => item.id === id);
+
+if (!messageToSend) {
+setMessage("Message not found.");
+return;
+}
+
+if (!messageToSend.participantEmail) {
+setMessage("This participant does not have an email address on file.");
+return;
+}
+
+try {
+setMessage("Sending message...");
+
+await sendMessageEmail(messageToSend);
+
 const next = messages.map((item) =>
 item.id === id
 ? {
@@ -383,10 +434,16 @@ updatedAt: new Date().toISOString(),
 }
 : item
 );
+
 persistMessages(next);
 setActiveTab("sent");
 setSelectedMessageId(id);
-setMessage("Message marked as sent in HireMinds.");
+setMessage("Message sent to candidate email.");
+} catch (error) {
+const errorMessage =
+error instanceof Error ? error.message : "Unable to send message.";
+setMessage(errorMessage);
+}
 }
 
 function deleteMessage(id: string) {
@@ -499,7 +556,9 @@ disabled={loadingLogout}
 {action.participantPhone ? ` • ${action.participantPhone}` : ""}
 {action.dueDate ? ` • Due ${action.dueDate}` : ""}
 </p>
-{action.message ? <p style={styles.supportBody}>{action.message}</p> : null}
+{action.message ? (
+<p style={styles.supportBody}>{action.message}</p>
+) : null}
 </div>
 
 <button
@@ -655,7 +714,9 @@ return (
 <div style={styles.previewInner}>
 <div style={styles.previewTop}>
 <div>
-<p style={styles.previewType}>{message.source === "support_action" ? "FROM SUPPORT ACTION" : "MANUAL DRAFT"}</p>
+<p style={styles.previewType}>
+{message.source === "support_action" ? "FROM SUPPORT ACTION" : "MANUAL DRAFT"}
+</p>
 <h2 style={styles.previewTitle}>{message.participantName}</h2>
 <p style={styles.previewMeta}>
 {message.participantEmail || "—"}
