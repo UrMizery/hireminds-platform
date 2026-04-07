@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
@@ -40,7 +39,6 @@ return "guest";
 
 export default function SiteHeader() {
 const { t } = useLanguage();
-const pathname = usePathname();
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [checkingAuth, setCheckingAuth] = useState(true);
@@ -140,25 +138,9 @@ window.location.href = "/";
 }
 }
 
-const isCandidate = role === "candidate";
-const isPartner = role === "partner";
-
-const partnerStickyRoutes = new Set([
-"/messages",
-"/partner-dashboard/career-map",
-"/partner-dashboard/workshop-resources",
-"/partner-dashboard/report-summary",
-]);
-
-const isPartnerPage =
-pathname?.startsWith("/partner-dashboard") ||
-partnerStickyRoutes.has(pathname || "");
-
-const showMyProfile = isLoggedIn && isCandidate;
-const showCareerToolkit = isLoggedIn && (isCandidate || isPartner);
-const showPartnerDashboard = isLoggedIn && (isPartner || isPartnerPage);
-const showPartnerTools = isLoggedIn && (isPartner || isPartnerPage);
-const showNotes = isLoggedIn && (isCandidate || isPartner || isPartnerPage);
+const isGuest = !isLoggedIn;
+const isCandidate = isLoggedIn && role === "candidate";
+const isPartner = isLoggedIn && role === "partner";
 
 return (
 <header style={styles.header}>
@@ -172,45 +154,71 @@ HireMinds
 {t.home}
 </a>
 
-{!checkingAuth && !isLoggedIn ? (
+<a href="/contact" style={styles.link}>
+{t.contact}
+</a>
+
+{isGuest && !checkingAuth ? (
 <a href="/sign-in" style={styles.link}>
 {t.signIn}
 </a>
 ) : null}
 
-{!checkingAuth && !isLoggedIn ? (
+{isGuest && !checkingAuth ? (
+<a href="/employer-partner-login" style={styles.link}>
+{t.employerPartnerSignIn}
+</a>
+) : null}
+
+{isGuest && !checkingAuth ? (
 <a href="/partner-with-hireminds" style={styles.link}>
 {t.partner}
 </a>
 ) : null}
-
-<a href="/contact" style={styles.link}>
-{t.contact}
-</a>
 </div>
 
 <div style={styles.rightNav}>
-{isLoggedIn ? (
+{isCandidate ? (
 <>
-{showMyProfile ? (
 <a href="/profile" style={styles.link}>
 My Profile
 </a>
-) : null}
 
-{showCareerToolkit ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
 </a>
+
+<button
+type="button"
+onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
+style={styles.notesButtonLike}
+>
+Notes
+</button>
+
+<span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
+
+<button
+type="button"
+onClick={handleLogout}
+style={styles.logoutButton}
+disabled={loadingLogout}
+>
+{loadingLogout ? "Logging Off..." : "Log Off"}
+</button>
+</>
 ) : null}
 
-{showPartnerDashboard ? (
+{isPartner ? (
+<>
+<a href="/career-toolkit" style={styles.link}>
+Career ToolKit
+</a>
+
 <a href="/partner-dashboard" style={styles.link}>
 Partner Dashboard
 </a>
-) : null}
 
-{showPartnerTools ? (
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
@@ -245,9 +253,7 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 </div>
-) : null}
 
-{showNotes ? (
 <button
 type="button"
 onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
@@ -255,7 +261,8 @@ style={styles.notesButtonLike}
 >
 Notes
 </button>
-) : null}
+
+<span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
 
 <button
 type="button"
@@ -268,12 +275,8 @@ disabled={loadingLogout}
 </>
 ) : null}
 
+{isGuest && !checkingAuth ? (
 <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
-
-{!checkingAuth && !isLoggedIn ? (
-<a href="/employer-partner-login" style={styles.link}>
-{t.employerPartnerSignIn}
-</a>
 ) : null}
 </div>
 </div>
