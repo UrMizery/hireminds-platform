@@ -12,6 +12,8 @@ type PartnerRow = {
 organization_name?: string | null;
 contact_name?: string | null;
 contact_title?: string | null;
+account_holder?: string | null;
+title?: string | null;
 contact_email?: string | null;
 referral_code?: string | null;
 account_type?: string | null;
@@ -912,9 +914,9 @@ to { transform: scaleY(1); opacity: 1; }
 <p style={styles.kicker}>Partner Reporting</p>
 <h1 style={styles.title}>{partner?.organization_name || "Partner"} Live Reporting</h1>
 <p style={styles.subtitle}>
-Account Holder: <strong>{partner?.contact_name || "—"}</strong>
+Account Holder: <strong>{partner?.account_holder || partner?.contact_name || "—"}</strong>
 </p>
-<p style={styles.subtleLine}>Title: {partner?.contact_title || "—"}</p>
+<p style={styles.subtleLine}>Title: {partner?.title || partner?.contact_title || "—"}</p>
 <p style={styles.subtleLine}>Email: {partner?.contact_email || "—"}</p>
 <p style={styles.subtleLine}>Referral Code: {partner?.referral_code || "—"}</p>
 </div>
