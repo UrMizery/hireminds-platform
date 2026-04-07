@@ -158,6 +158,8 @@ partnerStickyRoutes.has(pathname || "");
 
 const showMyProfile = isLoggedIn && isCandidate;
 const showCareerToolkit = isLoggedIn && (isCandidate || isPartner);
+const showPartnerDashboard = isLoggedIn && (isPartner || isPartnerPage);
+const showPartnerTools = isLoggedIn && (isPartner || isPartnerPage);
 const showNotes = isLoggedIn && (isCandidate || isPartner || isPartnerPage);
 
 return (
