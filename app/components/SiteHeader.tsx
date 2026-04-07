@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-type UserRole = "guest" | "candidate" | "partner" | "admin";
+type UserRole = "guest" | "candidate" | "partner";
 
 type PartnerNavItem = {
 label: string;
@@ -22,7 +22,6 @@ const partnerNavItems: PartnerNavItem[] = [
 function normalizeRole(rawRole: unknown): UserRole {
 const normalizedRole = String(rawRole || "").toLowerCase().trim();
 
-if (normalizedRole === "admin") return "admin";
 if (normalizedRole === "partner") return "partner";
 
 if (
@@ -183,18 +182,15 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
-// candidate-only
 const candidateCanSeeMyProfile = isLoggedIn && isCandidate;
 const candidateCanSeeCareerToolkit = isLoggedIn && isCandidate;
 const candidateCanSeeNotes = isLoggedIn && isCandidate;
 
-// partner-only
 const partnerCanSeeCareerToolkit = isLoggedIn && isPartner;
 const partnerCanSeePartnerDashboard = isLoggedIn && (isPartner || isPartnerPage);
 const partnerCanSeePartnerTools = isLoggedIn && (isPartner || isPartnerPage);
 const partnerCanSeeNotes = isLoggedIn && (isPartner || isPartnerPage);
 
-// shared flags used by JSX
 const showMyProfile = candidateCanSeeMyProfile;
 const showCareerToolkit = candidateCanSeeCareerToolkit || partnerCanSeeCareerToolkit;
 const showPartnerDashboard = partnerCanSeePartnerDashboard;
