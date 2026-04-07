@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
-type UserRole = "guest" | "candidate" | "partner";
+type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
 
 type PartnerNavItem = {
 label: string;
@@ -22,7 +22,9 @@ const partnerNavItems: PartnerNavItem[] = [
 function normalizeRole(rawRole: unknown): UserRole {
 const normalizedRole = String(rawRole || "").toLowerCase().trim();
 
+if (normalizedRole === "admin") return "admin";
 if (normalizedRole === "partner") return "partner";
+if (normalizedRole === "employer") return "employer";
 
 if (
 normalizedRole === "candidate" ||
@@ -47,35 +49,11 @@ const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
-const [partnerEmailMatch, setPartnerEmailMatch] = useState(false);
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
 let mounted = true;
-
-async function checkPartnerEmail(email?: string | null) {
-if (!email) {
-if (!mounted) return;
-setPartnerEmailMatch(false);
-return;
-}
-
-try {
-const { data } = await supabase
-.from("partners")
-.select("contact_email")
-.ilike("contact_email", email)
-.maybeSingle();
-
-if (!mounted) return;
-setPartnerEmailMatch(!!data?.contact_email);
-} catch (error) {
-console.error("Partner email check error:", error);
-if (!mounted) return;
-setPartnerEmailMatch(false);
-}
-}
 
 async function checkAuth() {
 const {
@@ -89,7 +67,6 @@ if (!mounted) return;
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
-setPartnerEmailMatch(false);
 setCheckingAuth(false);
 return;
 }
@@ -103,7 +80,6 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
-await checkPartnerEmail(sessionUser.email);
 setCheckingAuth(false);
 }
 
@@ -111,7 +87,7 @@ checkAuth();
 
 const {
 data: { subscription },
-} = supabase.auth.onAuthStateChange(async (_event, session) => {
+} = supabase.auth.onAuthStateChange((_event, session) => {
 const sessionUser = session?.user ?? null;
 
 if (!mounted) return;
@@ -119,7 +95,6 @@ if (!mounted) return;
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
-setPartnerEmailMatch(false);
 setCheckingAuth(false);
 return;
 }
@@ -133,7 +108,6 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
-await checkPartnerEmail(sessionUser.email);
 setCheckingAuth(false);
 });
 
@@ -169,7 +143,9 @@ window.location.href = "/";
 }
 
 const isCandidate = role === "candidate";
-const isPartner = role === "partner" || partnerEmailMatch;
+const isPartner = role === "partner";
+const isAdmin = role === "admin";
+const isEmployer = role === "employer";
 
 const partnerStickyRoutes = new Set([
 "/messages",
@@ -182,20 +158,18 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
-const candidateCanSeeMyProfile = isLoggedIn && isCandidate;
-const candidateCanSeeCareerToolkit = isLoggedIn && isCandidate;
-const candidateCanSeeNotes = isLoggedIn && isCandidate;
+const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
 
-const partnerCanSeeCareerToolkit = isLoggedIn && isPartner;
-const partnerCanSeePartnerDashboard = isLoggedIn && (isPartner || isPartnerPage);
-const partnerCanSeePartnerTools = isLoggedIn && (isPartner || isPartnerPage);
-const partnerCanSeeNotes = isLoggedIn && (isPartner || isPartnerPage);
+const showCareerToolkit =
+isLoggedIn && !isPartnerPage && (isCandidate || isAdmin || (!isPartner && !isEmployer));
 
-const showMyProfile = candidateCanSeeMyProfile;
-const showCareerToolkit = candidateCanSeeCareerToolkit || partnerCanSeeCareerToolkit;
-const showPartnerDashboard = partnerCanSeePartnerDashboard;
-const showPartnerTools = partnerCanSeePartnerTools;
-const showNotes = candidateCanSeeNotes || partnerCanSeeNotes;
+const showPartnerDashboard =
+isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+
+const showPartnerTools =
+isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+
+const showNotes = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
 
 return (
 <header style={styles.header}>
@@ -282,6 +256,12 @@ onClick={() => setPartnersOpen(false)}
 </div>
 ) : null}
 </div>
+) : null}
+
+{isEmployer ? (
+<a href="/employer-dashboard" style={styles.link}>
+Employer Dashboard
+</a>
 ) : null}
 
 {showNotes ? (
