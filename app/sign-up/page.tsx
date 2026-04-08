@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabase";
 const VALID_REFERRAL_CODES = [
 "YWCA",
 "RDS",
-"REFERRAL_01",
+"DEMO",
 "REFERRAL_02",
 "REFERRAL_03",
 "REFERRAL_04",
