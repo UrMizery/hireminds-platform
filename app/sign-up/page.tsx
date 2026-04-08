@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const UPCOMING_REFERRAL_CODE_PLACEHOLDERS = [
+const VALID_REFERRAL_CODES = [
+"YWCA",
+"RDS",
 "REFERRAL_01",
 "REFERRAL_02",
 "REFERRAL_03",
@@ -14,14 +16,6 @@ const UPCOMING_REFERRAL_CODE_PLACEHOLDERS = [
 "REFERRAL_08",
 "REFERRAL_09",
 "REFERRAL_10",
-];
-
-const MANUAL_ALLOWED_REFERRAL_CODES = [
-"YWCA",
-"ywca",
-"RDS",
-"rds",
-...UPCOMING_REFERRAL_CODE_PLACEHOLDERS,
 ];
 
 export default function SignupPage() {
@@ -51,44 +45,19 @@ setLoading(false);
 return;
 }
 
-let hasReferralAccess = false;
-let accessTier: "referral" | "limited" = "limited";
-let normalizedReferralCode: string | null = null;
+const normalizedInputCode = trimmedReferralCode.toUpperCase();
 
-const normalizedInput = trimmedReferralCode.toUpperCase();
-
-const manuallyAllowedMatch = MANUAL_ALLOWED_REFERRAL_CODES.find(
-(code) => code.toUpperCase() === normalizedInput
-);
-
-const { data: referralRow, error: referralError } = await supabase
-.from("partners")
-.select("referralCode, account_type")
-.ilike("referralCode", trimmedReferralCode)
-.eq("account_type", "partner")
-.maybeSingle();
-
-if (referralError) {
-setMessage(referralError.message);
-setLoading(false);
-return;
-}
-
-if (referralRow?.referralCode) {
-hasReferralAccess = true;
-accessTier = "referral";
-normalizedReferralCode = referralRow.referralCode;
-} else if (manuallyAllowedMatch) {
-hasReferralAccess = true;
-accessTier = "referral";
-normalizedReferralCode = manuallyAllowedMatch.toUpperCase();
-} else {
+if (!VALID_REFERRAL_CODES.includes(normalizedInputCode)) {
 setMessage(
 "This referral code is not active or is not recognized. Please use a valid referral code. For subscription questions, please use the contact form."
 );
 setLoading(false);
 return;
 }
+
+const hasReferralAccess = true;
+const accessTier: "referral" | "limited" = "referral";
+const normalizedReferralCode = normalizedInputCode;
 
 const { data, error } = await supabase.auth.signUp({
 email,
@@ -175,17 +144,6 @@ return (
 Access to HireMinds is currently available by valid referral code only.
 If you have questions about subscription access, please use the contact form.
 </p>
-
-<div style={styles.noticeBox}>
-<p style={styles.noticeTitle}>Referral Access Required</p>
-<p style={styles.noticeText}>
-A valid referral code is required to create an account and access HireMinds.
-</p>
-<p style={styles.noticeText}>
-If you do not have an active referral code and want to ask about subscription
-access, please use the contact form.
-</p>
-</div>
 
 <input
 placeholder="Full Name"
@@ -331,26 +289,6 @@ color: "#d1d5db",
 textAlign: "center",
 lineHeight: 1.6,
 margin: "0 0 4px",
-},
-noticeBox: {
-background: "linear-gradient(180deg, #161616 0%, #1b1b1b 100%)",
-border: "1px solid #2f2f2f",
-borderRadius: "16px",
-padding: "16px",
-display: "grid",
-gap: "8px",
-},
-noticeTitle: {
-margin: 0,
-fontSize: "14px",
-fontWeight: 700,
-color: "#ffffff",
-},
-noticeText: {
-margin: 0,
-fontSize: "13px",
-color: "#d1d5db",
-lineHeight: 1.6,
 },
 input: {
 width: "100%",
