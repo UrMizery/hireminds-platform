@@ -3,6 +3,27 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
+const UPCOMING_REFERRAL_CODE_PLACEHOLDERS = [
+"REFERRAL_01",
+"REFERRAL_02",
+"REFERRAL_03",
+"REFERRAL_04",
+"REFERRAL_05",
+"REFERRAL_06",
+"REFERRAL_07",
+"REFERRAL_08",
+"REFERRAL_09",
+"REFERRAL_10",
+];
+
+const MANUAL_ALLOWED_REFERRAL_CODES = [
+"YWCA",
+"ywca",
+"RDS",
+"rds",
+...UPCOMING_REFERRAL_CODE_PLACEHOLDERS,
+];
+
 export default function SignupPage() {
 const [fullName, setFullName] = useState("");
 const [phone, setPhone] = useState("");
@@ -34,11 +55,17 @@ let hasReferralAccess = false;
 let accessTier: "referral" | "limited" = "limited";
 let normalizedReferralCode: string | null = null;
 
+const normalizedInput = trimmedReferralCode.toUpperCase();
+
+const manuallyAllowedMatch = MANUAL_ALLOWED_REFERRAL_CODES.find(
+(code) => code.toUpperCase() === normalizedInput
+);
+
 const { data: referralRow, error: referralError } = await supabase
-.from("referral_codes")
-.select("code, is_active")
-.ilike("code", trimmedReferralCode)
-.eq("is_active", true)
+.from("partners")
+.select("referralCode, account_type")
+.ilike("referralCode", trimmedReferralCode)
+.eq("account_type", "partner")
 .maybeSingle();
 
 if (referralError) {
@@ -47,17 +74,21 @@ setLoading(false);
 return;
 }
 
-if (!referralRow?.code) {
+if (referralRow?.referralCode) {
+hasReferralAccess = true;
+accessTier = "referral";
+normalizedReferralCode = referralRow.referralCode;
+} else if (manuallyAllowedMatch) {
+hasReferralAccess = true;
+accessTier = "referral";
+normalizedReferralCode = manuallyAllowedMatch.toUpperCase();
+} else {
 setMessage(
 "This referral code is not active or is not recognized. Please use a valid referral code. For subscription questions, please use the contact form."
 );
 setLoading(false);
 return;
 }
-
-hasReferralAccess = true;
-accessTier = "referral";
-normalizedReferralCode = referralRow.code;
 
 const { data, error } = await supabase.auth.signUp({
 email,
@@ -92,9 +123,7 @@ setLoading(false);
 return;
 }
 
-const { error: profileError } = await supabase
-.from("candidate_profiles")
-.upsert({
+const { error: profileError } = await supabase.from("candidate_profiles").upsert({
 user_id: user.id,
 full_name: fullName,
 phone: phone || null,
