@@ -83,6 +83,57 @@ async function callApi(action: string, body: Record<string, any>) {
   return res.json();
 }
 
+// ── File parser: handles DOCX, PDF, TXT, PNG ──
+async function extractTextFromFile(file: File): Promise<string> {
+  const name = file.name.toLowerCase();
+
+  // DOCX
+  if (name.endsWith(".docx")) {
+    const mammoth = await import("mammoth");
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  }
+
+  // PDF
+  if (name.endsWith(".pdf")) {
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map((item: any) => item.str).join(" ") + "\n";
+    }
+    return text;
+  }
+
+  // PNG / Image — send to Claude vision via API
+  if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
+    const base64 = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve((e.target?.result as string).split(",")[1]);
+      reader.readAsDataURL(file);
+    });
+    const res = await fetch("/api/optimize-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "extractImage", imageBase64: base64, mediaType: file.type }),
+    });
+    const data = await res.json();
+    return data.text || "";
+  }
+
+  // TXT fallback
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsText(file);
+  });
+}
+
 const FONTS = [
   { label: "Times New Roman", value: "'Times New Roman', Times, serif" },
   { label: "Arial", value: "Arial, Helvetica, sans-serif" },
@@ -95,196 +146,7 @@ const EMPTY_SLOTS: ResumeSlot[] = [
   { id: "slot3", label: "Resume 3 — Alternate", resumeUrl: null, resumeData: null, isVisible: false, createdAt: null },
 ];
 
-// ─── Resume Preview Component ─────────────────────────────────────────────────
-
-function ResumePreview({
-  resume,
-  candidateInfo,
-  font,
-  editing,
-  onEdit,
-  onFlagSection,
-  flaggedSections,
-  suggestions,
-  loadingSuggestion,
-  onAcceptSuggestion,
-  onDismissFlag,
-}: {
-  resume: GeneratedResume;
-  candidateInfo: { fullName: string; email: string; phone: string; linkedinUrl: string; city: string; state: string };
-  font: string;
-  editing: boolean;
-  onEdit: (field: string, value: any) => void;
-  onFlagSection: (key: string) => void;
-  flaggedSections: Record<string, boolean>;
-  suggestions: Record<string, { issue: string; revised: string } | null>;
-  loadingSuggestion: Record<string, boolean>;
-  onAcceptSuggestion: (key: string) => void;
-  onDismissFlag: (key: string) => void;
-}) {
-  const pageStyle: CSSProperties = {
-    fontFamily: font,
-    fontSize: "11pt",
-    lineHeight: 1.4,
-    color: "#000",
-    background: "#fff",
-    padding: "1in 1in 1in 1in",
-    maxWidth: "8.5in",
-    margin: "0 auto",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
-    minHeight: "11in",
-    boxSizing: "border-box",
-  };
-
-  const headerStyle: CSSProperties = { textAlign: "center", marginBottom: "6pt" };
-  const nameStyle: CSSProperties = { fontSize: "16pt", fontWeight: "bold", margin: 0 };
-  const contactStyle: CSSProperties = { fontSize: "10pt", margin: "4pt 0 0", textAlign: "center" };
-  const sectionHeaderStyle: CSSProperties = { textAlign: "center", fontWeight: "bold", fontSize: "11pt", borderBottom: "1px solid #000", marginTop: "10pt", marginBottom: "4pt", paddingBottom: "2pt" };
-  const jobHeaderStyle: CSSProperties = { display: "flex", justifyContent: "space-between", marginTop: "8pt" };
-  const jobTitleStyle: CSSProperties = { fontStyle: "italic", margin: 0 };
-  const bulletStyle: CSSProperties = { marginLeft: "16pt", margin: "2pt 0 2pt 16pt" };
-
-  return (
-    <div style={pageStyle}>
-      {/* Header */}
-      <div style={headerStyle}>
-        <p style={nameStyle}>{candidateInfo.fullName || "Your Name"}</p>
-        <p style={contactStyle}>
-          {candidateInfo.email || "email@example.com"}
-          {candidateInfo.linkedinUrl ? ` | ${candidateInfo.linkedinUrl}` : ""}
-          {candidateInfo.phone ? ` | ${candidateInfo.phone}` : ""}
-        </p>
-        {(candidateInfo.city || candidateInfo.state) && (
-          <p style={{ ...contactStyle, marginTop: "2pt" }}>
-            {[candidateInfo.city, candidateInfo.state].filter(Boolean).join(", ")}
-          </p>
-        )}
-      </div>
-
-      <hr style={{ border: "none", borderTop: "1px solid #000", margin: "6pt 0" }} />
-
-      {/* Professional Title */}
-      <div style={sectionHeaderStyle}>
-        {editing ? (
-          <input
-            value={resume.professionalTitle}
-            onChange={(e) => onEdit("professionalTitle", e.target.value)}
-            style={{ textAlign: "center", fontWeight: "bold", fontSize: "11pt", border: "1px dashed #aaa", width: "100%", background: "transparent", outline: "none" }}
-          />
-        ) : (
-          resume.professionalTitle
-        )}
-      </div>
-
-      {/* Summary */}
-      <div>
-        <SectionWithFlag sectionKey="summary" flagged={flaggedSections["summary"]} loading={loadingSuggestion["summary"]} suggestion={suggestions["summary"]} onFlag={() => onFlagSection("summary")} onAccept={() => onAcceptSuggestion("summary")} onDismiss={() => onDismissFlag("summary")}>
-          {editing ? (
-            <textarea
-              value={resume.summary}
-              onChange={(e) => onEdit("summary", e.target.value)}
-              rows={4}
-              style={{ width: "100%", fontSize: "11pt", fontFamily: font, border: "1px dashed #aaa", padding: "4px", boxSizing: "border-box", resize: "vertical" }}
-            />
-          ) : (
-            <p style={{ margin: "4pt 0", fontSize: "11pt" }}>{resume.summary}</p>
-          )}
-        </SectionWithFlag>
-      </div>
-
-      {/* Core Skills */}
-      <div style={sectionHeaderStyle}>CORE SKILLS</div>
-      <SectionWithFlag sectionKey="skills" flagged={flaggedSections["skills"]} loading={loadingSuggestion["skills"]} suggestion={suggestions["skills"]} onFlag={() => onFlagSection("skills")} onAccept={() => onAcceptSuggestion("skills")} onDismiss={() => onDismissFlag("skills")}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2pt 16pt", margin: "4pt 0" }}>
-          {resume.skills.map((skill, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "4pt" }}>
-              <span>•</span>
-              {editing ? (
-                <input
-                  value={skill}
-                  onChange={(e) => {
-                    const updated = [...resume.skills];
-                    updated[i] = e.target.value;
-                    onEdit("skills", updated);
-                  }}
-                  style={{ fontSize: "10pt", fontFamily: font, border: "1px dashed #aaa", width: "100%", background: "transparent" }}
-                />
-              ) : (
-                <span style={{ fontSize: "10pt" }}>{skill}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </SectionWithFlag>
-
-      {/* Experience */}
-      <div style={sectionHeaderStyle}>EXPERIENCE</div>
-      {resume.experience.map((job, ji) => (
-        <div key={ji}>
-          <div style={jobHeaderStyle}>
-            <span style={{ fontWeight: "normal", fontSize: "11pt" }}>
-              {editing ? (
-                <span style={{ display: "flex", gap: "8px" }}>
-                  <input value={job.company} onChange={(e) => { const exp = [...resume.experience]; exp[ji] = { ...exp[ji], company: e.target.value }; onEdit("experience", exp); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} />
-                  <input value={job.location} onChange={(e) => { const exp = [...resume.experience]; exp[ji] = { ...exp[ji], location: e.target.value }; onEdit("experience", exp); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} />
-                </span>
-              ) : (
-                `${job.company}${job.location ? `, ${job.location}` : ""}`
-              )}
-            </span>
-            <span style={{ fontSize: "10pt" }}>
-              {editing ? (
-                <input value={job.dates} onChange={(e) => { const exp = [...resume.experience]; exp[ji] = { ...exp[ji], dates: e.target.value }; onEdit("experience", exp); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} />
-              ) : job.dates}
-            </span>
-          </div>
-          <p style={jobTitleStyle}>
-            {editing ? (
-              <input value={job.title} onChange={(e) => { const exp = [...resume.experience]; exp[ji] = { ...exp[ji], title: e.target.value }; onEdit("experience", exp); }} style={{ fontSize: "10pt", fontStyle: "italic", border: "1px dashed #aaa", fontFamily: font, width: "60%" }} />
-            ) : job.title}
-          </p>
-          <ul style={{ margin: "2pt 0", paddingLeft: "20pt" }}>
-            {job.bullets.map((b, bi) => (
-              <li key={bi} style={{ ...bulletStyle, listStyle: "disc" }}>
-                {editing ? (
-                  <input value={b} onChange={(e) => { const exp = [...resume.experience]; exp[ji].bullets[bi] = e.target.value; onEdit("experience", exp); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "95%" }} />
-                ) : b}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-
-      {/* Education */}
-      {resume.education?.length > 0 && (
-        <>
-          <div style={sectionHeaderStyle}>EDUCATION</div>
-          {resume.education.map((edu, ei) => (
-            <div key={ei}>
-              <div style={jobHeaderStyle}>
-                <span style={{ fontSize: "11pt" }}>
-                  {editing ? (
-                    <input value={edu.school} onChange={(e) => { const ed = [...resume.education]; ed[ei] = { ...ed[ei], school: e.target.value }; onEdit("education", ed); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} />
-                  ) : edu.school}
-                </span>
-                <span style={{ fontSize: "10pt" }}>
-                  {editing ? (
-                    <input value={edu.dates} onChange={(e) => { const ed = [...resume.education]; ed[ei] = { ...ed[ei], dates: e.target.value }; onEdit("education", ed); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} />
-                  ) : edu.dates}
-                </span>
-              </div>
-              <p style={jobTitleStyle}>
-                {editing ? (
-                  <input value={edu.degree} onChange={(e) => { const ed = [...resume.education]; ed[ei] = { ...ed[ei], degree: e.target.value }; onEdit("education", ed); }} style={{ fontSize: "10pt", fontStyle: "italic", border: "1px dashed #aaa", fontFamily: font, width: "60%" }} />
-                ) : edu.degree}
-              </p>
-            </div>
-          ))}
-        </>
-      )}
-    </div>
-  );
-}
+// ─── Section Flag Component ───────────────────────────────────────────────────
 
 function SectionWithFlag({ sectionKey, flagged, loading, suggestion, onFlag, onAccept, onDismiss, children }: {
   sectionKey: string; flagged: boolean; loading: boolean;
@@ -315,6 +177,143 @@ function SectionWithFlag({ sectionKey, flagged, loading, suggestion, onFlag, onA
   );
 }
 
+// ─── Resume Preview ───────────────────────────────────────────────────────────
+
+function ResumePreview({ resume, candidateInfo, font, editing, onEdit, onFlagSection, flaggedSections, suggestions, loadingSuggestion, onAcceptSuggestion, onDismissFlag }: {
+  resume: GeneratedResume;
+  candidateInfo: { fullName: string; email: string; phone: string; linkedinUrl: string; city: string; state: string };
+  font: string; editing: boolean;
+  onEdit: (field: string, value: any) => void;
+  onFlagSection: (key: string) => void;
+  flaggedSections: Record<string, boolean>;
+  suggestions: Record<string, { issue: string; revised: string } | null>;
+  loadingSuggestion: Record<string, boolean>;
+  onAcceptSuggestion: (key: string) => void;
+  onDismissFlag: (key: string) => void;
+}) {
+  const pg: CSSProperties = { fontFamily: font, fontSize: "11pt", lineHeight: 1.4, color: "#000", background: "#fff", padding: "1in", maxWidth: "8.5in", margin: "0 auto", boxShadow: "0 4px 24px rgba(0,0,0,0.18)", minHeight: "11in", boxSizing: "border-box" };
+  const secHdr: CSSProperties = { textAlign: "center", fontWeight: "bold", fontSize: "11pt", borderBottom: "1px solid #000", marginTop: "10pt", marginBottom: "4pt", paddingBottom: "2pt" };
+  const jobHdr: CSSProperties = { display: "flex", justifyContent: "space-between", marginTop: "8pt" };
+
+  return (
+    <div style={pg}>
+      {/* Name */}
+      <div style={{ textAlign: "center", marginBottom: "6pt" }}>
+        <p style={{ fontSize: "16pt", fontWeight: "bold", margin: 0 }}>{candidateInfo.fullName || "Your Name"}</p>
+        <p style={{ fontSize: "10pt", margin: "4pt 0 0", textAlign: "center" }}>
+          {[candidateInfo.email, candidateInfo.linkedinUrl, candidateInfo.phone].filter(Boolean).join(" | ")}
+        </p>
+        {(candidateInfo.city || candidateInfo.state) && (
+          <p style={{ fontSize: "10pt", margin: "2pt 0 0" }}>{[candidateInfo.city, candidateInfo.state].filter(Boolean).join(", ")}</p>
+        )}
+      </div>
+
+      <hr style={{ border: "none", borderTop: "1px solid #000", margin: "6pt 0" }} />
+
+      {/* Professional Title */}
+      <div style={secHdr}>
+        {editing ? (
+          <input value={resume.professionalTitle} onChange={(e) => onEdit("professionalTitle", e.target.value)} style={{ textAlign: "center", fontWeight: "bold", fontSize: "11pt", border: "1px dashed #aaa", width: "100%", background: "transparent", outline: "none", fontFamily: font }} />
+        ) : resume.professionalTitle}
+      </div>
+
+      {/* Summary */}
+      <SectionWithFlag sectionKey="summary" flagged={flaggedSections["summary"]} loading={loadingSuggestion["summary"]} suggestion={suggestions["summary"]} onFlag={() => onFlagSection("summary")} onAccept={() => onAcceptSuggestion("summary")} onDismiss={() => onDismissFlag("summary")}>
+        {editing ? (
+          <textarea value={resume.summary} onChange={(e) => onEdit("summary", e.target.value)} rows={4} style={{ width: "100%", fontSize: "11pt", fontFamily: font, border: "1px dashed #aaa", padding: "4px", boxSizing: "border-box", resize: "vertical" }} />
+        ) : (
+          <p style={{ margin: "4pt 0", fontSize: "11pt" }}>{resume.summary}</p>
+        )}
+      </SectionWithFlag>
+
+      {/* Core Skills */}
+      <div style={secHdr}>CORE SKILLS</div>
+      <SectionWithFlag sectionKey="skills" flagged={flaggedSections["skills"]} loading={loadingSuggestion["skills"]} suggestion={suggestions["skills"]} onFlag={() => onFlagSection("skills")} onAccept={() => onAcceptSuggestion("skills")} onDismiss={() => onDismissFlag("skills")}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2pt 16pt", margin: "4pt 0" }}>
+          {resume.skills.map((skill, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "4pt" }}>
+              <span>•</span>
+              {editing ? (
+                <input value={skill} onChange={(e) => { const u = [...resume.skills]; u[i] = e.target.value; onEdit("skills", u); }} style={{ fontSize: "10pt", fontFamily: font, border: "1px dashed #aaa", width: "100%", background: "transparent" }} />
+              ) : <span style={{ fontSize: "10pt" }}>{skill}</span>}
+            </div>
+          ))}
+        </div>
+      </SectionWithFlag>
+
+      {/* Experience */}
+      <div style={secHdr}>EXPERIENCE</div>
+      {resume.experience.map((job, ji) => (
+        <div key={ji}>
+          <div style={jobHdr}>
+            <span style={{ fontSize: "11pt" }}>
+              {editing ? (
+                <span style={{ display: "inline-flex", gap: "6px" }}>
+                  <input value={job.company} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], company: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "140px" }} />
+                  <input value={job.location} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], location: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "100px" }} />
+                </span>
+              ) : `${job.company}${job.location ? `, ${job.location}` : ""}`}
+            </span>
+            <span style={{ fontSize: "10pt" }}>
+              {editing ? <input value={job.dates} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], dates: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} /> : job.dates}
+            </span>
+          </div>
+          <p style={{ fontStyle: "italic", margin: 0 }}>
+            {editing ? <input value={job.title} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], title: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", fontStyle: "italic", border: "1px dashed #aaa", fontFamily: font, width: "60%" }} /> : job.title}
+          </p>
+          <ul style={{ margin: "2pt 0", paddingLeft: "20pt" }}>
+            {job.bullets.map((b, bi) => (
+              <li key={bi} style={{ margin: "2pt 0", listStyle: "disc" }}>
+                {editing ? <input value={b} onChange={(e) => { const ex = [...resume.experience]; ex[ji].bullets[bi] = e.target.value; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "95%" }} /> : b}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      {/* Education */}
+      {resume.education?.length > 0 && (
+        <>
+          <div style={secHdr}>EDUCATION</div>
+          {resume.education.map((edu, ei) => (
+            <div key={ei}>
+              <div style={jobHdr}>
+                <span>{editing ? <input value={edu.school} onChange={(e) => { const ed = [...resume.education]; ed[ei] = { ...ed[ei], school: e.target.value }; onEdit("education", ed); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} /> : edu.school}</span>
+                <span style={{ fontSize: "10pt" }}>{editing ? <input value={edu.dates} onChange={(e) => { const ed = [...resume.education]; ed[ei] = { ...ed[ei], dates: e.target.value }; onEdit("education", ed); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} /> : edu.dates}</span>
+              </div>
+              <p style={{ fontStyle: "italic", margin: 0 }}>{editing ? <input value={edu.degree} onChange={(e) => { const ed = [...resume.education]; ed[ei] = { ...ed[ei], degree: e.target.value }; onEdit("education", ed); }} style={{ fontSize: "10pt", fontStyle: "italic", border: "1px dashed #aaa", fontFamily: font, width: "60%" }} /> : edu.degree}</p>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Upload Zone ──────────────────────────────────────────────────────────────
+
+function UploadZone({ loaded, onFile, inputId }: { loaded: boolean; onFile: (f: File) => void; inputId: string }) {
+  const [drag, setDrag] = useState(false);
+  return (
+    <>
+      <div
+        style={{ border: `2px dashed ${drag ? "#6366f1" : "#2a2a2a"}`, borderRadius: "12px", padding: "28px 24px", textAlign: "center", cursor: "pointer", background: drag ? "#0d0d1a" : "#0d0d0d", transition: "all 0.2s" }}
+        onClick={() => document.getElementById(inputId)?.click()}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) onFile(f); }}
+      >
+        <div style={{ fontSize: "32px", marginBottom: "10px" }}>📄</div>
+        <p style={{ color: loaded ? "#4ade80" : "#9ca3af", margin: "0 0 4px", fontSize: "14px", fontWeight: loaded ? 700 : 400 }}>
+          {loaded ? "✅ Resume loaded — click to replace" : "Click to upload or drag & drop"}
+        </p>
+        <p style={{ color: "#444", margin: 0, fontSize: "12px", fontFamily: "monospace" }}>PDF · DOCX · TXT · PNG</p>
+      </div>
+      <input id={inputId} type="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
+    </>
+  );
+}
+
 // ─── Main Profile Page ────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
@@ -337,10 +336,15 @@ export default function ProfilePage() {
   const [publicProfileUrl, setPublicProfileUrl] = useState("");
   const trackedRef = useRef(false);
 
-  // ── Optimizer State ──
+  // Slot 1 direct upload state
+  const [slot1Uploading, setSlot1Uploading] = useState(false);
+  const [slot1FileName, setSlot1FileName] = useState("");
+
+  // Optimizer state
   const [showOptimizer, setShowOptimizer] = useState(false);
   const [optimizerStep, setOptimizerStep] = useState(0);
   const [rawResumeText, setRawResumeText] = useState("");
+  const [resumeFileName, setResumeFileName] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [selectedJobs, setSelectedJobs] = useState<Job[]>([]);
@@ -356,20 +360,17 @@ export default function ProfilePage() {
   const [loadingSuggestion, setLoadingSuggestion] = useState<Record<string, boolean>>({});
   const [optimizerLoading, setOptimizerLoading] = useState(false);
   const [optimizerError, setOptimizerError] = useState("");
-  const [targetSlot, setTargetSlot] = useState<string>("slot1");
+  const [targetSlot, setTargetSlot] = useState("slot2");
   const [slotLabel, setSlotLabel] = useState("");
+  const [fileLoading, setFileLoading] = useState(false);
 
-  // ── Load Profile ──
+  // Load profile
   useEffect(() => {
     async function loadProfile() {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData.user) { window.location.href = "/sign-in"; return; }
-
-      const { data: profile, error: profileError } = await supabase
-        .from("candidate_profiles").select("*").eq("user_id", authData.user.id).single();
-
+      const { data: profile, error: profileError } = await supabase.from("candidate_profiles").select("*").eq("user_id", authData.user.id).single();
       if (profileError || !profile) { setMessage(profileError?.message || "Profile not found."); setLoading(false); return; }
-
       setUserId(authData.user.id || "");
       setProfileId(profile.id || "");
       setFullName(profile.full_name || "");
@@ -382,37 +383,25 @@ export default function ProfilePage() {
       setLinkedinUrl(profile.linkedin_url || "");
       setPhotoUrl(profile.photo_url || "");
       setPublicProfileUrl(profile.public_profile_url || "");
-
-      // Load resume slots from profile
-      if (profile.resume_slots) {
-        setResumeSlots(profile.resume_slots);
-      }
-
+      if (profile.resume_slots) setResumeSlots(profile.resume_slots);
       if (!trackedRef.current) {
         trackedRef.current = true;
-        await supabase.from("user_activity").insert({
-          user_id: authData.user.id, full_name: profile.full_name || null,
-          email: profile.email || authData.user.email || null,
-          referral_code: profile.referral_code || null,
-          event_type: "profile_viewed", tool_name: "profile", page_name: "/profile",
-        });
+        await supabase.from("user_activity").insert({ user_id: authData.user.id, full_name: profile.full_name || null, email: profile.email || authData.user.email || null, referral_code: profile.referral_code || null, event_type: "profile_viewed", tool_name: "profile", page_name: "/profile" });
       }
       setLoading(false);
     }
     loadProfile();
   }, []);
 
-  // ── Upload File ──
   async function uploadFile(bucket: string, file: File, folder: string) {
     const fileExt = file.name.split(".").pop() || "file";
     const filePath = `${folder}/${Date.now()}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, file, { upsert: true });
-    if (uploadError) throw uploadError;
+    const { error } = await supabase.storage.from(bucket).upload(filePath, file, { upsert: true });
+    if (error) throw error;
     const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
     return data.publicUrl;
   }
 
-  // ── Save Profile ──
   async function handleSaveProfile() {
     setMessage("");
     if (!userId) { setMessage("You must be signed in."); return; }
@@ -420,18 +409,9 @@ export default function ProfilePage() {
       setSaving(true);
       let nextPhotoUrl = photoUrl;
       if (photoFile) nextPhotoUrl = await uploadFile("profile-photos", photoFile, `${userId}/photo`);
-
       const slug = slugify(fullName || "career-passport");
       const publicUrl = `${window.location.origin}/passport/${slug}-${userId.slice(0, 8)}`;
-
-      const payload = {
-        user_id: userId, full_name: fullName, phone, email, city,
-        state: stateName, bio, headline, linkedin_url: linkedinUrl,
-        photo_url: nextPhotoUrl || null,
-        resume_slots: resumeSlots,
-        public_profile_url: publicUrl,
-      };
-
+      const payload = { user_id: userId, full_name: fullName, phone, email, city, state: stateName, bio, headline, linkedin_url: linkedinUrl, photo_url: nextPhotoUrl || null, resume_slots: resumeSlots, public_profile_url: publicUrl };
       if (profileId) {
         const { error } = await supabase.from("candidate_profiles").update(payload).eq("id", profileId);
         if (error) throw error;
@@ -440,7 +420,6 @@ export default function ProfilePage() {
         if (error) throw error;
         setProfileId(data.id);
       }
-
       setPhotoUrl(nextPhotoUrl);
       setPublicProfileUrl(publicUrl);
       setMessage("Profile saved successfully.");
@@ -451,7 +430,6 @@ export default function ProfilePage() {
     }
   }
 
-  // ── Resume Slot Actions ──
   function setVisibleSlot(slotId: string) {
     setResumeSlots((prev) => prev.map((s) => ({ ...s, isVisible: s.id === slotId })));
   }
@@ -460,10 +438,41 @@ export default function ProfilePage() {
     setResumeSlots((prev) => prev.map((s) => s.id === slotId ? { ...s, label } : s));
   }
 
-  // ── Optimizer: Analyze ──
+  // Slot 1 direct upload
+  async function handleSlot1Upload(file: File) {
+    try {
+      setSlot1Uploading(true);
+      setSlot1FileName(file.name);
+      const url = await uploadFile("resumes", file, `${userId}/slot1`);
+      setResumeSlots((prev) => prev.map((s) => s.id === "slot1" ? { ...s, resumeUrl: url, createdAt: new Date().toISOString() } : s));
+      setMessage("Resume uploaded to Slot 1!");
+    } catch (err: any) {
+      setMessage(err.message || "Upload failed.");
+    } finally {
+      setSlot1Uploading(false);
+    }
+  }
+
+  // Handle resume file for optimizer
+  async function handleResumeFile(file: File) {
+    setFileLoading(true);
+    setResumeFileName(file.name);
+    try {
+      const text = await extractTextFromFile(file);
+      setRawResumeText(text);
+    } catch {
+      setOptimizedError("Could not read file. Please try a different format or paste the text.");
+    }
+    setFileLoading(false);
+  }
+
+  function setOptimizedError(msg: string) {
+    setOptimizerError(msg);
+  }
+
   async function handleAnalyze() {
-    if (!rawResumeText.trim()) { setOptimizerError("Please paste your resume text."); return; }
-    if (!jobDescription.trim()) { setOptimizerError("Please paste the job description."); return; }
+    if (!rawResumeText.trim()) { setOptimizerError("Please upload or paste your resume."); return; }
+    if (!jobDescription.trim()) { setOptimizerError("Please paste a job description."); return; }
     setOptimizerError(""); setOptimizerLoading(true);
     try {
       const result = await callApi("analyze", { resumeText: rawResumeText, jobDescription });
@@ -477,33 +486,27 @@ export default function ProfilePage() {
     setOptimizerLoading(false);
   }
 
-  // ── Optimizer: Generate ──
   async function handleGenerate() {
     setOptimizerLoading(true); setOptimizerError("");
+    setOptimizerStep(3);
     try {
       const candidateInfo = { fullName, email, phone, linkedinUrl, city, state: stateName };
       const main = await callApi("generate", { resumeText: rawResumeText, jobDescription, selectedJobs, selectedEducation, format: chosenFormat, font: chosenFont, resumeTitle, candidateInfo });
       const resumes: GeneratedResume[] = [main];
-
-      // Generate alternate resume if multiple career tracks
       if (analysis?.hasMultipleCareerTracks && analysis.careerTracks?.length > 1) {
-        const track2Jobs = analysis.jobs.filter((j) =>
-          analysis.careerTracks[1]?.jobIds.includes(j.id)
-        );
+        const track2Jobs = analysis.jobs.filter((j) => analysis.careerTracks[1]?.jobIds.includes(j.id));
         if (track2Jobs.length > 0) {
           const alt = await callApi("generateAlternate", { resumeText: rawResumeText, jobDescription, alternatejobs: track2Jobs, selectedEducation, candidateInfo });
           resumes.push(alt);
         }
       }
-
       setGeneratedResumes(resumes);
       setActiveResumeIdx(0);
       setOptimizerStep(4);
-    } catch { setOptimizerError("Generation failed. Please try again."); }
+    } catch { setOptimizerError("Generation failed. Please try again."); setOptimizerStep(2); }
     setOptimizerLoading(false);
   }
 
-  // ── Flag Section ──
   async function handleFlagSection(key: string) {
     const resume = generatedResumes[activeResumeIdx];
     if (!resume) return;
@@ -532,24 +535,22 @@ export default function ProfilePage() {
     setGeneratedResumes(updated);
   }
 
-  // ── Save Resume to Slot ──
   async function handleSaveToSlot() {
     const resume = generatedResumes[activeResumeIdx];
     if (!resume) return;
     const label = slotLabel || `${resume.professionalTitle} Resume`;
-    setResumeSlots((prev) => prev.map((s) =>
-      s.id === targetSlot ? { ...s, resumeData: resume, label, createdAt: new Date().toISOString() } : s
-    ));
+    setResumeSlots((prev) => prev.map((s) => s.id === targetSlot ? { ...s, resumeData: resume, label, createdAt: new Date().toISOString() } : s));
     setShowOptimizer(false);
     setOptimizerStep(0);
+    setRawResumeText("");
+    setJobDescription("");
+    setGeneratedResumes([]);
+    setAnalysis(null);
     setMessage(`Resume saved to ${label}!`);
     await handleSaveProfile();
   }
 
-  // ── Print ──
-  function handlePrint() {
-    window.print();
-  }
+  function handlePrint() { window.print(); }
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -563,11 +564,8 @@ export default function ProfilePage() {
   return (
     <main style={st.page}>
       <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          .print-page { box-shadow: none !important; margin: 0 !important; }
-          body { background: white; }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media print { .no-print { display: none !important; } body { background: white; } }
       `}</style>
 
       <div style={st.shell}>
@@ -578,16 +576,14 @@ export default function ProfilePage() {
             <h1 style={st.title}>Career Passport Editor</h1>
             <p style={st.subtitle}>Update your profile, manage your resumes, and share your Career Passport with employers.</p>
           </div>
-          <div style={st.heroRight}>
-            <button onClick={handleSignOut} style={st.secondaryButton}>Sign Out</button>
-          </div>
+          <button onClick={handleSignOut} style={st.secondaryButton}>Sign Out</button>
         </section>
 
         {/* Profile Strip */}
         <section style={st.profileStrip}>
           <div style={st.profileStripLeft}>
             {photoUrl ? <img src={photoUrl} alt="Profile" style={st.avatar} /> : <div style={st.avatarPlaceholder}>No Photo</div>}
-            <div style={st.photoUploadWrap}>
+            <div>
               <label style={st.label}>Profile Photo</label>
               <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} style={st.input} />
             </div>
@@ -597,11 +593,7 @@ export default function ProfilePage() {
             <p style={st.headlinePreview}>{headline || "Professional Headline"}</p>
             <p style={st.metaPreview}>{[city, stateName].filter(Boolean).join(", ") || "City, State"}</p>
             <p style={st.metaPreview}>{email || "email@example.com"}</p>
-            {publicProfileUrl && (
-              <a href={publicProfileUrl} target="_blank" rel="noopener noreferrer" style={st.publicLink}>
-                🔗 View Public Profile
-              </a>
-            )}
+            {publicProfileUrl && <a href={publicProfileUrl} target="_blank" rel="noopener noreferrer" style={st.publicLink}>🔗 View Public Profile</a>}
           </div>
         </section>
 
@@ -632,48 +624,59 @@ export default function ProfilePage() {
           <div style={st.flowIntro}>
             <p style={st.sectionKicker}>Resumes</p>
             <h2 style={st.sectionTitle}>My Resumes</h2>
-            <p style={st.flowText}>You can store up to 3 resumes. Choose which one is visible to employers on your public Career Passport.</p>
+            <p style={st.flowText}>Store up to 3 resumes. Choose which one is visible to employers on your public Career Passport.</p>
           </div>
 
           <div style={{ display: "grid", gap: "16px" }}>
             {resumeSlots.map((slot) => (
-              <div key={slot.id} style={{ ...glass, borderRadius: "20px", padding: "20px", display: "grid", gap: "12px" }}>
+              <div key={slot.id} style={{ ...glass, borderRadius: "20px", padding: "24px", display: "grid", gap: "14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <input
-                      value={slot.label}
-                      onChange={(e) => updateSlotLabel(slot.id, e.target.value)}
-                      style={{ ...st.input, width: "280px", fontSize: "15px", fontWeight: 700, padding: "8px 12px" }}
-                    />
+                    <input value={slot.label} onChange={(e) => updateSlotLabel(slot.id, e.target.value)} style={{ ...st.input, width: "260px", fontSize: "14px", fontWeight: 700, padding: "8px 12px" }} />
                     {slot.isVisible && <span style={{ fontSize: "11px", background: "#1e3a2f", color: "#4ade80", border: "1px solid #2d5a3d", padding: "3px 10px", borderRadius: "999px", fontFamily: "monospace" }}>Visible to Employers</span>}
                   </div>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     {!slot.isVisible && (
-                      <button onClick={() => setVisibleSlot(slot.id)} style={{ ...st.secondaryButton, fontSize: "13px", padding: "8px 14px" }}>
-                        Set as Visible
-                      </button>
+                      <button onClick={() => setVisibleSlot(slot.id)} style={{ ...st.secondaryButton, fontSize: "13px", padding: "8px 14px" }}>Set as Visible</button>
                     )}
-                    <button onClick={() => { setTargetSlot(slot.id); setSlotLabel(slot.label); setShowOptimizer(true); setOptimizerStep(0); }}
-                      style={{ ...st.secondaryButton, fontSize: "13px", padding: "8px 14px", borderColor: "#6366f1", color: "#a5b4fc" }}>
-                      + Use Optimizer
+                    <button
+                      onClick={() => { setTargetSlot(slot.id); setSlotLabel(slot.label); setShowOptimizer(true); setOptimizerStep(0); setRawResumeText(""); setJobDescription(""); setAnalysis(null); setGeneratedResumes([]); }}
+                      style={{ ...st.secondaryButton, fontSize: "13px", padding: "8px 14px", borderColor: "#6366f1", color: "#a5b4fc" }}
+                    >
+                      + Resume Career Optimizer
                     </button>
                   </div>
                 </div>
 
-                {slot.resumeData ? (
+                {/* Slot 1 — also allows direct upload */}
+                {slot.id === "slot1" && (
                   <div>
-                    <p style={{ margin: "0 0 4px", color: "#9ca3af", fontSize: "13px" }}>
-                      {slot.resumeData.professionalTitle} · Saved {slot.createdAt ? new Date(slot.createdAt).toLocaleDateString() : ""}
+                    <p style={{ margin: "0 0 10px", color: "#9ca3af", fontSize: "13px" }}>
+                      Upload a resume directly <span style={{ color: "#6b7280" }}>— or use the optimizer above to tailor it</span>
                     </p>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <button onClick={() => { setGeneratedResumes([slot.resumeData!]); setActiveResumeIdx(0); setShowOptimizer(true); setOptimizerStep(4); }}
-                        style={{ fontSize: "12px", color: "#f5f5f5", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}>
-                        Preview / Edit
-                      </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                      <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px 16px", cursor: "pointer", fontSize: "13px", color: "#f5f5f5" }}>
+                        📄 {slot1Uploading ? "Uploading..." : slot1FileName || "Upload Resume"}
+                        <input type="file" accept=".pdf,.doc,.docx,.txt,.png" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) await handleSlot1Upload(f); }} />
+                      </label>
+                      {slot.resumeUrl && <a href={slot.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#a5b4fc", fontSize: "13px", textDecoration: "underline" }}>View uploaded resume</a>}
                     </div>
                   </div>
-                ) : (
-                  <p style={{ margin: 0, color: "#6b7280", fontSize: "13px" }}>No resume saved yet. Use the optimizer to generate one.</p>
+                )}
+
+                {/* Slots 2 & 3 — optimizer only */}
+                {slot.id !== "slot1" && !slot.resumeData && (
+                  <p style={{ margin: 0, color: "#6b7280", fontSize: "13px" }}>No resume saved yet. Use the Resume Career Optimizer to generate one.</p>
+                )}
+
+                {slot.resumeData && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <p style={{ margin: 0, color: "#9ca3af", fontSize: "13px" }}>{slot.resumeData.professionalTitle} · Saved {slot.createdAt ? new Date(slot.createdAt).toLocaleDateString() : ""}</p>
+                    <button onClick={() => { setGeneratedResumes([slot.resumeData!]); setActiveResumeIdx(0); setShowOptimizer(true); setOptimizerStep(4); setTargetSlot(slot.id); }}
+                      style={{ fontSize: "12px", color: "#f5f5f5", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}>
+                      Preview / Edit
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -690,7 +693,6 @@ export default function ProfilePage() {
           <p style={st.noticeText}>Your information is stored securely and is not sold or shared outside platform and reporting purposes.</p>
         </section>
 
-        {/* Bottom Actions */}
         <section style={st.bottomDock}>
           <button onClick={handleSaveProfile} disabled={saving} style={st.primaryButton}>{saving ? "Saving..." : "Save Profile"}</button>
           <a href="/career-toolkit" style={st.linkButton}>Career Toolkit</a>
@@ -701,21 +703,20 @@ export default function ProfilePage() {
 
       {/* ── Resume Career Optimizer Modal ── */}
       {showOptimizer && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 100, overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.93)", zIndex: 100, overflowY: "auto" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 24px" }}>
 
-            {/* Optimizer Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "28px" }} className="no-print">
               <div>
                 <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 700, color: "#f5f5f5" }}>Resume Career Optimizer</h2>
-                <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: "14px" }}>Tailoring for: <strong style={{ color: "#a5b4fc" }}>{resumeSlots.find((s) => s.id === targetSlot)?.label}</strong></p>
+                <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: "14px" }}>
+                  Tailoring for: <strong style={{ color: "#a5b4fc" }}>{resumeSlots.find((s) => s.id === targetSlot)?.label}</strong>
+                </p>
               </div>
-              <button onClick={() => { setShowOptimizer(false); setOptimizerStep(0); }} style={{ background: "transparent", border: "1px solid #3f3f46", color: "#d4d4d8", borderRadius: "10px", padding: "8px 16px", cursor: "pointer", fontSize: "14px" }}>
-                ✕ Close
-              </button>
+              <button onClick={() => { setShowOptimizer(false); setOptimizerStep(0); }} style={{ background: "transparent", border: "1px solid #3f3f46", color: "#d4d4d8", borderRadius: "10px", padding: "8px 16px", cursor: "pointer", fontSize: "14px" }}>✕ Close</button>
             </div>
 
-            {/* Progress */}
+            {/* Progress steps */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "32px", alignItems: "center" }} className="no-print">
               {["Input", "Analyze", "Review", "Format", "Preview & Save"].map((label, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", flex: i < 4 ? 1 : "none" }}>
@@ -730,60 +731,37 @@ export default function ProfilePage() {
               ))}
             </div>
 
-            {optimizerError && <div style={{ background: "#2a0f0f", border: "1px solid #5a1f1f", borderRadius: "10px", padding: "12px 16px", color: "#f87171", fontSize: "13px", fontFamily: "monospace", marginBottom: "16px" }} className="no-print">{optimizerError}</div>}
+            {optimizerError && (
+              <div style={{ background: "#2a0f0f", border: "1px solid #5a1f1f", borderRadius: "10px", padding: "12px 16px", color: "#f87171", fontSize: "13px", fontFamily: "monospace", marginBottom: "16px" }} className="no-print">
+                {optimizerError}
+              </div>
+            )}
 
             {/* STEP 0 — Input */}
             {optimizerStep === 0 && (
               <div style={optCard} className="no-print">
                 <h3 style={optH3}>Upload your resume & paste job description</h3>
-                <p style={optSub}>This tool tailors your existing resume — it cannot create a resume from scratch.</p>
+                <p style={optSub}>This tool tailors your existing resume to a job — it cannot create a resume from scratch.</p>
 
                 <label style={optLabel}>Your Resume</label>
-                <div
-                  style={{ border: "2px dashed #2a2a2a", borderRadius: "12px", padding: "28px 24px", textAlign: "center", cursor: "pointer", background: "#0d0d0d", marginBottom: "12px", transition: "border-color 0.2s" }}
-                  onClick={() => document.getElementById("resume-upload")?.click()}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const f = e.dataTransfer.files?.[0];
-                    if (!f) return;
-                    const reader = new FileReader();
-                    reader.onload = (ev) => setRawResumeText(ev.target?.result as string);
-                    reader.readAsText(f);
-                  }}
-                >
-                  <div style={{ fontSize: "32px", marginBottom: "10px" }}>📄</div>
-                  <p style={{ color: "#9ca3af", margin: "0 0 4px", fontSize: "14px" }}>
-                    {rawResumeText ? "✅ Resume loaded — click to replace" : "Click to upload or drag & drop your resume"}
-                  </p>
-                  <p style={{ color: "#444", margin: 0, fontSize: "12px", fontFamily: "monospace" }}>PDF · DOC · DOCX · TXT</p>
-                </div>
-                <input
-                  id="resume-upload"
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt"
-                  style={{ display: "none" }}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    const reader = new FileReader();
-                    reader.onload = (ev) => setRawResumeText(ev.target?.result as string);
-                    reader.readAsText(f);
-                  }}
-                />
+                <UploadZone loaded={!!rawResumeText} inputId="optimizer-resume-upload" onFile={async (f) => await handleResumeFile(f)} />
 
-                <p style={{ color: "#444", fontSize: "12px", textAlign: "center", margin: "8px 0", fontFamily: "monospace" }}>— or paste text below —</p>
+                {fileLoading && <p style={{ color: "#9ca3af", fontSize: "13px", margin: "8px 0", fontFamily: "monospace" }}>Reading file...</p>}
+                {resumeFileName && !fileLoading && <p style={{ color: "#4ade80", fontSize: "12px", margin: "8px 0", fontFamily: "monospace" }}>📄 {resumeFileName}</p>}
+
+                <p style={{ color: "#444", fontSize: "12px", textAlign: "center", margin: "12px 0 8px", fontFamily: "monospace" }}>— or paste text below —</p>
                 <textarea style={{ ...optTextarea, marginBottom: "20px" }} rows={5} placeholder="Or paste your full resume text here..." value={rawResumeText} onChange={(e) => setRawResumeText(e.target.value)} />
 
                 <label style={optLabel}>Job Description</label>
                 <textarea style={optTextarea} rows={8} placeholder="Paste the full job posting here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
-                <button style={{ ...optBtn, marginTop: "20px", width: "100%" }} onClick={handleAnalyze} disabled={optimizerLoading}>
+
+                <button style={{ ...optBtn, marginTop: "20px", width: "100%" }} onClick={handleAnalyze} disabled={optimizerLoading || fileLoading}>
                   {optimizerLoading ? "Analyzing..." : "Analyze Match →"}
                 </button>
               </div>
             )}
 
-            {/* STEP 1 — Loading */}
+            {/* STEP 1 — Analyzing */}
             {optimizerStep === 1 && (
               <div style={{ ...optCard, textAlign: "center", padding: "60px" }} className="no-print">
                 <div style={{ width: "44px", height: "44px", border: "2px solid #1e1e1e", borderTop: "2px solid #4ade80", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 20px" }} />
@@ -806,21 +784,18 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   {analysis.matchScore < 40 && (
-                    <div style={{ background: "#2a1500", border: "1px solid #92400e", borderRadius: "10px", padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                      <span style={{ fontSize: "20px" }}>⚠️</span>
-                      <div>
-                        <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#fb923c" }}>Low Match — Less than 40%</p>
-                        <p style={{ margin: "0 0 10px", color: "#fdba74", fontSize: "13px" }}>Your background may not align closely with this role. Would you still like to proceed?</p>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button style={optBtn} onClick={() => setOptimizerStep(3)}>Yes, proceed anyway</button>
-                          <button style={optBtnGhost} onClick={() => setOptimizerStep(0)}>Go back</button>
-                        </div>
+                    <div style={{ background: "#2a1500", border: "1px solid #92400e", borderRadius: "10px", padding: "14px 16px" }}>
+                      <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#fb923c" }}>⚠️ Low Match — Less than 40%</p>
+                      <p style={{ margin: "0 0 12px", color: "#fdba74", fontSize: "13px" }}>Your background may not align closely with this role. Would you still like to proceed?</p>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button style={optBtn} onClick={() => setOptimizerStep(3)}>Yes, proceed anyway</button>
+                        <button style={optBtnGhost} onClick={() => setOptimizerStep(0)}>Go back</button>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Format Recommendation */}
+                {/* Format */}
                 <div style={{ ...optCard, marginBottom: "16px" }}>
                   <h3 style={optH3}>Resume Format</h3>
                   <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>
@@ -828,9 +803,8 @@ export default function ProfilePage() {
                   </p>
                   <div style={{ display: "flex", gap: "10px" }}>
                     {(["chronological", "combination"] as const).map((f) => (
-                      <button key={f} onClick={() => setChosenFormat(f)}
-                        style={{ padding: "10px 20px", borderRadius: "10px", border: chosenFormat === f ? "2px solid #6366f1" : "1px solid #3f3f46", background: chosenFormat === f ? "#1e1b4b" : "transparent", color: chosenFormat === f ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontWeight: chosenFormat === f ? 700 : 400, fontSize: "14px", textTransform: "capitalize" }}>
-                        {f} {f === analysis.recommendedFormat ? "⭐ Recommended" : ""}
+                      <button key={f} onClick={() => setChosenFormat(f)} style={{ padding: "10px 20px", borderRadius: "10px", border: chosenFormat === f ? "2px solid #6366f1" : "1px solid #3f3f46", background: chosenFormat === f ? "#1e1b4b" : "transparent", color: chosenFormat === f ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontWeight: chosenFormat === f ? 700 : 400, fontSize: "14px", textTransform: "capitalize" }}>
+                        {f} {f === analysis.recommendedFormat ? "⭐" : ""}
                       </button>
                     ))}
                   </div>
@@ -840,13 +814,10 @@ export default function ProfilePage() {
                 {analysis.hasMultipleCareerTracks && analysis.careerTracks?.length > 1 && (
                   <div style={{ ...optCard, marginBottom: "16px", border: "1px solid #3730a3" }}>
                     <h3 style={optH3}>Multiple Career Tracks Detected</h3>
-                    <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>
-                      Your resume shows experience in different areas. We'll generate a tailored resume for the job + a separate resume for your other experience.
-                    </p>
+                    <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>We'll generate a tailored resume for the job + a separate resume for your other experience.</p>
                     {analysis.careerTracks.map((track, i) => (
                       <div key={track.trackId} style={{ background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: "10px", padding: "12px", marginBottom: "8px" }}>
                         <p style={{ margin: 0, fontWeight: 700, color: "#a5b4fc", fontSize: "14px" }}>Resume {i + 1}: {track.label}</p>
-                        <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: "12px", fontFamily: "monospace" }}>{track.jobIds.join(", ")}</p>
                       </div>
                     ))}
                   </div>
@@ -855,15 +826,15 @@ export default function ProfilePage() {
                 {/* Select Jobs */}
                 <div style={{ ...optCard, marginBottom: "16px" }}>
                   <h3 style={optH3}>Select Jobs to Include</h3>
-                  <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>Pre-selected based on relevance. Uncheck any job you want to exclude.</p>
+                  <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>Pre-selected based on relevance. Uncheck any you want to exclude.</p>
                   {analysis.jobs.map((job) => {
-                    const isSelected = selectedJobs.some((j) => j.id === job.id);
+                    const isSel = selectedJobs.some((j) => j.id === job.id);
                     return (
-                      <div key={job.id} style={{ background: isSelected ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSelected ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
-                        onClick={() => setSelectedJobs((prev) => isSelected ? prev.filter((j) => j.id !== job.id) : [...prev, job])}>
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                          <div style={{ width: "18px", height: "18px", borderRadius: "4px", border: `2px solid ${isSelected ? "#4ade80" : "#3f3f46"}`, background: isSelected ? "#4ade80" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
-                            {isSelected && <span style={{ color: "#0a0a0a", fontSize: "12px", fontWeight: 700 }}>✓</span>}
+                      <div key={job.id} style={{ background: isSel ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSel ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
+                        onClick={() => setSelectedJobs((prev) => isSel ? prev.filter((j) => j.id !== job.id) : [...prev, job])}>
+                        <div style={{ display: "flex", gap: "10px" }}>
+                          <div style={{ width: "18px", height: "18px", borderRadius: "4px", border: `2px solid ${isSel ? "#4ade80" : "#3f3f46"}`, background: isSel ? "#4ade80" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
+                            {isSel && <span style={{ color: "#0a0a0a", fontSize: "11px", fontWeight: 700 }}>✓</span>}
                           </div>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, color: "#f5f5f5", fontSize: "14px" }}>{job.title} — {job.company}</p>
@@ -882,13 +853,13 @@ export default function ProfilePage() {
                 <div style={{ ...optCard, marginBottom: "16px" }}>
                   <h3 style={optH3}>Select Education to Include</h3>
                   {analysis.education.map((edu) => {
-                    const isSelected = selectedEducation.some((e) => e.id === edu.id);
+                    const isSel = selectedEducation.some((e) => e.id === edu.id);
                     return (
-                      <div key={edu.id} style={{ background: isSelected ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSelected ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
-                        onClick={() => setSelectedEducation((prev) => isSelected ? prev.filter((e) => e.id !== edu.id) : [...prev, edu])}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <div style={{ width: "18px", height: "18px", borderRadius: "4px", border: `2px solid ${isSelected ? "#4ade80" : "#3f3f46"}`, background: isSelected ? "#4ade80" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            {isSelected && <span style={{ color: "#0a0a0a", fontSize: "12px", fontWeight: 700 }}>✓</span>}
+                      <div key={edu.id} style={{ background: isSel ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSel ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
+                        onClick={() => setSelectedEducation((prev) => isSel ? prev.filter((e) => e.id !== edu.id) : [...prev, edu])}>
+                        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                          <div style={{ width: "18px", height: "18px", borderRadius: "4px", border: `2px solid ${isSel ? "#4ade80" : "#3f3f46"}`, background: isSel ? "#4ade80" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            {isSel && <span style={{ color: "#0a0a0a", fontSize: "11px", fontWeight: 700 }}>✓</span>}
                           </div>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, color: "#f5f5f5", fontSize: "14px" }}>{edu.degree} — {edu.school}</p>
@@ -902,8 +873,8 @@ export default function ProfilePage() {
 
                 {/* Professional Title */}
                 <div style={{ ...optCard, marginBottom: "16px" }}>
-                  <h3 style={optH3}>Resume Title / Professional Title</h3>
-                  <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>This will appear centered at the top of your resume instead of "Summary". You can change it to anything you like.</p>
+                  <h3 style={optH3}>Resume Title</h3>
+                  <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>This appears centered at the top of your resume instead of "Summary". Change it to anything you like.</p>
                   <input value={resumeTitle} onChange={(e) => setResumeTitle(e.target.value)} style={{ ...st.input, fontSize: "15px" }} placeholder="e.g. Professional Truck Driver, Senior Marketing Manager..." />
                 </div>
 
@@ -912,8 +883,7 @@ export default function ProfilePage() {
                   <h3 style={optH3}>Choose Font</h3>
                   <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                     {FONTS.map((f) => (
-                      <button key={f.value} onClick={() => setChosenFont(f.value)}
-                        style={{ padding: "10px 20px", borderRadius: "10px", border: chosenFont === f.value ? "2px solid #6366f1" : "1px solid #3f3f46", background: chosenFont === f.value ? "#1e1b4b" : "transparent", color: chosenFont === f.value ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontFamily: f.value, fontSize: "14px" }}>
+                      <button key={f.value} onClick={() => setChosenFont(f.value)} style={{ padding: "10px 20px", borderRadius: "10px", border: chosenFont === f.value ? "2px solid #6366f1" : "1px solid #3f3f46", background: chosenFont === f.value ? "#1e1b4b" : "transparent", color: chosenFont === f.value ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontFamily: f.value, fontSize: "14px" }}>
                         {f.label}
                       </button>
                     ))}
@@ -940,36 +910,29 @@ export default function ProfilePage() {
             {/* STEP 4 — Preview & Save */}
             {optimizerStep === 4 && generatedResumes.length > 0 && (
               <div>
-                {/* Resume Tabs */}
                 {generatedResumes.length > 1 && (
                   <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }} className="no-print">
                     {generatedResumes.map((r, i) => (
-                      <button key={i} onClick={() => setActiveResumeIdx(i)}
-                        style={{ padding: "10px 20px", borderRadius: "10px", border: activeResumeIdx === i ? "2px solid #6366f1" : "1px solid #3f3f46", background: activeResumeIdx === i ? "#1e1b4b" : "transparent", color: activeResumeIdx === i ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontSize: "14px", fontWeight: activeResumeIdx === i ? 700 : 400 }}>
+                      <button key={i} onClick={() => setActiveResumeIdx(i)} style={{ padding: "10px 20px", borderRadius: "10px", border: activeResumeIdx === i ? "2px solid #6366f1" : "1px solid #3f3f46", background: activeResumeIdx === i ? "#1e1b4b" : "transparent", color: activeResumeIdx === i ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontSize: "14px", fontWeight: activeResumeIdx === i ? 700 : 400 }}>
                         Resume {i + 1}: {r.professionalTitle}
                       </button>
                     ))}
                   </div>
                 )}
 
-                {/* Actions */}
                 <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }} className="no-print">
-                  <button style={optBtn} onClick={() => setEditingResume((e) => !e)}>
-                    {editingResume ? "✓ Done Editing" : "✏️ Edit Resume"}
-                  </button>
+                  <button style={optBtn} onClick={() => setEditingResume((e) => !e)}>{editingResume ? "✓ Done Editing" : "✏️ Edit Resume"}</button>
                   <button style={optBtnGhost} onClick={handlePrint}>🖨️ Print</button>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
                     <span style={{ color: "#9ca3af", fontSize: "13px" }}>Save to:</span>
-                    <select value={targetSlot} onChange={(e) => setTargetSlot(e.target.value)}
-                      style={{ background: "#111", border: "1px solid #3f3f46", color: "#f5f5f5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px" }}>
+                    <select value={targetSlot} onChange={(e) => setTargetSlot(e.target.value)} style={{ background: "#111", border: "1px solid #3f3f46", color: "#f5f5f5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px" }}>
                       {resumeSlots.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
                     </select>
                     <button style={optBtn} onClick={handleSaveToSlot}>Save Resume</button>
                   </div>
                 </div>
 
-                {/* Live Preview */}
-                <div style={{ overflow: "auto" }} className="print-page">
+                <div style={{ overflow: "auto" }}>
                   <ResumePreview
                     resume={generatedResumes[activeResumeIdx]}
                     candidateInfo={candidateInfo}
@@ -1015,12 +978,7 @@ function TextAreaField({ label, value, onChange, placeholder }: { label: string;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const glass: CSSProperties = {
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "0 18px 60px rgba(0,0,0,0.22)",
-  backdropFilter: "blur(14px)",
-};
+const glass: CSSProperties = { background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 18px 60px rgba(0,0,0,0.22)", backdropFilter: "blur(14px)" };
 
 const optCard: CSSProperties = { background: "#111", border: "1px solid #1e1e1e", borderRadius: "16px", padding: "28px", marginBottom: "16px" };
 const optH3: CSSProperties = { fontSize: "18px", fontWeight: 700, color: "#f5f5f5", margin: "0 0 8px" };
@@ -1031,12 +989,11 @@ const optBtn: CSSProperties = { background: "#f0ede8", color: "#0a0a0a", border:
 const optBtnGhost: CSSProperties = { background: "transparent", color: "#9ca3af", border: "1px solid #3f3f46", borderRadius: "10px", padding: "12px 24px", fontSize: "14px", cursor: "pointer" };
 
 const st: Record<string, CSSProperties> = {
-  page: { minHeight: "100vh", background: "radial-gradient(circle at top left, rgba(59,130,246,0.12) 0%, transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)", color: "#e7e7e7", padding: "34px 24px 64px", fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif' },
+  page: { minHeight: "100vh", background: "radial-gradient(circle at top left, rgba(59,130,246,0.12) 0%, transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)", color: "#e7e7e7", padding: "34px 24px 64px", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" },
   centerWrap: { maxWidth: "1200px", margin: "0 auto", padding: "40px 24px" },
   shell: { maxWidth: "1320px", margin: "0 auto", display: "grid", gap: "24px" },
   hero: { display: "flex", justifyContent: "space-between", gap: "24px", alignItems: "flex-start", flexWrap: "wrap" },
   heroLeft: { maxWidth: "860px" },
-  heroRight: { display: "flex", alignItems: "flex-start" },
   kicker: { margin: "0 0 8px", color: "#9ca3af", fontSize: "12px", letterSpacing: "0.18em", textTransform: "uppercase" },
   title: { margin: "0 0 12px", fontSize: "46px", fontWeight: 700, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#f5f5f5" },
   subtitle: { margin: 0, color: "#d4d4d8", fontSize: "16px", lineHeight: 1.85, maxWidth: "780px" },
@@ -1045,7 +1002,6 @@ const st: Record<string, CSSProperties> = {
   profileStripRight: { minWidth: 0 },
   avatar: { width: "200px", height: "200px", borderRadius: "26px", objectFit: "cover", border: "1px solid rgba(255,255,255,0.08)" },
   avatarPlaceholder: { width: "200px", height: "200px", borderRadius: "26px", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.04)", color: "#cbd5e1", border: "1px solid rgba(255,255,255,0.08)" },
-  photoUploadWrap: { display: "grid", gap: "8px" },
   namePreview: { margin: "0 0 10px", fontSize: "34px", lineHeight: 1.08, fontWeight: 700, color: "#f5f5f5" },
   headlinePreview: { margin: "0 0 8px", fontSize: "18px", lineHeight: 1.6, color: "#e5e7eb" },
   metaPreview: { margin: "0 0 6px", color: "#bdbdbd", lineHeight: 1.6, fontSize: "15px" },
