@@ -80,6 +80,7 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
+console.log("raw role:", rawRole, "→ normalized:", normalizeRole(rawRole));
 setCheckingAuth(false);
 }
 
@@ -108,6 +109,7 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
+console.log("raw role:", rawRole, "→ normalized:", normalizeRole(rawRole));
 setCheckingAuth(false);
 });
 
