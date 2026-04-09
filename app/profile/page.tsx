@@ -735,13 +735,49 @@ export default function ProfilePage() {
             {/* STEP 0 — Input */}
             {optimizerStep === 0 && (
               <div style={optCard} className="no-print">
-                <h3 style={optH3}>Paste your resume & job description</h3>
+                <h3 style={optH3}>Upload your resume & paste job description</h3>
                 <p style={optSub}>This tool tailors your existing resume — it cannot create a resume from scratch.</p>
-                <label style={optLabel}>Your Resume (paste full text)</label>
-                <textarea style={optTextarea} rows={10} placeholder="Paste your entire resume text here..." value={rawResumeText} onChange={(e) => setRawResumeText(e.target.value)} />
-                <label style={{ ...optLabel, marginTop: "20px" }}>Job Description</label>
+
+                <label style={optLabel}>Your Resume</label>
+                <div
+                  style={{ border: "2px dashed #2a2a2a", borderRadius: "12px", padding: "28px 24px", textAlign: "center", cursor: "pointer", background: "#0d0d0d", marginBottom: "12px", transition: "border-color 0.2s" }}
+                  onClick={() => document.getElementById("resume-upload")?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const f = e.dataTransfer.files?.[0];
+                    if (!f) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setRawResumeText(ev.target?.result as string);
+                    reader.readAsText(f);
+                  }}
+                >
+                  <div style={{ fontSize: "32px", marginBottom: "10px" }}>📄</div>
+                  <p style={{ color: "#9ca3af", margin: "0 0 4px", fontSize: "14px" }}>
+                    {rawResumeText ? "✅ Resume loaded — click to replace" : "Click to upload or drag & drop your resume"}
+                  </p>
+                  <p style={{ color: "#444", margin: 0, fontSize: "12px", fontFamily: "monospace" }}>PDF · DOC · DOCX · TXT</p>
+                </div>
+                <input
+                  id="resume-upload"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setRawResumeText(ev.target?.result as string);
+                    reader.readAsText(f);
+                  }}
+                />
+
+                <p style={{ color: "#444", fontSize: "12px", textAlign: "center", margin: "8px 0", fontFamily: "monospace" }}>— or paste text below —</p>
+                <textarea style={{ ...optTextarea, marginBottom: "20px" }} rows={5} placeholder="Or paste your full resume text here..." value={rawResumeText} onChange={(e) => setRawResumeText(e.target.value)} />
+
+                <label style={optLabel}>Job Description</label>
                 <textarea style={optTextarea} rows={8} placeholder="Paste the full job posting here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
-                <button style={optBtn} onClick={handleAnalyze} disabled={optimizerLoading}>
+                <button style={{ ...optBtn, marginTop: "20px", width: "100%" }} onClick={handleAnalyze} disabled={optimizerLoading}>
                   {optimizerLoading ? "Analyzing..." : "Analyze Match →"}
                 </button>
               </div>
