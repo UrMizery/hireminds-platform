@@ -163,7 +163,7 @@ partnerStickyRoutes.has(pathname || "");
 const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
 
 const showCareerToolkit =
-isLoggedIn && !isPartnerPage && (isCandidate || isAdmin || (!isPartner && !isEmployer));
+isLoggedIn && (isCandidate || isPartner || isAdmin);
 
 const showPartnerDashboard =
 isLoggedIn && (isPartner || isAdmin || isPartnerPage);
