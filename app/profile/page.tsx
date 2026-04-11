@@ -83,19 +83,14 @@ async function callApi(action: string, body: Record<string, any>) {
   return res.json();
 }
 
-// ── File parser: handles DOCX, PDF, TXT, PNG ──
 async function extractTextFromFile(file: File): Promise<string> {
   const name = file.name.toLowerCase();
-
-  // DOCX
   if (name.endsWith(".docx")) {
     const mammoth = await import("mammoth");
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.extractRawText({ arrayBuffer });
     return result.value;
   }
-
-  // PDF
   if (name.endsWith(".pdf")) {
     const pdfjsLib = await import("pdfjs-dist");
     pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -109,8 +104,6 @@ async function extractTextFromFile(file: File): Promise<string> {
     }
     return text;
   }
-
-  // PNG / Image — send to Claude vision via API
   if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
     const base64 = await new Promise<string>((resolve) => {
       const reader = new FileReader();
@@ -125,8 +118,6 @@ async function extractTextFromFile(file: File): Promise<string> {
     const data = await res.json();
     return data.text || "";
   }
-
-  // TXT fallback
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => resolve(e.target?.result as string);
@@ -146,7 +137,7 @@ const EMPTY_SLOTS: ResumeSlot[] = [
   { id: "slot3", label: "Resume 3 — Alternate", resumeUrl: null, resumeData: null, isVisible: false, createdAt: null },
 ];
 
-// ─── Section Flag Component ───────────────────────────────────────────────────
+// ─── Section Flag ─────────────────────────────────────────────────────────────
 
 function SectionWithFlag({ sectionKey, flagged, loading, suggestion, onFlag, onAccept, onDismiss, children }: {
   sectionKey: string; flagged: boolean; loading: boolean;
@@ -197,81 +188,46 @@ function ResumePreview({ resume, candidateInfo, font, editing, onEdit, onFlagSec
 
   return (
     <div style={pg}>
-      {/* Name */}
       <div style={{ textAlign: "center", marginBottom: "6pt" }}>
         <p style={{ fontSize: "16pt", fontWeight: "bold", margin: 0 }}>{candidateInfo.fullName || "Your Name"}</p>
-        <p style={{ fontSize: "10pt", margin: "4pt 0 0", textAlign: "center" }}>
-          {[candidateInfo.email, candidateInfo.linkedinUrl, candidateInfo.phone].filter(Boolean).join(" | ")}
-        </p>
-        {(candidateInfo.city || candidateInfo.state) && (
-          <p style={{ fontSize: "10pt", margin: "2pt 0 0" }}>{[candidateInfo.city, candidateInfo.state].filter(Boolean).join(", ")}</p>
-        )}
+        <p style={{ fontSize: "10pt", margin: "4pt 0 0" }}>{[candidateInfo.email, candidateInfo.linkedinUrl, candidateInfo.phone].filter(Boolean).join(" | ")}</p>
+        {(candidateInfo.city || candidateInfo.state) && <p style={{ fontSize: "10pt", margin: "2pt 0 0" }}>{[candidateInfo.city, candidateInfo.state].filter(Boolean).join(", ")}</p>}
       </div>
-
       <hr style={{ border: "none", borderTop: "1px solid #000", margin: "6pt 0" }} />
-
-      {/* Professional Title */}
       <div style={secHdr}>
-        {editing ? (
-          <input value={resume.professionalTitle} onChange={(e) => onEdit("professionalTitle", e.target.value)} style={{ textAlign: "center", fontWeight: "bold", fontSize: "11pt", border: "1px dashed #aaa", width: "100%", background: "transparent", outline: "none", fontFamily: font }} />
-        ) : resume.professionalTitle}
+        {editing ? <input value={resume.professionalTitle} onChange={(e) => onEdit("professionalTitle", e.target.value)} style={{ textAlign: "center", fontWeight: "bold", fontSize: "11pt", border: "1px dashed #aaa", width: "100%", background: "transparent", outline: "none", fontFamily: font }} /> : resume.professionalTitle}
       </div>
-
-      {/* Summary */}
       <SectionWithFlag sectionKey="summary" flagged={flaggedSections["summary"]} loading={loadingSuggestion["summary"]} suggestion={suggestions["summary"]} onFlag={() => onFlagSection("summary")} onAccept={() => onAcceptSuggestion("summary")} onDismiss={() => onDismissFlag("summary")}>
-        {editing ? (
-          <textarea value={resume.summary} onChange={(e) => onEdit("summary", e.target.value)} rows={4} style={{ width: "100%", fontSize: "11pt", fontFamily: font, border: "1px dashed #aaa", padding: "4px", boxSizing: "border-box", resize: "vertical" }} />
-        ) : (
-          <p style={{ margin: "4pt 0", fontSize: "11pt" }}>{resume.summary}</p>
-        )}
+        {editing ? <textarea value={resume.summary} onChange={(e) => onEdit("summary", e.target.value)} rows={4} style={{ width: "100%", fontSize: "11pt", fontFamily: font, border: "1px dashed #aaa", padding: "4px", boxSizing: "border-box", resize: "vertical" }} /> : <p style={{ margin: "4pt 0", fontSize: "11pt" }}>{resume.summary}</p>}
       </SectionWithFlag>
-
-      {/* Core Skills */}
       <div style={secHdr}>CORE SKILLS</div>
       <SectionWithFlag sectionKey="skills" flagged={flaggedSections["skills"]} loading={loadingSuggestion["skills"]} suggestion={suggestions["skills"]} onFlag={() => onFlagSection("skills")} onAccept={() => onAcceptSuggestion("skills")} onDismiss={() => onDismissFlag("skills")}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2pt 16pt", margin: "4pt 0" }}>
           {resume.skills.map((skill, i) => (
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "4pt" }}>
               <span>•</span>
-              {editing ? (
-                <input value={skill} onChange={(e) => { const u = [...resume.skills]; u[i] = e.target.value; onEdit("skills", u); }} style={{ fontSize: "10pt", fontFamily: font, border: "1px dashed #aaa", width: "100%", background: "transparent" }} />
-              ) : <span style={{ fontSize: "10pt" }}>{skill}</span>}
+              {editing ? <input value={skill} onChange={(e) => { const u = [...resume.skills]; u[i] = e.target.value; onEdit("skills", u); }} style={{ fontSize: "10pt", fontFamily: font, border: "1px dashed #aaa", width: "100%", background: "transparent" }} /> : <span style={{ fontSize: "10pt" }}>{skill}</span>}
             </div>
           ))}
         </div>
       </SectionWithFlag>
-
-      {/* Experience */}
       <div style={secHdr}>EXPERIENCE</div>
       {resume.experience.map((job, ji) => (
         <div key={ji}>
           <div style={jobHdr}>
             <span style={{ fontSize: "11pt" }}>
-              {editing ? (
-                <span style={{ display: "inline-flex", gap: "6px" }}>
-                  <input value={job.company} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], company: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "140px" }} />
-                  <input value={job.location} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], location: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "100px" }} />
-                </span>
-              ) : `${job.company}${job.location ? `, ${job.location}` : ""}`}
+              {editing ? <span style={{ display: "inline-flex", gap: "6px" }}><input value={job.company} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], company: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "140px" }} /><input value={job.location} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], location: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "100px" }} /></span> : `${job.company}${job.location ? `, ${job.location}` : ""}`}
             </span>
-            <span style={{ fontSize: "10pt" }}>
-              {editing ? <input value={job.dates} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], dates: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} /> : job.dates}
-            </span>
+            <span style={{ fontSize: "10pt" }}>{editing ? <input value={job.dates} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], dates: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font }} /> : job.dates}</span>
           </div>
-          <p style={{ fontStyle: "italic", margin: 0 }}>
-            {editing ? <input value={job.title} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], title: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", fontStyle: "italic", border: "1px dashed #aaa", fontFamily: font, width: "60%" }} /> : job.title}
-          </p>
+          <p style={{ fontStyle: "italic", margin: 0 }}>{editing ? <input value={job.title} onChange={(e) => { const ex = [...resume.experience]; ex[ji] = { ...ex[ji], title: e.target.value }; onEdit("experience", ex); }} style={{ fontSize: "10pt", fontStyle: "italic", border: "1px dashed #aaa", fontFamily: font, width: "60%" }} /> : job.title}</p>
           <ul style={{ margin: "2pt 0", paddingLeft: "20pt" }}>
             {job.bullets.map((b, bi) => (
-              <li key={bi} style={{ margin: "2pt 0", listStyle: "disc" }}>
-                {editing ? <input value={b} onChange={(e) => { const ex = [...resume.experience]; ex[ji].bullets[bi] = e.target.value; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "95%" }} /> : b}
-              </li>
+              <li key={bi} style={{ margin: "2pt 0", listStyle: "disc" }}>{editing ? <input value={b} onChange={(e) => { const ex = [...resume.experience]; ex[ji].bullets[bi] = e.target.value; onEdit("experience", ex); }} style={{ fontSize: "10pt", border: "1px dashed #aaa", fontFamily: font, width: "95%" }} /> : b}</li>
             ))}
           </ul>
         </div>
       ))}
-
-      {/* Education */}
       {resume.education?.length > 0 && (
         <>
           <div style={secHdr}>EDUCATION</div>
@@ -314,6 +270,380 @@ function UploadZone({ loaded, onFile, inputId }: { loaded: boolean; onFile: (f: 
   );
 }
 
+// ─── ISOLATED Optimizer Modal (one instance per slot, fully independent) ──────
+
+function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave, onClose }: {
+  slotId: string;
+  slotLabel: string;
+  resumeSlots: ResumeSlot[];
+  candidateInfo: { fullName: string; email: string; phone: string; linkedinUrl: string; city: string; state: string };
+  onSave: (slotId: string, resume: GeneratedResume, label: string) => void;
+  onClose: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  const [rawResumeText, setRawResumeText] = useState("");
+  const [resumeFileName, setResumeFileName] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [selectedJobs, setSelectedJobs] = useState<Job[]>([]);
+  const [selectedEducation, setSelectedEducation] = useState<Education[]>([]);
+  const [chosenFormat, setChosenFormat] = useState<"chronological" | "combination">("chronological");
+  const [chosenFont, setChosenFont] = useState(FONTS[0].value);
+  const [resumeTitle, setResumeTitle] = useState("");
+  const [generatedResumes, setGeneratedResumes] = useState<GeneratedResume[]>([]);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [flaggedSections, setFlaggedSections] = useState<Record<string, boolean>>({});
+  const [suggestions, setSuggestions] = useState<Record<string, { issue: string; revised: string } | null>>({});
+  const [loadingSugg, setLoadingSugg] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [fileLoading, setFileLoading] = useState(false);
+  const [saveToSlot, setSaveToSlot] = useState(slotId);
+
+  // Each slot gets a unique input ID — prevents cross-slot interference
+  const uploadInputId = `opt-upload-${slotId}-${Date.now()}`;
+
+  async function handleResumeFile(file: File) {
+    setFileLoading(true);
+    setResumeFileName(file.name);
+    setError("");
+    try {
+      const text = await extractTextFromFile(file);
+      setRawResumeText(text);
+    } catch {
+      setError("Could not read file. Try a different format or paste the text.");
+    }
+    setFileLoading(false);
+  }
+
+  async function handleAnalyze() {
+    if (!rawResumeText.trim()) { setError("Please upload or paste your resume."); return; }
+    if (!jobDescription.trim()) { setError("Please paste a job description."); return; }
+    setError(""); setLoading(true);
+    try {
+      const result = await callApi("analyze", { resumeText: rawResumeText, jobDescription });
+      setAnalysis(result);
+      setSelectedJobs(result.jobs?.filter((j: Job) => j.relevant) || []);
+      setSelectedEducation(result.education?.filter((e: Education) => e.relevant) || []);
+      setChosenFormat(result.recommendedFormat || "chronological");
+      setResumeTitle(result.professionalTitle || "");
+      setStep(2);
+    } catch { setError("Analysis failed. Please try again."); }
+    setLoading(false);
+  }
+
+  async function handleGenerate() {
+    setLoading(true); setError(""); setStep(3);
+    try {
+      const main = await callApi("generate", { resumeText: rawResumeText, jobDescription, selectedJobs, selectedEducation, format: chosenFormat, font: chosenFont, resumeTitle, candidateInfo });
+      const resumes: GeneratedResume[] = [main];
+      if (analysis?.hasMultipleCareerTracks && analysis.careerTracks?.length > 1) {
+        const track2Jobs = analysis.jobs.filter((j) => analysis.careerTracks[1]?.jobIds.includes(j.id));
+        if (track2Jobs.length > 0) {
+          const alt = await callApi("generateAlternate", { resumeText: rawResumeText, jobDescription, alternatejobs: track2Jobs, selectedEducation, candidateInfo });
+          resumes.push(alt);
+        }
+      }
+      setGeneratedResumes(resumes);
+      setActiveIdx(0);
+      setStep(4);
+    } catch { setError("Generation failed. Please try again."); setStep(2); }
+    setLoading(false);
+  }
+
+  async function handleFlagSection(key: string) {
+    const resume = generatedResumes[activeIdx];
+    if (!resume) return;
+    setFlaggedSections((f) => ({ ...f, [key]: true }));
+    setLoadingSugg((l) => ({ ...l, [key]: true }));
+    const sectionContent = key === "summary" ? resume.summary : key === "skills" ? resume.skills.join(", ") : "";
+    const result = await callApi("flagSection", { resumeText: rawResumeText, sectionKey: key, sectionContent });
+    setSuggestions((s) => ({ ...s, [key]: result }));
+    setLoadingSugg((l) => ({ ...l, [key]: false }));
+  }
+
+  function handleAcceptSuggestion(key: string) {
+    const s = suggestions[key];
+    if (!s) return;
+    const updated = [...generatedResumes];
+    if (key === "summary") updated[activeIdx] = { ...updated[activeIdx], summary: s.revised };
+    if (key === "skills") updated[activeIdx] = { ...updated[activeIdx], skills: s.revised.split(",").map((x) => x.trim()) };
+    setGeneratedResumes(updated);
+    setFlaggedSections((f) => ({ ...f, [key]: false }));
+    setSuggestions((sg) => ({ ...sg, [key]: null }));
+  }
+
+  function handleEditResume(field: string, value: any) {
+    const updated = [...generatedResumes];
+    updated[activeIdx] = { ...updated[activeIdx], [field]: value };
+    setGeneratedResumes(updated);
+  }
+
+  function handleSave() {
+    const resume = generatedResumes[activeIdx];
+    if (!resume) return;
+    const label = resume.professionalTitle + " Resume";
+    onSave(saveToSlot, resume, label);
+  }
+
+  const pct = [0, 20, 40, 60, 80, 100][step] ?? 100;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.93)", zIndex: 100, overflowY: "auto" }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 24px" }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 700, color: "#f5f5f5" }}>Resume Career Optimizer</h2>
+            <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: "14px" }}>
+              Tailoring for: <strong style={{ color: "#a5b4fc" }}>{slotLabel}</strong>
+            </p>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #3f3f46", color: "#d4d4d8", borderRadius: "10px", padding: "8px 16px", cursor: "pointer", fontSize: "14px" }}>✕ Close</button>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: "3px", background: "#1e1e1e", borderRadius: "999px", marginBottom: "28px", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${pct}%`, background: "#4ade80", transition: "width 0.4s ease" }} />
+        </div>
+
+        {/* Steps indicator */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "28px", alignItems: "center" }}>
+          {["Input", "Analyze", "Review", "Generate", "Preview & Save"].map((label, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", flex: i < 4 ? 1 : "none" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, background: i < step ? "#4ade80" : i === step ? "#f5f5f5" : "#1a1a1a", color: i <= step ? "#0a0a0a" : "#666", border: i > step ? "1px solid #333" : "none", flexShrink: 0 }}>
+                  {i < step ? "✓" : i + 1}
+                </div>
+                <span style={{ fontSize: "10px", color: i === step ? "#f5f5f5" : "#555", fontFamily: "monospace", whiteSpace: "nowrap" }}>{label}</span>
+              </div>
+              {i < 4 && <div style={{ flex: 1, height: "1px", background: i < step ? "#4ade80" : "#222", margin: "0 6px 16px" }} />}
+            </div>
+          ))}
+        </div>
+
+        {error && <div style={{ background: "#2a0f0f", border: "1px solid #5a1f1f", borderRadius: "10px", padding: "12px 16px", color: "#f87171", fontSize: "13px", fontFamily: "monospace", marginBottom: "16px" }}>{error}</div>}
+
+        {/* STEP 0 — Input */}
+        {step === 0 && (
+          <div style={optCard}>
+            <h3 style={optH3}>Upload your resume & paste a job description</h3>
+            <p style={optSub}>This tool tailors your <strong>existing</strong> resume to a specific job — it cannot create a resume from scratch.</p>
+            <label style={optLabel}>Your Resume</label>
+            <UploadZone loaded={!!rawResumeText} inputId={uploadInputId} onFile={handleResumeFile} />
+            {fileLoading && <p style={{ color: "#9ca3af", fontSize: "13px", margin: "8px 0", fontFamily: "monospace" }}>Reading file...</p>}
+            {resumeFileName && !fileLoading && <p style={{ color: "#4ade80", fontSize: "12px", margin: "8px 0 0", fontFamily: "monospace" }}>📄 {resumeFileName}</p>}
+            <p style={{ color: "#444", fontSize: "12px", textAlign: "center", margin: "12px 0 8px", fontFamily: "monospace" }}>— or paste text below —</p>
+            <textarea style={{ ...optTextarea, marginBottom: "20px" }} rows={5} placeholder="Or paste your full resume text here..." value={rawResumeText} onChange={(e) => setRawResumeText(e.target.value)} />
+            <label style={optLabel}>Job Description</label>
+            <textarea style={optTextarea} rows={8} placeholder="Paste the full job posting here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
+            <button style={{ ...optBtn, marginTop: "20px", width: "100%" }} onClick={handleAnalyze} disabled={loading || fileLoading}>
+              {loading ? "Analyzing..." : "Analyze Match →"}
+            </button>
+          </div>
+        )}
+
+        {/* STEP 1 — Analyzing spinner */}
+        {step === 1 && (
+          <div style={{ ...optCard, textAlign: "center", padding: "60px" }}>
+            <div style={{ width: "44px", height: "44px", border: "2px solid #1e1e1e", borderTop: "2px solid #4ade80", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 20px" }} />
+            <p style={{ color: "#9ca3af" }}>Analyzing your resume against the job description...</p>
+          </div>
+        )}
+
+        {/* STEP 2 — Review Analysis */}
+        {step === 2 && analysis && (
+          <div>
+            {/* Match Score */}
+            <div style={{ ...optCard, marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "12px" }}>
+                <div style={{ fontSize: "52px", fontWeight: 700, color: analysis.matchScore >= 60 ? "#4ade80" : analysis.matchScore >= 40 ? "#facc15" : "#f87171", lineHeight: 1 }}>
+                  {analysis.matchScore}%
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, color: "#f5f5f5", fontSize: "16px" }}>Match Score</p>
+                  <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: "14px" }}>{analysis.matchSummary}</p>
+                </div>
+              </div>
+              {analysis.matchScore < 40 && (
+                <div style={{ background: "#2a1500", border: "1px solid #92400e", borderRadius: "10px", padding: "14px 16px" }}>
+                  <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#fb923c" }}>⚠️ Low Match — Less than 40%</p>
+                  <p style={{ margin: "0 0 12px", color: "#fdba74", fontSize: "13px" }}>Your background may not closely align with this role based on what we found. You can still proceed and we'll do our best to tailor your resume, but you may want to consider whether this role is a good fit.</p>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button style={optBtn} onClick={() => setStep(3)}>Yes, proceed anyway</button>
+                    <button style={optBtnGhost} onClick={() => setStep(0)}>← Go back</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Format */}
+            <div style={{ ...optCard, marginBottom: "16px" }}>
+              <h3 style={optH3}>Resume Format</h3>
+              <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>
+                We recommend <strong style={{ color: "#f5f5f5" }}>{analysis.recommendedFormat}</strong> — {analysis.formatReason}
+              </p>
+              <div style={{ display: "flex", gap: "10px" }}>
+                {(["chronological", "combination"] as const).map((f) => (
+                  <button key={f} onClick={() => setChosenFormat(f)} style={{ padding: "10px 20px", borderRadius: "10px", border: chosenFormat === f ? "2px solid #6366f1" : "1px solid #3f3f46", background: chosenFormat === f ? "#1e1b4b" : "transparent", color: chosenFormat === f ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontWeight: chosenFormat === f ? 700 : 400, fontSize: "14px", textTransform: "capitalize" }}>
+                    {f} {f === analysis.recommendedFormat ? "⭐ Recommended" : ""}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Career Tracks */}
+            {analysis.hasMultipleCareerTracks && analysis.careerTracks?.length > 1 && (
+              <div style={{ ...optCard, marginBottom: "16px", border: "1px solid #3730a3" }}>
+                <h3 style={optH3}>Multiple Career Tracks Detected</h3>
+                <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>
+                  Your resume shows experience in different career areas. We'll generate a tailored resume for this job <strong style={{ color: "#f5f5f5" }}>plus</strong> a separate resume for your other experience automatically.
+                </p>
+                {analysis.careerTracks.map((track, i) => (
+                  <div key={track.trackId} style={{ background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: "10px", padding: "12px", marginBottom: "8px" }}>
+                    <p style={{ margin: 0, fontWeight: 700, color: "#a5b4fc", fontSize: "14px" }}>Resume {i + 1}: {track.label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Select Jobs */}
+            <div style={{ ...optCard, marginBottom: "16px" }}>
+              <h3 style={optH3}>Select Jobs to Include</h3>
+              <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>We've pre-selected the most relevant jobs. Uncheck any you want to leave out.</p>
+              {analysis.jobs.map((job) => {
+                const isSel = selectedJobs.some((j) => j.id === job.id);
+                return (
+                  <div key={job.id} style={{ background: isSel ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSel ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
+                    onClick={() => setSelectedJobs((prev) => isSel ? prev.filter((j) => j.id !== job.id) : [...prev, job])}>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <div style={{ width: "18px", height: "18px", borderRadius: "4px", border: `2px solid ${isSel ? "#4ade80" : "#3f3f46"}`, background: isSel ? "#4ade80" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
+                        {isSel && <span style={{ color: "#0a0a0a", fontSize: "11px", fontWeight: 700 }}>✓</span>}
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, color: "#f5f5f5", fontSize: "14px" }}>{job.title} — {job.company}</p>
+                        <p style={{ margin: "2px 0", color: "#9ca3af", fontSize: "12px" }}>{job.dates} · {job.location}</p>
+                        <p style={{ margin: "4px 0 0", color: job.relevant ? "#4ade80" : "#f87171", fontSize: "12px", fontFamily: "monospace" }}>
+                          {job.relevant ? "✓ Relevant" : "✗ Not relevant"} — {job.relevanceReason}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Select Education */}
+            <div style={{ ...optCard, marginBottom: "16px" }}>
+              <h3 style={optH3}>Select Education to Include</h3>
+              <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>Uncheck any education you want to leave out.</p>
+              {analysis.education.map((edu) => {
+                const isSel = selectedEducation.some((e) => e.id === edu.id);
+                return (
+                  <div key={edu.id} style={{ background: isSel ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSel ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
+                    onClick={() => setSelectedEducation((prev) => isSel ? prev.filter((e) => e.id !== edu.id) : [...prev, edu])}>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      <div style={{ width: "18px", height: "18px", borderRadius: "4px", border: `2px solid ${isSel ? "#4ade80" : "#3f3f46"}`, background: isSel ? "#4ade80" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {isSel && <span style={{ color: "#0a0a0a", fontSize: "11px", fontWeight: 700 }}>✓</span>}
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, color: "#f5f5f5", fontSize: "14px" }}>{edu.degree} — {edu.school}</p>
+                        <p style={{ margin: "2px 0 0", color: "#9ca3af", fontSize: "12px" }}>{edu.dates}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Professional Title */}
+            <div style={{ ...optCard, marginBottom: "16px" }}>
+              <h3 style={optH3}>Professional Title</h3>
+              <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>
+                This appears centered at the top of your resume. We suggested one based on your experience — feel free to change it to anything you prefer, or use a traditional heading like "Summary".
+              </p>
+              <input value={resumeTitle} onChange={(e) => setResumeTitle(e.target.value)} style={{ width: "100%", padding: "14px 16px", borderRadius: "12px", border: "1px solid #2a2a2a", background: "#0d0d0d", color: "#f4f4f5", fontSize: "15px", boxSizing: "border-box", outline: "none" }} placeholder="e.g. Professional Truck Driver, Senior Marketing Manager..." />
+            </div>
+
+            {/* Font */}
+            <div style={{ ...optCard, marginBottom: "24px" }}>
+              <h3 style={optH3}>Choose Font</h3>
+              <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>Pick the font for your resume. All three are ATS-friendly and professional.</p>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                {FONTS.map((f) => (
+                  <button key={f.value} onClick={() => setChosenFont(f.value)} style={{ padding: "10px 20px", borderRadius: "10px", border: chosenFont === f.value ? "2px solid #6366f1" : "1px solid #3f3f46", background: chosenFont === f.value ? "#1e1b4b" : "transparent", color: chosenFont === f.value ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontFamily: f.value, fontSize: "14px" }}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button style={optBtn} onClick={handleGenerate} disabled={loading}>
+                {loading ? "Generating..." : "Generate Resume →"}
+              </button>
+              <button style={optBtnGhost} onClick={() => setStep(0)}>← Back</button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3 — Generating */}
+        {step === 3 && (
+          <div style={{ ...optCard, textAlign: "center", padding: "60px" }}>
+            <div style={{ width: "44px", height: "44px", border: "2px solid #1e1e1e", borderTop: "2px solid #4ade80", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 20px" }} />
+            <p style={{ color: "#9ca3af", marginBottom: "8px" }}>Generating your tailored resume{analysis?.hasMultipleCareerTracks ? "s" : ""}...</p>
+            <p style={{ color: "#555", fontSize: "13px", fontFamily: "monospace" }}>This usually takes 15–30 seconds</p>
+          </div>
+        )}
+
+        {/* STEP 4 — Preview & Save */}
+        {step === 4 && generatedResumes.length > 0 && (
+          <div>
+            {generatedResumes.length > 1 && (
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                {generatedResumes.map((r, i) => (
+                  <button key={i} onClick={() => setActiveIdx(i)} style={{ padding: "10px 20px", borderRadius: "10px", border: activeIdx === i ? "2px solid #6366f1" : "1px solid #3f3f46", background: activeIdx === i ? "#1e1b4b" : "transparent", color: activeIdx === i ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontSize: "14px", fontWeight: activeIdx === i ? 700 : 400 }}>
+                    Resume {i + 1}: {r.professionalTitle}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+              <button style={optBtn} onClick={() => setEditing((e) => !e)}>{editing ? "✓ Done Editing" : "✏️ Edit Resume"}</button>
+              <button style={optBtnGhost} onClick={() => window.print()}>🖨️ Print</button>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
+                <span style={{ color: "#9ca3af", fontSize: "13px" }}>Save to:</span>
+                <select value={saveToSlot} onChange={(e) => setSaveToSlot(e.target.value)} style={{ background: "#111", border: "1px solid #3f3f46", color: "#f5f5f5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px" }}>
+                  {resumeSlots.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+                </select>
+                <button style={optBtn} onClick={handleSave}>Save Resume</button>
+              </div>
+            </div>
+            <div style={{ overflow: "auto" }}>
+              <ResumePreview
+                resume={generatedResumes[activeIdx]}
+                candidateInfo={candidateInfo}
+                font={chosenFont}
+                editing={editing}
+                onEdit={handleEditResume}
+                onFlagSection={handleFlagSection}
+                flaggedSections={flaggedSections}
+                suggestions={suggestions}
+                loadingSuggestion={loadingSugg}
+                onAcceptSuggestion={handleAcceptSuggestion}
+                onDismissFlag={(key) => { setFlaggedSections((f) => ({ ...f, [key]: false })); setSuggestions((sg) => ({ ...sg, [key]: null })); }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Profile Page ────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
@@ -336,35 +666,13 @@ export default function ProfilePage() {
   const [publicProfileUrl, setPublicProfileUrl] = useState("");
   const trackedRef = useRef(false);
 
-  // Slot 1 direct upload state
+  // Slot 1 direct upload
   const [slot1Uploading, setSlot1Uploading] = useState(false);
   const [slot1FileName, setSlot1FileName] = useState("");
 
-  // Optimizer state
-  const [showOptimizer, setShowOptimizer] = useState(false);
-  const [optimizerStep, setOptimizerStep] = useState(0);
-  const [rawResumeText, setRawResumeText] = useState("");
-  const [resumeFileName, setResumeFileName] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [selectedJobs, setSelectedJobs] = useState<Job[]>([]);
-  const [selectedEducation, setSelectedEducation] = useState<Education[]>([]);
-  const [chosenFormat, setChosenFormat] = useState<"chronological" | "combination">("chronological");
-  const [chosenFont, setChosenFont] = useState(FONTS[0].value);
-  const [resumeTitle, setResumeTitle] = useState("");
-  const [generatedResumes, setGeneratedResumes] = useState<GeneratedResume[]>([]);
-  const [activeResumeIdx, setActiveResumeIdx] = useState(0);
-  const [editingResume, setEditingResume] = useState(false);
-  const [flaggedSections, setFlaggedSections] = useState<Record<string, boolean>>({});
-  const [suggestions, setSuggestions] = useState<Record<string, { issue: string; revised: string } | null>>({});
-  const [loadingSuggestion, setLoadingSuggestion] = useState<Record<string, boolean>>({});
-  const [optimizerLoading, setOptimizerLoading] = useState(false);
-  const [optimizerError, setOptimizerError] = useState("");
-  const [targetSlot, setTargetSlot] = useState("slot2");
-  const [slotLabel, setSlotLabel] = useState("");
-  const [fileLoading, setFileLoading] = useState(false);
+  // Which optimizer is open — null means none, slotId means that slot's optimizer is open
+  const [openOptimizerSlot, setOpenOptimizerSlot] = useState<string | null>(null);
 
-  // Load profile
   useEffect(() => {
     async function loadProfile() {
       const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -402,7 +710,7 @@ export default function ProfilePage() {
     return data.publicUrl;
   }
 
-  async function handleSaveProfile() {
+  async function handleSaveProfile(updatedSlots?: ResumeSlot[]) {
     setMessage("");
     if (!userId) { setMessage("You must be signed in."); return; }
     try {
@@ -411,7 +719,8 @@ export default function ProfilePage() {
       if (photoFile) nextPhotoUrl = await uploadFile("profile-photos", photoFile, `${userId}/photo`);
       const slug = slugify(fullName || "career-passport");
       const publicUrl = `${window.location.origin}/passport/${slug}-${userId.slice(0, 8)}`;
-      const payload = { user_id: userId, full_name: fullName, phone, email, city, state: stateName, bio, headline, linkedin_url: linkedinUrl, photo_url: nextPhotoUrl || null, resume_slots: resumeSlots, public_profile_url: publicUrl };
+      const slots = updatedSlots || resumeSlots;
+      const payload = { user_id: userId, full_name: fullName, phone, email, city, state: stateName, bio, headline, linkedin_url: linkedinUrl, photo_url: nextPhotoUrl || null, resume_slots: slots, public_profile_url: publicUrl };
       if (profileId) {
         const { error } = await supabase.from("candidate_profiles").update(payload).eq("id", profileId);
         if (error) throw error;
@@ -438,6 +747,14 @@ export default function ProfilePage() {
     setResumeSlots((prev) => prev.map((s) => s.id === slotId ? { ...s, label } : s));
   }
 
+  // Remove a resume from any slot
+  function handleRemoveResume(slotId: string) {
+    if (!confirm("Are you sure you want to remove this resume?")) return;
+    setResumeSlots((prev) => prev.map((s) => s.id === slotId ? { ...s, resumeUrl: null, resumeData: null, isVisible: false, createdAt: null } : s));
+    if (slotId === "slot1") setSlot1FileName("");
+    setMessage("Resume removed.");
+  }
+
   // Slot 1 direct upload
   async function handleSlot1Upload(file: File) {
     try {
@@ -453,104 +770,14 @@ export default function ProfilePage() {
     }
   }
 
-  // Handle resume file for optimizer
-  async function handleResumeFile(file: File) {
-    setFileLoading(true);
-    setResumeFileName(file.name);
-    try {
-      const text = await extractTextFromFile(file);
-      setRawResumeText(text);
-    } catch {
-      setOptimizedError("Could not read file. Please try a different format or paste the text.");
-    }
-    setFileLoading(false);
-  }
-
-  function setOptimizedError(msg: string) {
-    setOptimizerError(msg);
-  }
-
-  async function handleAnalyze() {
-    if (!rawResumeText.trim()) { setOptimizerError("Please upload or paste your resume."); return; }
-    if (!jobDescription.trim()) { setOptimizerError("Please paste a job description."); return; }
-    setOptimizerError(""); setOptimizerLoading(true);
-    try {
-      const result = await callApi("analyze", { resumeText: rawResumeText, jobDescription });
-      setAnalysis(result);
-      setSelectedJobs(result.jobs?.filter((j: Job) => j.relevant) || []);
-      setSelectedEducation(result.education?.filter((e: Education) => e.relevant) || []);
-      setChosenFormat(result.recommendedFormat || "chronological");
-      setResumeTitle(result.professionalTitle || "");
-      setOptimizerStep(2);
-    } catch { setOptimizerError("Analysis failed. Please try again."); }
-    setOptimizerLoading(false);
-  }
-
-  async function handleGenerate() {
-    setOptimizerLoading(true); setOptimizerError("");
-    setOptimizerStep(3);
-    try {
-      const candidateInfo = { fullName, email, phone, linkedinUrl, city, state: stateName };
-      const main = await callApi("generate", { resumeText: rawResumeText, jobDescription, selectedJobs, selectedEducation, format: chosenFormat, font: chosenFont, resumeTitle, candidateInfo });
-      const resumes: GeneratedResume[] = [main];
-      if (analysis?.hasMultipleCareerTracks && analysis.careerTracks?.length > 1) {
-        const track2Jobs = analysis.jobs.filter((j) => analysis.careerTracks[1]?.jobIds.includes(j.id));
-        if (track2Jobs.length > 0) {
-          const alt = await callApi("generateAlternate", { resumeText: rawResumeText, jobDescription, alternatejobs: track2Jobs, selectedEducation, candidateInfo });
-          resumes.push(alt);
-        }
-      }
-      setGeneratedResumes(resumes);
-      setActiveResumeIdx(0);
-      setOptimizerStep(4);
-    } catch { setOptimizerError("Generation failed. Please try again."); setOptimizerStep(2); }
-    setOptimizerLoading(false);
-  }
-
-  async function handleFlagSection(key: string) {
-    const resume = generatedResumes[activeResumeIdx];
-    if (!resume) return;
-    setFlaggedSections((f) => ({ ...f, [key]: true }));
-    setLoadingSuggestion((l) => ({ ...l, [key]: true }));
-    const sectionContent = key === "summary" ? resume.summary : key === "skills" ? resume.skills.join(", ") : "";
-    const result = await callApi("flagSection", { resumeText: rawResumeText, sectionKey: key, sectionContent });
-    setSuggestions((s) => ({ ...s, [key]: result }));
-    setLoadingSuggestion((l) => ({ ...l, [key]: false }));
-  }
-
-  function handleAcceptSuggestion(key: string) {
-    const suggestion = suggestions[key];
-    if (!suggestion) return;
-    const updated = [...generatedResumes];
-    if (key === "summary") updated[activeResumeIdx] = { ...updated[activeResumeIdx], summary: suggestion.revised };
-    if (key === "skills") updated[activeResumeIdx] = { ...updated[activeResumeIdx], skills: suggestion.revised.split(",").map((s) => s.trim()) };
-    setGeneratedResumes(updated);
-    setFlaggedSections((f) => ({ ...f, [key]: false }));
-    setSuggestions((s) => ({ ...s, [key]: null }));
-  }
-
-  function handleEditResume(field: string, value: any) {
-    const updated = [...generatedResumes];
-    updated[activeResumeIdx] = { ...updated[activeResumeIdx], [field]: value };
-    setGeneratedResumes(updated);
-  }
-
-  async function handleSaveToSlot() {
-    const resume = generatedResumes[activeResumeIdx];
-    if (!resume) return;
-    const label = slotLabel || `${resume.professionalTitle} Resume`;
-    setResumeSlots((prev) => prev.map((s) => s.id === targetSlot ? { ...s, resumeData: resume, label, createdAt: new Date().toISOString() } : s));
-    setShowOptimizer(false);
-    setOptimizerStep(0);
-    setRawResumeText("");
-    setJobDescription("");
-    setGeneratedResumes([]);
-    setAnalysis(null);
+  // Called when optimizer saves a resume
+  async function handleOptimizerSave(slotId: string, resume: GeneratedResume, label: string) {
+    const updated = resumeSlots.map((s) => s.id === slotId ? { ...s, resumeData: resume, label, createdAt: new Date().toISOString() } : s);
+    setResumeSlots(updated);
+    setOpenOptimizerSlot(null);
     setMessage(`Resume saved to ${label}!`);
-    await handleSaveProfile();
+    await handleSaveProfile(updated);
   }
-
-  function handlePrint() { window.print(); }
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -560,13 +787,11 @@ export default function ProfilePage() {
   if (loading) return <main style={st.page}><div style={st.centerWrap}>Loading...</div></main>;
 
   const candidateInfo = { fullName, email, phone, linkedinUrl, city, state: stateName };
+  const openSlot = resumeSlots.find((s) => s.id === openOptimizerSlot);
 
   return (
     <main style={st.page}>
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media print { .no-print { display: none !important; } body { background: white; } }
-      `}</style>
+      <style>{`@media print { .no-print { display: none !important; } body { background: white; } }`}</style>
 
       <div style={st.shell}>
         {/* Hero */}
@@ -636,11 +861,11 @@ export default function ProfilePage() {
                     {slot.isVisible && <span style={{ fontSize: "11px", background: "#1e3a2f", color: "#4ade80", border: "1px solid #2d5a3d", padding: "3px 10px", borderRadius: "999px", fontFamily: "monospace" }}>Visible to Employers</span>}
                   </div>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    {!slot.isVisible && (
+                    {!slot.isVisible && (slot.resumeUrl || slot.resumeData) && (
                       <button onClick={() => setVisibleSlot(slot.id)} style={{ ...st.secondaryButton, fontSize: "13px", padding: "8px 14px" }}>Set as Visible</button>
                     )}
                     <button
-                      onClick={() => { setTargetSlot(slot.id); setSlotLabel(slot.label); setShowOptimizer(true); setOptimizerStep(0); setRawResumeText(""); setJobDescription(""); setAnalysis(null); setGeneratedResumes([]); }}
+                      onClick={() => setOpenOptimizerSlot(slot.id)}
                       style={{ ...st.secondaryButton, fontSize: "13px", padding: "8px 14px", borderColor: "#6366f1", color: "#a5b4fc" }}
                     >
                       + Resume Career Optimizer
@@ -648,7 +873,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Slot 1 — also allows direct upload */}
+                {/* Slot 1 — direct upload OR optimizer */}
                 {slot.id === "slot1" && (
                   <div>
                     <p style={{ margin: "0 0 10px", color: "#9ca3af", fontSize: "13px" }}>
@@ -656,10 +881,15 @@ export default function ProfilePage() {
                     </p>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                       <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px 16px", cursor: "pointer", fontSize: "13px", color: "#f5f5f5" }}>
-                        📄 {slot1Uploading ? "Uploading..." : slot1FileName || "Upload Resume"}
+                        📄 {slot1Uploading ? "Uploading..." : slot1FileName ? `Replace: ${slot1FileName}` : slot.resumeUrl ? "Replace Resume" : "Upload Resume"}
                         <input type="file" accept=".pdf,.doc,.docx,.txt,.png" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) await handleSlot1Upload(f); }} />
                       </label>
-                      {slot.resumeUrl && <a href={slot.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#a5b4fc", fontSize: "13px", textDecoration: "underline" }}>View uploaded resume</a>}
+                      {slot.resumeUrl && (
+                        <>
+                          <a href={slot.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#a5b4fc", fontSize: "13px", textDecoration: "underline" }}>View resume</a>
+                          <button onClick={() => handleRemoveResume("slot1")} style={{ fontSize: "12px", color: "#f87171", background: "transparent", border: "1px solid #5a1f1f", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}>✕ Remove</button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -669,12 +899,23 @@ export default function ProfilePage() {
                   <p style={{ margin: 0, color: "#6b7280", fontSize: "13px" }}>No resume saved yet. Use the Resume Career Optimizer to generate one.</p>
                 )}
 
+                {/* Saved resume data (slots 2 & 3) */}
                 {slot.resumeData && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <p style={{ margin: 0, color: "#9ca3af", fontSize: "13px" }}>{slot.resumeData.professionalTitle} · Saved {slot.createdAt ? new Date(slot.createdAt).toLocaleDateString() : ""}</p>
-                    <button onClick={() => { setGeneratedResumes([slot.resumeData!]); setActiveResumeIdx(0); setShowOptimizer(true); setOptimizerStep(4); setTargetSlot(slot.id); }}
-                      style={{ fontSize: "12px", color: "#f5f5f5", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <p style={{ margin: 0, color: "#9ca3af", fontSize: "13px" }}>
+                      {slot.resumeData.professionalTitle} · Saved {slot.createdAt ? new Date(slot.createdAt).toLocaleDateString() : ""}
+                    </p>
+                    <button
+                      onClick={() => setOpenOptimizerSlot(slot.id)}
+                      style={{ fontSize: "12px", color: "#f5f5f5", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}
+                    >
                       Preview / Edit
+                    </button>
+                    <button
+                      onClick={() => handleRemoveResume(slot.id)}
+                      style={{ fontSize: "12px", color: "#f87171", background: "transparent", border: "1px solid #5a1f1f", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}
+                    >
+                      ✕ Remove
                     </button>
                   </div>
                 )}
@@ -694,263 +935,23 @@ export default function ProfilePage() {
         </section>
 
         <section style={st.bottomDock}>
-          <button onClick={handleSaveProfile} disabled={saving} style={st.primaryButton}>{saving ? "Saving..." : "Save Profile"}</button>
-          <a href="/career-toolkit" style={st.linkButton}>Career Toolkit</a>
+          <button onClick={() => handleSaveProfile()} disabled={saving} style={st.primaryButton}>{saving ? "Saving..." : "Save Profile"}</button>
         </section>
 
         {message && <p style={st.message}>{message}</p>}
       </div>
 
-      {/* ── Resume Career Optimizer Modal ── */}
-      {showOptimizer && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.93)", zIndex: 100, overflowY: "auto" }}>
-          <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 24px" }}>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "28px" }} className="no-print">
-              <div>
-                <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 700, color: "#f5f5f5" }}>Resume Career Optimizer</h2>
-                <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: "14px" }}>
-                  Tailoring for: <strong style={{ color: "#a5b4fc" }}>{resumeSlots.find((s) => s.id === targetSlot)?.label}</strong>
-                </p>
-              </div>
-              <button onClick={() => { setShowOptimizer(false); setOptimizerStep(0); }} style={{ background: "transparent", border: "1px solid #3f3f46", color: "#d4d4d8", borderRadius: "10px", padding: "8px 16px", cursor: "pointer", fontSize: "14px" }}>✕ Close</button>
-            </div>
-
-            {/* Progress steps */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "32px", alignItems: "center" }} className="no-print">
-              {["Input", "Analyze", "Review", "Format", "Preview & Save"].map((label, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", flex: i < 4 ? 1 : "none" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                    <div style={{ width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, background: i < optimizerStep ? "#4ade80" : i === optimizerStep ? "#f5f5f5" : "#1a1a1a", color: i <= optimizerStep ? "#0a0a0a" : "#666", border: i > optimizerStep ? "1px solid #333" : "none", flexShrink: 0 }}>
-                      {i < optimizerStep ? "✓" : i + 1}
-                    </div>
-                    <span style={{ fontSize: "10px", color: i === optimizerStep ? "#f5f5f5" : "#555", fontFamily: "monospace", whiteSpace: "nowrap" }}>{label}</span>
-                  </div>
-                  {i < 4 && <div style={{ flex: 1, height: "1px", background: i < optimizerStep ? "#4ade80" : "#222", margin: "0 6px 16px" }} />}
-                </div>
-              ))}
-            </div>
-
-            {optimizerError && (
-              <div style={{ background: "#2a0f0f", border: "1px solid #5a1f1f", borderRadius: "10px", padding: "12px 16px", color: "#f87171", fontSize: "13px", fontFamily: "monospace", marginBottom: "16px" }} className="no-print">
-                {optimizerError}
-              </div>
-            )}
-
-            {/* STEP 0 — Input */}
-            {optimizerStep === 0 && (
-              <div style={optCard} className="no-print">
-                <h3 style={optH3}>Upload your resume & paste job description</h3>
-                <p style={optSub}>This tool tailors your existing resume to a job — it cannot create a resume from scratch.</p>
-
-                <label style={optLabel}>Your Resume</label>
-                <UploadZone loaded={!!rawResumeText} inputId="optimizer-resume-upload" onFile={async (f) => await handleResumeFile(f)} />
-
-                {fileLoading && <p style={{ color: "#9ca3af", fontSize: "13px", margin: "8px 0", fontFamily: "monospace" }}>Reading file...</p>}
-                {resumeFileName && !fileLoading && <p style={{ color: "#4ade80", fontSize: "12px", margin: "8px 0", fontFamily: "monospace" }}>📄 {resumeFileName}</p>}
-
-                <p style={{ color: "#444", fontSize: "12px", textAlign: "center", margin: "12px 0 8px", fontFamily: "monospace" }}>— or paste text below —</p>
-                <textarea style={{ ...optTextarea, marginBottom: "20px" }} rows={5} placeholder="Or paste your full resume text here..." value={rawResumeText} onChange={(e) => setRawResumeText(e.target.value)} />
-
-                <label style={optLabel}>Job Description</label>
-                <textarea style={optTextarea} rows={8} placeholder="Paste the full job posting here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
-
-                <button style={{ ...optBtn, marginTop: "20px", width: "100%" }} onClick={handleAnalyze} disabled={optimizerLoading || fileLoading}>
-                  {optimizerLoading ? "Analyzing..." : "Analyze Match →"}
-                </button>
-              </div>
-            )}
-
-            {/* STEP 1 — Analyzing */}
-            {optimizerStep === 1 && (
-              <div style={{ ...optCard, textAlign: "center", padding: "60px" }} className="no-print">
-                <div style={{ width: "44px", height: "44px", border: "2px solid #1e1e1e", borderTop: "2px solid #4ade80", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 20px" }} />
-                <p style={{ color: "#9ca3af" }}>Analyzing your resume against the job description...</p>
-              </div>
-            )}
-
-            {/* STEP 2 — Review Analysis */}
-            {optimizerStep === 2 && analysis && (
-              <div className="no-print">
-                {/* Match Score */}
-                <div style={{ ...optCard, marginBottom: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "12px" }}>
-                    <div style={{ fontSize: "48px", fontWeight: 700, color: analysis.matchScore >= 60 ? "#4ade80" : analysis.matchScore >= 40 ? "#facc15" : "#f87171" }}>
-                      {analysis.matchScore}%
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 700, color: "#f5f5f5" }}>Match Score</p>
-                      <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: "14px" }}>{analysis.matchSummary}</p>
-                    </div>
-                  </div>
-                  {analysis.matchScore < 40 && (
-                    <div style={{ background: "#2a1500", border: "1px solid #92400e", borderRadius: "10px", padding: "14px 16px" }}>
-                      <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#fb923c" }}>⚠️ Low Match — Less than 40%</p>
-                      <p style={{ margin: "0 0 12px", color: "#fdba74", fontSize: "13px" }}>Your background may not align closely with this role. Would you still like to proceed?</p>
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button style={optBtn} onClick={() => setOptimizerStep(3)}>Yes, proceed anyway</button>
-                        <button style={optBtnGhost} onClick={() => setOptimizerStep(0)}>Go back</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Format */}
-                <div style={{ ...optCard, marginBottom: "16px" }}>
-                  <h3 style={optH3}>Resume Format</h3>
-                  <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>
-                    We recommend <strong style={{ color: "#f5f5f5" }}>{analysis.recommendedFormat}</strong> — {analysis.formatReason}
-                  </p>
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    {(["chronological", "combination"] as const).map((f) => (
-                      <button key={f} onClick={() => setChosenFormat(f)} style={{ padding: "10px 20px", borderRadius: "10px", border: chosenFormat === f ? "2px solid #6366f1" : "1px solid #3f3f46", background: chosenFormat === f ? "#1e1b4b" : "transparent", color: chosenFormat === f ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontWeight: chosenFormat === f ? 700 : 400, fontSize: "14px", textTransform: "capitalize" }}>
-                        {f} {f === analysis.recommendedFormat ? "⭐" : ""}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Career Tracks */}
-                {analysis.hasMultipleCareerTracks && analysis.careerTracks?.length > 1 && (
-                  <div style={{ ...optCard, marginBottom: "16px", border: "1px solid #3730a3" }}>
-                    <h3 style={optH3}>Multiple Career Tracks Detected</h3>
-                    <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>We'll generate a tailored resume for the job + a separate resume for your other experience.</p>
-                    {analysis.careerTracks.map((track, i) => (
-                      <div key={track.trackId} style={{ background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: "10px", padding: "12px", marginBottom: "8px" }}>
-                        <p style={{ margin: 0, fontWeight: 700, color: "#a5b4fc", fontSize: "14px" }}>Resume {i + 1}: {track.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Select Jobs */}
-                <div style={{ ...optCard, marginBottom: "16px" }}>
-                  <h3 style={optH3}>Select Jobs to Include</h3>
-                  <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>Pre-selected based on relevance. Uncheck any you want to exclude.</p>
-                  {analysis.jobs.map((job) => {
-                    const isSel = selectedJobs.some((j) => j.id === job.id);
-                    return (
-                      <div key={job.id} style={{ background: isSel ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSel ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
-                        onClick={() => setSelectedJobs((prev) => isSel ? prev.filter((j) => j.id !== job.id) : [...prev, job])}>
-                        <div style={{ display: "flex", gap: "10px" }}>
-                          <div style={{ width: "18px", height: "18px", borderRadius: "4px", border: `2px solid ${isSel ? "#4ade80" : "#3f3f46"}`, background: isSel ? "#4ade80" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
-                            {isSel && <span style={{ color: "#0a0a0a", fontSize: "11px", fontWeight: 700 }}>✓</span>}
-                          </div>
-                          <div>
-                            <p style={{ margin: 0, fontWeight: 700, color: "#f5f5f5", fontSize: "14px" }}>{job.title} — {job.company}</p>
-                            <p style={{ margin: "2px 0", color: "#9ca3af", fontSize: "12px" }}>{job.dates} · {job.location}</p>
-                            <p style={{ margin: "4px 0 0", color: job.relevant ? "#4ade80" : "#f87171", fontSize: "12px", fontFamily: "monospace" }}>
-                              {job.relevant ? "✓ Relevant" : "✗ Not relevant"} — {job.relevanceReason}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Select Education */}
-                <div style={{ ...optCard, marginBottom: "16px" }}>
-                  <h3 style={optH3}>Select Education to Include</h3>
-                  {analysis.education.map((edu) => {
-                    const isSel = selectedEducation.some((e) => e.id === edu.id);
-                    return (
-                      <div key={edu.id} style={{ background: isSel ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSel ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
-                        onClick={() => setSelectedEducation((prev) => isSel ? prev.filter((e) => e.id !== edu.id) : [...prev, edu])}>
-                        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                          <div style={{ width: "18px", height: "18px", borderRadius: "4px", border: `2px solid ${isSel ? "#4ade80" : "#3f3f46"}`, background: isSel ? "#4ade80" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            {isSel && <span style={{ color: "#0a0a0a", fontSize: "11px", fontWeight: 700 }}>✓</span>}
-                          </div>
-                          <div>
-                            <p style={{ margin: 0, fontWeight: 700, color: "#f5f5f5", fontSize: "14px" }}>{edu.degree} — {edu.school}</p>
-                            <p style={{ margin: "2px 0 0", color: "#9ca3af", fontSize: "12px" }}>{edu.dates}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Professional Title */}
-                <div style={{ ...optCard, marginBottom: "16px" }}>
-                  <h3 style={optH3}>Resume Title</h3>
-                  <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>This appears centered at the top of your resume instead of "Summary". Change it to anything you like.</p>
-                  <input value={resumeTitle} onChange={(e) => setResumeTitle(e.target.value)} style={{ ...st.input, fontSize: "15px" }} placeholder="e.g. Professional Truck Driver, Senior Marketing Manager..." />
-                </div>
-
-                {/* Font */}
-                <div style={{ ...optCard, marginBottom: "24px" }}>
-                  <h3 style={optH3}>Choose Font</h3>
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                    {FONTS.map((f) => (
-                      <button key={f.value} onClick={() => setChosenFont(f.value)} style={{ padding: "10px 20px", borderRadius: "10px", border: chosenFont === f.value ? "2px solid #6366f1" : "1px solid #3f3f46", background: chosenFont === f.value ? "#1e1b4b" : "transparent", color: chosenFont === f.value ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontFamily: f.value, fontSize: "14px" }}>
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <button style={optBtn} onClick={handleGenerate} disabled={optimizerLoading}>
-                    {optimizerLoading ? "Generating..." : "Generate Resume →"}
-                  </button>
-                  <button style={optBtnGhost} onClick={() => setOptimizerStep(0)}>← Back</button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 3 — Generating */}
-            {optimizerStep === 3 && (
-              <div style={{ ...optCard, textAlign: "center", padding: "60px" }} className="no-print">
-                <div style={{ width: "44px", height: "44px", border: "2px solid #1e1e1e", borderTop: "2px solid #4ade80", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 20px" }} />
-                <p style={{ color: "#9ca3af" }}>Generating your tailored resume{analysis?.hasMultipleCareerTracks ? "s" : ""}...</p>
-              </div>
-            )}
-
-            {/* STEP 4 — Preview & Save */}
-            {optimizerStep === 4 && generatedResumes.length > 0 && (
-              <div>
-                {generatedResumes.length > 1 && (
-                  <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }} className="no-print">
-                    {generatedResumes.map((r, i) => (
-                      <button key={i} onClick={() => setActiveResumeIdx(i)} style={{ padding: "10px 20px", borderRadius: "10px", border: activeResumeIdx === i ? "2px solid #6366f1" : "1px solid #3f3f46", background: activeResumeIdx === i ? "#1e1b4b" : "transparent", color: activeResumeIdx === i ? "#a5b4fc" : "#9ca3af", cursor: "pointer", fontSize: "14px", fontWeight: activeResumeIdx === i ? 700 : 400 }}>
-                        Resume {i + 1}: {r.professionalTitle}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }} className="no-print">
-                  <button style={optBtn} onClick={() => setEditingResume((e) => !e)}>{editingResume ? "✓ Done Editing" : "✏️ Edit Resume"}</button>
-                  <button style={optBtnGhost} onClick={handlePrint}>🖨️ Print</button>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
-                    <span style={{ color: "#9ca3af", fontSize: "13px" }}>Save to:</span>
-                    <select value={targetSlot} onChange={(e) => setTargetSlot(e.target.value)} style={{ background: "#111", border: "1px solid #3f3f46", color: "#f5f5f5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px" }}>
-                      {resumeSlots.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-                    </select>
-                    <button style={optBtn} onClick={handleSaveToSlot}>Save Resume</button>
-                  </div>
-                </div>
-
-                <div style={{ overflow: "auto" }}>
-                  <ResumePreview
-                    resume={generatedResumes[activeResumeIdx]}
-                    candidateInfo={candidateInfo}
-                    font={chosenFont}
-                    editing={editingResume}
-                    onEdit={handleEditResume}
-                    onFlagSection={handleFlagSection}
-                    flaggedSections={flaggedSections}
-                    suggestions={suggestions}
-                    loadingSuggestion={loadingSuggestion}
-                    onAcceptSuggestion={handleAcceptSuggestion}
-                    onDismissFlag={(key) => { setFlaggedSections((f) => ({ ...f, [key]: false })); setSuggestions((s) => ({ ...s, [key]: null })); }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Render optimizer only for the open slot — fully isolated */}
+      {openOptimizerSlot && openSlot && (
+        <OptimizerModal
+          key={openOptimizerSlot}
+          slotId={openOptimizerSlot}
+          slotLabel={openSlot.label}
+          resumeSlots={resumeSlots}
+          candidateInfo={candidateInfo}
+          onSave={handleOptimizerSave}
+          onClose={() => setOpenOptimizerSlot(null)}
+        />
       )}
     </main>
   );
@@ -1017,10 +1018,9 @@ const st: Record<string, CSSProperties> = {
   noticeFloat: { ...glass, borderRadius: "24px", padding: "18px 20px" },
   noticeTitle: { margin: "0 0 8px", color: "#f3f4f6", fontWeight: 700, fontSize: "14px" },
   noticeText: { margin: 0, color: "#b8b8b8", fontSize: "14px", lineHeight: 1.7 },
-  bottomDock: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", maxWidth: "520px", marginTop: "4px" },
+  bottomDock: { display: "grid", gridTemplateColumns: "1fr", gap: "12px", maxWidth: "260px", marginTop: "4px" },
   primaryButton: { width: "100%", padding: "15px 18px", borderRadius: "18px", border: "1px solid #d1d5db", background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)", color: "#09090b", fontSize: "15px", fontWeight: 700, cursor: "pointer" },
   secondaryButton: { padding: "12px 16px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f5f5f5", fontWeight: 700, cursor: "pointer", backdropFilter: "blur(10px)" },
-  linkButton: { display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none", padding: "15px 18px", borderRadius: "18px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#f5f5f5", fontWeight: 700, backdropFilter: "blur(10px)" },
   fieldWrap: { display: "grid", gap: "8px" },
   label: { color: "#d4d4d8", fontSize: "13px", fontWeight: 600 },
   input: { width: "100%", padding: "14px 16px", borderRadius: "18px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.035)", color: "#f4f4f5", fontSize: "15px", boxSizing: "border-box", outline: "none", backdropFilter: "blur(10px)" },
