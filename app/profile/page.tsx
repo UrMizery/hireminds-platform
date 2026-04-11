@@ -691,7 +691,11 @@ export default function ProfilePage() {
       setLinkedinUrl(profile.linkedin_url || "");
       setPhotoUrl(profile.photo_url || "");
       setPublicProfileUrl(profile.public_profile_url || "");
-      if (profile.resume_slots) setResumeSlots(profile.resume_slots);
+      if (profile.resume_slots && Array.isArray(profile.resume_slots) && profile.resume_slots.length > 0) {
+        setResumeSlots(profile.resume_slots);
+      } else {
+        setResumeSlots(EMPTY_SLOTS);
+      }
       if (!trackedRef.current) {
         trackedRef.current = true;
         await supabase.from("user_activity").insert({ user_id: authData.user.id, full_name: profile.full_name || null, email: profile.email || authData.user.email || null, referral_code: profile.referral_code || null, event_type: "profile_viewed", tool_name: "profile", page_name: "/profile" });
@@ -761,8 +765,10 @@ export default function ProfilePage() {
       setSlot1Uploading(true);
       setSlot1FileName(file.name);
       const url = await uploadFile("resumes", file, `${userId}/slot1`);
-      setResumeSlots((prev) => prev.map((s) => s.id === "slot1" ? { ...s, resumeUrl: url, createdAt: new Date().toISOString() } : s));
+      const updatedSlots = resumeSlots.map((s) => s.id === "slot1" ? { ...s, resumeUrl: url, createdAt: new Date().toISOString() } : s);
+      setResumeSlots(updatedSlots);
       setMessage("Resume uploaded to Slot 1!");
+      await handleSaveProfile(updatedSlots);
     } catch (err: any) {
       setMessage(err.message || "Upload failed.");
     } finally {
