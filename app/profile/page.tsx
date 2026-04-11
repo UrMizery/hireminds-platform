@@ -323,11 +323,25 @@ function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave,
     setError(""); setLoading(true);
     try {
       const result = await callApi("analyze", { resumeText: rawResumeText, jobDescription });
-      setAnalysis(result);
-      setSelectedJobs(result.jobs?.filter((j: Job) => j.relevant) || []);
-      setSelectedEducation(result.education?.filter((e: Education) => e.relevant) || []);
-      setChosenFormat(result.recommendedFormat || "chronological");
-      setResumeTitle(result.professionalTitle || "");
+      const safeResult = {
+        ...result,
+        jobs: Array.isArray(result.jobs) ? result.jobs : [],
+        education: Array.isArray(result.education) ? result.education : [],
+        careerTracks: Array.isArray(result.careerTracks) ? result.careerTracks : [],
+        skills: Array.isArray(result.skills) ? result.skills : [],
+        keywords: Array.isArray(result.keywords) ? result.keywords : [],
+        matchScore: result.matchScore || 0,
+        matchSummary: result.matchSummary || "",
+        recommendedFormat: result.recommendedFormat || "chronological",
+        formatReason: result.formatReason || "",
+        professionalTitle: result.professionalTitle || "",
+        hasMultipleCareerTracks: result.hasMultipleCareerTracks || false,
+      };
+      setAnalysis(safeResult);
+      setSelectedJobs(safeResult.jobs.filter((j: Job) => j.relevant));
+      setSelectedEducation(safeResult.education.filter((e: Education) => e.relevant));
+      setChosenFormat(safeResult.recommendedFormat);
+      setResumeTitle(safeResult.professionalTitle);
       setStep(2);
     } catch { setError("Analysis failed. Please try again."); }
     setLoading(false);
@@ -502,7 +516,7 @@ function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave,
                 <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>
                   Your resume shows experience in different career areas. We'll generate a tailored resume for this job <strong style={{ color: "#f5f5f5" }}>plus</strong> a separate resume for your other experience automatically.
                 </p>
-                {analysis.careerTracks.map((track, i) => (
+                {(analysis.careerTracks || []).map((track, i) => (
                   <div key={track.trackId} style={{ background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: "10px", padding: "12px", marginBottom: "8px" }}>
                     <p style={{ margin: 0, fontWeight: 700, color: "#a5b4fc", fontSize: "14px" }}>Resume {i + 1}: {track.label}</p>
                   </div>
@@ -514,7 +528,7 @@ function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave,
             <div style={{ ...optCard, marginBottom: "16px" }}>
               <h3 style={optH3}>Select Jobs to Include</h3>
               <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>We've pre-selected the most relevant jobs. Uncheck any you want to leave out.</p>
-              {analysis.jobs.map((job) => {
+              {(analysis.jobs || []).map((job) => {
                 const isSel = selectedJobs.some((j) => j.id === job.id);
                 return (
                   <div key={job.id} style={{ background: isSel ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSel ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
@@ -540,7 +554,7 @@ function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave,
             <div style={{ ...optCard, marginBottom: "16px" }}>
               <h3 style={optH3}>Select Education to Include</h3>
               <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 12px" }}>Uncheck any education you want to leave out.</p>
-              {analysis.education.map((edu) => {
+              {(analysis.education || []).map((edu) => {
                 const isSel = selectedEducation.some((e) => e.id === edu.id);
                 return (
                   <div key={edu.id} style={{ background: isSel ? "#0d1f16" : "#0d0d0d", border: `1px solid ${isSel ? "#2d5a3d" : "#2a2a2a"}`, borderRadius: "10px", padding: "14px", marginBottom: "8px", cursor: "pointer" }}
