@@ -300,6 +300,7 @@ function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave,
   const [error, setError] = useState("");
   const [fileLoading, setFileLoading] = useState(false);
   const [saveToSlot, setSaveToSlot] = useState(slotId);
+  const [generateProgress, setGenerateProgress] = useState("");
 
   // Each slot gets a unique input ID — prevents cross-slot interference
   const uploadInputId = `opt-upload-${slotId}-${Date.now()}`;
@@ -350,19 +351,62 @@ function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave,
   async function handleGenerate() {
     setLoading(true); setError(""); setStep(3);
     try {
-      const main = await callApi("generate", { resumeText: rawResumeText, jobDescription, selectedJobs, selectedEducation, format: chosenFormat, font: chosenFont, resumeTitle, candidateInfo });
+      // Split into small calls each under 10 seconds to stay within Vercel Hobby limits
+
+      // Call 1: Generate summary + skills
+      setGenerateProgress("Building your professional summary...");
+      const summaryData = await callApi("generateSummarySkills", {
+        resumeText: rawResumeText, jobDescription, selectedJobs, resumeTitle, candidateInfo
+      });
+
+      // Call 2: Generate experience + education
+      setGenerateProgress("Writing your experience section...");
+      const expData = await callApi("generateExperience", {
+        resumeText: rawResumeText, jobDescription, selectedJobs, selectedEducation,
+        format: chosenFormat, candidateInfo
+      });
+
+      const main: GeneratedResume = {
+        professionalTitle: summaryData.professionalTitle || resumeTitle,
+        summary: summaryData.summary || "",
+        skills: Array.isArray(summaryData.skills) ? summaryData.skills : [],
+        experience: Array.isArray(expData.experience) ? expData.experience : [],
+        education: Array.isArray(expData.education) ? expData.education : [],
+      };
+
       const resumes: GeneratedResume[] = [main];
-      if (analysis?.hasMultipleCareerTracks && analysis.careerTracks?.length > 1) {
-        const track2Jobs = analysis.jobs.filter((j) => analysis.careerTracks[1]?.jobIds.includes(j.id));
+
+      // If multiple career tracks, generate alternate resume
+      if (analysis?.hasMultipleCareerTracks && (analysis.careerTracks || []).length > 1) {
+        const track2Jobs = (analysis.jobs || []).filter((j) =>
+          (analysis.careerTracks[1]?.jobIds || []).includes(j.id)
+        );
         if (track2Jobs.length > 0) {
-          const alt = await callApi("generateAlternate", { resumeText: rawResumeText, jobDescription, alternatejobs: track2Jobs, selectedEducation, candidateInfo });
-          resumes.push(alt);
+          setGenerateProgress("Building your alternate career resume...");
+          const altSummary = await callApi("generateAltSummarySkills", {
+            alternatejobs: track2Jobs, candidateInfo
+          });
+          const altExp = await callApi("generateAltExperience", {
+            alternatejobs: track2Jobs, selectedEducation
+          });
+          resumes.push({
+            professionalTitle: altSummary.professionalTitle || "Professional Resume",
+            summary: altSummary.summary || "",
+            skills: Array.isArray(altSummary.skills) ? altSummary.skills : [],
+            experience: Array.isArray(altExp.experience) ? altExp.experience : [],
+            education: Array.isArray(altExp.education) ? altExp.education : [],
+          });
         }
       }
+
       setGeneratedResumes(resumes);
       setActiveIdx(0);
       setStep(4);
-    } catch { setError("Generation failed. Please try again."); setStep(2); }
+    } catch (err: any) {
+      setError("Generation failed. Please try again.");
+      setStep(2);
+    }
+    setGenerateProgress("");
     setLoading(false);
   }
 
@@ -608,8 +652,10 @@ function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave,
         {step === 3 && (
           <div style={{ ...optCard, textAlign: "center", padding: "60px" }}>
             <div style={{ width: "44px", height: "44px", border: "2px solid #1e1e1e", borderTop: "2px solid #4ade80", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 20px" }} />
-            <p style={{ color: "#9ca3af", marginBottom: "8px" }}>Generating your tailored resume{analysis?.hasMultipleCareerTracks ? "s" : ""}...</p>
-            <p style={{ color: "#555", fontSize: "13px", fontFamily: "monospace" }}>This usually takes 15–30 seconds</p>
+            <p style={{ color: "#9ca3af", marginBottom: "8px" }}>
+              {generateProgress || "Generating your tailored resume..."}
+            </p>
+            <p style={{ color: "#555", fontSize: "13px", fontFamily: "monospace" }}>Each step takes a few seconds</p>
           </div>
         )}
 
