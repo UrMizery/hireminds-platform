@@ -349,6 +349,7 @@ function OptimizerModal({ slotId, slotLabel, resumeSlots, candidateInfo, onSave,
   }
 
   async function handleGenerate() {
+    console.log("handleGenerate called", { selectedJobs, selectedEducation, resumeTitle, candidateInfo });
     setLoading(true); setError(""); setStep(3);
     try {
       // Split into small calls each under 10 seconds to stay within Vercel Hobby limits
