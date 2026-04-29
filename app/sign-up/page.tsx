@@ -7,6 +7,7 @@ const VALID_REFERRAL_CODES = [
 "YWCA",
 "RDS",
 "DEMO",
+"TWP2026",
 "REFERRAL_02",
 "REFERRAL_03",
 "REFERRAL_04",
@@ -17,6 +18,19 @@ const VALID_REFERRAL_CODES = [
 "REFERRAL_09",
 "REFERRAL_10",
 ];
+
+// When checking referral codes, use:
+const isValidReferralCode = (referralCode: string) => {
+return VALID_REFERRAL_CODES.includes(referralCode.toUpperCase());
+};
+
+// When saving referral code after signup, use:
+const saveReferralCode = (referralCode: string) => {
+localStorage.setItem(
+"hireminds_referral_code",
+referralCode.toUpperCase()
+);
+};
 
 export default function SignupPage() {
 const [fullName, setFullName] = useState("");
