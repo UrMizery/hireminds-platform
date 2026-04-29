@@ -49,6 +49,7 @@ const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
+const [referralCode, setReferralCode] = useState("");
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -67,6 +68,7 @@ if (!mounted) return;
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setReferralCode("");
 setCheckingAuth(false);
 return;
 }
@@ -80,6 +82,14 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
+
+const storedCode =
+(typeof window !== "undefined" &&
+localStorage.getItem("hireminds_referral_code")) ||
+"";
+
+setReferralCode(String(storedCode).toUpperCase());
+
 console.log("raw role:", rawRole, "→ normalized:", normalizeRole(rawRole));
 setCheckingAuth(false);
 }
@@ -96,6 +106,7 @@ if (!mounted) return;
 if (!sessionUser) {
 setIsLoggedIn(false);
 setRole("guest");
+setReferralCode("");
 setCheckingAuth(false);
 return;
 }
@@ -109,6 +120,14 @@ sessionUser.user_metadata?.account_type ||
 "candidate";
 
 setRole(normalizeRole(rawRole));
+
+const storedCode =
+(typeof window !== "undefined" &&
+localStorage.getItem("hireminds_referral_code")) ||
+"";
+
+setReferralCode(String(storedCode).toUpperCase());
+
 console.log("raw role:", rawRole, "→ normalized:", normalizeRole(rawRole));
 setCheckingAuth(false);
 });
@@ -165,6 +184,11 @@ const showMyProfile = isLoggedIn && (isCandidate || isPartner || isAdmin || isPa
 const showCareerToolkit =
 isLoggedIn && (isCandidate || isPartner || isAdmin);
 
+const showSkillsQuest =
+isLoggedIn &&
+isCandidate &&
+referralCode === "TWP2026";
+
 const showPartnerDashboard =
 isLoggedIn && (isPartner || isAdmin || isPartnerPage);
 
@@ -214,6 +238,12 @@ My Profile
 {showCareerToolkit ? (
 <a href="/career-toolkit" style={styles.link}>
 Career ToolKit
+</a>
+) : null}
+
+{showSkillsQuest ? (
+<a href="/skillsquest" style={styles.link}>
+SkillsQuest
 </a>
 ) : null}
 
