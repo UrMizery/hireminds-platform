@@ -1,29 +1,83 @@
+"use client";
+
 import Link from "next/link";
+import React, { useEffect, useState } from "react";
+
+const REQUIRED_SECONDS = 300; // 5 minutes
 
 export default function MedicalTerminologyStudyPage() {
+const [secondsLeft, setSecondsLeft] = useState(REQUIRED_SECONDS);
+const [complete, setComplete] = useState(false);
+
+useEffect(() => {
+const alreadyComplete =
+localStorage.getItem("medicalTerminologyStudyComplete") === "true";
+
+if (alreadyComplete) {
+setComplete(true);
+setSecondsLeft(0);
+return;
+}
+
+const timer = setInterval(() => {
+setSecondsLeft((prev) => {
+if (prev <= 1) {
+clearInterval(timer);
+localStorage.setItem("medicalTerminologyStudyComplete", "true");
+setComplete(true);
+return 0;
+}
+
+return prev - 1;
+});
+}, 1000);
+
+return () => clearInterval(timer);
+}, []);
+
+const minutes = Math.floor(secondsLeft / 60);
+const seconds = secondsLeft % 60;
+
 return (
 <main style={styles.main}>
 <section style={styles.hero}>
 <p style={styles.kicker}>HireMinds Study Guide</p>
 <h1 style={styles.title}>Medical Terminology Study Guide</h1>
 <p style={styles.subtitle}>
-Learn the basics before taking the MedScope™ Medical Terminology Assessment.
+Review the core medical terminology basics before starting the assessment.
 </p>
 
+<div style={styles.timerBox}>
+{complete ? (
+<strong>Assessment Unlocked ✅</strong>
+) : (
+<strong>
+Assessment unlocks in {minutes}:{seconds.toString().padStart(2, "0")}
+</strong>
+)}
+</div>
+
 <div style={styles.buttons}>
+<Link href="/skillsquest" style={styles.secondaryBtn}>
+Back to SkillsQuest
+</Link>
+
+{complete ? (
 <Link href="/medical-terminology-assessment" style={styles.primaryBtn}>
-Take Assessment
+Start Assessment
 </Link>
-<Link href="/" style={styles.secondaryBtn}>
-Home
-</Link>
+) : (
+<span style={styles.lockedBtn}>Keep Studying to Unlock Assessment</span>
+)}
 </div>
 </section>
 
 <section style={styles.card}>
 <h2>How Medical Terms Are Built</h2>
 <p>
-Medical words are often made from three parts: a prefix, root word, and suffix.
+Medical words are often made from three parts: a prefix, root word,
+and suffix. Learning these parts helps you break down unfamiliar
+healthcare terms.
 </p>
 
 <div style={styles.exampleBox}>
@@ -33,7 +87,9 @@ Medical words are often made from three parts: a prefix, root word, and suffix.
 <b>card</b> = heart<br />
 <b>-itis</b> = inflammation
 </p>
-<p><b>Meaning:</b> inflammation around the heart.</p>
+<p>
+<b>Meaning:</b> inflammation around the heart.
+</p>
 </div>
 </section>
 
@@ -87,22 +143,26 @@ items={[
 <h2>Career Tip</h2>
 <p>
 Medical terminology is useful for medical front desk, patient access,
-billing, coding, healthcare administration, medical assistant, and clinical support roles.
+billing, coding, healthcare administration, medical assistant, and
+clinical support roles.
 </p>
 </section>
 
 <section style={styles.card}>
 <h2>Ready?</h2>
-<p>
-When you are ready, take the assessment. You will need the access code:
-</p>
-<div style={styles.codeBox}>MED-N0NP</div>
-<p style={styles.note}>
-Score 80% or higher on the terminology section to unlock a certificate of completion.
-</p>
+{complete ? (
+<>
+<p>You have completed the required study time.</p>
 <Link href="/medical-terminology-assessment" style={styles.primaryBtn}>
 Start Assessment
 </Link>
+</>
+) : (
+<p>
+Stay on this study guide until the timer finishes. Once complete,
+the assessment will unlock automatically.
+</p>
+)}
 </section>
 </main>
 );
@@ -114,7 +174,9 @@ return (
 <h3>{title}</h3>
 <ul>
 {items.map((item) => (
-<li key={item} style={styles.li}>{item}</li>
+<li key={item} style={styles.li}>
+{item}
+</li>
 ))}
 </ul>
 </div>
@@ -153,6 +215,14 @@ color: "rgba(255,255,255,.78)",
 maxWidth: 720,
 lineHeight: 1.6,
 },
+timerBox: {
+marginTop: 18,
+padding: 14,
+borderRadius: 14,
+background: "rgba(255,255,255,.09)",
+border: "1px solid rgba(255,255,255,.14)",
+maxWidth: 420,
+},
 buttons: {
 display: "flex",
 gap: 10,
@@ -179,6 +249,14 @@ borderRadius: 12,
 fontWeight: 800,
 textDecoration: "none",
 border: "1px solid rgba(255,255,255,.16)",
+},
+lockedBtn: {
+display: "inline-block",
+background: "rgba(255,255,255,.08)",
+color: "rgba(255,255,255,.65)",
+padding: "12px 16px",
+borderRadius: 12,
+fontWeight: 800,
 },
 card: {
 maxWidth: 1100,
@@ -212,18 +290,5 @@ border: "1px solid rgba(255,255,255,.12)",
 li: {
 marginBottom: 8,
 color: "rgba(255,255,255,.84)",
-},
-codeBox: {
-display: "inline-block",
-padding: "10px 14px",
-borderRadius: 12,
-background: "#fff",
-color: "#000",
-fontWeight: 950,
-letterSpacing: 1,
-margin: "8px 0",
-},
-note: {
-color: "rgba(255,255,255,.75)",
 },
 };
