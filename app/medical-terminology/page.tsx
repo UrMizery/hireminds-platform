@@ -4,572 +4,575 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 
 type Question = {
-id: number;
-section: string;
-question: string;
-options?: string[];
-correct?: string;
-type: "quiz" | "scale";
+  id: number;
+  section: string;
+  question: string;
+  options?: string[];
+  correct?: string;
+  type: "quiz" | "scale";
 };
 
-const ACCESS_CODE = "MED-N0NP";
+const REQUIRED_REFERRAL_CODE = "TWP2026";
 
 const questions: Question[] = [
-{
-id: 1,
-section: "Prefixes",
-question: "What does the prefix “hyper-” mean?",
-options: [
-"Below normal",
-"Excessive / above normal",
-"Around",
-"Within",
-],
-correct: "Excessive / above normal",
-type: "quiz",
-},
-{
-id: 2,
-section: "Prefixes",
-question: "What does “hypo-” mean?",
-options: [
-"Under / less than",
-"Surgical removal",
-"Inflammation",
-"Fast",
-],
-correct: "Under / less than",
-type: "quiz",
-},
-{
-id: 3,
-section: "Prefixes",
-question: "What does “tachy-” mean?",
-options: ["Slow", "Fast", "Bone", "Around"],
-correct: "Fast",
-type: "quiz",
-},
-{
-id: 4,
-section: "Prefixes",
-question: "What does “brady-” mean?",
-options: ["Fast", "Large", "Slow", "Skin"],
-correct: "Slow",
-type: "quiz",
-},
-{
-id: 5,
-section: "Prefixes",
-question: "What does “peri-” mean?",
-options: ["Around", "Inside", "Blood", "Kidney"],
-correct: "Around",
-type: "quiz",
-},
+  { id: 1, section: "Prefixes", question: "What does the prefix hyper- mean?", options: ["Below normal", "Excessive / above normal", "Around", "Within"], correct: "Excessive / above normal", type: "quiz" },
+  { id: 2, section: "Prefixes", question: "What does hypo- mean?", options: ["Under / less than", "Surgical removal", "Inflammation", "Fast"], correct: "Under / less than", type: "quiz" },
+  { id: 3, section: "Prefixes", question: "What does tachy- mean?", options: ["Slow", "Fast", "Bone", "Around"], correct: "Fast", type: "quiz" },
+  { id: 4, section: "Prefixes", question: "What does brady- mean?", options: ["Fast", "Large", "Slow", "Skin"], correct: "Slow", type: "quiz" },
+  { id: 5, section: "Prefixes", question: "What does peri- mean?", options: ["Around", "Inside", "Blood", "Kidney"], correct: "Around", type: "quiz" },
 
-{
-id: 6,
-section: "Root Words",
-question: "Cardi/o refers to:",
-options: ["Brain", "Heart", "Skin", "Kidney"],
-correct: "Heart",
-type: "quiz",
-},
-{
-id: 7,
-section: "Root Words",
-question: "Nephr/o refers to:",
-options: ["Kidney", "Bone", "Liver", "Lung"],
-correct: "Kidney",
-type: "quiz",
-},
-{
-id: 8,
-section: "Root Words",
-question: "Derm/o refers to:",
-options: ["Blood", "Skin", "Bone", "Eye"],
-correct: "Skin",
-type: "quiz",
-},
-{
-id: 9,
-section: "Root Words",
-question: "Oste/o refers to:",
-options: ["Bone", "Ear", "Nose", "Vein"],
-correct: "Bone",
-type: "quiz",
-},
-{
-id: 10,
-section: "Root Words",
-question: "Hepat/o refers to:",
-options: ["Liver", "Lung", "Joint", "Nerve"],
-correct: "Liver",
-type: "quiz",
-},
+  { id: 6, section: "Root Words", question: "Cardi/o refers to:", options: ["Brain", "Heart", "Skin", "Kidney"], correct: "Heart", type: "quiz" },
+  { id: 7, section: "Root Words", question: "Nephr/o refers to:", options: ["Kidney", "Bone", "Liver", "Lung"], correct: "Kidney", type: "quiz" },
+  { id: 8, section: "Root Words", question: "Derm/o refers to:", options: ["Blood", "Skin", "Bone", "Eye"], correct: "Skin", type: "quiz" },
+  { id: 9, section: "Root Words", question: "Oste/o refers to:", options: ["Bone", "Ear", "Nose", "Vein"], correct: "Bone", type: "quiz" },
+  { id: 10, section: "Root Words", question: "Hepat/o refers to:", options: ["Liver", "Lung", "Joint", "Nerve"], correct: "Liver", type: "quiz" },
 
-{
-id: 11,
-section: "Suffixes",
-question: "“-itis” means:",
-options: [
-"Surgical removal",
-"Inflammation",
-"Disease",
-"Record",
-],
-correct: "Inflammation",
-type: "quiz",
-},
-{
-id: 12,
-section: "Suffixes",
-question: "“-ectomy” means:",
-options: [
-"To cut out / remove",
-"Study of",
-"Around",
-"Swelling",
-],
-correct: "To cut out / remove",
-type: "quiz",
-},
-{
-id: 13,
-section: "Suffixes",
-question: "“-ology” means:",
-options: ["Pain", "Condition", "Study of", "Repair"],
-correct: "Study of",
-type: "quiz",
-},
-{
-id: 14,
-section: "Suffixes",
-question: "“-scopy” means:",
-options: [
-"Visual examination",
-"Removal",
-"Slow",
-"Muscle",
-],
-correct: "Visual examination",
-type: "quiz",
-},
-{
-id: 15,
-section: "Suffixes",
-question: "“-osis” means:",
-options: [
-"Abnormal condition",
-"Heart",
-"Before",
-"Gland",
-],
-correct: "Abnormal condition",
-type: "quiz",
-},
+  { id: 11, section: "Suffixes", question: "-itis means:", options: ["Surgical removal", "Inflammation", "Disease", "Record"], correct: "Inflammation", type: "quiz" },
+  { id: 12, section: "Suffixes", question: "-ectomy means:", options: ["To cut out / remove", "Study of", "Around", "Swelling"], correct: "To cut out / remove", type: "quiz" },
+  { id: 13, section: "Suffixes", question: "-ology means:", options: ["Pain", "Condition", "Study of", "Repair"], correct: "Study of", type: "quiz" },
+  { id: 14, section: "Suffixes", question: "-scopy means:", options: ["Visual examination", "Removal", "Slow", "Muscle"], correct: "Visual examination", type: "quiz" },
+  { id: 15, section: "Suffixes", question: "-osis means:", options: ["Abnormal condition", "Heart", "Before", "Gland"], correct: "Abnormal condition", type: "quiz" },
 
-{
-id: 16,
-section: "Medical Meaning",
-question: "Gastritis means:",
-options: [
-"Heart inflammation",
-"Stomach inflammation",
-"Skin disease",
-"Kidney removal",
-],
-correct: "Stomach inflammation",
-type: "quiz",
-},
-{
-id: 17,
-section: "Medical Meaning",
-question: "Dermatology is the study of:",
-options: ["Blood", "Skin", "Brain", "Liver"],
-correct: "Skin",
-type: "quiz",
-},
-{
-id: 18,
-section: "Medical Meaning",
-question: "Nephrectomy means:",
-options: [
-"Kidney removal",
-"Bone fracture",
-"Heart surgery",
-"Ear infection",
-],
-correct: "Kidney removal",
-type: "quiz",
-},
-{
-id: 19,
-section: "Medical Meaning",
-question: "Bradycardia means:",
-options: [
-"Fast heartbeat",
-"Slow heartbeat",
-"Broken bone",
-"Joint pain",
-],
-correct: "Slow heartbeat",
-type: "quiz",
-},
-{
-id: 20,
-section: "Medical Meaning",
-question: "Pericarditis means:",
-options: [
-"Inflammation around the heart",
-"Skin infection",
-"Liver swelling",
-"Lung disease",
-],
-correct: "Inflammation around the heart",
-type: "quiz",
-},
+  { id: 16, section: "Medical Term Meaning", question: "Gastritis means:", options: ["Heart inflammation", "Stomach inflammation", "Skin disease", "Kidney removal"], correct: "Stomach inflammation", type: "quiz" },
+  { id: 17, section: "Medical Term Meaning", question: "Dermatology is the study of:", options: ["Blood", "Skin", "Brain", "Liver"], correct: "Skin", type: "quiz" },
+  { id: 18, section: "Medical Term Meaning", question: "Nephrectomy means:", options: ["Kidney removal", "Bone fracture", "Heart surgery", "Ear infection"], correct: "Kidney removal", type: "quiz" },
+  { id: 19, section: "Medical Term Meaning", question: "Bradycardia means:", options: ["Fast heartbeat", "Slow heartbeat", "Broken bone", "Joint pain"], correct: "Slow heartbeat", type: "quiz" },
+  { id: 20, section: "Medical Term Meaning", question: "Pericarditis means:", options: ["Inflammation around the heart", "Skin infection", "Liver swelling", "Lung disease"], correct: "Inflammation around the heart", type: "quiz" },
 
-{
-id: 21,
-section: "Career Readiness",
-question: "Are you comfortable working with patient information?",
-type: "scale",
-},
-{
-id: 22,
-section: "Career Readiness",
-question: "Do you enjoy detail-oriented work?",
-type: "scale",
-},
-{
-id: 23,
-section: "Career Readiness",
-question:
-"Are you interested in healthcare careers that may not require direct patient care?",
-type: "scale",
-},
-{
-id: 24,
-section: "Career Readiness",
-question: "Can you work with deadlines and documentation?",
-type: "scale",
-},
-{
-id: 25,
-section: "Career Readiness",
-question:
-"Are you interested in certifications like billing, coding, or medical administration?",
-type: "scale",
-},
+  { id: 21, section: "Career Readiness", question: "Are you comfortable working with patient information?", type: "scale" },
+  { id: 22, section: "Career Readiness", question: "Do you enjoy detail-oriented work?", type: "scale" },
+  { id: 23, section: "Career Readiness", question: "Are you interested in healthcare careers that may not require direct patient care?", type: "scale" },
+  { id: 24, section: "Career Readiness", question: "Can you work with deadlines and documentation?", type: "scale" },
+  { id: 25, section: "Career Readiness", question: "Are you interested in certifications like billing, coding, or medical administration?", type: "scale" },
 ];
 
-export default function MedicalAssessmentPage() {
-const [fullName, setFullName] = useState("");
-const [enteredCode, setEnteredCode] = useState("");
-const [unlocked, setUnlocked] = useState(false);
-const [submitted, setSubmitted] = useState(false);
-const [answers, setAnswers] = useState<Record<number, string | number>>({});
+export default function MedicalTerminologyAssessmentPage() {
+  const [fullName, setFullName] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, string | number>>({});
+  const [submitted, setSubmitted] = useState(false);
 
-const quizQuestions = questions.filter((q) => q.type === "quiz");
-const scaleQuestions = questions.filter((q) => q.type === "scale");
+  const quizQuestions = questions.filter((q) => q.type === "quiz");
+  const scaleQuestions = questions.filter((q) => q.type === "scale");
 
-const quizScore = useMemo(() => {
-return quizQuestions.reduce((score, q) => {
-return answers[q.id] === q.correct ? score + 1 : score;
-}, 0);
-}, [answers]);
+  const quizScore = useMemo(() => {
+    return quizQuestions.reduce((score, q) => {
+      return answers[q.id] === q.correct ? score + 1 : score;
+    }, 0);
+  }, [answers, quizQuestions]);
 
-const readinessScore = useMemo(() => {
-return scaleQuestions.reduce((score, q) => {
-return score + Number(answers[q.id] || 0);
-}, 0);
-}, [answers]);
+  const readinessScore = useMemo(() => {
+    return scaleQuestions.reduce((score, q) => {
+      return score + Number(answers[q.id] || 0);
+    }, 0);
+  }, [answers, scaleQuestions]);
 
-const percentage = Math.round((quizScore / 20) * 100);
-const passed = percentage >= 80;
+  const percentage = Math.round((quizScore / 20) * 100);
+  const passed = percentage >= 80;
 
-function handleUnlock() {
-if (!fullName.trim()) {
-alert("Please enter your full name.");
-return;
-}
+  const resultTitle = useMemo(() => {
+    if (quizScore <= 9) return "Healthcare Explorer";
+    if (quizScore <= 14) return "Healthcare Ready";
+    if (quizScore <= 17) return "Healthcare Career Track";
+    return "HireMinds Medical Professional Path";
+  }, [quizScore]);
 
-if (enteredCode.trim().toUpperCase() !== ACCESS_CODE) {
-alert("Invalid access code.");
-return;
-}
+  const recommendedPaths = useMemo(() => {
+    if (quizScore <= 9) {
+      return ["Medical Front Desk", "Patient Services Representative", "Healthcare Support Assistant"];
+    }
+    if (quizScore <= 14) {
+      return ["Medical Administrative Assistant", "Patient Access Representative", "Scheduling Coordinator", "Insurance Verification Assistant"];
+    }
+    if (quizScore <= 17) {
+      return ["Medical Billing Assistant", "Medical Coding Pathway", "Healthcare Administration", "Clinical Support Roles"];
+    }
+    return ["Medical Billing Specialist", "Medical Coding Specialist", "Revenue Cycle Support", "Patient Access Coordinator"];
+  }, [quizScore]);
 
-setUnlocked(true);
-}
+  function unlockAssessment() {
+    if (!fullName.trim()) {
+      alert("Please enter your full name.");
+      return;
+    }
 
-function handleAnswer(id: number, value: string | number) {
-setAnswers((prev) => ({
-...prev,
-[id]: value,
-}));
-}
+    if (referralCode.trim().toUpperCase() !== REQUIRED_REFERRAL_CODE) {
+      alert("This assessment is only available to approved TWP2026 referral participants.");
+      return;
+    }
 
-function handleSubmit() {
-if (Object.keys(answers).length < questions.length) {
-alert("Please answer all questions.");
-return;
-}
+    setUnlocked(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-setSubmitted(true);
-window.scrollTo({ top: 0, behavior: "smooth" });
-}
+  function handleAnswer(id: number, value: string | number) {
+    setAnswers((prev) => ({ ...prev, [id]: value }));
+  }
 
-function printCertificate() {
-window.print();
-}
+  function submitAssessment() {
+    if (Object.keys(answers).length < questions.length) {
+      alert("Please answer all questions before submitting.");
+      return;
+    }
 
-if (!unlocked) {
-return (
-<main style={styles.main}>
-<section style={styles.lockCard}>
-<h1 style={styles.title}>Medical Terminology Assessment</h1>
-<p style={styles.subtitle}>
-Enter your name and workshop access code to begin.
-</p>
+    setSubmitted(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-<input
-style={styles.input}
-placeholder="Full Name"
-value={fullName}
-onChange={(e) => setFullName(e.target.value)}
-/>
+  function resetAssessment() {
+    setAnswers({});
+    setSubmitted(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-<input
-style={styles.input}
-placeholder="Access Code"
-value={enteredCode}
-onChange={(e) => setEnteredCode(e.target.value)}
-/>
+  function printCertificate() {
+    window.print();
+  }
 
-<button style={styles.primaryBtn} onClick={handleUnlock}>
-Start Assessment
-</button>
+  if (!unlocked) {
+    return (
+      <main style={styles.main}>
+        <section style={styles.lockCard}>
+          <p style={styles.kicker}>HireMinds Medical Pathway</p>
+          <h1 style={styles.title}>MedScope Medical Terminology Assessment</h1>
+          <p style={styles.subtitle}>
+            This assessment is only available to participants with referral code TWP2026.
+          </p>
 
-<Link href="/medical-terminology-study" style={styles.linkBtn}>
-Study Guide First
-</Link>
-</section>
-</main>
-);
-}
+          <input
+            style={styles.input}
+            placeholder="Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+          />
 
-if (submitted) {
-return (
-<main style={styles.main}>
-<section style={styles.resultCard}>
-<h1 style={styles.title}>Assessment Results</h1>
+          <input
+            style={styles.input}
+            placeholder="Referral Code"
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+          />
 
-<p>
-<strong>Participant:</strong> {fullName}
-</p>
+          <button type="button" style={styles.primaryBtn} onClick={unlockAssessment}>
+            Start Assessment
+          </button>
 
-<p>
-<strong>Medical Terminology Score:</strong> {quizScore}/20
-</p>
+          <Link href="/medical-terminology-study" style={styles.linkBtn}>
+            Study Guide
+          </Link>
+        </section>
+      </main>
+    );
+  }
 
-<p>
-<strong>Career Readiness Score:</strong> {readinessScore}/25
-</p>
+  if (submitted) {
+    return (
+      <main style={styles.main}>
+        <section style={styles.resultCard}>
+          <p style={styles.kicker}>Assessment Results</p>
+          <h1 style={styles.title}>{resultTitle}</h1>
 
-<p>
-<strong>Passing Score:</strong> {percentage}%
-</p>
+          <div style={styles.scoreGrid}>
+            <div style={styles.scoreBox}>
+              <span style={styles.scoreLabel}>Participant</span>
+              <strong>{fullName}</strong>
+            </div>
 
-{passed ? (
-<>
-<h2 style={{ color: "#7dffb3" }}>
-Certificate of Completion Unlocked
-</h2>
+            <div style={styles.scoreBox}>
+              <span style={styles.scoreLabel}>Terminology Score</span>
+              <strong>{quizScore}/20</strong>
+            </div>
 
-<div style={styles.certificate}>
-<h2>HireMinds Certificate of Completion</h2>
-<p>This certifies that</p>
-<h1>{fullName}</h1>
-<p>
-has successfully completed the Medical Terminology Assessment
-</p>
-<p>Score: {percentage}%</p>
-</div>
+            <div style={styles.scoreBox}>
+              <span style={styles.scoreLabel}>Certificate Score</span>
+              <strong>{percentage}%</strong>
+            </div>
 
-<button
-style={styles.primaryBtn}
-onClick={printCertificate}
->
-Print Certificate
-</button>
-</>
-) : (
-<>
-<h2 style={{ color: "#ff9d9d" }}>
-Certificate Not Unlocked
-</h2>
-<p>
-You need 80% or higher to receive a certificate.
-</p>
-<Link href="/medical-terminology-study" style={styles.linkBtn}>
-Return to Study Guide
-</Link>
-</>
-)}
-</section>
-</main>
-);
-}
+            <div style={styles.scoreBox}>
+              <span style={styles.scoreLabel}>Readiness Score</span>
+              <strong>{readinessScore}/25</strong>
+            </div>
+          </div>
 
-return (
-<main style={styles.main}>
-<section style={styles.assessmentWrap}>
-<h1 style={styles.title}>MedScope™ Assessment</h1>
+          <h2 style={styles.sectionTitle}>Recommended Career Paths</h2>
+          <div style={styles.pathGrid}>
+            {recommendedPaths.map((path) => (
+              <div key={path} style={styles.pathCard}>✓ {path}</div>
+            ))}
+          </div>
 
-{questions.map((q) => (
-<div key={q.id} style={styles.questionCard}>
-<h3>{q.id}. {q.question}</h3>
+          {passed ? (
+            <>
+              <h2 style={styles.passText}>Certificate of Completion Unlocked</h2>
 
-{q.type === "quiz" ? (
-<div style={styles.optionWrap}>
-{q.options?.map((option) => (
-<button
-key={option}
-style={{
-...styles.optionBtn,
-...(answers[q.id] === option
-? styles.selected
-: {}),
-}}
-onClick={() => handleAnswer(q.id, option)}
->
-{option}
-</button>
-))}
-</div>
-) : (
-<div style={styles.optionWrap}>
-{[1, 2, 3, 4, 5].map((n) => (
-<button
-key={n}
-style={{
-...styles.optionBtn,
-...(answers[q.id] === n
-? styles.selected
-: {}),
-}}
-onClick={() => handleAnswer(q.id, n)}
->
-{n}
-</button>
-))}
-</div>
-)}
-</div>
-))}
+              <div style={styles.certificate}>
+                <p style={styles.certSmall}>Certificate of Completion</p>
+                <h1 style={styles.certTitle}>HireMinds</h1>
+                <p>This certifies that</p>
+                <h2 style={styles.certName}>{fullName}</h2>
+                <p>has successfully completed the</p>
+                <h3>MedScope Medical Terminology Assessment</h3>
+                <p>Score: {percentage}%</p>
+                <p>Date: {new Date().toLocaleDateString()}</p>
+              </div>
 
-<button style={styles.primaryBtn} onClick={handleSubmit}>
-Submit Assessment
-</button>
-</section>
-</main>
-);
+              <button type="button" style={styles.primaryBtn} onClick={printCertificate}>
+                Print Certificate / Save as PDF
+              </button>
+            </>
+          ) : (
+            <>
+              <h2 style={styles.failText}>Certificate Not Unlocked</h2>
+              <p style={styles.resultText}>
+                You need 80% or higher on the medical terminology section to receive a certificate.
+                Review the study guide and try again.
+              </p>
+              <Link href="/medical-terminology-study" style={styles.linkBtn}>
+                Return to Study Guide
+              </Link>
+            </>
+          )}
+
+          <button type="button" style={styles.secondaryBtn} onClick={resetAssessment}>
+            Retake Assessment
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main style={styles.main}>
+      <section style={styles.hero}>
+        <div>
+          <p style={styles.kicker}>HireMinds Assessment</p>
+          <h1 style={styles.title}>MedScope Medical Terminology Assessment</h1>
+          <p style={styles.subtitle}>
+            Answer all questions. Score 80% or higher on the terminology questions to unlock a certificate.
+          </p>
+        </div>
+
+        <div style={styles.heroButtons}>
+          <Link href="/medical-terminology-study" style={styles.secondaryBtn}>
+            Study Guide
+          </Link>
+        </div>
+      </section>
+
+      <section style={styles.assessmentCard}>
+        {questions.map((q) => (
+          <div key={q.id} style={styles.questionCard}>
+            <div style={styles.questionTop}>
+              <span style={styles.badge}>{q.section}</span>
+              <span style={styles.questionNumber}>Question {q.id}</span>
+            </div>
+
+            <h3 style={styles.questionText}>{q.question}</h3>
+
+            {q.type === "quiz" && q.options ? (
+              <div style={styles.optionGrid}>
+                {q.options.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => handleAnswer(q.id, option)}
+                    style={{
+                      ...styles.optionBtn,
+                      ...(answers[q.id] === option ? styles.selected : {}),
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={styles.scaleGrid}>
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => handleAnswer(q.id, num)}
+                    style={{
+                      ...styles.scaleBtn,
+                      ...(answers[q.id] === num ? styles.selected : {}),
+                    }}
+                  >
+                    {num}
+                  </button>
+                ))}
+                <div style={styles.scaleLabels}>
+                  <span>1 = Not comfortable</span>
+                  <span>5 = Very comfortable</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        <button type="button" style={styles.submitBtn} onClick={submitAssessment}>
+          Submit Assessment
+        </button>
+      </section>
+    </main>
+  );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-main: {
-minHeight: "100vh",
-background: "#0a0a0a",
-color: "#fff",
-padding: 24,
-fontFamily: "Arial",
-},
-title: {
-fontSize: 38,
-fontWeight: 900,
-marginBottom: 10,
-},
-subtitle: {
-opacity: 0.8,
-marginBottom: 20,
-},
-lockCard: {
-maxWidth: 700,
-margin: "0 auto",
-padding: 30,
-borderRadius: 20,
-background: "#111",
-border: "1px solid rgba(255,255,255,.1)",
-},
-input: {
-width: "100%",
-padding: 14,
-marginBottom: 14,
-borderRadius: 12,
-border: "1px solid rgba(255,255,255,.15)",
-background: "#1a1a1a",
-color: "#fff",
-},
-primaryBtn: {
-background: "#fff",
-color: "#000",
-padding: "14px 18px",
-borderRadius: 12,
-fontWeight: 900,
-border: "none",
-cursor: "pointer",
-marginTop: 10,
-},
-linkBtn: {
-display: "block",
-marginTop: 16,
-color: "#8cc4ff",
-fontWeight: 800,
-textDecoration: "none",
-},
-assessmentWrap: {
-maxWidth: 1100,
-margin: "0 auto",
-},
-questionCard: {
-padding: 20,
-borderRadius: 18,
-background: "#111",
-marginBottom: 14,
-border: "1px solid rgba(255,255,255,.08)",
-},
-optionWrap: {
-display: "grid",
-gap: 10,
-marginTop: 14,
-},
-optionBtn: {
-padding: 12,
-borderRadius: 12,
-border: "1px solid rgba(255,255,255,.15)",
-background: "#1a1a1a",
-color: "#fff",
-cursor: "pointer",
-textAlign: "left",
-},
-selected: {
-background: "#fff",
-color: "#000",
-fontWeight: 800,
-},
-resultCard: {
-maxWidth: 900,
-margin: "0 auto",
-padding: 30,
-borderRadius: 20,
-background: "#111",
-},
-certificate: {
-marginTop: 24,
-padding: 30,
-borderRadius: 18,
-background: "#fff",
-color: "#000",
-textAlign: "center",
-},
+  main: {
+    minHeight: "100vh",
+    background: "radial-gradient(circle at top left, rgba(0,122,255,.25), transparent 35%), linear-gradient(180deg,#050505,#111)",
+    color: "#fff",
+    fontFamily: "system-ui, Arial, sans-serif",
+    padding: 24,
+  },
+  hero: {
+    maxWidth: 1100,
+    margin: "0 auto",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 20,
+    alignItems: "center",
+    flexWrap: "wrap",
+    padding: "28px 0",
+  },
+  kicker: {
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    fontSize: 12,
+    color: "#7db7ff",
+    fontWeight: 800,
+    margin: 0,
+  },
+  title: {
+    fontSize: 40,
+    lineHeight: 1.05,
+    margin: "10px 0",
+    fontWeight: 950,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "rgba(255,255,255,.78)",
+    maxWidth: 720,
+    lineHeight: 1.6,
+  },
+  lockCard: {
+    maxWidth: 720,
+    margin: "60px auto",
+    padding: 28,
+    borderRadius: 22,
+    background: "rgba(255,255,255,.075)",
+    border: "1px solid rgba(255,255,255,.14)",
+  },
+  input: {
+    width: "100%",
+    padding: 14,
+    marginBottom: 14,
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,.18)",
+    background: "rgba(0,0,0,.35)",
+    color: "#fff",
+    fontSize: 15,
+  },
+  primaryBtn: {
+    background: "#fff",
+    color: "#000",
+    padding: "13px 16px",
+    borderRadius: 12,
+    fontWeight: 900,
+    textDecoration: "none",
+    border: "none",
+    cursor: "pointer",
+    marginTop: 10,
+    display: "inline-block",
+  },
+  secondaryBtn: {
+    background: "rgba(255,255,255,.09)",
+    color: "#fff",
+    padding: "13px 16px",
+    borderRadius: 12,
+    fontWeight: 800,
+    textDecoration: "none",
+    border: "1px solid rgba(255,255,255,.16)",
+    cursor: "pointer",
+    marginTop: 10,
+    display: "inline-block",
+  },
+  linkBtn: {
+    display: "block",
+    marginTop: 16,
+    color: "#8cc4ff",
+    fontWeight: 800,
+    textDecoration: "none",
+  },
+  heroButtons: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  assessmentCard: {
+    maxWidth: 1100,
+    margin: "0 auto",
+    display: "grid",
+    gap: 14,
+  },
+  questionCard: {
+    padding: 18,
+    borderRadius: 18,
+    background: "rgba(255,255,255,.075)",
+    border: "1px solid rgba(255,255,255,.12)",
+  },
+  questionTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 10,
+    flexWrap: "wrap",
+    marginBottom: 10,
+  },
+  badge: {
+    background: "rgba(125,183,255,.15)",
+    color: "#b8dcff",
+    padding: "6px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 900,
+  },
+  questionNumber: {
+    color: "rgba(255,255,255,.6)",
+    fontSize: 12,
+    fontWeight: 800,
+  },
+  questionText: {
+    margin: "0 0 12px",
+    fontSize: 19,
+  },
+  optionGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+    gap: 10,
+  },
+  optionBtn: {
+    padding: 12,
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,.15)",
+    background: "rgba(0,0,0,.3)",
+    color: "#fff",
+    cursor: "pointer",
+    textAlign: "left",
+    fontWeight: 700,
+  },
+  selected: {
+    background: "#fff",
+    color: "#000",
+    borderColor: "#fff",
+  },
+  scaleGrid: {
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  scaleBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,.15)",
+    background: "rgba(0,0,0,.3)",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 900,
+  },
+  scaleLabels: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "space-between",
+    color: "rgba(255,255,255,.55)",
+    fontSize: 12,
+  },
+  submitBtn: {
+    padding: 15,
+    borderRadius: 14,
+    border: "none",
+    background: "#fff",
+    color: "#000",
+    fontWeight: 950,
+    cursor: "pointer",
+    marginBottom: 40,
+  },
+  resultCard: {
+    maxWidth: 1000,
+    margin: "0 auto",
+    padding: 26,
+    borderRadius: 22,
+    background: "rgba(255,255,255,.08)",
+    border: "1px solid rgba(255,255,255,.13)",
+  },
+  scoreGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
+    gap: 12,
+    marginTop: 18,
+  },
+  scoreBox: {
+    background: "rgba(0,0,0,.32)",
+    padding: 16,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,.1)",
+  },
+  scoreLabel: {
+    display: "block",
+    color: "rgba(255,255,255,.65)",
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  sectionTitle: {
+    marginTop: 24,
+  },
+  pathGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))",
+    gap: 10,
+  },
+  pathCard: {
+    padding: 12,
+    borderRadius: 14,
+    background: "rgba(125,183,255,.13)",
+    border: "1px solid rgba(125,183,255,.20)",
+    fontWeight: 800,
+  },
+  passText: {
+    color: "#7dffb3",
+    marginTop: 24,
+  },
+  failText: {
+    color: "#ff9d9d",
+    marginTop: 24,
+  },
+  resultText: {
+    color: "rgba(255,255,255,.8)",
+    lineHeight: 1.65,
+  },
+  certificate: {
+    marginTop: 20,
+    marginBottom: 18,
+    padding: 34,
+    borderRadius: 18,
+    background: "#fff",
+    color: "#000",
+    textAlign: "center",
+    border: "8px solid #111",
+  },
+  certSmall: {
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    fontWeight: 800,
+  },
+  certTitle: {
+    fontSize: 42,
+    margin: "10px 0",
+  },
+  certName: {
+    fontSize: 32,
+    margin: "12px 0",
+  },
 };
