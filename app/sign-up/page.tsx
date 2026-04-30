@@ -146,6 +146,7 @@ return;
 }
 
 setLoading(false);
+saveReferralCode(normalizedReferralCode);
 window.location.href = "/profile";
 }
 
