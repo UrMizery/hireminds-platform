@@ -391,10 +391,10 @@ visibility: visible !important;
 
 .certificate-print {
 position: fixed !important;
-left: 0.25in !important;
-top: 0.25in !important;
-width: 10.5in !important;
-height: 8in !important;
+left: 0.5in !important;
+top: 0.5in !important;
+width: 10in !important;
+height: 7.5in !important;
 max-width: none !important;
 margin: 0 !important;
 padding: 0 !important;
@@ -514,11 +514,11 @@ retakeBox: { marginTop: 12, padding: 16, borderRadius: 14, background: "rgba(255
 
 certificate: {
 width: "100%",
-maxWidth: "980px",
+maxWidth: "820px",
 aspectRatio: "11 / 8.5",
 margin: "20px auto 18px",
-padding: 16,
-borderRadius: 18,
+padding: 12,
+borderRadius: 16,
 background: "#f7f7f4",
 color: "#000",
 textAlign: "center",
