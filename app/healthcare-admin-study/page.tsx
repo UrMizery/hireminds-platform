@@ -30,10 +30,11 @@ const seconds = secondsLeft % 60;
 
 return (
 <main style={styles.main}>
-<h1 style={styles.title}>Healthcare Admin Basics</h1>
+<h1 style={styles.title}>Healthcare Administration Basics</h1>
 
 <p style={styles.subtitle}>
-You are preparing for roles like Patient Access Rep, Front Desk, and Medical Admin.
+This guide prepares you for front desk, patient access, and administrative
+roles in healthcare settings.
 </p>
 
 <div style={styles.timer}>
@@ -42,68 +43,82 @@ You are preparing for roles like Patient Access Rep, Front Desk, and Medical Adm
 
 {/* PATIENT INTAKE */}
 <section style={styles.card}>
-<h2>Patient Intake (Real Workflow)</h2>
+<h2>Patient Intake & First Impressions</h2>
 
 <p>
-You are the first point of contact. Your job is to:
+Patient intake is the first step of the healthcare experience. This is
+where patients check in, provide their information, and begin their visit.
+</p>
+
+<p>
+Your role is to create a smooth, respectful, and professional experience.
+Many patients may be nervous, in pain, or unsure of what to expect.
 </p>
 
 <ul>
-<li>Greet the patient professionally</li>
-<li>Verify name, DOB, insurance</li>
+<li>Greet patients clearly and professionally</li>
+<li>Verify identity (name and date of birth)</li>
 <li>Confirm appointment details</li>
+<li>Collect or confirm insurance information</li>
 </ul>
 
-<p><strong>What to say:</strong></p>
-<p style={styles.example}>
-“Hi, welcome in. Can I verify your name and date of birth?”
-</p>
-
-<p><strong>What NOT to say:</strong></p>
-<p style={styles.bad}>
-“What’s your info?” (too vague, unprofessional)
+<p>
+Accuracy is critical. Even small mistakes in spelling, date of birth,
+or insurance details can lead to delays, billing issues, or patient
+frustration.
 </p>
 </section>
 
 {/* HIPAA */}
 <section style={styles.card}>
-<h2>HIPAA (Privacy Basics)</h2>
+<h2>HIPAA & Patient Privacy</h2>
 
 <p>
-You cannot share patient information unless authorized.
+HIPAA (Health Insurance Portability and Accountability Act) protects
+patient health information.
+</p>
+
+<p>
+In healthcare roles, you are responsible for maintaining privacy at all
+times — both in person and over the phone.
 </p>
 
 <ul>
-<li>Never discuss patient info out loud</li>
-<li>Always verify identity first</li>
-<li>Do not leave screens visible</li>
+<li>Never share patient information without authorization</li>
+<li>Always verify identity before discussing details</li>
+<li>Avoid speaking loudly about patient information</li>
+<li>Do not leave screens or documents visible</li>
 </ul>
 
-<p style={styles.scenario}>
-Scenario: Someone calls asking about a patient.
-<br />
-✅ Correct: “I need to verify authorization before sharing information.”
+<p>
+Even casual conversations can be violations. Being careful, aware, and
+professional protects both the patient and the organization.
 </p>
 </section>
 
 {/* SCHEDULING */}
 <section style={styles.card}>
-<h2>Scheduling</h2>
+<h2>Scheduling & Office Coordination</h2>
 
 <p>
-Mistakes here affect the entire office.
+Scheduling is a core responsibility in healthcare administration.
+It affects providers, staff, and patients.
+</p>
+
+<p>
+A well-managed schedule keeps the office running smoothly, while poor
+scheduling can create delays and frustration.
 </p>
 
 <ul>
-<li>Avoid double booking</li>
-<li>Confirm time + provider</li>
-<li>Communicate delays clearly</li>
+<li>Avoid double booking unless instructed</li>
+<li>Confirm appointment times and providers</li>
+<li>Communicate delays or changes clearly</li>
+<li>Document cancellations or no-shows properly</li>
 </ul>
 
-<p style={styles.scenario}>
-Scenario: Doctor is running late.
-<br />
-✅ “There’s a delay of about 15 minutes, thank you for your patience.”
+<p>
+Strong organization and attention to detail are essential in this role.
 </p>
 </section>
 
@@ -112,21 +127,24 @@ Scenario: Doctor is running late.
 <h2>Insurance Basics</h2>
 
 <p>
-Patients are often confused or frustrated.
+Patients often have questions or concerns about insurance coverage.
+Many do not fully understand their plans.
+</p>
+
+<p>
+Your role is not to diagnose coverage but to guide patients and help
+them understand next steps.
 </p>
 
 <ul>
-<li>Verify insurance before visit</li>
-<li>Do not guess coverage</li>
-<li>Stay calm under pressure</li>
+<li>Verify insurance information before visits</li>
+<li>Remain calm and professional during confusion</li>
+<li>Direct patients to the appropriate department when needed</li>
 </ul>
 
-<p style={styles.bad}>
-❌ “That’s not covered, not my problem”
-</p>
-
-<p style={styles.example}>
-✅ “Let me help check that for you and guide you through it.”
+<p>
+Professionalism is especially important when patients are frustrated
+or confused about costs.
 </p>
 </section>
 
@@ -134,25 +152,26 @@ Patients are often confused or frustrated.
 <section style={styles.card}>
 <h2>Professional Communication</h2>
 
+<p>
+Communication is one of the most important skills in healthcare
+administration.
+</p>
+
+<p>
+Patients rely on you for clarity, direction, and reassurance.
+</p>
+
 <ul>
-<li>Stay calm</li>
-<li>Use clear language</li>
-<li>Be respectful at all times</li>
+<li>Use clear and simple language</li>
+<li>Remain calm under pressure</li>
+<li>Listen actively before responding</li>
+<li>Show empathy and respect</li>
 </ul>
 
-<p style={styles.scenario}>
-Scenario: Patient is upset.
-<br />
-✅ “I understand this is frustrating, let me help resolve it.”
+<p>
+Your tone, body language, and word choice all impact how patients
+experience care.
 </p>
-</section>
-
-{/* QUICK CHECK */}
-<section style={styles.card}>
-<h2>Quick Check</h2>
-
-<p>What should you do before discussing patient info?</p>
-<p style={styles.answer}>✔ Verify identity</p>
 </section>
 
 {complete ? (
@@ -160,7 +179,9 @@ Scenario: Patient is upset.
 Start Assessment
 </Link>
 ) : (
-<div style={styles.locked}>Complete timer to unlock assessment</div>
+<div style={styles.locked}>
+Complete the timer to unlock the assessment
+</div>
 )}
 </main>
 );
@@ -173,19 +194,25 @@ color: "#fff",
 background: "#050505",
 minHeight: "100vh",
 },
-title: { fontSize: 32, marginBottom: 10 },
-subtitle: { marginBottom: 20, opacity: 0.8 },
-timer: { marginBottom: 20, fontSize: 18 },
+title: {
+fontSize: 32,
+marginBottom: 10,
+},
+subtitle: {
+marginBottom: 20,
+opacity: 0.8,
+},
+timer: {
+marginBottom: 20,
+fontSize: 18,
+},
 card: {
 background: "#111",
-padding: 20,
+padding: 22,
 borderRadius: 12,
 marginBottom: 16,
+lineHeight: 1.6,
 },
-example: { color: "#7dffb3" },
-bad: { color: "#ff9d9d" },
-scenario: { marginTop: 10, fontStyle: "italic" },
-answer: { color: "#7dffb3", fontWeight: "bold" },
 button: {
 background: "#fff",
 color: "#000",
@@ -193,5 +220,7 @@ padding: 12,
 borderRadius: 10,
 textDecoration: "none",
 },
-locked: { opacity: 0.6 },
+locked: {
+opacity: 0.6,
+},
 };
