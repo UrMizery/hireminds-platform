@@ -2,25 +2,49 @@
 
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 const REQUIRED_CODE = "TWP2026";
 
 export default function SkillsQuestPage() {
 const [allowed, setAllowed] = useState(false);
 const [checked, setChecked] = useState(false);
+const [studyComplete, setStudyComplete] = useState(false);
 
 useEffect(() => {
-const code =
-localStorage.getItem("hireminds_referral_code") ||
-localStorage.getItem("referral_code") ||
-"";
+async function checkAccess() {
+const {
+data: { session },
+} = await supabase.auth.getSession();
 
-setAllowed(code.toUpperCase() === REQUIRED_CODE);
+const user = session?.user;
+
+const userReferralCode = String(
+user?.user_metadata?.referral_code ||
+user?.user_metadata?.referralCode ||
+user?.user_metadata?.access_code ||
+""
+)
+.trim()
+.toUpperCase();
+
+const completedStudy =
+localStorage.getItem("medicalTerminologyStudyComplete") === "true";
+
+setAllowed(userReferralCode === REQUIRED_CODE);
+setStudyComplete(completedStudy);
 setChecked(true);
+}
+
+checkAccess();
 }, []);
 
 if (!checked) {
-return <main style={styles.main}>Checking access...</main>;
+return (
+<main style={styles.main}>
+<p>Loading SkillsQuest...</p>
+</main>
+);
 }
 
 if (!allowed) {
@@ -29,9 +53,13 @@ return (
 <section style={styles.lockCard}>
 <h1>SkillsQuest Locked</h1>
 <p>
-This learning area is currently available only to approved participants.
+This learning area is currently available only to approved TWP2026
+participants.
 </p>
-<Link href="/" style={styles.btn}>Return Home</Link>
+
+<Link href="/" style={styles.button}>
+Return Home
+</Link>
 </section>
 </main>
 );
@@ -42,62 +70,58 @@ return (
 <section style={styles.hero}>
 <p style={styles.kicker}>HireMinds Learning Hub</p>
 <h1 style={styles.title}>SkillsQuest</h1>
+
 <p style={styles.subtitle}>
-Study guides, assessments, certificates, and career-readiness tools in one place.
+Study guides, timed assessments, certifications, and career pathways
+built to help candidates grow faster and prove readiness.
 </p>
 </section>
 
 <section style={styles.grid}>
-<Card
-title="Medical Terminology Study Guide"
-text="Review prefixes, root words, suffixes, and practice terms before taking the assessment."
-href="/medical-terminology-study"
-/>
+<div style={styles.card}>
+<h2>Medical Terminology Pathway</h2>
 
-<Card
-title="MedScope Medical Terminology Assessment"
-text="Take the assessment and unlock a certificate if you score 80% or higher."
+<p>
+Review prefixes, suffixes, root words, and common healthcare terms.
+Complete the required study guide before unlocking the assessment.
+</p>
+
+<div style={styles.statusBox}>
+<strong>Status:</strong>{" "}
+{studyComplete ? "Assessment Unlocked" : "Study Guide Required"}
+</div>
+
+<div style={styles.buttonGroup}>
+<Link href="/medical-terminology-study" style={styles.primaryButton}>
+Open Study Guide
+</Link>
+
+{studyComplete ? (
+<Link
 href="/medical-terminology-assessment"
-/>
+style={styles.secondaryButton}
+>
+Start Assessment
+</Link>
+) : (
+<span style={styles.lockedButton}>
+Complete Study Guide First
+</span>
+)}
+</div>
+</div>
 
-<Card
-title="More Assessments Coming Soon"
-text="Future assessments can include customer service, interviewing, workplace communication, and resume readiness."
-href="#"
-disabled
-/>
+<div style={{ ...styles.card, opacity: 0.65 }}>
+<h2>Customer Service Assessment</h2>
+<p>Coming soon</p>
+</div>
+
+<div style={{ ...styles.card, opacity: 0.65 }}>
+<h2>Interview Readiness Assessment</h2>
+<p>Coming soon</p>
+</div>
 </section>
 </main>
-);
-}
-
-function Card({
-title,
-text,
-href,
-disabled,
-}: {
-title: string;
-text: string;
-href: string;
-disabled?: boolean;
-}) {
-if (disabled) {
-return (
-<div style={{ ...styles.card, opacity: 0.6 }}>
-<h2>{title}</h2>
-<p>{text}</p>
-<span style={styles.disabledBtn}>Coming Soon</span>
-</div>
-);
-}
-
-return (
-<Link href={href} style={styles.card}>
-<h2>{title}</h2>
-<p>{text}</p>
-<span style={styles.cardBtn}>Open</span>
-</Link>
 );
 }
 
@@ -105,84 +129,110 @@ const styles: Record<string, React.CSSProperties> = {
 main: {
 minHeight: "100vh",
 background:
-"radial-gradient(circle at top left, rgba(0,122,255,.25), transparent 35%), linear-gradient(180deg,#050505,#111)",
-color: "#fff",
+"radial-gradient(circle at top left, rgba(0,122,255,.20), transparent 35%), linear-gradient(180deg,#050505,#101010)",
+color: "#ffffff",
+padding: "32px",
 fontFamily: "system-ui, Arial, sans-serif",
-padding: 24,
 },
+
 hero: {
 maxWidth: 1100,
-margin: "0 auto",
-padding: "36px 0",
+margin: "0 auto 32px auto",
 },
+
 kicker: {
 color: "#7db7ff",
 fontWeight: 900,
-textTransform: "uppercase",
 letterSpacing: 1.4,
+textTransform: "uppercase",
 fontSize: 12,
 },
+
 title: {
 fontSize: 48,
+fontWeight: 900,
 margin: "8px 0",
-fontWeight: 950,
 },
+
 subtitle: {
-color: "rgba(255,255,255,.78)",
 fontSize: 16,
-maxWidth: 720,
-lineHeight: 1.6,
+lineHeight: 1.7,
+color: "rgba(255,255,255,.78)",
+maxWidth: 760,
 },
+
 grid: {
 maxWidth: 1100,
 margin: "0 auto",
 display: "grid",
-gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
-gap: 16,
+gap: 18,
 },
+
 card: {
-display: "block",
-color: "#fff",
-textDecoration: "none",
-padding: 22,
+background: "rgba(255,255,255,.06)",
+border: "1px solid rgba(255,255,255,.12)",
 borderRadius: 20,
-background: "rgba(255,255,255,.075)",
-border: "1px solid rgba(255,255,255,.14)",
+padding: 24,
 },
-cardBtn: {
-display: "inline-block",
-marginTop: 12,
-background: "#fff",
-color: "#000",
-padding: "10px 14px",
+
+statusBox: {
+marginTop: 18,
+marginBottom: 18,
+padding: 14,
 borderRadius: 12,
-fontWeight: 900,
+background: "rgba(255,255,255,.08)",
 },
-disabledBtn: {
-display: "inline-block",
-marginTop: 12,
-background: "rgba(255,255,255,.12)",
-color: "#fff",
-padding: "10px 14px",
+
+buttonGroup: {
+display: "flex",
+gap: 12,
+flexWrap: "wrap",
+marginTop: 10,
+},
+
+primaryButton: {
+background: "#ffffff",
+color: "#000000",
+padding: "12px 18px",
 borderRadius: 12,
-fontWeight: 900,
+textDecoration: "none",
+fontWeight: 800,
 },
+
+secondaryButton: {
+background: "#0A84FF",
+color: "#ffffff",
+padding: "12px 18px",
+borderRadius: 12,
+textDecoration: "none",
+fontWeight: 800,
+},
+
+lockedButton: {
+background: "rgba(255,255,255,.10)",
+color: "rgba(255,255,255,.70)",
+padding: "12px 18px",
+borderRadius: 12,
+fontWeight: 800,
+},
+
 lockCard: {
 maxWidth: 650,
-margin: "80px auto",
-padding: 28,
+margin: "100px auto",
+padding: 30,
 borderRadius: 22,
-background: "rgba(255,255,255,.075)",
-border: "1px solid rgba(255,255,255,.14)",
+background: "rgba(255,255,255,.06)",
+border: "1px solid rgba(255,255,255,.12)",
 },
-btn: {
+
+button: {
 display: "inline-block",
-marginTop: 12,
-background: "#fff",
-color: "#000",
-padding: "12px 16px",
+marginTop: 16,
+background: "#ffffff",
+color: "#000000",
+padding: "12px 18px",
 borderRadius: 12,
-fontWeight: 900,
 textDecoration: "none",
+fontWeight: 800,
 },
 };
