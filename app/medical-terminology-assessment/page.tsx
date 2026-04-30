@@ -50,13 +50,17 @@ export default function MedicalTerminologyAssessmentPage() {
 const [ready, setReady] = useState(false);
 const [studyComplete, setStudyComplete] = useState(false);
 const [fullName, setFullName] = useState("");
+const [email, setEmail] = useState("");
 const [referralCode, setReferralCode] = useState("");
 const [unlocked, setUnlocked] = useState(false);
 const [answers, setAnswers] = useState<Record<number, string | number>>({});
 const [submitted, setSubmitted] = useState(false);
+const [reported, setReported] = useState(false);
 
 useEffect(() => {
 setStudyComplete(localStorage.getItem("medicalTerminologyStudyComplete") === "true");
+const storedCode = localStorage.getItem("hireminds_referral_code") || "";
+if (storedCode) setReferralCode(storedCode.toUpperCase());
 setReady(true);
 }, []);
 
@@ -74,6 +78,27 @@ return scaleQuestions.reduce((score, q) => score + Number(answers[q.id] || 0), 0
 const percentage = Math.round((quizScore / 20) * 100);
 const passed = percentage >= 80;
 
+const sectionBreakdown = useMemo(() => {
+const sections = ["Prefixes", "Root Words", "Suffixes", "Medical Term Meaning"];
+
+return sections.map((section) => {
+const sectionQuestions = quizQuestions.filter((q) => q.section === section);
+const correct = sectionQuestions.reduce((count, q) => answers[q.id] === q.correct ? count + 1 : count, 0);
+const total = sectionQuestions.length;
+const pct = Math.round((correct / total) * 100);
+
+return {
+section,
+correct,
+total,
+pct,
+status: pct >= 80 ? "Strong" : pct >= 60 ? "Review" : "Focus Area",
+};
+});
+}, [answers, quizQuestions]);
+
+const weakAreas = sectionBreakdown.filter((s) => s.pct < 80);
+
 const resultTitle = useMemo(() => {
 if (quizScore <= 9) return "Healthcare Explorer";
 if (quizScore <= 14) return "Healthcare Ready";
@@ -87,6 +112,38 @@ if (quizScore <= 14) return ["Medical Administrative Assistant", "Patient Access
 if (quizScore <= 17) return ["Medical Billing Assistant", "Medical Coding Pathway", "Healthcare Administration", "Clinical Support Roles"];
 return ["Medical Billing Specialist", "Medical Coding Specialist", "Revenue Cycle Support", "Patient Access Coordinator"];
 }, [quizScore]);
+
+async function reportResults() {
+if (reported) return;
+
+try {
+await fetch("/api/skillsquest/report", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({
+fullName,
+email,
+referralCode,
+module: "medical_terminology",
+eventType: "assessment_submitted",
+score: quizScore,
+percentage,
+passed,
+certificateEarned: passed,
+details: {
+readinessScore,
+sectionBreakdown,
+weakAreas: weakAreas.map((w) => w.section),
+answers,
+},
+}),
+});
+
+setReported(true);
+} catch {
+// Keeps user experience from breaking if reporting fails.
+}
+}
 
 function unlockAssessment() {
 if (!fullName.trim()) {
@@ -107,7 +164,7 @@ function handleAnswer(id: number, value: string | number) {
 setAnswers((prev) => ({ ...prev, [id]: value }));
 }
 
-function submitAssessment() {
+async function submitAssessment() {
 if (Object.keys(answers).length < questions.length) {
 alert("Please answer all questions before submitting.");
 return;
@@ -115,11 +172,16 @@ return;
 
 setSubmitted(true);
 window.scrollTo({ top: 0, behavior: "smooth" });
+
+setTimeout(() => {
+reportResults();
+}, 200);
 }
 
 function resetAssessment() {
 setAnswers({});
 setSubmitted(false);
+setReported(false);
 window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -140,12 +202,8 @@ return (
 <p style={styles.subtitle}>
 You must complete the Medical Terminology Study Guide timer before starting the assessment.
 </p>
-<Link href="/medical-terminology-study" style={styles.primaryBtn}>
-Open Study Guide
-</Link>
-<Link href="/skillsquest" style={styles.linkBtn}>
-Back to SkillsQuest
-</Link>
+<Link href="/medical-terminology-study" style={styles.primaryBtn}>Open Study Guide</Link>
+<Link href="/skillsquest" style={styles.linkBtn}>Back to SkillsQuest</Link>
 </section>
 </main>
 );
@@ -162,15 +220,11 @@ This assessment is available to participants with referral code TWP2026.
 </p>
 
 <input style={styles.input} placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+<input style={styles.input} placeholder="Email optional, for reporting" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
 <input style={styles.input} placeholder="Referral Code" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())} />
 
-<button type="button" style={styles.primaryBtn} onClick={unlockAssessment}>
-Start Assessment
-</button>
-
-<Link href="/medical-terminology-study" style={styles.linkBtn}>
-Study Guide
-</Link>
+<button type="button" style={styles.primaryBtn} onClick={unlockAssessment}>Start Assessment</button>
+<Link href="/medical-terminology-study" style={styles.linkBtn}>Study Guide</Link>
 </section>
 </main>
 );
@@ -190,6 +244,60 @@ return (
 <div style={styles.scoreBox}><span style={styles.scoreLabel}>Readiness Score</span><strong>{readinessScore}/25</strong></div>
 </div>
 
+<h2 style={styles.sectionTitle}>Section Breakdown</h2>
+<div style={styles.pathGrid}>
+{sectionBreakdown.map((s) => (
+<div key={s.section} style={styles.pathCard}>
+<strong>{s.section}</strong>
+<br />
+{s.correct}/{s.total} correct — {s.pct}%
+<br />
+<span>{s.status}</span>
+</div>
+))}
+</div>
+
+{weakAreas.length ? (
+<>
+<h2 style={styles.sectionTitle}>Focus Areas</h2>
+<p style={styles.resultText}>
+Review: {weakAreas.map((w) => w.section).join(", ")}. Use the study guide and focus on these sections before retaking.
+</p>
+</>
+) : (
+<>
+<h2 style={styles.sectionTitle}>Strong Performance</h2>
+<p style={styles.resultText}>
+You scored 80% or higher in every terminology section.
+</p>
+</>
+)}
+
+<h2 style={styles.sectionTitle}>Correct vs. Your Answer</h2>
+<div style={styles.reviewList}>
+{quizQuestions.map((q) => {
+const userAnswer = answers[q.id];
+const isCorrect = userAnswer === q.correct;
+
+return (
+<div key={q.id} style={styles.reviewCard}>
+<strong>Q{q.id}. {q.question}</strong>
+<p style={styles.reviewLine}>
+Your Answer:{" "}
+<span style={isCorrect ? styles.correctText : styles.wrongText}>
+{String(userAnswer || "No answer")} {isCorrect ? "✓" : "✗"}
+</span>
+</p>
+{!isCorrect ? (
+<p style={styles.reviewLine}>
+Correct Answer: <span style={styles.correctText}>{q.correct}</span>
+</p>
+) : null}
+</div>
+);
+})}
+</div>
+
 <h2 style={styles.sectionTitle}>Recommended Career Paths</h2>
 <div style={styles.pathGrid}>
 {recommendedPaths.map((path) => <div key={path} style={styles.pathCard}>✓ {path}</div>)}
@@ -198,16 +306,35 @@ return (
 {passed ? (
 <>
 <h2 style={styles.passText}>Certificate of Completion Unlocked</h2>
-<div style={styles.certificate}>
+
+<div style={styles.certificate} className="certificate-print">
+<div style={styles.certBorder}>
 <p style={styles.certSmall}>Certificate of Completion</p>
 <h1 style={styles.certTitle}>HireMinds</h1>
-<p>This certifies that</p>
+<p style={styles.certWebsite}>HireMinds.app</p>
+
+<p style={styles.certText}>This certifies that</p>
 <h2 style={styles.certName}>{fullName}</h2>
-<p>has successfully completed the</p>
-<h3>MedScope Medical Terminology Assessment</h3>
-<p>Score: {percentage}%</p>
-<p>Date: {new Date().toLocaleDateString()}</p>
+
+<p style={styles.certText}>has successfully completed</p>
+<h3 style={styles.certCourse}>MedScope Medical Terminology Assessment</h3>
+
+<p style={styles.certText}>with a passing score of</p>
+<h2 style={styles.certScore}>{percentage}%</h2>
+
+<div style={styles.certFooter}>
+<div>
+<p style={styles.certLine}>{new Date().toLocaleDateString()}</p>
+<p style={styles.certLabel}>Date Completed</p>
 </div>
+<div>
+<p style={styles.scriptSignature}>HireMinds.app</p>
+<p style={styles.certLabel}>Authorized Signature</p>
+</div>
+</div>
+</div>
+</div>
+
 <button type="button" style={styles.primaryBtn} onClick={printCertificate}>
 Print Certificate / Save as PDF
 </button>
@@ -218,14 +345,43 @@ Print Certificate / Save as PDF
 <p style={styles.resultText}>
 You need 80% or higher on the medical terminology section to receive a certificate.
 </p>
+<div style={styles.retakeBox}>
+<strong>Retake Suggestions:</strong>
+<ul>
+<li>Review your weak areas listed above.</li>
+<li>Return to the study guide and focus on prefixes, roots, suffixes, or full terms as needed.</li>
+<li>Retake the assessment after reviewing.</li>
+</ul>
+</div>
 <Link href="/medical-terminology-study" style={styles.linkBtn}>Return to Study Guide</Link>
 </>
 )}
 
-<button type="button" style={styles.secondaryBtn} onClick={resetAssessment}>
-Retake Assessment
-</button>
+<button type="button" style={styles.secondaryBtn} onClick={resetAssessment}>Retake Assessment</button>
 </section>
+
+<style jsx global>{`
+@media print {
+body * {
+visibility: hidden !important;
+}
+.certificate-print,
+.certificate-print * {
+visibility: visible !important;
+}
+.certificate-print {
+position: absolute !important;
+left: 0 !important;
+top: 0 !important;
+width: 100% !important;
+box-shadow: none !important;
+}
+@page {
+size: landscape;
+margin: 0.35in;
+}
+}
+`}</style>
 </main>
 );
 }
@@ -311,18 +467,34 @@ scaleGrid: { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" },
 scaleBtn: { width: 46, height: 46, borderRadius: 999, border: "1px solid rgba(255,255,255,.15)", background: "rgba(0,0,0,.3)", color: "#fff", cursor: "pointer", fontWeight: 900 },
 scaleLabels: { width: "100%", display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,.55)", fontSize: 12 },
 submitBtn: { padding: 15, borderRadius: 14, border: "none", background: "#fff", color: "#000", fontWeight: 950, cursor: "pointer", marginBottom: 40 },
-resultCard: { maxWidth: 1000, margin: "0 auto", padding: 26, borderRadius: 22, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.13)" },
+resultCard: { maxWidth: 1100, margin: "0 auto", padding: 26, borderRadius: 22, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.13)" },
 scoreGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 12, marginTop: 18 },
 scoreBox: { background: "rgba(0,0,0,.32)", padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,.1)" },
 scoreLabel: { display: "block", color: "rgba(255,255,255,.65)", fontSize: 13, marginBottom: 6 },
 sectionTitle: { marginTop: 24 },
 pathGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 10 },
 pathCard: { padding: 12, borderRadius: 14, background: "rgba(125,183,255,.13)", border: "1px solid rgba(125,183,255,.20)", fontWeight: 800 },
+reviewList: { display: "grid", gap: 10 },
+reviewCard: { padding: 14, borderRadius: 14, background: "rgba(0,0,0,.30)", border: "1px solid rgba(255,255,255,.10)" },
+reviewLine: { margin: "8px 0 0", color: "rgba(255,255,255,.82)" },
+correctText: { color: "#7dffb3", fontWeight: 900 },
+wrongText: { color: "#ff9d9d", fontWeight: 900 },
 passText: { color: "#7dffb3", marginTop: 24 },
 failText: { color: "#ff9d9d", marginTop: 24 },
 resultText: { color: "rgba(255,255,255,.8)", lineHeight: 1.65 },
-certificate: { marginTop: 20, marginBottom: 18, padding: 34, borderRadius: 18, background: "#fff", color: "#000", textAlign: "center", border: "8px solid #111" },
-certSmall: { textTransform: "uppercase", letterSpacing: 2, fontWeight: 800 },
-certTitle: { fontSize: 42, margin: "10px 0" },
-certName: { fontSize: 32, margin: "12px 0" },
+retakeBox: { marginTop: 12, padding: 16, borderRadius: 14, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)", color: "rgba(255,255,255,.86)" },
+
+certificate: { marginTop: 20, marginBottom: 18, padding: 20, borderRadius: 18, background: "#f7f7f4", color: "#000", textAlign: "center", boxShadow: "0 18px 50px rgba(0,0,0,.35)" },
+certBorder: { border: "8px double #111", padding: 36, minHeight: 480, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
+certSmall: { textTransform: "uppercase", letterSpacing: 3, fontWeight: 900, fontSize: 13, margin: 0 },
+certTitle: { fontSize: 54, margin: "8px 0 0", fontWeight: 950 },
+certWebsite: { margin: "0 0 22px", fontWeight: 800, letterSpacing: 1.5 },
+certText: { fontSize: 17, margin: "8px 0", color: "#333" },
+certName: { fontSize: 38, margin: "10px 0", borderBottom: "2px solid #111", padding: "0 28px 8px", fontWeight: 900 },
+certCourse: { fontSize: 24, margin: "8px 0", fontWeight: 900 },
+certScore: { fontSize: 34, margin: "6px 0", fontWeight: 950 },
+certFooter: { width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 30, marginTop: 36 },
+certLine: { borderBottom: "1px solid #111", minWidth: 190, paddingBottom: 6, margin: 0, fontWeight: 800 },
+certLabel: { margin: "6px 0 0", fontSize: 12, textTransform: "uppercase", letterSpacing: 1.2, color: "#444" },
+scriptSignature: { fontFamily: "Brush Script MT, Segoe Script, cursive", fontSize: 34, borderBottom: "1px solid #111", minWidth: 220, paddingBottom: 4, margin: 0 },
 };
