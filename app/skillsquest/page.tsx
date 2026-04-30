@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 
 const REQUIRED_CODE = "TWP2026";
 
-export default function SkillQuestPage() {
+export default function SkillsQuestPage() {
 const [allowed, setAllowed] = useState(false);
 const [checked, setChecked] = useState(false);
 
@@ -27,7 +27,7 @@ if (!allowed) {
 return (
 <main style={styles.main}>
 <section style={styles.lockCard}>
-<h1>SkillQuest Locked</h1>
+<h1>SkillsQuest Locked</h1>
 <p>
 This learning area is currently available only to approved participants.
 </p>
@@ -41,7 +41,7 @@ return (
 <main style={styles.main}>
 <section style={styles.hero}>
 <p style={styles.kicker}>HireMinds Learning Hub</p>
-<h1 style={styles.title}>SkillQuest</h1>
+<h1 style={styles.title}>SkillsQuest</h1>
 <p style={styles.subtitle}>
 Study guides, assessments, certificates, and career-readiness tools in one place.
 </p>
