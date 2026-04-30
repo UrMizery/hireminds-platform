@@ -9,7 +9,9 @@ const REQUIRED_CODE = "TWP2026";
 export default function SkillsQuestPage() {
 const [allowed, setAllowed] = useState(false);
 const [checked, setChecked] = useState(false);
-const [studyComplete, setStudyComplete] = useState(false);
+
+const [medicalStudyComplete, setMedicalStudyComplete] = useState(false);
+const [healthcareStudyComplete, setHealthcareStudyComplete] = useState(false);
 
 useEffect(() => {
 async function checkAccess() {
@@ -28,11 +30,16 @@ user?.user_metadata?.access_code ||
 .trim()
 .toUpperCase();
 
-const completedStudy =
-localStorage.getItem("medicalTerminologyStudyComplete") === "true";
-
 setAllowed(userReferralCode === REQUIRED_CODE);
-setStudyComplete(completedStudy);
+
+setMedicalStudyComplete(
+localStorage.getItem("medicalTerminologyStudyComplete") === "true"
+);
+
+setHealthcareStudyComplete(
+localStorage.getItem("healthcareAdminStudyComplete") === "true"
+);
+
 setChecked(true);
 }
 
@@ -53,8 +60,7 @@ return (
 <section style={styles.lockCard}>
 <h1>SkillsQuest Locked</h1>
 <p>
-This learning area is currently available only to approved TWP2026
-participants.
+This learning area is only available to approved participants.
 </p>
 
 <Link href="/" style={styles.button}>
@@ -72,31 +78,34 @@ return (
 <h1 style={styles.title}>SkillsQuest</h1>
 
 <p style={styles.subtitle}>
-Study guides, timed assessments, certifications, and career pathways
-built to help candidates grow faster and prove readiness.
+Complete study guides, unlock assessments, earn certificates, and
+prepare for real job opportunities.
 </p>
 </section>
 
 <section style={styles.grid}>
+{/* MEDICAL TERMINOLOGY */}
 <div style={styles.card}>
-<h2>Medical Terminology Pathway</h2>
+<h2>Medical Terminology</h2>
 
 <p>
-Review prefixes, suffixes, root words, and common healthcare terms.
-Complete the required study guide before unlocking the assessment.
+Learn prefixes, suffixes, root words, and medical terms used in
+healthcare settings.
 </p>
 
 <div style={styles.statusBox}>
 <strong>Status:</strong>{" "}
-{studyComplete ? "Assessment Unlocked" : "Study Guide Required"}
+{medicalStudyComplete
+? "Assessment Unlocked"
+: "Study Guide Required"}
 </div>
 
 <div style={styles.buttonGroup}>
 <Link href="/medical-terminology-study" style={styles.primaryButton}>
-Open Study Guide
+Study Guide
 </Link>
 
-{studyComplete ? (
+{medicalStudyComplete ? (
 <Link
 href="/medical-terminology-assessment"
 style={styles.secondaryButton}
@@ -105,19 +114,56 @@ Start Assessment
 </Link>
 ) : (
 <span style={styles.lockedButton}>
-Complete Study Guide First
+Complete Study First
 </span>
 )}
 </div>
 </div>
 
-<div style={{ ...styles.card, opacity: 0.65 }}>
-<h2>Customer Service Assessment</h2>
+{/* HEALTHCARE ADMIN BASICS */}
+<div style={styles.card}>
+<h2>Healthcare Admin Basics</h2>
+
+<p>
+Learn patient intake, scheduling, HIPAA basics, insurance, and
+professional communication in healthcare environments.
+</p>
+
+<div style={styles.statusBox}>
+<strong>Status:</strong>{" "}
+{healthcareStudyComplete
+? "Assessment Unlocked"
+: "Study Guide Required"}
+</div>
+
+<div style={styles.buttonGroup}>
+<Link href="/healthcare-admin-study" style={styles.primaryButton}>
+Study Guide
+</Link>
+
+{healthcareStudyComplete ? (
+<Link
+href="/healthcare-admin-assessment"
+style={styles.secondaryButton}
+>
+Start Assessment
+</Link>
+) : (
+<span style={styles.lockedButton}>
+Complete Study First
+</span>
+)}
+</div>
+</div>
+
+{/* COMING SOON */}
+<div style={{ ...styles.card, opacity: 0.6 }}>
+<h2>Customer Service Excellence</h2>
 <p>Coming soon</p>
 </div>
 
-<div style={{ ...styles.card, opacity: 0.65 }}>
-<h2>Interview Readiness Assessment</h2>
+<div style={{ ...styles.card, opacity: 0.6 }}>
+<h2>Interview Readiness</h2>
 <p>Coming soon</p>
 </div>
 </section>
