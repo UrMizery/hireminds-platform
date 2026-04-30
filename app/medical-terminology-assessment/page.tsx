@@ -515,7 +515,7 @@ retakeBox: { marginTop: 12, padding: 16, borderRadius: 14, background: "rgba(255
 certificate: {
 width: "100%",
 maxWidth: "820px",
-aspectRatio: "11 / 8.5",
+aspectRatio: "8.5 / 11",
 margin: "20px auto 18px",
 padding: 12,
 borderRadius: 16,
