@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const STUDY_TIME = 11 * 60; // 11 minutes
+const STUDY_TIME = 11 * 60;
 
 export default function HealthcareAdminStudy() {
 const [secondsLeft, setSecondsLeft] = useState(STUDY_TIME);
@@ -32,49 +32,127 @@ return (
 <main style={styles.main}>
 <h1 style={styles.title}>Healthcare Admin Basics</h1>
 
+<p style={styles.subtitle}>
+You are preparing for roles like Patient Access Rep, Front Desk, and Medical Admin.
+</p>
+
 <div style={styles.timer}>
 ⏱ {minutes}:{seconds.toString().padStart(2, "0")}
 </div>
 
+{/* PATIENT INTAKE */}
 <section style={styles.card}>
-<h2>Patient Intake</h2>
+<h2>Patient Intake (Real Workflow)</h2>
+
 <p>
-The first interaction a patient has sets the tone. You are responsible
-for greeting, verifying information, and ensuring the patient feels
-comfortable and respected.
+You are the first point of contact. Your job is to:
+</p>
+
+<ul>
+<li>Greet the patient professionally</li>
+<li>Verify name, DOB, insurance</li>
+<li>Confirm appointment details</li>
+</ul>
+
+<p><strong>What to say:</strong></p>
+<p style={styles.example}>
+“Hi, welcome in. Can I verify your name and date of birth?”
+</p>
+
+<p><strong>What NOT to say:</strong></p>
+<p style={styles.bad}>
+“What’s your info?” (too vague, unprofessional)
 </p>
 </section>
 
+{/* HIPAA */}
 <section style={styles.card}>
-<h2>HIPAA Basics</h2>
+<h2>HIPAA (Privacy Basics)</h2>
+
 <p>
-Patient information is private. Never share personal health
-information. Always verify identity before discussing anything.
+You cannot share patient information unless authorized.
+</p>
+
+<ul>
+<li>Never discuss patient info out loud</li>
+<li>Always verify identity first</li>
+<li>Do not leave screens visible</li>
+</ul>
+
+<p style={styles.scenario}>
+Scenario: Someone calls asking about a patient.
+<br />
+✅ Correct: “I need to verify authorization before sharing information.”
 </p>
 </section>
 
+{/* SCHEDULING */}
 <section style={styles.card}>
 <h2>Scheduling</h2>
+
 <p>
-Accuracy matters. Double booking, missed appointments, and poor
-communication can impact patient care.
+Mistakes here affect the entire office.
+</p>
+
+<ul>
+<li>Avoid double booking</li>
+<li>Confirm time + provider</li>
+<li>Communicate delays clearly</li>
+</ul>
+
+<p style={styles.scenario}>
+Scenario: Doctor is running late.
+<br />
+✅ “There’s a delay of about 15 minutes, thank you for your patience.”
 </p>
 </section>
 
+{/* INSURANCE */}
 <section style={styles.card}>
 <h2>Insurance Basics</h2>
+
 <p>
-Patients may not understand coverage. Your role is to guide, clarify,
-and remain professional even when situations are stressful.
+Patients are often confused or frustrated.
+</p>
+
+<ul>
+<li>Verify insurance before visit</li>
+<li>Do not guess coverage</li>
+<li>Stay calm under pressure</li>
+</ul>
+
+<p style={styles.bad}>
+❌ “That’s not covered, not my problem”
+</p>
+
+<p style={styles.example}>
+✅ “Let me help check that for you and guide you through it.”
 </p>
 </section>
 
+{/* COMMUNICATION */}
 <section style={styles.card}>
 <h2>Professional Communication</h2>
-<p>
-Stay calm, respectful, and clear. Patients may be anxious — your tone
-matters just as much as your words.
+
+<ul>
+<li>Stay calm</li>
+<li>Use clear language</li>
+<li>Be respectful at all times</li>
+</ul>
+
+<p style={styles.scenario}>
+Scenario: Patient is upset.
+<br />
+✅ “I understand this is frustrating, let me help resolve it.”
 </p>
+</section>
+
+{/* QUICK CHECK */}
+<section style={styles.card}>
+<h2>Quick Check</h2>
+
+<p>What should you do before discussing patient info?</p>
+<p style={styles.answer}>✔ Verify identity</p>
 </section>
 
 {complete ? (
@@ -95,7 +173,8 @@ color: "#fff",
 background: "#050505",
 minHeight: "100vh",
 },
-title: { fontSize: 32, marginBottom: 20 },
+title: { fontSize: 32, marginBottom: 10 },
+subtitle: { marginBottom: 20, opacity: 0.8 },
 timer: { marginBottom: 20, fontSize: 18 },
 card: {
 background: "#111",
@@ -103,13 +182,16 @@ padding: 20,
 borderRadius: 12,
 marginBottom: 16,
 },
+example: { color: "#7dffb3" },
+bad: { color: "#ff9d9d" },
+scenario: { marginTop: 10, fontStyle: "italic" },
+answer: { color: "#7dffb3", fontWeight: "bold" },
 button: {
 background: "#fff",
 color: "#000",
 padding: 12,
 borderRadius: 10,
 textDecoration: "none",
-display: "inline-block",
 },
 locked: { opacity: 0.6 },
 };
