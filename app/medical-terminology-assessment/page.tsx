@@ -68,11 +68,17 @@ const quizQuestions = questions.filter((q) => q.type === "quiz");
 const scaleQuestions = questions.filter((q) => q.type === "scale");
 
 const quizScore = useMemo(() => {
-return quizQuestions.reduce((score, q) => answers[q.id] === q.correct ? score + 1 : score, 0);
+return quizQuestions.reduce(
+(score, q) => (answers[q.id] === q.correct ? score + 1 : score),
+0
+);
 }, [answers, quizQuestions]);
 
 const readinessScore = useMemo(() => {
-return scaleQuestions.reduce((score, q) => score + Number(answers[q.id] || 0), 0);
+return scaleQuestions.reduce(
+(score, q) => score + Number(answers[q.id] || 0),
+0
+);
 }, [answers, scaleQuestions]);
 
 const percentage = Math.round((quizScore / 20) * 100);
@@ -83,7 +89,10 @@ const sections = ["Prefixes", "Root Words", "Suffixes", "Medical Term Meaning"];
 
 return sections.map((section) => {
 const sectionQuestions = quizQuestions.filter((q) => q.section === section);
-const correct = sectionQuestions.reduce((count, q) => answers[q.id] === q.correct ? count + 1 : count, 0);
+const correct = sectionQuestions.reduce(
+(count, q) => (answers[q.id] === q.correct ? count + 1 : count),
+0
+);
 const total = sectionQuestions.length;
 const pct = Math.round((correct / total) * 100);
 
@@ -107,9 +116,15 @@ return "HireMinds Medical Professional Path";
 }, [quizScore]);
 
 const recommendedPaths = useMemo(() => {
-if (quizScore <= 9) return ["Medical Front Desk", "Patient Services Representative", "Healthcare Support Assistant"];
-if (quizScore <= 14) return ["Medical Administrative Assistant", "Patient Access Representative", "Scheduling Coordinator", "Insurance Verification Assistant"];
-if (quizScore <= 17) return ["Medical Billing Assistant", "Medical Coding Pathway", "Healthcare Administration", "Clinical Support Roles"];
+if (quizScore <= 9) {
+return ["Medical Front Desk", "Patient Services Representative", "Healthcare Support Assistant"];
+}
+if (quizScore <= 14) {
+return ["Medical Administrative Assistant", "Patient Access Representative", "Scheduling Coordinator", "Insurance Verification Assistant"];
+}
+if (quizScore <= 17) {
+return ["Medical Billing Assistant", "Medical Coding Pathway", "Healthcare Administration", "Clinical Support Roles"];
+}
 return ["Medical Billing Specialist", "Medical Coding Specialist", "Revenue Cycle Support", "Patient Access Coordinator"];
 }, [quizScore]);
 
@@ -141,7 +156,7 @@ answers,
 
 setReported(true);
 } catch {
-// Keeps user experience from breaking if reporting fails.
+// reporting should not block user
 }
 }
 
@@ -309,12 +324,14 @@ Correct Answer: <span style={styles.correctText}>{q.correct}</span>
 
 <div style={styles.certificate} className="certificate-print">
 <div style={styles.certBorder}>
+<img src="/hireminds-logo.png" alt="HireMinds Logo" style={styles.certWatermark} />
+
 <p style={styles.certSmall}>Certificate of Completion</p>
 <h1 style={styles.certTitle}>HireMinds</h1>
 <p style={styles.certWebsite}>HireMinds.app</p>
 
 <p style={styles.certText}>This certifies that</p>
-<h2 style={styles.certName}>{fullName}</h2>
+<h2 style={styles.certName}>{fullName.trim() || "Participant"}</h2>
 
 <p style={styles.certText}>has successfully completed</p>
 <h3 style={styles.certCourse}>MedScope Medical Terminology Assessment</h3>
@@ -327,6 +344,7 @@ Correct Answer: <span style={styles.correctText}>{q.correct}</span>
 <p style={styles.certLine}>{new Date().toLocaleDateString()}</p>
 <p style={styles.certLabel}>Date Completed</p>
 </div>
+
 <div>
 <p style={styles.scriptSignature}>HireMinds.app</p>
 <p style={styles.certLabel}>Authorized Signature</p>
@@ -365,20 +383,30 @@ You need 80% or higher on the medical terminology section to receive a certifica
 body * {
 visibility: hidden !important;
 }
+
 .certificate-print,
 .certificate-print * {
 visibility: visible !important;
 }
+
 .certificate-print {
-position: absolute !important;
-left: 0 !important;
-top: 0 !important;
-width: 100% !important;
+position: fixed !important;
+left: 0.25in !important;
+top: 0.25in !important;
+width: 10.5in !important;
+height: 8in !important;
+max-width: none !important;
+margin: 0 !important;
+padding: 0 !important;
 box-shadow: none !important;
+border-radius: 0 !important;
+overflow: hidden !important;
+background: #f7f7f4 !important;
 }
+
 @page {
-size: landscape;
-margin: 0.35in;
+size: letter landscape;
+margin: 0;
 }
 }
 `}</style>
@@ -484,17 +512,51 @@ failText: { color: "#ff9d9d", marginTop: 24 },
 resultText: { color: "rgba(255,255,255,.8)", lineHeight: 1.65 },
 retakeBox: { marginTop: 12, padding: 16, borderRadius: 14, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)", color: "rgba(255,255,255,.86)" },
 
-certificate: { marginTop: 20, marginBottom: 18, padding: 20, borderRadius: 18, background: "#f7f7f4", color: "#000", textAlign: "center", boxShadow: "0 18px 50px rgba(0,0,0,.35)" },
-certBorder: { border: "8px double #111", padding: 36, minHeight: 480, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
-certSmall: { textTransform: "uppercase", letterSpacing: 3, fontWeight: 900, fontSize: 13, margin: 0 },
-certTitle: { fontSize: 54, margin: "8px 0 0", fontWeight: 950 },
-certWebsite: { margin: "0 0 22px", fontWeight: 800, letterSpacing: 1.5 },
-certText: { fontSize: 17, margin: "8px 0", color: "#333" },
-certName: { fontSize: 38, margin: "10px 0", borderBottom: "2px solid #111", padding: "0 28px 8px", fontWeight: 900 },
-certCourse: { fontSize: 24, margin: "8px 0", fontWeight: 900 },
-certScore: { fontSize: 34, margin: "6px 0", fontWeight: 950 },
-certFooter: { width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 30, marginTop: 36 },
-certLine: { borderBottom: "1px solid #111", minWidth: 190, paddingBottom: 6, margin: 0, fontWeight: 800 },
-certLabel: { margin: "6px 0 0", fontSize: 12, textTransform: "uppercase", letterSpacing: 1.2, color: "#444" },
-scriptSignature: { fontFamily: "Brush Script MT, Segoe Script, cursive", fontSize: 34, borderBottom: "1px solid #111", minWidth: 220, paddingBottom: 4, margin: 0 },
+certificate: {
+width: "100%",
+maxWidth: "980px",
+aspectRatio: "11 / 8.5",
+margin: "20px auto 18px",
+padding: 16,
+borderRadius: 18,
+background: "#f7f7f4",
+color: "#000",
+textAlign: "center",
+boxShadow: "0 18px 50px rgba(0,0,0,.35)",
+boxSizing: "border-box",
+},
+certBorder: {
+position: "relative",
+width: "100%",
+height: "100%",
+border: "6px double #111",
+padding: 28,
+boxSizing: "border-box",
+display: "flex",
+flexDirection: "column",
+alignItems: "center",
+justifyContent: "center",
+overflow: "hidden",
+},
+certWatermark: {
+position: "absolute",
+width: "360px",
+maxWidth: "55%",
+opacity: 0.08,
+top: "50%",
+left: "50%",
+transform: "translate(-50%, -50%)",
+zIndex: 0,
+},
+certSmall: { position: "relative", zIndex: 1, textTransform: "uppercase", letterSpacing: 3, fontWeight: 900, fontSize: 12, margin: 0 },
+certTitle: { position: "relative", zIndex: 1, fontSize: 48, margin: "6px 0 0", fontWeight: 950 },
+certWebsite: { position: "relative", zIndex: 1, margin: "0 0 18px", fontWeight: 800, letterSpacing: 1.5 },
+certText: { position: "relative", zIndex: 1, fontSize: 16, margin: "6px 0", color: "#333" },
+certName: { position: "relative", zIndex: 1, fontSize: 34, margin: "8px 0", borderBottom: "2px solid #111", padding: "0 28px 6px", fontWeight: 900 },
+certCourse: { position: "relative", zIndex: 1, fontSize: 22, margin: "6px 0", fontWeight: 900 },
+certScore: { position: "relative", zIndex: 1, fontSize: 32, margin: "4px 0", fontWeight: 950 },
+certFooter: { position: "relative", zIndex: 1, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, marginTop: 26 },
+certLine: { borderBottom: "1px solid #111", minWidth: 170, paddingBottom: 5, margin: 0, fontWeight: 800 },
+certLabel: { margin: "6px 0 0", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: "#444" },
+scriptSignature: { fontFamily: "Brush Script MT, Segoe Script, cursive", fontSize: 30, borderBottom: "1px solid #111", minWidth: 200, paddingBottom: 4, margin: 0 },
 };
