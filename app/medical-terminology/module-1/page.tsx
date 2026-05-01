@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import AsyncTracker from "../../../components/AsyncTracker";
+import AsyncTracker from "../../components/AsyncTracker";
 
 export default function MedicalTerminologyModuleOne() {
 return (
