@@ -7,26 +7,28 @@ import { supabase } from "../lib/supabase";
 
 type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
 
-type PartnerNavItem = {
+type NavItem = {
 label: string;
 href: string;
 };
 
-const partnerNavItems: PartnerNavItem[] = [
+const CAREER_PATHWAY_ACCESS_CODES = ["TWP2026"];
+
+const partnerNavItems: NavItem[] = [
 { label: "Messages", href: "/messages" },
 { label: "Career Map", href: "/partner-dashboard/career-map" },
 { label: "Workshop Resources", href: "/partner-dashboard/workshop-resources" },
 { label: "Summary Generator", href: "/partner-dashboard/report-summary" },
 ];
 
-const careerPathwayNavItems: PartnerNavItem[] = [
+const careerPathwayNavItems: NavItem[] = [
 { label: "Career Pathway Program", href: "/skillsquest" },
 { label: "Independent Learning", href: "/independent-learning-lab" },
 { label: "Career Media Library", href: "/career-media-library" },
 { label: "Assigned Training", href: "/assigned-training" },
 ];
 
-const skillsQuestNavItems: PartnerNavItem[] = [
+const skillsQuestNavItems: NavItem[] = [
 { label: "Skill Builder Lab", href: "/skill-builder-lab" },
 { label: "Apply Knowledge Lab", href: "/applied-learning-lab" },
 { label: "Simulation Lab", href: "/simulation-lab" },
@@ -101,16 +103,13 @@ sessionUser.user_metadata?.account_type ||
 setRole(normalizeRole(rawRole));
 
 const userReferralCode =
+sessionUser.app_metadata?.referral_code ||
 sessionUser.user_metadata?.referral_code ||
 sessionUser.user_metadata?.referralCode ||
 sessionUser.user_metadata?.access_code ||
 "";
 
 setReferralCode(String(userReferralCode).trim().toUpperCase());
-
-console.log("raw role:", rawRole, "→ normalized:", normalizeRole(rawRole));
-console.log("user referral code:", userReferralCode);
-
 setCheckingAuth(false);
 }
 
@@ -142,16 +141,13 @@ sessionUser.user_metadata?.account_type ||
 setRole(normalizeRole(rawRole));
 
 const userReferralCode =
+sessionUser.app_metadata?.referral_code ||
 sessionUser.user_metadata?.referral_code ||
 sessionUser.user_metadata?.referralCode ||
 sessionUser.user_metadata?.access_code ||
 "";
 
 setReferralCode(String(userReferralCode).trim().toUpperCase());
-
-console.log("raw role:", rawRole, "→ normalized:", normalizeRole(rawRole));
-console.log("user referral code:", userReferralCode);
-
 setCheckingAuth(false);
 });
 
@@ -221,17 +217,24 @@ const isPartnerPage =
 pathname?.startsWith("/partner-dashboard") ||
 partnerStickyRoutes.has(pathname || "");
 
+const hasCareerPathwayAccess =
+CAREER_PATHWAY_ACCESS_CODES.includes(referralCode);
+
 const showMyProfile =
 isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
 
 const showCareerToolkit =
-isLoggedIn && (isCandidate || isPartner || isAdmin);
+isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
 
 const showCareerPathway =
-isLoggedIn && isCandidate && referralCode === "TWP2026";
+isLoggedIn &&
+(isCandidate || isPartner || isAdmin || isPartnerPage) &&
+hasCareerPathwayAccess;
 
 const showSkillsQuest =
-isLoggedIn && isCandidate && referralCode === "TWP2026";
+isLoggedIn &&
+(isCandidate || isPartner || isAdmin || isPartnerPage) &&
+hasCareerPathwayAccess;
 
 const showPartnerDashboard =
 isLoggedIn && (isPartner || isAdmin || isPartnerPage);
