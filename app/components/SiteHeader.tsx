@@ -49,7 +49,6 @@ const [checkingAuth, setCheckingAuth] = useState(true);
 const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
-const [skillsOpen, setSkillsOpen] = useState(false);
 const [referralCode, setReferralCode] = useState("");
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -92,6 +91,9 @@ sessionUser.user_metadata?.access_code ||
 
 setReferralCode(String(userReferralCode).trim().toUpperCase());
 
+console.log("raw role:", rawRole, "â†’ normalized:", normalizeRole(rawRole));
+console.log("user referral code:", userReferralCode);
+
 setCheckingAuth(false);
 }
 
@@ -130,6 +132,9 @@ sessionUser.user_metadata?.access_code ||
 
 setReferralCode(String(userReferralCode).trim().toUpperCase());
 
+console.log("raw role:", rawRole, "â†’ normalized:", normalizeRole(rawRole));
+console.log("user referral code:", userReferralCode);
+
 setCheckingAuth(false);
 });
 
@@ -144,7 +149,6 @@ function handleClickOutside(event: MouseEvent) {
 if (!dropdownRef.current) return;
 if (!dropdownRef.current.contains(event.target as Node)) {
 setPartnersOpen(false);
-setSkillsOpen(false);
 }
 }
 
@@ -160,6 +164,7 @@ setLoadingLogout(true);
 localStorage.removeItem("hireminds_referral_code");
 await supabase.auth.signOut();
 } catch {
+// ignore
 } finally {
 window.location.href = "/";
 }
@@ -170,8 +175,19 @@ const isPartner = role === "partner";
 const isAdmin = role === "admin";
 const isEmployer = role === "employer";
 
+const partnerStickyRoutes = new Set([
+"/messages",
+"/partner-dashboard/career-map",
+"/partner-dashboard/workshop-resources",
+"/partner-dashboard/report-summary",
+]);
+
+const isPartnerPage =
+pathname?.startsWith("/partner-dashboard") ||
+partnerStickyRoutes.has(pathname || "");
+
 const showMyProfile =
-isLoggedIn && (isCandidate || isPartner || isAdmin);
+isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
 
 const showCareerToolkit =
 isLoggedIn && (isCandidate || isPartner || isAdmin);
@@ -181,6 +197,15 @@ isLoggedIn &&
 isCandidate &&
 referralCode === "TWP2026";
 
+const showPartnerDashboard =
+isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+
+const showPartnerTools =
+isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+
+const showNotes =
+isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
+
 return (
 <header style={styles.header}>
 <div style={styles.inner}>
@@ -189,55 +214,125 @@ HireMinds
 </a>
 
 <div style={styles.centerNav}>
-<a href="/" style={styles.link}>{t.home}</a>
-{!checkingAuth && !isLoggedIn && (
-<a href="/sign-in" style={styles.link}>{t.signIn}</a>
-)}
-<a href="/contact" style={styles.link}>{t.contact}</a>
+<a href="/" style={styles.link}>
+{t.home}
+</a>
+
+{!checkingAuth && !isLoggedIn ? (
+<a href="/sign-in" style={styles.link}>
+{t.signIn}
+</a>
+) : null}
+
+{!checkingAuth && !isLoggedIn ? (
+<a href="/partner-with-hireminds" style={styles.link}>
+{t.partner}
+</a>
+) : null}
+
+<a href="/contact" style={styles.link}>
+{t.contact}
+</a>
 </div>
 
 <div style={styles.rightNav}>
-{isLoggedIn && (
+{isLoggedIn ? (
 <>
-{showMyProfile && (
-<a href="/profile" style={styles.link}>My Profile</a>
-)}
+{showMyProfile ? (
+<a href="/profile" style={styles.link}>
+My Profile
+</a>
+) : null}
 
-{showCareerToolkit && (
-<a href="/career-toolkit" style={styles.link}>Career ToolKit</a>
-)}
+{showCareerToolkit ? (
+<a href="/career-toolkit" style={styles.link}>
+Career ToolKit
+</a>
+) : null}
 
-{showSkillsQuest && (
+{showSkillsQuest ? (
+<a href="/skillsquest" style={styles.link}>
+SkillsQuest
+</a>
+) : null}
+
+{showPartnerDashboard ? (
+<a href="/partner-dashboard" style={styles.link}>
+Partner Dashboard
+</a>
+) : null}
+
+{showPartnerTools ? (
 <div style={styles.dropdownWrap} ref={dropdownRef}>
 <button
 type="button"
-onClick={() => setSkillsOpen((prev) => !prev)}
+onClick={() => setPartnersOpen((prev) => !prev)}
 style={styles.dropdownTrigger}
+aria-haspopup="menu"
+aria-expanded={partnersOpen}
 >
-SkillsQuest ▼
+Tools
+<span
+style={{
+...styles.dropdownChevron,
+transform: partnersOpen ? "rotate(180deg)" : "rotate(0deg)",
+}}
+>
+â–¼
+</span>
 </button>
 
-{skillsOpen && (
+{partnersOpen ? (
 <div style={styles.dropdownMenu}>
-<a href="/skillsquest" style={styles.dropdownItem}>
-Career Pathway Program
+{partnerNavItems.map((item) => (
+<a
+key={item.href}
+href={item.href}
+style={styles.dropdownItem}
+onClick={() => setPartnersOpen(false)}
+>
+{item.label}
 </a>
-<a href="/independent-learning-lab" style={styles.dropdownItem}>
-Independent Learning Lab
-</a>
-<a href="/applied-learning-lab" style={styles.dropdownItem}>
-Applied Learning Lab
-</a>
+))}
 </div>
-)}
+) : null}
 </div>
-)}
+) : null}
 
-<button onClick={handleLogout} style={styles.logoutButton}>
-Log Off
+{isEmployer ? (
+<a href="/employer-dashboard" style={styles.link}>
+Employer Dashboard
+</a>
+) : null}
+
+{showNotes ? (
+<button
+type="button"
+onClick={() => window.dispatchEvent(new Event("toggle-notes-panel"))}
+style={styles.notesButtonLike}
+>
+Notes
+</button>
+) : null}
+
+<button
+type="button"
+onClick={handleLogout}
+style={styles.logoutButton}
+disabled={loadingLogout}
+>
+{loadingLogout ? "Logging Off..." : "Log Off"}
 </button>
 </>
-)}
+) : null}
+
+<span style={styles.lockedLink}>{t.jobBoard} ðŸ”’</span>
+
+{!checkingAuth && !isLoggedIn ? (
+<a href="/employer-partner-login" style={styles.link}>
+{t.employerPartnerSignIn}
+</a>
+) : null}
 </div>
 </div>
 </header>
@@ -245,22 +340,126 @@ Log Off
 }
 
 const styles: Record<string, CSSProperties> = {
-header: { width: "100%", background: "#050505", borderBottom: "1px solid #1f1f1f" },
-inner: { display: "flex", justifyContent: "space-between", padding: "16px" },
-logo: { color: "#fff", fontSize: "22px", textDecoration: "none" },
-centerNav: { display: "flex", gap: "20px" },
-rightNav: { display: "flex", gap: "16px", alignItems: "center" },
-link: { color: "#d4d4d8", textDecoration: "none" },
-dropdownWrap: { position: "relative" },
-dropdownTrigger: { background: "transparent", color: "#d4d4d8", border: "none" },
+header: {
+width: "100%",
+position: "sticky",
+top: 0,
+zIndex: 100,
+background: "rgba(5,5,5,0.95)",
+backdropFilter: "blur(10px)",
+borderBottom: "1px solid #1f1f1f",
+},
+inner: {
+maxWidth: "1520px",
+margin: "0 auto",
+padding: "16px 24px",
+display: "grid",
+gridTemplateColumns: "240px 1fr auto",
+alignItems: "center",
+gap: "20px",
+},
+logo: {
+color: "#f5f5f5",
+fontSize: "26px",
+fontWeight: 700,
+textDecoration: "none",
+letterSpacing: "0.2px",
+},
+centerNav: {
+display: "flex",
+gap: "22px",
+alignItems: "center",
+justifyContent: "center",
+flexWrap: "wrap",
+},
+rightNav: {
+display: "flex",
+gap: "18px",
+alignItems: "center",
+justifyContent: "flex-end",
+flexWrap: "wrap",
+},
+link: {
+color: "#d4d4d8",
+textDecoration: "none",
+fontSize: "15px",
+cursor: "pointer",
+whiteSpace: "nowrap",
+},
+notesButtonLike: {
+border: "1px solid #a1a1aa",
+background: "#ffffff",
+color: "#111111",
+fontSize: "15px",
+fontWeight: 700,
+cursor: "pointer",
+whiteSpace: "nowrap",
+borderRadius: "999px",
+padding: "8px 22px",
+appearance: "none",
+WebkitAppearance: "none",
+boxShadow: "0 0 0 1px rgba(255,255,255,0.15) inset",
+},
+dropdownWrap: {
+position: "relative",
+display: "inline-flex",
+alignItems: "center",
+},
+dropdownTrigger: {
+border: "none",
+background: "transparent",
+color: "#d4d4d8",
+fontSize: "15px",
+cursor: "pointer",
+padding: 0,
+whiteSpace: "nowrap",
+display: "inline-flex",
+alignItems: "center",
+gap: "6px",
+appearance: "none",
+WebkitAppearance: "none",
+},
+dropdownChevron: {
+fontSize: "10px",
+transition: "transform 0.2s ease",
+display: "inline-block",
+},
 dropdownMenu: {
 position: "absolute",
-top: "100%",
+top: "calc(100% + 10px)",
 right: 0,
-background: "#111",
-padding: "10px",
-borderRadius: "10px"
+minWidth: "240px",
+background: "#111111",
+border: "1px solid #2a2a2d",
+borderRadius: "14px",
+boxShadow: "0 18px 40px rgba(0,0,0,0.28)",
+padding: "8px",
+zIndex: 200,
+display: "grid",
+gap: "4px",
 },
-dropdownItem: { display: "block", padding: "8px", color: "#fff", textDecoration: "none" },
-logoutButton: { background: "transparent", color: "#fff", border: "1px solid #444" }
+dropdownItem: {
+color: "#e4e4e7",
+textDecoration: "none",
+fontSize: "15px",
+padding: "10px 12px",
+borderRadius: "10px",
+whiteSpace: "nowrap",
+background: "transparent",
+},
+lockedLink: {
+color: "#7c7c85",
+fontSize: "15px",
+whiteSpace: "nowrap",
+},
+logoutButton: {
+background: "transparent",
+border: "1px solid #3f3f46",
+color: "#d4d4d8",
+fontSize: "15px",
+cursor: "pointer",
+whiteSpace: "nowrap",
+borderRadius: "10px",
+padding: "8px 12px",
+},
 };
