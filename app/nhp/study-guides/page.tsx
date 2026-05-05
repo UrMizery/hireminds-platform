@@ -5,7 +5,7 @@ import React from "react";
 const weeks = [
 {
 week: "Week 1",
-theme: "Entry-Level Workforce Foundation",
+theme: "Workforce Foundation",
 description:
 "Start with the core skills every participant needs before moving into industry-specific pathways.",
 guides: [
