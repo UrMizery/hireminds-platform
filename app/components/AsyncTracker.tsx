@@ -26,12 +26,12 @@ const SAMPLE_CHECKPOINT_TASKS = [
 
 export default function AsyncTracker({
 module,
-activityType,
+activityType = "independent_learning",
 completionKey,
 requiredSeconds = 660,
 }: {
 module: string;
-activityType: string;
+activityType?: string;
 completionKey?: string;
 requiredSeconds?: number;
 }) {
@@ -58,9 +58,7 @@ return;
 }
 
 const saved = Number(localStorage.getItem(progressKey) || 0);
-if (saved > 0) {
-setSecondsEarned(saved);
-}
+if (saved > 0) setSecondsEarned(saved);
 
 const timer = setInterval(() => {
 if (document.hidden || checkpointOpen) {
@@ -72,7 +70,6 @@ setPaused(false);
 
 setSecondsEarned((prev) => {
 const next = Math.min(prev + 1, requiredSeconds);
-
 localStorage.setItem(progressKey, String(next));
 
 if (next - lastReported.current >= 60) {
@@ -93,9 +90,7 @@ openCheckpoint(checkpoint.minute);
 }
 
 if (next >= requiredSeconds) {
-if (completionKey) {
-localStorage.setItem(completionKey, "true");
-}
+if (completionKey) localStorage.setItem(completionKey, "true");
 setComplete(true);
 }
 
@@ -224,7 +219,7 @@ return (
 <div style={styles.notice}>
 <strong>Active Learning Notice:</strong>
 <p>
-This self-paced module includes timed checkpoints at 15, 30, 45, 60,
+This self-paced activity includes timed checkpoints at 15, 30, 45, 60,
 and 90 minutes. The 15-minute checkpoint is a warning only. Missed
 checkpoints after that may reduce your recorded progress.
 </p>
@@ -237,7 +232,8 @@ checkpoints after that may reduce your recorded progress.
 <strong>Paused — complete the checkpoint or return to the page.</strong>
 ) : (
 <strong>
-Required Time Remaining: {minutes}:{seconds.toString().padStart(2, "0")}
+Required Time Remaining: {minutes}:
+{seconds.toString().padStart(2, "0")}
 </strong>
 )}
 </div>
