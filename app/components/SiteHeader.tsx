@@ -21,8 +21,13 @@ const partnerNavItems: PartnerNavItem[] = [
 
 const careerPathwayNavItems: PartnerNavItem[] = [
 { label: "Career Pathway Program", href: "/skillsquest" },
-{ label: "Independent Learning Lab", href: "/independent-learning-lab" },
-{ label: "Applied Learning Lab", href: "/applied-learning-lab" },
+{ label: "Independent Learning", href: "/independent-learning-lab" },
+{ label: "Career Media Library", href: "/career-media-library" },
+];
+
+const skillsQuestNavItems: PartnerNavItem[] = [
+{ label: "Skill Builder Lab", href: "/skill-builder-lab" },
+{ label: "Apply Knowledge Lab", href: "/applied-learning-lab" },
 { label: "Simulation Lab", href: "/simulation-lab" },
 ];
 
@@ -57,10 +62,12 @@ const [loadingLogout, setLoadingLogout] = useState(false);
 const [role, setRole] = useState<UserRole>("guest");
 const [partnersOpen, setPartnersOpen] = useState(false);
 const [careerPathwayOpen, setCareerPathwayOpen] = useState(false);
+const [skillsQuestOpen, setSkillsQuestOpen] = useState(false);
 const [referralCode, setReferralCode] = useState("");
 
 const partnerDropdownRef = useRef<HTMLDivElement | null>(null);
 const careerPathwayDropdownRef = useRef<HTMLDivElement | null>(null);
+const skillsQuestDropdownRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
 let mounted = true;
@@ -169,6 +176,13 @@ careerPathwayDropdownRef.current &&
 !careerPathwayDropdownRef.current.contains(target)
 ) {
 setCareerPathwayOpen(false);
+}
+
+if (
+skillsQuestDropdownRef.current &&
+!skillsQuestDropdownRef.current.contains(target)
+) {
+setSkillsQuestOpen(false);
 }
 }
 
@@ -311,9 +325,42 @@ onClick={() => setCareerPathwayOpen(false)}
 ) : null}
 
 {showSkillsQuest ? (
-<a href="/skillsquest-roadmap" style={styles.link}>
+<div style={styles.dropdownWrap} ref={skillsQuestDropdownRef}>
+<button
+type="button"
+onClick={() => setSkillsQuestOpen((prev) => !prev)}
+style={styles.dropdownTrigger}
+aria-haspopup="menu"
+aria-expanded={skillsQuestOpen}
+>
 SkillsQuest
+<span
+style={{
+...styles.dropdownChevron,
+transform: skillsQuestOpen
+? "rotate(180deg)"
+: "rotate(0deg)",
+}}
+>
+▼
+</span>
+</button>
+
+{skillsQuestOpen ? (
+<div style={styles.dropdownMenu}>
+{skillsQuestNavItems.map((item) => (
+<a
+key={item.href}
+href={item.href}
+style={styles.dropdownItem}
+onClick={() => setSkillsQuestOpen(false)}
+>
+{item.label}
 </a>
+))}
+</div>
+) : null}
+</div>
 ) : null}
 
 {showPartnerDashboard ? (
