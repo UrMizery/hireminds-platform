@@ -6,6 +6,7 @@ const skillBuilders = [
 {
 title: "Healthcare Communication Builder",
 category: "Communication",
+storageKey: "skill_builder_healthcare_communication",
 description:
 "Practice professional language, empathy, active listening, and clear responses for healthcare and customer-facing roles.",
 activities: [
@@ -18,6 +19,7 @@ activities: [
 {
 title: "Medical Terminology Drills",
 category: "Terminology",
+storageKey: "skill_builder_medical_terminology",
 description:
 "Build confidence with prefixes, root words, suffixes, and common healthcare terms through short drills.",
 activities: [
@@ -30,6 +32,7 @@ activities: [
 {
 title: "Customer Service Practice",
 category: "Service Skills",
+storageKey: "skill_builder_customer_service",
 description:
 "Strengthen service recovery, tone, patience, and professionalism when supporting patients, clients, or customers.",
 activities: [
@@ -42,6 +45,7 @@ activities: [
 {
 title: "Workplace Readiness Skills",
 category: "Workplace Readiness",
+storageKey: "skill_builder_workplace_readiness",
 description:
 "Practice reliability, attendance, communication, teamwork, safety, and professional responsibility.",
 activities: [
@@ -54,6 +58,7 @@ activities: [
 {
 title: "Resume Skills Translation",
 category: "Career Readiness",
+storageKey: "skill_builder_resume_translation",
 description:
 "Turn newly learned skills into resume language that matches healthcare and entry-level job postings.",
 activities: [
@@ -66,6 +71,7 @@ activities: [
 {
 title: "Confidence Builder",
 category: "Career Confidence",
+storageKey: "skill_builder_confidence",
 description:
 "Practice talking about your strengths, training, goals, and readiness for healthcare roles.",
 activities: [
@@ -77,37 +83,120 @@ activities: [
 },
 ];
 
-export default function SkillBuilderLabPage() {
-return (
-<main style={styles.main}>
-<section style={styles.hero}>
-<p style={styles.kicker}>SkillsQuest</p>
-<h1 style={styles.title}>Skill Builder Lab</h1>
-<p style={styles.subtitle}>
-Build and strengthen key workplace, healthcare, communication, and
-career-readiness skills through short practice activities and guided
-drills.
-</p>
-</section>
+function SkillBuilderCard({
+title,
+category,
+description,
+activities,
+storageKey,
+}: {
+title: string;
+category: string;
+description: string;
+activities: string[];
+storageKey: string;
+}) {
+const [completed, setCompleted] = React.useState(false);
 
-<section style={styles.grid}>
-{skillBuilders.map((item) => (
-<div key={item.title} style={styles.card}>
-<p style={styles.category}>{item.category}</p>
-<h2 style={styles.cardTitle}>{item.title}</h2>
-<p style={styles.description}>{item.description}</p>
+React.useEffect(() => {
+setCompleted(localStorage.getItem(storageKey) === "true");
+}, [storageKey]);
+
+function markComplete() {
+localStorage.setItem(storageKey, "true");
+setCompleted(true);
+}
+
+function markIncomplete() {
+localStorage.removeItem(storageKey);
+setCompleted(false);
+}
+
+return (
+<div style={styles.card}>
+<div style={styles.cardTop}>
+<div>
+<p style={styles.category}>{category}</p>
+<h2 style={styles.cardTitle}>{title}</h2>
+</div>
+
+<span
+style={{
+...styles.statusBadge,
+background: completed
+? "rgba(125,255,179,.15)"
+: "rgba(255,255,255,.08)",
+color: completed ? "#7dffb3" : "rgba(255,255,255,.65)",
+}}
+>
+{completed ? "Completed" : "Not Completed"}
+</span>
+</div>
+
+<p style={styles.description}>{description}</p>
 
 <h3 style={styles.activityTitle}>Practice Activities</h3>
 <ul style={styles.list}>
-{item.activities.map((activity) => (
+{activities.map((activity) => (
 <li key={activity} style={styles.listItem}>
 {activity}
 </li>
 ))}
 </ul>
 
-<span style={styles.comingSoon}>Coming Soon</span>
+<div style={styles.actions}>
+{completed ? (
+<button type="button" onClick={markIncomplete} style={styles.secondaryButton}>
+Mark Incomplete
+</button>
+) : (
+<button type="button" onClick={markComplete} style={styles.primaryButton}>
+Mark Complete
+</button>
+)}
 </div>
+</div>
+);
+}
+
+export default function SkillBuilderLabPage() {
+const [completedCount, setCompletedCount] = React.useState(0);
+
+React.useEffect(() => {
+const count = skillBuilders.filter(
+(item) => localStorage.getItem(item.storageKey) === "true"
+).length;
+
+setCompletedCount(count);
+}, []);
+
+function refreshProgress() {
+const count = skillBuilders.filter(
+(item) => localStorage.getItem(item.storageKey) === "true"
+).length;
+
+setCompletedCount(count);
+}
+
+return (
+<main style={styles.main} onClick={refreshProgress}>
+<section style={styles.hero}>
+<p style={styles.kicker}>SkillsQuest</p>
+<h1 style={styles.title}>Skill Builder Lab</h1>
+<p style={styles.subtitle}>
+Build and strengthen key workplace, healthcare, communication, and
+career-readiness skills through short practice activities and guided drills.
+</p>
+
+<div style={styles.progressBox}>
+<strong>Progress</strong>
+<span>{completedCount}/{skillBuilders.length} completed</span>
+</div>
+</section>
+
+<section style={styles.grid}>
+{skillBuilders.map((item) => (
+<SkillBuilderCard key={item.storageKey} {...item} />
 ))}
 </section>
 </main>
@@ -144,6 +233,18 @@ color: "rgba(255,255,255,.76)",
 lineHeight: 1.7,
 maxWidth: 850,
 },
+progressBox: {
+marginTop: 18,
+display: "flex",
+gap: 12,
+flexWrap: "wrap",
+alignItems: "center",
+width: "fit-content",
+padding: "12px 14px",
+borderRadius: 14,
+background: "rgba(255,255,255,.07)",
+border: "1px solid rgba(255,255,255,.12)",
+},
 grid: {
 maxWidth: 1100,
 margin: "0 auto",
@@ -157,6 +258,13 @@ border: "1px solid rgba(255,255,255,.12)",
 borderRadius: 20,
 padding: 20,
 },
+cardTop: {
+display: "flex",
+justifyContent: "space-between",
+gap: 12,
+alignItems: "flex-start",
+flexWrap: "wrap",
+},
 category: {
 color: "#9ed0ff",
 textTransform: "uppercase",
@@ -168,6 +276,13 @@ margin: 0,
 cardTitle: {
 fontSize: 22,
 margin: "8px 0 10px",
+},
+statusBadge: {
+padding: "7px 10px",
+borderRadius: 999,
+fontSize: 12,
+fontWeight: 900,
+whiteSpace: "nowrap",
 },
 description: {
 color: "rgba(255,255,255,.74)",
@@ -187,14 +302,25 @@ color: "rgba(255,255,255,.82)",
 marginBottom: 8,
 lineHeight: 1.45,
 },
-comingSoon: {
-display: "inline-block",
-marginTop: 12,
-background: "rgba(255,255,255,.1)",
-color: "rgba(255,255,255,.75)",
-padding: "9px 12px",
-borderRadius: 10,
-fontWeight: 800,
-fontSize: 13,
+actions: {
+marginTop: 16,
+},
+primaryButton: {
+background: "#ffffff",
+color: "#000000",
+border: "none",
+borderRadius: 12,
+padding: "10px 14px",
+fontWeight: 900,
+cursor: "pointer",
+},
+secondaryButton: {
+background: "rgba(255,255,255,.09)",
+color: "#ffffff",
+border: "1px solid rgba(255,255,255,.14)",
+borderRadius: 12,
+padding: "10px 14px",
+fontWeight: 900,
+cursor: "pointer",
 },
 };
