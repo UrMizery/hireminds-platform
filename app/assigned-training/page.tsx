@@ -7,23 +7,64 @@ const assignedTrainings = [
 title: "COVID-19 & Workplace Safety Awareness",
 duration: "~1 hour",
 type: "External Training",
+category: "Workplace Safety & Infection Prevention",
 storageKey: "assigned_covid_workplace_safety_completed",
-description:
-"Covers COVID-19 awareness, workplace safety, infection prevention, and emergency preparedness. Participants learn how illness spreads, how to help prevent transmission, and what employers expect in maintaining a safe work environment.",
+overview:
+"This assigned training provides foundational knowledge on COVID-19 and general respiratory illness prevention in workplace environments. Participants will learn how illnesses spread, how to reduce risk, and how to follow workplace safety expectations across different industries.",
+purpose:
+"This training is designed to prepare participants for real-world work environments where safety, hygiene, and professional responsibility are critical.",
+objectives: [
+"Define COVID-19 and understand its role within broader respiratory illnesses",
+"Identify common symptoms and recognize when to report illness",
+"Explain how viruses spread in workplace environments",
+"Apply basic infection prevention practices in daily work activities",
+"Understand employer and employee responsibilities related to workplace safety",
+"Demonstrate awareness of hygiene, sanitation, and exposure prevention",
+"Respond appropriately to workplace safety concerns or emergencies",
+],
+topics: [
+"Introduction to COVID-19 and respiratory illness",
+"Symptoms, exposure, and risk awareness",
+"How illness spreads through droplets, surfaces, close contact, and shared spaces",
+"Workplace prevention strategies",
+"Hand hygiene and cleaning practices",
+"Staying home when sick and reporting illness appropriately",
+"Employer expectations and workplace safety policies",
+"Emergency preparedness basics",
+"Communication and reporting procedures",
+],
+industries: [
+"Healthcare",
+"Food Service",
+"Manufacturing",
+"Warehousing & Distribution",
+"Retail & Customer Service",
+"Personal Care and Cosmetology",
+],
 },
 ];
 
 function AssignedTrainingCard({
 title,
-description,
+overview,
+purpose,
+objectives,
+topics,
+industries,
 duration,
 type,
+category,
 storageKey,
 }: {
 title: string;
-description: string;
+overview: string;
+purpose: string;
+objectives: string[];
+topics: string[];
+industries: string[];
 duration: string;
 type: string;
+category: string;
 storageKey: string;
 }) {
 const [completed, setCompleted] = React.useState(false);
@@ -48,19 +89,66 @@ return (
 <div>
 <p style={styles.type}>{type}</p>
 <h2 style={styles.cardTitle}>{title}</h2>
+<p style={styles.category}>{category}</p>
 </div>
 
 <span style={styles.duration}>{duration}</span>
 </div>
 
-<p style={styles.description}>{description}</p>
+<section style={styles.section}>
+<h3>Overview</h3>
+<p style={styles.description}>{overview}</p>
+<p style={styles.description}>{purpose}</p>
+</section>
+
+<section style={styles.section}>
+<h3>Learning Objectives</h3>
+<ul style={styles.list}>
+{objectives.map((item) => (
+<li key={item} style={styles.listItem}>
+{item}
+</li>
+))}
+</ul>
+</section>
+
+<section style={styles.section}>
+<h3>Key Topics Covered</h3>
+<ul style={styles.list}>
+{topics.map((item) => (
+<li key={item} style={styles.listItem}>
+{item}
+</li>
+))}
+</ul>
+</section>
+
+<section style={styles.section}>
+<h3>Workplace Application</h3>
+<p style={styles.description}>
+This training supports safe work practices across industries including:
+</p>
+<div style={styles.tagGrid}>
+{industries.map((industry) => (
+<span key={industry} style={styles.tag}>
+{industry}
+</span>
+))}
+</div>
+</section>
 
 <div style={styles.instructions}>
-<strong>Instructions:</strong>
+<strong>Completion Instructions:</strong>
 <p>
 Complete this training using the external link or assignment provided
-by your instructor. Return to HireMinds and mark it completed after
-finishing.
+by your instructor. After completion, return to HireMinds and mark this
+training as completed.
+</p>
+
+<strong>Instructor Note:</strong>
+<p>
+This is an assigned external training. While completed outside of
+HireMinds, progress is tracked here for program completion review.
 </p>
 </div>
 
@@ -174,6 +262,11 @@ cardTitle: {
 fontSize: 24,
 margin: "6px 0 0",
 },
+category: {
+color: "rgba(255,255,255,.65)",
+margin: "8px 0 0",
+fontWeight: 700,
+},
 duration: {
 background: "rgba(125,183,255,.15)",
 color: "#9ed0ff",
@@ -183,17 +276,44 @@ fontSize: 12,
 fontWeight: 900,
 whiteSpace: "nowrap",
 },
+section: {
+marginTop: 18,
+},
 description: {
 color: "rgba(255,255,255,.75)",
 lineHeight: 1.6,
-marginTop: 14,
+marginTop: 8,
+},
+list: {
+paddingLeft: 20,
+marginTop: 10,
+},
+listItem: {
+color: "rgba(255,255,255,.78)",
+marginBottom: 8,
+lineHeight: 1.45,
+},
+tagGrid: {
+display: "flex",
+flexWrap: "wrap",
+gap: 8,
+marginTop: 12,
+},
+tag: {
+background: "rgba(125,183,255,.13)",
+border: "1px solid rgba(125,183,255,.20)",
+color: "#b8dcff",
+padding: "7px 10px",
+borderRadius: 999,
+fontSize: 12,
+fontWeight: 800,
 },
 instructions: {
 background: "rgba(0,0,0,.28)",
 border: "1px solid rgba(255,255,255,.10)",
 borderRadius: 14,
 padding: 14,
-marginTop: 16,
+marginTop: 18,
 color: "rgba(255,255,255,.78)",
 lineHeight: 1.55,
 },
