@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import AsyncTracker from "../../components/AsyncTracker";
+import StudyGuideTimer from "../../components/StudyGuideTimer";
 
 export default function MedicalTerminologyModuleOne() {
 return (
@@ -10,9 +10,8 @@ return (
 <p style={styles.kicker}>Medical Terminology • Study Guide 1</p>
 <h1>How Medical Words Are Built</h1>
 
-<AsyncTracker
+<StudyGuideTimer
 module="medicalTerminology_module_1"
-activityType="study"
 completionKey="medicalTerminology_module_1"
 requiredSeconds={660}
 />
@@ -95,10 +94,18 @@ meaning faster and communicate more confidently.
 
 <h2>Practice Prompts</h2>
 <ul>
-<li>What does the suffix <strong>-itis</strong> mean?</li>
-<li>What body part does <strong>cardi</strong> refer to?</li>
-<li>Break down the word <strong>arthritis</strong>.</li>
-<li>Why is learning word parts useful in healthcare settings?</li>
+<li>
+What does the suffix <strong>-itis</strong> mean?
+</li>
+<li>
+What body part does <strong>cardi</strong> refer to?
+</li>
+<li>
+Break down the word <strong>arthritis</strong>.
+</li>
+<li>
+Why is learning word parts useful in healthcare settings?
+</li>
 </ul>
 
 <Link href="/skillsquest" style={styles.button}>
