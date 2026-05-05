@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import React from "react";
 
 const mediaSections = [
@@ -104,25 +103,6 @@ resume.
 </div>
 ))}
 </section>
-
-<section style={styles.noteBox}>
-<h2>How to Use This Library</h2>
-<p>
-Use this page between live sessions to review career examples, prepare
-for interviews, understand employer expectations, and update your
-resume based on the skills you are learning.
-</p>
-</section>
-
-<div style={styles.actions}>
-<Link href="/skillsquest" style={styles.secondaryButton}>
-Back to Career Pathway Program
-</Link>
-
-<Link href="/independent-learning-lab" style={styles.primaryButton}>
-Open Independent Learning
-</Link>
-</div>
 </main>
 );
 }
@@ -196,39 +176,5 @@ padding: "9px 12px",
 borderRadius: 10,
 fontWeight: 800,
 fontSize: 13,
-},
-noteBox: {
-maxWidth: 1100,
-margin: "32px auto 0",
-padding: 22,
-borderRadius: 20,
-background: "rgba(10,132,255,.10)",
-border: "1px solid rgba(125,183,255,.18)",
-lineHeight: 1.65,
-},
-actions: {
-maxWidth: 1100,
-margin: "24px auto 0",
-display: "flex",
-gap: 12,
-flexWrap: "wrap",
-},
-primaryButton: {
-background: "#0A84FF",
-color: "#ffffff",
-padding: "12px 16px",
-borderRadius: 12,
-textDecoration: "none",
-fontWeight: 900,
-display: "inline-block",
-},
-secondaryButton: {
-background: "#ffffff",
-color: "#000000",
-padding: "12px 16px",
-borderRadius: 12,
-textDecoration: "none",
-fontWeight: 900,
-display: "inline-block",
 },
 };
