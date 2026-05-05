@@ -8,7 +8,7 @@ title: "COVID-19 & Workplace Safety Awareness",
 duration: "~1 hour",
 type: "External Training",
 category: "Workplace Safety & Infection Prevention",
-storageKey: "assigned_covid_workplace_safety_completed",
+storageKey: "assigned_covid_request",
 overview:
 "This assigned training provides foundational knowledge on COVID-19 and general respiratory illness prevention in workplace environments. Participants will learn how illnesses spread, how to reduce risk, and how to follow workplace safety expectations across different industries.",
 purpose:
@@ -25,10 +25,10 @@ objectives: [
 topics: [
 "Introduction to COVID-19 and respiratory illness",
 "Symptoms, exposure, and risk awareness",
-"How illness spreads through droplets, surfaces, close contact, and shared spaces",
+"How illness spreads through droplets, surfaces, and close contact",
 "Workplace prevention strategies",
 "Hand hygiene and cleaning practices",
-"Staying home when sick and reporting illness appropriately",
+"Staying home when sick and reporting illness",
 "Employer expectations and workplace safety policies",
 "Emergency preparedness basics",
 "Communication and reporting procedures",
@@ -55,32 +55,21 @@ duration,
 type,
 category,
 storageKey,
-}: {
-title: string;
-overview: string;
-purpose: string;
-objectives: string[];
-topics: string[];
-industries: string[];
-duration: string;
-type: string;
-category: string;
-storageKey: string;
-}) {
-const [completed, setCompleted] = React.useState(false);
+}: any) {
+const [requested, setRequested] = React.useState(false);
 
 React.useEffect(() => {
-setCompleted(localStorage.getItem(storageKey) === "true");
+setRequested(localStorage.getItem(storageKey) === "true");
 }, [storageKey]);
 
-function markCompleted() {
+function handleRequest() {
 localStorage.setItem(storageKey, "true");
-setCompleted(true);
+setRequested(true);
 }
 
-function resetCompleted() {
+function resetRequest() {
 localStorage.removeItem(storageKey);
-setCompleted(false);
+setRequested(false);
 }
 
 return (
@@ -104,7 +93,7 @@ return (
 <section style={styles.section}>
 <h3>Learning Objectives</h3>
 <ul style={styles.list}>
-{objectives.map((item) => (
+{objectives.map((item: string) => (
 <li key={item} style={styles.listItem}>
 {item}
 </li>
@@ -115,7 +104,7 @@ return (
 <section style={styles.section}>
 <h3>Key Topics Covered</h3>
 <ul style={styles.list}>
-{topics.map((item) => (
+{topics.map((item: string) => (
 <li key={item} style={styles.listItem}>
 {item}
 </li>
@@ -125,11 +114,8 @@ return (
 
 <section style={styles.section}>
 <h3>Workplace Application</h3>
-<p style={styles.description}>
-This training supports safe work practices across industries including:
-</p>
 <div style={styles.tagGrid}>
-{industries.map((industry) => (
+{industries.map((industry: string) => (
 <span key={industry} style={styles.tag}>
 {industry}
 </span>
@@ -138,17 +124,11 @@ This training supports safe work practices across industries including:
 </section>
 
 <div style={styles.instructions}>
-<strong>Completion Instructions:</strong>
+<strong>How This Works:</strong>
 <p>
-Complete this training using the external link or assignment provided
-by your instructor. After completion, return to HireMinds and mark this
-training as completed.
-</p>
-
-<strong>Instructor Note:</strong>
-<p>
-This is an assigned external training. While completed outside of
-HireMinds, progress is tracked here for program completion review.
+Click “Request Enrollment” to let your instructor know you are ready to
+take this training. You will receive instructions or access from your
+program.
 </p>
 </div>
 
@@ -156,22 +136,30 @@ HireMinds, progress is tracked here for program completion review.
 <span
 style={{
 ...styles.status,
-background: completed
-? "rgba(125,255,179,.15)"
+background: requested
+? "rgba(125,183,255,.15)"
 : "rgba(255,255,255,.08)",
-color: completed ? "#7dffb3" : "rgba(255,255,255,.65)",
+color: requested ? "#9ed0ff" : "rgba(255,255,255,.65)",
 }}
 >
-{completed ? "Completed" : "Pending"}
+{requested ? "Requested" : "Not Requested"}
 </span>
 
-{completed ? (
-<button type="button" style={styles.secondaryButton} onClick={resetCompleted}>
-Mark Pending
+{requested ? (
+<button
+type="button"
+style={styles.secondaryButton}
+onClick={resetRequest}
+>
+Cancel Request
 </button>
 ) : (
-<button type="button" style={styles.primaryButton} onClick={markCompleted}>
-Mark Completed
+<button
+type="button"
+style={styles.primaryButton}
+onClick={handleRequest}
+>
+Request Enrollment
 </button>
 )}
 </div>
@@ -186,9 +174,7 @@ return (
 <p style={styles.kicker}>Career Pathway Program</p>
 <h1 style={styles.title}>Assigned Training</h1>
 <p style={styles.subtitle}>
-Track external trainings assigned by your instructor. These trainings
-are completed outside of HireMinds and marked here for progress
-tracking.
+Request access to external trainings assigned by your instructor.
 </p>
 </section>
 
@@ -210,142 +196,52 @@ color: "#ffffff",
 padding: "32px",
 fontFamily: "system-ui, Arial, sans-serif",
 },
-hero: {
-maxWidth: 1100,
-margin: "0 auto 28px",
-},
-kicker: {
-color: "#7db7ff",
-fontWeight: 900,
-textTransform: "uppercase",
-letterSpacing: 1.3,
-fontSize: 12,
-},
-title: {
-fontSize: 46,
-fontWeight: 950,
-margin: "8px 0",
-},
-subtitle: {
-color: "rgba(255,255,255,.76)",
-lineHeight: 1.7,
-maxWidth: 850,
-},
-grid: {
-maxWidth: 1100,
-margin: "0 auto",
-display: "grid",
-gap: 16,
-},
+hero: { maxWidth: 1100, margin: "0 auto 28px" },
+kicker: { color: "#7db7ff", fontWeight: 900, fontSize: 12 },
+title: { fontSize: 46, fontWeight: 950 },
+subtitle: { color: "rgba(255,255,255,.76)" },
+grid: { maxWidth: 1100, margin: "0 auto", display: "grid", gap: 16 },
 card: {
 background: "rgba(255,255,255,.06)",
 border: "1px solid rgba(255,255,255,.12)",
 borderRadius: 20,
 padding: 22,
 },
-cardTop: {
-display: "flex",
-justifyContent: "space-between",
-gap: 16,
-alignItems: "flex-start",
-flexWrap: "wrap",
-},
-type: {
-color: "#9ed0ff",
-textTransform: "uppercase",
-letterSpacing: 1.2,
-fontSize: 12,
-fontWeight: 900,
-margin: 0,
-},
-cardTitle: {
-fontSize: 24,
-margin: "6px 0 0",
-},
-category: {
-color: "rgba(255,255,255,.65)",
-margin: "8px 0 0",
-fontWeight: 700,
-},
-duration: {
-background: "rgba(125,183,255,.15)",
-color: "#9ed0ff",
-padding: "6px 11px",
-borderRadius: 999,
-fontSize: 12,
-fontWeight: 900,
-whiteSpace: "nowrap",
-},
-section: {
-marginTop: 18,
-},
-description: {
-color: "rgba(255,255,255,.75)",
-lineHeight: 1.6,
-marginTop: 8,
-},
-list: {
-paddingLeft: 20,
-marginTop: 10,
-},
-listItem: {
-color: "rgba(255,255,255,.78)",
-marginBottom: 8,
-lineHeight: 1.45,
-},
-tagGrid: {
-display: "flex",
-flexWrap: "wrap",
-gap: 8,
-marginTop: 12,
-},
+cardTop: { display: "flex", justifyContent: "space-between" },
+type: { color: "#9ed0ff", fontWeight: 900 },
+cardTitle: { fontSize: 24 },
+category: { color: "rgba(255,255,255,.6)" },
+duration: { color: "#9ed0ff" },
+section: { marginTop: 18 },
+description: { color: "rgba(255,255,255,.75)" },
+list: { paddingLeft: 20 },
+listItem: { marginBottom: 6 },
+tagGrid: { display: "flex", flexWrap: "wrap", gap: 8 },
 tag: {
 background: "rgba(125,183,255,.13)",
-border: "1px solid rgba(125,183,255,.20)",
-color: "#b8dcff",
-padding: "7px 10px",
+padding: "6px 10px",
 borderRadius: 999,
-fontSize: 12,
-fontWeight: 800,
 },
 instructions: {
+marginTop: 18,
 background: "rgba(0,0,0,.28)",
-border: "1px solid rgba(255,255,255,.10)",
-borderRadius: 14,
-padding: 14,
-marginTop: 18,
-color: "rgba(255,255,255,.78)",
-lineHeight: 1.55,
+padding: 12,
+borderRadius: 10,
 },
-actions: {
-display: "flex",
-gap: 12,
-alignItems: "center",
-flexWrap: "wrap",
-marginTop: 18,
-},
-status: {
-padding: "7px 11px",
-borderRadius: 999,
-fontSize: 12,
-fontWeight: 900,
-},
+actions: { display: "flex", gap: 12, marginTop: 18 },
+status: { padding: "6px 10px", borderRadius: 999 },
 primaryButton: {
-background: "#ffffff",
-color: "#000000",
-border: "none",
-borderRadius: 12,
-padding: "10px 14px",
-fontWeight: 900,
+background: "#fff",
+color: "#000",
+padding: "8px 12px",
+borderRadius: 10,
 cursor: "pointer",
 },
 secondaryButton: {
-background: "rgba(255,255,255,.09)",
-color: "#ffffff",
-border: "1px solid rgba(255,255,255,.14)",
-borderRadius: 12,
-padding: "10px 14px",
-fontWeight: 900,
+background: "rgba(255,255,255,.1)",
+color: "#fff",
+padding: "8px 12px",
+borderRadius: 10,
 cursor: "pointer",
 },
 };
