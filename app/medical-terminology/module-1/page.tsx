@@ -7,7 +7,7 @@ export default function MedicalTerminologyModuleOne() {
 return (
 <main style={styles.main}>
 <section style={styles.card}>
-<p style={styles.kicker}>Medical Terminology • Module 1</p>
+<p style={styles.kicker}>Medical Terminology • Study Guide 1</p>
 <h1>How Medical Words Are Built</h1>
 
 <AsyncTracker
@@ -17,43 +17,89 @@ completionKey="medicalTerminology_module_1"
 requiredSeconds={660}
 />
 
+<div style={styles.notice}>
+<strong>Timed Study Guide</strong>
 <p>
-Medical terms are often built from word parts. Once you understand
-those parts, you can break down unfamiliar words more easily.
+This guide must stay open for 11 minutes before Study Guide 2
+unlocks. Review the content, complete the practice prompts, and
+return to SkillsQuest once the timer is complete.
+</p>
+</div>
+
+<h2>What You Are Learning</h2>
+<p>
+Medical terms are often built from smaller word parts. When you learn
+how those parts work, longer medical words become easier to understand.
 </p>
 
-<h2>Three Common Word Parts</h2>
+<h2>The Three Main Word Parts</h2>
+
+<div style={styles.box}>
+<h3>Prefix</h3>
 <p>
-<strong>Prefix:</strong> appears at the beginning of a word and changes
-the meaning.
+A prefix appears at the beginning of a word. It changes or adds to
+the meaning of the word.
 </p>
 <p>
-<strong>Root word:</strong> gives the main meaning of the term.
+Example: <strong>peri-</strong> means around.
+</p>
+</div>
+
+<div style={styles.box}>
+<h3>Root Word</h3>
+<p>
+The root word gives the main meaning of the term. It often points to
+a body part, organ, or system.
 </p>
 <p>
-<strong>Suffix:</strong> appears at the end and often describes a
-condition, procedure, or process.
+Example: <strong>cardi</strong> means heart.
+</p>
+</div>
+
+<div style={styles.box}>
+<h3>Suffix</h3>
+<p>
+A suffix appears at the end of a word. It often describes a
+condition, procedure, process, or disease.
+</p>
+<p>
+Example: <strong>-itis</strong> means inflammation.
+</p>
+</div>
+
+<h2>Example Breakdown</h2>
+
+<div style={styles.exampleBox}>
+<h3>Pericarditis</h3>
+<p>
+<strong>peri-</strong> = around
+</p>
+<p>
+<strong>cardi</strong> = heart
+</p>
+<p>
+<strong>-itis</strong> = inflammation
+</p>
+<p>
+<strong>Meaning:</strong> inflammation around the heart.
+</p>
+</div>
+
+<h2>Why This Matters in Healthcare</h2>
+<p>
+Healthcare workers may see medical terms in schedules, care notes,
+discharge paperwork, job descriptions, referrals, and patient
+instructions. Understanding basic word parts helps you recognize
+meaning faster and communicate more confidently.
 </p>
 
-<h2>Example</h2>
-<p>
-<strong>Pericarditis</strong>
-</p>
-<p>
-peri- = around<br />
-cardi = heart<br />
--itis = inflammation
-</p>
-<p>
-Meaning: inflammation around the heart.
-</p>
-
-<h2>Why This Matters</h2>
-<p>
-Healthcare workers often see medical words in schedules, care notes,
-referrals, discharge papers, and job descriptions. Learning word parts
-helps you understand the meaning faster.
-</p>
+<h2>Practice Prompts</h2>
+<ul>
+<li>What does the suffix <strong>-itis</strong> mean?</li>
+<li>What body part does <strong>cardi</strong> refer to?</li>
+<li>Break down the word <strong>arthritis</strong>.</li>
+<li>Why is learning word parts useful in healthcare settings?</li>
+</ul>
 
 <Link href="/skillsquest" style={styles.button}>
 Back to SkillsQuest
@@ -72,7 +118,7 @@ padding: 24,
 fontFamily: "system-ui, Arial, sans-serif",
 },
 card: {
-maxWidth: 900,
+maxWidth: 920,
 margin: "0 auto",
 background: "#111",
 border: "1px solid rgba(255,255,255,.12)",
@@ -86,6 +132,27 @@ fontWeight: 900,
 textTransform: "uppercase",
 letterSpacing: 1.3,
 fontSize: 12,
+},
+notice: {
+background: "rgba(125,183,255,.12)",
+border: "1px solid rgba(125,183,255,.22)",
+padding: 16,
+borderRadius: 14,
+margin: "18px 0",
+},
+box: {
+background: "rgba(255,255,255,.06)",
+border: "1px solid rgba(255,255,255,.1)",
+borderRadius: 14,
+padding: 16,
+marginBottom: 12,
+},
+exampleBox: {
+background: "rgba(0,0,0,.35)",
+border: "1px solid rgba(255,255,255,.12)",
+borderRadius: 14,
+padding: 16,
+marginBottom: 16,
 },
 button: {
 display: "inline-block",
