@@ -280,7 +280,6 @@ Hours
 
 <section style={styles.programHero}>
 <div>
-<p style={styles.programLabel}>MedScope Track</p>
 <h2 style={styles.programTitle}>
 Healthcare Career Orientation for SCSEP Participants
 </h2>
