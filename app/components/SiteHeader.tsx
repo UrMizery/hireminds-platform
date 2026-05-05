@@ -23,6 +23,7 @@ const careerPathwayNavItems: PartnerNavItem[] = [
 { label: "Career Pathway Program", href: "/skillsquest" },
 { label: "Independent Learning", href: "/independent-learning-lab" },
 { label: "Career Media Library", href: "/career-media-library" },
+{ label: "Assigned Training", href: "/assigned-training" },
 ];
 
 const skillsQuestNavItems: PartnerNavItem[] = [
