@@ -10,10 +10,10 @@ description:
 "Start with the core skills every participant needs before moving into industry-specific pathways.",
 guides: [
 {
-title: "Career Readiness",
+title: "Digital Literacy",
 description:
-"Build job search confidence, understand employer expectations, and prepare for applications, interviews, and workplace success.",
-href: "/nhp/study-guides/career-readiness",
+"Practice computer basics, email communication, online applications, workplace technology, and digital professionalism.",
+href: "/nhp/study-guides/digital-literacy",
 status: "Start Training →",
 },
 {
@@ -24,10 +24,10 @@ href: "/nhp/study-guides/customer-service",
 status: "Start Training →",
 },
 {
-title: "Digital Literacy",
+title: "Career Readiness",
 description:
-"Practice computer basics, email communication, online applications, workplace technology, and digital professionalism.",
-href: "/nhp/study-guides/digital-literacy",
+"Build job search confidence, understand employer expectations, and prepare for applications, interviews, and workplace success.",
+href: "/nhp/study-guides/career-readiness",
 status: "Start Training →",
 },
 ],
