@@ -184,6 +184,24 @@ sessionPlan: "2-hour final preparation session.",
 },
 ];
 
+const weekDetails = {
+"Week 1": {
+title: "Healthcare Career Foundation",
+description:
+"Participants begin with orientation, healthcare career awareness, customer service foundations, and communication skills needed for patient-facing and support roles.",
+},
+"Week 2": {
+title: "Healthcare Knowledge + Timed Study Guides",
+description:
+"Participants complete structured healthcare learning blocks with timed study guides, terminology practice, and assessments that unlock after all required guides are completed.",
+},
+"Week 3": {
+title: "Certification Prep + Employment Readiness",
+description:
+"Participants connect training to employment outcomes through CPR/First Aid awareness, resume building, cover letter preparation, interview practice, and healthcare job search readiness.",
+},
+};
+
 export default function SkillsQuestPage() {
 const [allowed, setAllowed] = useState(false);
 const [checked, setChecked] = useState(false);
@@ -198,6 +216,7 @@ data: { session },
 const user = session?.user;
 
 const userReferralCode = String(
+user?.app_metadata?.referral_code ||
 user?.user_metadata?.referral_code ||
 user?.user_metadata?.referralCode ||
 user?.user_metadata?.access_code ||
@@ -243,7 +262,7 @@ return completedMap[previousModule.completionKey] === true;
 }
 
 if (!checked) {
-return <main style={styles.main}>Loading SkillsQuest...</main>;
+return <main style={styles.main}>Loading Career Pathway...</main>;
 }
 
 if (!allowed) {
@@ -251,9 +270,9 @@ return (
 <main style={styles.main}>
 <section style={styles.lockCard}>
 <p style={styles.kicker}>Restricted Learning Area</p>
-<h1 style={styles.title}>SkillsQuest Locked</h1>
+<h1 style={styles.title}>Career Pathway Locked</h1>
 <p style={styles.subtitle}>
-This learning area is currently available only to approved
+This learning area is currently available only to approved TWP2026
 participants.
 </p>
 <Link href="/" style={styles.primaryButton}>
@@ -270,56 +289,65 @@ const completedDays = trainingDays.filter((day) => isDayComplete(day)).length;
 return (
 <main style={styles.main}>
 <section style={styles.hero}>
-<p style={styles.kicker}>HireMinds Learning Hub</p>
-<h1 style={styles.title}>SkillsQuest</h1>
+<p style={styles.kicker}>TWP2026 Career Pathway</p>
+<h1 style={styles.title}>3-Week Career Pathway Program</h1>
 <p style={styles.subtitle}>
-Career Pathway Program • 3 Weeks • 9 Sessions • 18 Live Instructional
-Hours
+This instructor-led healthcare career orientation helps participants
+build workplace confidence, healthcare awareness, customer service
+skills, terminology knowledge, and employment readiness through live
+sessions, timed study guides, assessments, and certificate-based
+completion.
 </p>
-</section>
 
-<section style={styles.programHero}>
-<div>
-<h2 style={styles.programTitle}>
-Healthcare Career Orientation for SCSEP Participants
-</h2>
-<p style={styles.programText}>
-A 3-week instructor-led workforce training pathway with timed study
-guides, assessments, resources, and certificates.
-</p>
+<div style={styles.overviewGrid}>
+<div style={styles.overviewCard}>
+<strong>3 Weeks</strong>
+<span>Structured healthcare pathway</span>
 </div>
-
-<div style={styles.progressCard}>
-<strong>Program Progress</strong>
-<span style={styles.progressNumber}>
+<div style={styles.overviewCard}>
+<strong>9 Sessions</strong>
+<span>Three guided sessions per week</span>
+</div>
+<div style={styles.overviewCard}>
+<strong>18 Hours</strong>
+<span>Instructor-led training</span>
+</div>
+<div style={styles.overviewCard}>
+<strong>
 {completedDays}/{activeDays}
-</span>
-<small>active training days completed</small>
+</strong>
+<span>assessment-based days complete</span>
+</div>
 </div>
 </section>
 
-<section style={styles.hoursGrid}>
-<div style={styles.hourCard}>
-<h3>3 Weeks</h3>
-<p>Career pathway training</p>
-</div>
-
-<div style={styles.hourCard}>
-<h3>9 Sessions</h3>
-<p>3 days per week</p>
-</div>
-
-<div style={styles.hourCard}>
-<h3>18 Hours</h3>
-<p>Instructor-led training</p>
-</div>
+<section style={styles.programNote}>
+<p style={styles.noteLabel}>Program Focus</p>
+<h2 style={styles.noteTitle}>
+Healthcare Readiness + Employment Preparation
+</h2>
+<p style={styles.noteText}>
+This pathway is designed to support participants as they explore
+healthcare support careers, strengthen communication skills, understand
+professional expectations, and prepare for job search activities.
+Week 2 includes timed study guides where participants must complete
+each guide in order before the assessment unlocks.
+</p>
 </section>
 
-<section style={styles.weekGrid}>
-{["Week 1", "Week 2", "Week 3"].map((week) => (
+<section style={styles.weekStack}>
+{["Week 1", "Week 2", "Week 3"].map((week) => {
+const info = weekDetails[week as keyof typeof weekDetails];
+
+return (
 <div key={week} style={styles.weekCard}>
-<h2 style={styles.weekTitle}>{week}</h2>
+<div style={styles.weekHeader}>
+<p style={styles.weekLabel}>{week}</p>
+<h2 style={styles.weekTitle}>{info.title}</h2>
+<p style={styles.weekDescription}>{info.description}</p>
+</div>
 
+<div style={styles.guideGrid}>
 {trainingDays
 .filter((day) => day.week === week)
 .map((day) => {
@@ -329,7 +357,8 @@ const count = completedCount(day);
 const total = day.modules?.length || 0;
 
 return (
-<div key={`${day.week}-${day.day}`} style={styles.moduleCard}>
+<div key={`${day.week}-${day.day}`} style={styles.guideCard}>
+<div>
 <div style={styles.moduleTop}>
 <span style={styles.dayBadge}>{day.day}</span>
 <span
@@ -350,12 +379,11 @@ style={{
 </span>
 </div>
 
-<h3 style={styles.moduleTitle}>{day.title}</h3>
-<p style={styles.moduleText}>{day.description}</p>
+<h3 style={styles.guideTitle}>{day.title}</h3>
+<p style={styles.guideText}>{day.description}</p>
 <p style={styles.sessionPlan}>{day.sessionPlan}</p>
 
 {hasModules ? (
-<>
 <div style={styles.studyList}>
 {day.modules?.map((module, index) => {
 const moduleComplete =
@@ -393,9 +421,12 @@ style={{
 );
 })}
 </div>
+) : null}
+</div>
 
 <div style={styles.buttonGroup}>
-{dayComplete ? (
+{hasModules ? (
+dayComplete ? (
 <Link
 href={day.assessmentHref || "#"}
 style={styles.secondaryButton}
@@ -404,22 +435,22 @@ Start Assessment
 </Link>
 ) : (
 <span style={styles.lockedButton}>
-Assessment Locked Until All Study Guides Are
-Complete
+Assessment Locked
 </span>
-)}
-</div>
-</>
+)
 ) : (
 <span style={styles.lockedButton}>
 Trainer-Led Session
 </span>
 )}
 </div>
+</div>
 );
 })}
 </div>
-))}
+</div>
+);
+})}
 </section>
 </main>
 );
@@ -436,40 +467,51 @@ fontFamily: "system-ui, Arial, sans-serif",
 },
 hero: {
 maxWidth: 1180,
-margin: "0 auto 28px",
+margin: "0 auto 30px",
 },
 kicker: {
 color: "#7db7ff",
 fontWeight: 900,
-letterSpacing: 1.4,
 textTransform: "uppercase",
+letterSpacing: 1.3,
 fontSize: 12,
 },
 title: {
-fontSize: 52,
+fontSize: 48,
 fontWeight: 950,
 margin: "8px 0",
 },
 subtitle: {
-fontSize: 16,
+color: "rgba(255,255,255,.76)",
 lineHeight: 1.7,
-color: "rgba(255,255,255,.78)",
-maxWidth: 900,
+maxWidth: 980,
+fontSize: 16,
 },
-programHero: {
+overviewGrid: {
+display: "grid",
+gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+gap: 14,
+marginTop: 22,
+maxWidth: 1050,
+},
+overviewCard: {
+display: "grid",
+gap: 6,
+padding: 18,
+borderRadius: 18,
+background: "rgba(255,255,255,.07)",
+border: "1px solid rgba(255,255,255,.12)",
+},
+programNote: {
 maxWidth: 1180,
 margin: "0 auto 24px",
-padding: 26,
-borderRadius: 24,
+padding: 22,
+borderRadius: 22,
 background:
-"linear-gradient(135deg, rgba(10,132,255,.22), rgba(255,255,255,.06))",
-border: "1px solid rgba(255,255,255,.15)",
-display: "grid",
-gridTemplateColumns: "1fr 220px",
-gap: 20,
-alignItems: "center",
+"linear-gradient(135deg, rgba(10,132,255,.18), rgba(255,255,255,.055))",
+border: "1px solid rgba(125,183,255,.18)",
 },
-programLabel: {
+noteLabel: {
 color: "#9ed0ff",
 fontWeight: 900,
 textTransform: "uppercase",
@@ -477,72 +519,69 @@ letterSpacing: 1.2,
 fontSize: 12,
 margin: 0,
 },
-programTitle: {
-fontSize: 30,
+noteTitle: {
+fontSize: 28,
 margin: "8px 0",
-fontWeight: 950,
 },
-programText: {
-color: "rgba(255,255,255,.78)",
-lineHeight: 1.65,
-margin: 0,
+noteText: {
+color: "rgba(255,255,255,.76)",
+lineHeight: 1.7,
+maxWidth: 980,
 },
-progressCard: {
-borderRadius: 18,
-background: "rgba(0,0,0,.35)",
-border: "1px solid rgba(255,255,255,.12)",
-padding: 18,
-display: "grid",
-gap: 6,
-textAlign: "center",
-},
-progressNumber: {
-fontSize: 38,
-fontWeight: 950,
-},
-hoursGrid: {
-maxWidth: 1180,
-margin: "0 auto 24px",
-display: "grid",
-gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-gap: 14,
-},
-hourCard: {
-background: "rgba(255,255,255,.065)",
-border: "1px solid rgba(255,255,255,.12)",
-borderRadius: 20,
-padding: 20,
-},
-weekGrid: {
+weekStack: {
 maxWidth: 1180,
 margin: "0 auto",
 display: "grid",
-gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
-gap: 18,
+gap: 22,
 },
 weekCard: {
+padding: 22,
+borderRadius: 24,
 background: "rgba(255,255,255,.055)",
 border: "1px solid rgba(255,255,255,.12)",
-borderRadius: 24,
-padding: 18,
+},
+weekHeader: {
+marginBottom: 18,
+},
+weekLabel: {
+color: "#9ed0ff",
+fontWeight: 900,
+textTransform: "uppercase",
+letterSpacing: 1.2,
+fontSize: 12,
+margin: 0,
 },
 weekTitle: {
-margin: "0 0 14px",
-fontSize: 24,
+fontSize: 28,
+margin: "6px 0",
 },
-moduleCard: {
-background: "rgba(0,0,0,.28)",
-border: "1px solid rgba(255,255,255,.10)",
+weekDescription: {
+color: "rgba(255,255,255,.72)",
+lineHeight: 1.6,
+maxWidth: 940,
+},
+guideGrid: {
+display: "grid",
+gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+gap: 16,
+},
+guideCard: {
+minHeight: 300,
+display: "flex",
+flexDirection: "column",
+justifyContent: "space-between",
+background: "rgba(0,0,0,.30)",
+border: "1px solid rgba(255,255,255,.12)",
 borderRadius: 18,
-padding: 16,
-marginBottom: 14,
+padding: 20,
+color: "#ffffff",
 },
 moduleTop: {
 display: "flex",
 justifyContent: "space-between",
 gap: 10,
 alignItems: "center",
-marginBottom: 10,
+marginBottom: 12,
 },
 dayBadge: {
 background: "rgba(255,255,255,.10)",
@@ -557,6 +596,7 @@ padding: "6px 10px",
 borderRadius: 999,
 fontSize: 11,
 fontWeight: 900,
+whiteSpace: "nowrap",
 },
 completeBadge: {
 background: "rgba(125,255,179,.16)",
@@ -570,17 +610,17 @@ trainerBadge: {
 background: "rgba(255,255,255,.09)",
 color: "rgba(255,255,255,.65)",
 },
-moduleTitle: {
-fontSize: 18,
-margin: "0 0 8px",
+guideTitle: {
+fontSize: 22,
+margin: "0 0 10px",
 },
-moduleText: {
+guideText: {
 color: "rgba(255,255,255,.76)",
-lineHeight: 1.55,
-fontSize: 14,
+lineHeight: 1.6,
+marginBottom: 12,
 },
 sessionPlan: {
-color: "rgba(255,255,255,.55)",
+color: "rgba(255,255,255,.58)",
 fontSize: 13,
 lineHeight: 1.5,
 marginTop: 8,
@@ -623,7 +663,7 @@ buttonGroup: {
 display: "flex",
 gap: 10,
 flexWrap: "wrap",
-marginTop: 12,
+marginTop: 16,
 },
 secondaryButton: {
 background: "#0A84FF",
@@ -641,7 +681,6 @@ padding: "11px 15px",
 borderRadius: 12,
 fontWeight: 850,
 display: "inline-block",
-marginTop: 12,
 },
 primaryButton: {
 background: "#ffffff",
