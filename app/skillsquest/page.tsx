@@ -392,7 +392,7 @@ export default function SkillsQuestPage() {
                             )
                           ) : day.demoHref ? (
                             <Link href={day.demoHref} style={styles.secondaryButton}>
-                              Start Demo →
+                              Demo →
                             </Link>
                           ) : (
                             <span style={styles.lockedButton}>
