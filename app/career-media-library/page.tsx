@@ -2,6 +2,21 @@
 
 import React from "react";
 
+const featuredVideos = [
+{
+title: "Career Media Video 1",
+description: "Watch this short career-readiness video.",
+embedUrl:
+"https://drive.google.com/file/d/13pLE5JH_eILwQKsugMnZNXpatmGdEMv-/preview",
+},
+{
+title: "Career Media Video 2",
+description: "Watch this short career-readiness video.",
+embedUrl:
+"https://drive.google.com/file/d/186TOWldMIuzmPGJOoHrMTROyh5omF13t/preview",
+},
+];
+
 const mediaSections = [
 {
 title: "Industry Overview Clips",
@@ -85,6 +100,28 @@ resume.
 </p>
 </section>
 
+<section style={styles.videoGrid}>
+{featuredVideos.map((video) => (
+<div key={video.title} style={styles.videoCard}>
+<div style={styles.videoFrame}>
+<iframe
+src={video.embedUrl}
+width="100%"
+height="100%"
+allow="autoplay"
+style={styles.iframe}
+/>
+</div>
+
+<div style={styles.videoBody}>
+<h2 style={styles.videoTitle}>{video.title}</h2>
+<p style={styles.description}>{video.description}</p>
+<span style={styles.videoBadge}>Now Available</span>
+</div>
+</div>
+))}
+</section>
+
 <section style={styles.grid}>
 {mediaSections.map((section) => (
 <div key={section.title} style={styles.card}>
@@ -136,6 +173,48 @@ subtitle: {
 color: "rgba(255,255,255,.76)",
 lineHeight: 1.7,
 maxWidth: 850,
+},
+videoGrid: {
+maxWidth: 1100,
+margin: "0 auto 28px",
+display: "grid",
+gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
+gap: 16,
+},
+videoCard: {
+background: "rgba(255,255,255,.07)",
+border: "1px solid rgba(125,183,255,.28)",
+borderRadius: 22,
+overflow: "hidden",
+boxShadow: "0 18px 45px rgba(0,0,0,.35)",
+},
+videoFrame: {
+width: "100%",
+height: 280,
+background: "#000",
+},
+iframe: {
+border: "0",
+display: "block",
+},
+videoBody: {
+padding: 18,
+},
+videoTitle: {
+margin: "0 0 8px",
+fontSize: 22,
+fontWeight: 900,
+},
+videoBadge: {
+display: "inline-block",
+marginTop: 8,
+background: "rgba(0,122,255,.20)",
+color: "#b8dcff",
+border: "1px solid rgba(125,183,255,.35)",
+padding: "9px 12px",
+borderRadius: 10,
+fontWeight: 900,
+fontSize: 13,
 },
 grid: {
 maxWidth: 1100,
