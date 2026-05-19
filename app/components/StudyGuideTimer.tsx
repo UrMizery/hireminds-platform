@@ -15,91 +15,96 @@ const progressKey = `${module}_study_progress_seconds`;
 
 const [secondsEarned, setSecondsEarned] = useState(0);
 const [complete, setComplete] = useState(false);
-const [paused, setPaused] = useState(false);
 
 const lastReported = useRef(0);
 
 useEffect(() => {
-if (localStorage.getItem(completionKey) === "true") {
-setComplete(true);
-setSecondsEarned(requiredSeconds);
-return;
+const handleVisibility = () => {
+if (document.hidden) {
+resetDemoTimer();
 }
+};
 
-const saved = Number(localStorage.getItem(progressKey) || 0);
-if (saved > 0) setSecondsEarned(saved);
+window.addEventListener("beforeunload", resetDemoTimer);
+document.addEventListener(
+"visibilitychange",
+handleVisibility
+);
 
 const timer = setInterval(() => {
-if (document.hidden) {
-setPaused(true);
-return;
-}
-
-setPaused(false);
-
 setSecondsEarned((prev) => {
-const next = Math.min(prev + 1, requiredSeconds);
-localStorage.setItem(progressKey, String(next));
-
-if (next - lastReported.current >= 30) {
-lastReported.current = next;
-reportTime(30);
-}
+const next = prev + 1;
 
 if (next >= requiredSeconds) {
-localStorage.setItem(completionKey, "true");
+localStorage.setItem(
+completionKey,
+"true"
+);
+
 setComplete(true);
+
+return requiredSeconds;
 }
 
 return next;
 });
 }, 1000);
 
-return () => clearInterval(timer);
+return () => {
+clearInterval(timer);
+
+window.removeEventListener(
+"beforeunload",
+resetDemoTimer
+);
+
+document.removeEventListener(
+"visibilitychange",
+handleVisibility
+);
+};
 }, []);
 
-async function reportTime(seconds: number) {
-try {
-await fetch("/api/async-activity", {
-method: "POST",
-headers: {
-"Content-Type": "application/json",
-},
-body: JSON.stringify({
-module,
-activityType: "career_pathway_study",
-secondsSpent: seconds,
-}),
-});
-} catch {
-// do not block user experience
-}
+function resetDemoTimer() {
+localStorage.removeItem(completionKey);
+localStorage.removeItem(progressKey);
+
+setSecondsEarned(0);
+setComplete(false);
+
+lastReported.current = 0;
 }
 
-const secondsLeft = Math.max(0, requiredSeconds - secondsEarned);
-const minutes = Math.floor(secondsLeft / 30);
-const seconds = secondsLeft % 30;
+const secondsLeft = Math.max(
+0,
+requiredSeconds - secondsEarned
+);
+
+const displayTime = `0:${secondsLeft
+.toString()
+.padStart(2, "0")}`;
 
 return (
 <div style={styles.wrapper}>
 <div style={styles.notice}>
-<strong>Timed Study Guide:</strong>
+<strong>Demo Study Guide</strong>
+
 <p>
-This study guide must remain open for 30 seconds before the next guide
-unlocks. Please review the content and complete the prompts before
-moving forward.
+For demo purposes, leaving this page
+or switching tabs resets the timer.
 </p>
 </div>
 
 <div style={styles.timerBox}>
 {complete ? (
-<strong>Completed ✅ Next guide unlocked</strong>
-) : paused ? (
-<strong>Timer Paused — return to this page to continue</strong>
+<strong>
+Completed ✅ Next guide unlocked
+</strong>
 ) : (
 <strong>
-Required Time Remaining: {minutes}:
-{seconds.toString().padStart(2, "0")}
+Time Remaining:
+{" "}
+{displayTime}
 </strong>
 )}
 </div>
@@ -108,52 +113,65 @@ Required Time Remaining: {minutes}:
 <div
 style={{
 ...styles.progressFill,
-width: `${Math.min(100, (secondsEarned / requiredSeconds) * 100)}%`,
+width: `${
+(secondsEarned /
+requiredSeconds) *
+100
+}%`,
 }}
 />
 </div>
 
 <p style={styles.progressText}>
-Progress earned: {Math.floor(secondsEarned / 30)} seconds
+{secondsEarned}/{requiredSeconds}
+{" "}
+seconds completed
 </p>
 </div>
 );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-wrapper: {
-margin: "16px 0",
+const styles: Record<
+string,
+React.CSSProperties
+> = {
+wrapper:{
+margin:"16px 0"
 },
-notice: {
-padding: 14,
-borderRadius: 14,
-background: "rgba(125,183,255,.12)",
-border: "1px solid rgba(125,183,255,.22)",
-color: "#ffffff",
-marginBottom: 12,
-lineHeight: 1.5,
+
+notice:{
+padding:14,
+borderRadius:14,
+background:
+"rgba(125,183,255,.12)",
+border:
+"1px solid rgba(125,183,255,.22)",
+marginBottom:12
 },
-timerBox: {
-padding: 14,
-borderRadius: 14,
-background: "rgba(255,255,255,.09)",
-border: "1px solid rgba(255,255,255,.14)",
-color: "#ffffff",
+
+timerBox:{
+padding:14,
+borderRadius:14,
+background:
+"rgba(255,255,255,.08)"
 },
-progressBar: {
-height: 10,
-width: "100%",
-borderRadius: 999,
-background: "rgba(255,255,255,.12)",
-overflow: "hidden",
-marginTop: 12,
+
+progressBar:{
+height:10,
+background:
+"rgba(255,255,255,.10)",
+borderRadius:999,
+overflow:"hidden",
+marginTop:12
 },
-progressFill: {
-height: "100%",
-background: "#7db7ff",
+
+progressFill:{
+height:"100%",
+background:"#7db7ff"
 },
-progressText: {
-color: "rgba(255,255,255,.7)",
-fontSize: 13,
-},
+
+progressText:{
+fontSize:13,
+opacity:.75
+}
 };
