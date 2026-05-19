@@ -96,7 +96,7 @@ return (
 <p style={styles.kicker}>HireMinds Study Guide</p>
 <h1 style={styles.title}>Medical Terminology Study Guide</h1>
 <p style={styles.subtitle}>
-Complete the required 11-minute study guide before starting the assessment.
+Complete the required 30 seconds DEMO study guide before starting the assessment.
 The timer pauses if you leave this page.
 </p>
 
@@ -219,7 +219,7 @@ You do not need to memorize every medical word. The goal is to learn how to brea
 Start Assessment
 </Link>
 ) : (
-<p>Stay on this page until the 11-minute timer completes.</p>
+<p>Stay on this page until the 30-seconds timer completes.</p>
 )}
 </section>
 </main>
