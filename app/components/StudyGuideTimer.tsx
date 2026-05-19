@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 export default function StudyGuideTimer({
 module,
 completionKey,
-requiredSeconds = 660,
+requiredSeconds = 30,
 }: {
 module: string;
 completionKey: string;
@@ -41,9 +41,9 @@ setSecondsEarned((prev) => {
 const next = Math.min(prev + 1, requiredSeconds);
 localStorage.setItem(progressKey, String(next));
 
-if (next - lastReported.current >= 60) {
+if (next - lastReported.current >= 30) {
 lastReported.current = next;
-reportTime(60);
+reportTime(30);
 }
 
 if (next >= requiredSeconds) {
@@ -77,15 +77,15 @@ secondsSpent: seconds,
 }
 
 const secondsLeft = Math.max(0, requiredSeconds - secondsEarned);
-const minutes = Math.floor(secondsLeft / 60);
-const seconds = secondsLeft % 60;
+const minutes = Math.floor(secondsLeft / 30);
+const seconds = secondsLeft % 30;
 
 return (
 <div style={styles.wrapper}>
 <div style={styles.notice}>
 <strong>Timed Study Guide:</strong>
 <p>
-This study guide must remain open for 11 minutes before the next guide
+This study guide must remain open for 30 seconds before the next guide
 unlocks. Please review the content and complete the prompts before
 moving forward.
 </p>
@@ -114,7 +114,7 @@ width: `${Math.min(100, (secondsEarned / requiredSeconds) * 100)}%`,
 </div>
 
 <p style={styles.progressText}>
-Progress earned: {Math.floor(secondsEarned / 60)} minutes
+Progress earned: {Math.floor(secondsEarned / 30)} seconds
 </p>
 </div>
 );
