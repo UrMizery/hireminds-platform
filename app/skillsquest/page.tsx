@@ -26,7 +26,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 1",
     day: "Day 1",
-    title: "Orientation + Platform Navigation (Demo)",
+    title: "Orientation + Platform Navigation",
     description:
       "Welcome to HireMinds, course expectations, platform navigation, healthcare pathway overview, goals, and pre-assessment.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
@@ -34,7 +34,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 1",
     day: "Day 2",
-    title: "Career Readiness Training (Demo)",
+    title: "Career Readiness Training",
     description:
       "Healthcare-focused resume basics, cover letter preparation, interview practice, professionalism, and workplace expectations.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
@@ -42,7 +42,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 1",
     day: "Day 3",
-    title: "CPR + First Aid Awareness (Demo)",
+    title: "CPR + First Aid Awareness)",
     description:
       "Emergency response awareness, choking response, adult CPR awareness, stroke and cardiac emergency recognition, and certification pathway discussion.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
@@ -50,7 +50,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 2",
     day: "Day 4",
-    title: "Customer Service Methodology (Demo)",
+    title: "Customer Service Methodology",
     description:
       "Active listening, empathy, de-escalation, service recovery, patient interaction examples, and documentation of service interactions.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
@@ -58,7 +58,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 2",
     day: "Day 5",
-    title: "Introduction to Medical Terminology (Demo)",
+    title: "Introduction to Medical Terminology",
     description:
       "Common medical roots, prefixes, suffixes, and terminology relevant to home care, geriatrics, and community health settings.",
     sessionPlan:
@@ -95,7 +95,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 2",
     day: "Day 6",
-    title: "Introduction to Healthcare Careers (Demo)",
+    title: "Introduction to Healthcare Careers",
     description:
       "Entry-level healthcare roles, Community Health Workers, Direct Support Professionals, daily responsibilities, work environments, and career pathways.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
@@ -103,7 +103,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 3",
     day: "Day 7",
-    title: "Foundations in Home & Community-Based Healthcare (Demo)",
+    title: "Foundations in Home & Community-Based Healthcare",
     description:
       "Home visit safety protocols, patient rights, privacy, dignity, autonomy, care-team roles, and interdisciplinary healthcare support.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
@@ -111,7 +111,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 3",
     day: "Day 8",
-    title: "Career Search for Healthcare Workers (Demo)",
+    title: "Career Search for Healthcare Workers",
     description:
       "Healthcare-specific job boards, reputable local employers, application requirements, background checks, drug screening, and healthcare hiring readiness.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
@@ -119,7 +119,7 @@ const trainingDays: TrainingDay[] = [
   {
     week: "Week 3",
     day: "Day 9",
-    title: "Career Readiness Review (Demo)",
+    title: "Career Readiness Review",
     description:
       "Healthcare-focused resume review, cover letter review, mock interview practice, terminology recap, and final employment preparation.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
