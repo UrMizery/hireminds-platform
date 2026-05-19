@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 
-const REQUIRED_SECONDS = 660; // 11 minutes
+const REQUIRED_SECONDS = 30;
 
 export default function MedicalTerminologyStudyPage() {
 const [secondsLeft, setSecondsLeft] = useState(REQUIRED_SECONDS);
