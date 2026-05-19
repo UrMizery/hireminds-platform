@@ -5,13 +5,15 @@ import React from "react";
 const featuredVideos = [
 {
 title: "Career Media Video 1",
-description: "Watch this short career-readiness video.",
+description:
+"Watch this career-readiness video to support your learning, preparation, and next steps in the Career Pathway Program.",
 embedUrl:
 "https://drive.google.com/file/d/13pLE5JH_eILwQKsugMnZNXpatmGdEMv-/preview",
 },
 {
 title: "Career Media Video 2",
-description: "Watch this short career-readiness video.",
+description:
+"Continue building your confidence with this additional career-readiness video designed to help you understand expectations, skills, and opportunities.",
 embedUrl:
 "https://drive.google.com/file/d/186TOWldMIuzmPGJOoHrMTROyh5omF13t/preview",
 },
@@ -93,16 +95,15 @@ return (
 <p style={styles.kicker}>Career Pathway Program</p>
 <h1 style={styles.title}>Career Media Library</h1>
 <p style={styles.subtitle}>
-Explore short career-readiness videos and guides that help you
-understand healthcare roles, employer expectations, job descriptions,
-interviews, and how to connect your newly learned skills to your
-resume.
+Explore career-readiness videos and guides that help you understand
+healthcare roles, employer expectations, job descriptions, interviews,
+and how to connect your newly learned skills to your resume.
 </p>
 </section>
 
-<section style={styles.videoGrid}>
+<section style={styles.videoSection}>
 {featuredVideos.map((video) => (
-<div key={video.title} style={styles.videoCard}>
+<article key={video.title} style={styles.videoCard}>
 <div style={styles.videoFrame}>
 <iframe
 src={video.embedUrl}
@@ -113,20 +114,37 @@ style={styles.iframe}
 />
 </div>
 
-<div style={styles.videoBody}>
+<div style={styles.videoContent}>
+<p style={styles.videoKicker}>Featured Video</p>
 <h2 style={styles.videoTitle}>{video.title}</h2>
-<p style={styles.description}>{video.description}</p>
-<span style={styles.videoBadge}>Now Available</span>
+<p style={styles.videoDescription}>{video.description}</p>
+<span style={styles.videoBadge}>Available Now</span>
 </div>
-</div>
+</article>
 ))}
 </section>
 
-<section style={styles.grid}>
+<section style={styles.sectionIntro}>
+<p style={styles.kicker}>More Career Media</p>
+<h2 style={styles.sectionTitle}>Coming Soon to the Library</h2>
+<p style={styles.sectionText}>
+These upcoming sections will organize career media by topic so users
+can easily review healthcare pathways, interviews, job descriptions,
+resumes, and employer expectations.
+</p>
+</section>
+
+<section style={styles.topicList}>
 {mediaSections.map((section) => (
-<div key={section.title} style={styles.card}>
+<article key={section.title} style={styles.topicCard}>
+<div style={styles.topicHeader}>
+<div>
 <h2 style={styles.cardTitle}>{section.title}</h2>
 <p style={styles.description}>{section.description}</p>
+</div>
+
+<span style={styles.comingSoon}>Media Coming Soon</span>
+</div>
 
 <ul style={styles.list}>
 {section.items.map((item) => (
@@ -135,9 +153,7 @@ style={styles.iframe}
 </li>
 ))}
 </ul>
-
-<span style={styles.comingSoon}>Media Coming Soon</span>
-</div>
+</article>
 ))}
 </section>
 </main>
@@ -148,14 +164,15 @@ const styles: Record<string, React.CSSProperties> = {
 main: {
 minHeight: "100vh",
 background:
-"radial-gradient(circle at top left, rgba(0,122,255,.20), transparent 35%), linear-gradient(180deg,#050505,#101010)",
+"radial-gradient(circle at top left, rgba(0,122,255,.22), transparent 35%), radial-gradient(circle at bottom right, rgba(125,183,255,.10), transparent 30%), linear-gradient(180deg,#050505,#101010)",
 color: "#ffffff",
-padding: "32px",
+padding: "40px 28px 70px",
 fontFamily: "system-ui, Arial, sans-serif",
 },
 hero: {
-maxWidth: 1100,
-margin: "0 auto 28px",
+maxWidth: 1250,
+margin: "0 auto 34px",
+padding: "28px 0",
 },
 kicker: {
 color: "#7db7ff",
@@ -163,97 +180,150 @@ fontWeight: 900,
 textTransform: "uppercase",
 letterSpacing: 1.3,
 fontSize: 12,
+margin: "0 0 10px",
 },
 title: {
-fontSize: 46,
+fontSize: "clamp(42px, 6vw, 76px)",
+lineHeight: 1,
 fontWeight: 950,
-margin: "8px 0",
+margin: "0 0 18px",
 },
 subtitle: {
-color: "rgba(255,255,255,.76)",
-lineHeight: 1.7,
-maxWidth: 850,
+color: "rgba(255,255,255,.78)",
+lineHeight: 1.8,
+maxWidth: 1050,
+fontSize: 18,
+margin: 0,
 },
-videoGrid: {
-maxWidth: 1100,
-margin: "0 auto 28px",
-display: "grid",
-gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
-gap: 16,
+videoSection: {
+maxWidth: 1250,
+margin: "0 auto 55px",
+display: "flex",
+flexDirection: "column",
+gap: 36,
 },
 videoCard: {
-background: "rgba(255,255,255,.07)",
-border: "1px solid rgba(125,183,255,.28)",
-borderRadius: 22,
+width: "100%",
+background: "rgba(255,255,255,.065)",
+border: "1px solid rgba(125,183,255,.25)",
+borderRadius: 30,
 overflow: "hidden",
-boxShadow: "0 18px 45px rgba(0,0,0,.35)",
+boxShadow: "0 24px 70px rgba(0,0,0,.40)",
 },
 videoFrame: {
 width: "100%",
-height: 280,
+height: 620,
 background: "#000",
 },
 iframe: {
-border: "0",
+border: 0,
 display: "block",
 },
-videoBody: {
-padding: 18,
+videoContent: {
+padding: "32px 40px 36px",
+},
+videoKicker: {
+color: "#7db7ff",
+fontWeight: 900,
+textTransform: "uppercase",
+letterSpacing: 1.2,
+fontSize: 12,
+margin: "0 0 10px",
 },
 videoTitle: {
-margin: "0 0 8px",
-fontSize: 22,
-fontWeight: 900,
+fontSize: "clamp(30px, 4vw, 46px)",
+lineHeight: 1.08,
+fontWeight: 950,
+margin: "0 0 14px",
+},
+videoDescription: {
+color: "rgba(255,255,255,.76)",
+lineHeight: 1.8,
+fontSize: 18,
+maxWidth: 1050,
+margin: 0,
 },
 videoBadge: {
 display: "inline-block",
-marginTop: 8,
-background: "rgba(0,122,255,.20)",
+marginTop: 22,
+background: "rgba(0,122,255,.17)",
 color: "#b8dcff",
-border: "1px solid rgba(125,183,255,.35)",
-padding: "9px 12px",
-borderRadius: 10,
+border: "1px solid rgba(125,183,255,.34)",
+padding: "11px 15px",
+borderRadius: 14,
 fontWeight: 900,
 fontSize: 13,
 },
-grid: {
-maxWidth: 1100,
-margin: "0 auto",
-display: "grid",
-gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
-gap: 16,
+sectionIntro: {
+maxWidth: 1250,
+margin: "0 auto 22px",
+paddingTop: 10,
 },
-card: {
-background: "rgba(255,255,255,.06)",
+sectionTitle: {
+fontSize: "clamp(30px, 4vw, 48px)",
+fontWeight: 950,
+margin: "0 0 12px",
+},
+sectionText: {
+color: "rgba(255,255,255,.74)",
+lineHeight: 1.75,
+maxWidth: 1000,
+fontSize: 17,
+margin: 0,
+},
+topicList: {
+maxWidth: 1250,
+margin: "0 auto",
+display: "flex",
+flexDirection: "column",
+gap: 18,
+},
+topicCard: {
+width: "100%",
+background: "rgba(255,255,255,.055)",
 border: "1px solid rgba(255,255,255,.12)",
-borderRadius: 20,
-padding: 20,
+borderRadius: 24,
+padding: "28px 32px",
+},
+topicHeader: {
+display: "flex",
+justifyContent: "space-between",
+alignItems: "flex-start",
+gap: 24,
 },
 cardTitle: {
 margin: "0 0 10px",
-fontSize: 22,
+fontSize: 28,
+fontWeight: 950,
 },
 description: {
 color: "rgba(255,255,255,.72)",
-lineHeight: 1.55,
+lineHeight: 1.65,
+fontSize: 16,
+maxWidth: 850,
+margin: 0,
 },
 list: {
+display: "grid",
+gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+gap: "10px 18px",
 paddingLeft: 20,
-marginTop: 14,
-marginBottom: 16,
+marginTop: 22,
+marginBottom: 0,
 },
 listItem: {
-marginBottom: 8,
-color: "rgba(255,255,255,.82)",
+color: "rgba(255,255,255,.84)",
+lineHeight: 1.5,
 },
 comingSoon: {
+flexShrink: 0,
 display: "inline-block",
-marginTop: 8,
 background: "rgba(255,255,255,.1)",
-color: "rgba(255,255,255,.72)",
-padding: "9px 12px",
-borderRadius: 10,
-fontWeight: 800,
+color: "rgba(255,255,255,.76)",
+padding: "10px 14px",
+borderRadius: 13,
+fontWeight: 900,
 fontSize: 13,
+whiteSpace: "nowrap",
 },
 };
