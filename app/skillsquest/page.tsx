@@ -20,6 +20,7 @@ type TrainingDay = {
   sessionPlan: string;
   modules?: StudyModule[];
   assessmentHref?: string;
+  demoHref?: string;
 };
 
 const trainingDays: TrainingDay[] = [
@@ -30,6 +31,7 @@ const trainingDays: TrainingDay[] = [
     description:
       "Welcome to HireMinds, course expectations, platform navigation, healthcare pathway overview, goals, and pre-assessment.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
+    demoHref: "/orientation-demo",
   },
   {
     week: "Week 1",
@@ -38,14 +40,16 @@ const trainingDays: TrainingDay[] = [
     description:
       "Healthcare-focused resume basics, cover letter preparation, interview practice, professionalism, and workplace expectations.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
+    demoHref: "/career-readiness-demo",
   },
   {
     week: "Week 1",
     day: "Day 3",
-    title: "CPR + First Aid Awareness)",
+    title: "CPR + First Aid Awareness",
     description:
       "Emergency response awareness, choking response, adult CPR awareness, stroke and cardiac emergency recognition, and certification pathway discussion.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
+    demoHref: "/cpr-first-aid-demo",
   },
   {
     week: "Week 2",
@@ -54,6 +58,7 @@ const trainingDays: TrainingDay[] = [
     description:
       "Active listening, empathy, de-escalation, service recovery, patient interaction examples, and documentation of service interactions.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
+    demoHref: "/customer-service-demo",
   },
   {
     week: "Week 2",
@@ -99,6 +104,7 @@ const trainingDays: TrainingDay[] = [
     description:
       "Entry-level healthcare roles, Community Health Workers, Direct Support Professionals, daily responsibilities, work environments, and career pathways.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
+    demoHref: "/healthcare-careers-demo",
   },
   {
     week: "Week 3",
@@ -107,6 +113,7 @@ const trainingDays: TrainingDay[] = [
     description:
       "Home visit safety protocols, patient rights, privacy, dignity, autonomy, care-team roles, and interdisciplinary healthcare support.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
+    demoHref: "/home-community-healthcare-demo",
   },
   {
     week: "Week 3",
@@ -115,6 +122,7 @@ const trainingDays: TrainingDay[] = [
     description:
       "Healthcare-specific job boards, reputable local employers, application requirements, background checks, drug screening, and healthcare hiring readiness.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
+    demoHref: "/healthcare-job-search-demo",
   },
   {
     week: "Week 3",
@@ -123,6 +131,7 @@ const trainingDays: TrainingDay[] = [
     description:
       "Healthcare-focused resume review, cover letter review, mock interview practice, terminology recap, and final employment preparation.",
     sessionPlan: "Demo Mode • 30-second accelerated unlock.",
+    demoHref: "/career-readiness-review-demo",
   },
 ];
 
@@ -381,6 +390,10 @@ export default function SkillsQuestPage() {
                                 Assessment Locked
                               </span>
                             )
+                          ) : day.demoHref ? (
+                            <Link href={day.demoHref} style={styles.secondaryButton}>
+                              Start Demo →
+                            </Link>
                           ) : (
                             <span style={styles.lockedButton}>
                               Demo Training Card
