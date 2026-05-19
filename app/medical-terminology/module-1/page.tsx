@@ -13,13 +13,13 @@ return (
 <StudyGuideTimer
 module="medicalTerminology_module_1"
 completionKey="medicalTerminology_module_1"
-requiredSeconds={660}
+requiredSeconds={30}
 />
 
 <div style={styles.notice}>
 <strong>Timed Study Guide</strong>
 <p>
-This guide must stay open for 11 minutes before Study Guide 2
+This guide must stay open for 30 seconds before Study Guide 2
 unlocks. Review the content, complete the practice prompts, and
 return to SkillsQuest once the timer is complete.
 </p>
