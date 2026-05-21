@@ -43,10 +43,13 @@ export default function CareerReadinessHubPage() {
 
   useEffect(() => {
     refreshCompletion();
+
     window.addEventListener("focus", refreshCompletion);
+    window.addEventListener("storage", refreshCompletion);
 
     return () => {
       window.removeEventListener("focus", refreshCompletion);
+      window.removeEventListener("storage", refreshCompletion);
     };
   }, []);
 
@@ -64,7 +67,7 @@ export default function CareerReadinessHubPage() {
       "twp_resume_completed",
     ].forEach((key) => localStorage.removeItem(key));
 
-    refreshCompletion();
+    window.location.reload();
   }
 
   const allComplete = modules.every(
@@ -79,10 +82,17 @@ export default function CareerReadinessHubPage() {
         <h1 style={styles.title}>Career Readiness Training</h1>
 
         <p style={styles.subtitle}>
-          Complete each Career Readiness module in order. Each module contains
-          30-second demo content. After all three modules are complete, the
-          final Career Readiness assessment unlocks.
+          Complete each Career Readiness module in order. After all three
+          modules are complete, the final Career Readiness assessment unlocks.
         </p>
+
+        <button
+          type="button"
+          onClick={refreshCompletion}
+          style={styles.refreshButton}
+        >
+          Refresh Progress
+        </button>
 
         <div style={styles.moduleList}>
           {modules.map((module, index) => {
@@ -182,6 +192,16 @@ const styles: Record<string, React.CSSProperties> = {
     color: "rgba(255,255,255,.76)",
     lineHeight: 1.6,
     fontSize: 15,
+  },
+  refreshButton: {
+    marginTop: 16,
+    background: "rgba(125,183,255,.16)",
+    color: "#ffffff",
+    padding: "10px 14px",
+    borderRadius: 12,
+    fontWeight: 850,
+    border: "1px solid rgba(125,183,255,.24)",
+    cursor: "pointer",
   },
   moduleList: {
     display: "grid",
