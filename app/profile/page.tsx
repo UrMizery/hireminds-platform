@@ -960,7 +960,35 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 )}
+{/* Slots 2 & 3 — optimizer only */}
+                {slot.id !== "slot1" && !slot.resumeData && (
+                  <p style={{ margin: 0, color: "#6b7280", fontSize: "13px" }}>No resume saved yet. Use the Resume Career Optimizer to generate one.</p>
+                )}
 
+                {/* Saved resume data (slots 2 & 3) */}
+                {slot.resumeData && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <p style={{ margin: 0, color: "#9ca3af", fontSize: "13px" }}>
+                      {slot.resumeData.professionalTitle} · Saved {slot.createdAt ? new Date(slot.createdAt).toLocaleDateString() : ""}
+                    </p>
+                    <button
+                      onClick={() => setOpenOptimizerSlot(slot.id)}
+                      style={{ fontSize: "12px", color: "#f5f5f5", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}
+                    >
+                      Preview / Edit
+                    </button>
+                    <button
+                      onClick={() => handleRemoveResume(slot.id)}
+                      style={{ fontSize: "12px", color: "#f87171", background: "transparent", border: "1px solid #5a1f1f", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}
+                    >
+                      ✕ Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
 {/* Notices */}
         <section style={st.noticeFloat}>
           <p style={st.noticeTitle}>Public Profile Note</p>
