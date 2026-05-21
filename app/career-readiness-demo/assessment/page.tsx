@@ -271,7 +271,7 @@ export default function CareerReadinessAssessmentPage() {
                 <p style={styles.certText}>has successfully completed</p>
 
                 <h2 style={styles.certCourse}>
-                  TWP Career Readiness Training
+                 Career Readiness Training
                 </h2>
 
                 <p style={styles.certText}>with a passing score of</p>
