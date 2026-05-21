@@ -8,7 +8,7 @@ return (
 <section style={styles.wrap}>
 <div style={styles.header}>
 <p style={styles.kicker}>Connect & eXplore</p>
-<h2 style={styles.title}>Stay Connected</h2>
+<h2 style={styles.title}>HireMinds Live</h2>
 <p style={styles.subtitle}>
 Join the monthly Open Room or explore the interactive Live Board.
 </p>
