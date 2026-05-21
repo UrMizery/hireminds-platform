@@ -11,37 +11,30 @@ module: string;
 completionKey: string;
 requiredSeconds?: number;
 }) {
-const progressKey = `${module}_study_progress_seconds`;
-
 const [secondsEarned, setSecondsEarned] = useState(0);
 const [complete, setComplete] = useState(false);
-
-const lastReported = useRef(0);
+const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
 useEffect(() => {
-const handleVisibility = () => {
-if (document.hidden) {
-resetDemoTimer();
+const alreadyComplete = localStorage.getItem(completionKey) === "true";
+
+if (alreadyComplete) {
+setComplete(true);
+setSecondsEarned(requiredSeconds);
+return;
 }
-};
 
-window.addEventListener("beforeunload", resetDemoTimer);
-document.addEventListener(
-"visibilitychange",
-handleVisibility
-);
-
-const timer = setInterval(() => {
+intervalRef.current = setInterval(() => {
 setSecondsEarned((prev) => {
 const next = prev + 1;
 
 if (next >= requiredSeconds) {
-localStorage.setItem(
-completionKey,
-"true"
-);
-
+localStorage.setItem(completionKey, "true");
 setComplete(true);
+
+if (intervalRef.current) {
+clearInterval(intervalRef.current);
+}
 
 return requiredSeconds;
 }
@@ -51,61 +44,35 @@ return next;
 }, 1000);
 
 return () => {
-clearInterval(timer);
-
-window.removeEventListener(
-"beforeunload",
-resetDemoTimer
-);
-
-document.removeEventListener(
-"visibilitychange",
-handleVisibility
-);
-};
-}, []);
-
-function resetDemoTimer() {
-localStorage.removeItem(completionKey);
-localStorage.removeItem(progressKey);
-
-setSecondsEarned(0);
-setComplete(false);
-
-lastReported.current = 0;
+if (intervalRef.current) {
+clearInterval(intervalRef.current);
 }
 
-const secondsLeft = Math.max(
-0,
-requiredSeconds - secondsEarned
-);
+const finished = localStorage.getItem(completionKey) === "true";
 
-const displayTime = `0:${secondsLeft
-.toString()
-.padStart(2, "0")}`;
+if (!finished) {
+setSecondsEarned(0);
+}
+};
+}, [completionKey, requiredSeconds]);
+
+const secondsLeft = Math.max(0, requiredSeconds - secondsEarned);
 
 return (
 <div style={styles.wrapper}>
 <div style={styles.notice}>
 <strong>Demo Study Guide</strong>
-
 <p>
-For demo purposes, leaving this page
-or switching tabs resets the timer.
+Stay on this page for {requiredSeconds} seconds to complete this demo
+guide. If you leave before it completes, the timer restarts.
 </p>
 </div>
 
 <div style={styles.timerBox}>
 {complete ? (
-<strong>
-Completed ✅ Next guide unlocked
-</strong>
+<strong>Completed ✅</strong>
 ) : (
-<strong>
-Time Remaining:
-{" "}
-{displayTime}
-</strong>
+<strong>Time Remaining: 0:{secondsLeft.toString().padStart(2, "0")}</strong>
 )}
 </div>
 
@@ -113,65 +80,47 @@ Time Remaining:
 <div
 style={{
 ...styles.progressFill,
-width: `${
-(secondsEarned /
-requiredSeconds) *
-100
-}%`,
+width: `${Math.min(100, (secondsEarned / requiredSeconds) * 100)}%`,
 }}
 />
 </div>
 
 <p style={styles.progressText}>
-{secondsEarned}/{requiredSeconds}
-{" "}
-seconds completed
+{secondsEarned}/{requiredSeconds} seconds completed
 </p>
 </div>
 );
 }
 
-const styles: Record<
-string,
-React.CSSProperties
-> = {
-wrapper:{
-margin:"16px 0"
+const styles: Record<string, React.CSSProperties> = {
+wrapper: {
+margin: "16px 0",
 },
-
-notice:{
-padding:14,
-borderRadius:14,
-background:
-"rgba(125,183,255,.12)",
-border:
-"1px solid rgba(125,183,255,.22)",
-marginBottom:12
+notice: {
+padding: 14,
+borderRadius: 14,
+background: "rgba(125,183,255,.12)",
+border: "1px solid rgba(125,183,255,.22)",
+marginBottom: 12,
 },
-
-timerBox:{
-padding:14,
-borderRadius:14,
-background:
-"rgba(255,255,255,.08)"
+timerBox: {
+padding: 14,
+borderRadius: 14,
+background: "rgba(255,255,255,.08)",
 },
-
-progressBar:{
-height:10,
-background:
-"rgba(255,255,255,.10)",
-borderRadius:999,
-overflow:"hidden",
-marginTop:12
+progressBar: {
+height: 10,
+background: "rgba(255,255,255,.10)",
+borderRadius: 999,
+overflow: "hidden",
+marginTop: 12,
 },
-
-progressFill:{
-height:"100%",
-background:"#7db7ff"
+progressFill: {
+height: "100%",
+background: "#7db7ff",
 },
-
-progressText:{
-fontSize:13,
-opacity:.75
-}
+progressText: {
+fontSize: 13,
+opacity: 0.75,
+},
 };
