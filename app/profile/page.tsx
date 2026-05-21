@@ -870,7 +870,7 @@ export default function ProfilePage() {
           </div>
           <button onClick={handleSignOut} style={st.secondaryButton}>Sign Out</button>
         </section>
-<ConnectExplore />
+
         {/* Profile Strip */}
         <section style={st.profileStrip}>
           <div style={st.profileStripLeft}>
@@ -1000,7 +1000,8 @@ export default function ProfilePage() {
           <p style={st.noticeTitle}>Privacy Notice</p>
           <p style={st.noticeText}>Your information is stored securely and is not sold or shared outside platform and reporting purposes.</p>
         </section>
-
+<ConnectExplore />
+        
         <section style={st.bottomDock}>
           <button onClick={() => handleSaveProfile()} disabled={saving} style={st.primaryButton}>{saving ? "Saving..." : "Save Profile"}</button>
         </section>
