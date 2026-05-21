@@ -2,7 +2,7 @@
 
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
-
+import ConnectExplore from "../components/ConnectExplore";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ResumeSlot = {
