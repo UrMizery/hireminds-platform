@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function StudyGuideTimer({
 module,
@@ -11,32 +11,30 @@ module: string;
 completionKey: string;
 requiredSeconds?: number;
 }) {
-const [seconds, setSeconds] = useState(0);
-const [completed, setCompleted] = useState(false);
+const [secondsEarned, setSecondsEarned] = useState(0);
+const [complete, setComplete] = useState(false);
+const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
 useEffect(() => {
-const alreadyComplete =
-localStorage.getItem(completionKey) === "true";
+const alreadyComplete = localStorage.getItem(completionKey) === "true";
 
 if (alreadyComplete) {
-setCompleted(true);
-setSeconds(requiredSeconds);
+setComplete(true);
+setSecondsEarned(requiredSeconds);
 return;
 }
 
-const timer = setInterval(() => {
-setSeconds((prev) => {
+intervalRef.current = setInterval(() => {
+setSecondsEarned((prev) => {
 const next = prev + 1;
 
 if (next >= requiredSeconds) {
-localStorage.setItem(
-completionKey,
-"true"
-);
+localStorage.setItem(completionKey, "true");
+setComplete(true);
 
-setCompleted(true);
-
-clearInterval(timer);
+if (intervalRef.current) {
+clearInterval(intervalRef.current);
+}
 
 return requiredSeconds;
 }
@@ -46,116 +44,83 @@ return next;
 }, 1000);
 
 return () => {
-clearInterval(timer);
+if (intervalRef.current) {
+clearInterval(intervalRef.current);
+}
 
-const finished =
-localStorage.getItem(
-completionKey
-) === "true";
+const finished = localStorage.getItem(completionKey) === "true";
 
 if (!finished) {
-localStorage.removeItem(
-completionKey
-);
+setSecondsEarned(0);
 }
 };
 }, [completionKey, requiredSeconds]);
 
-const remaining =
-requiredSeconds - seconds;
+const secondsLeft = Math.max(0, requiredSeconds - secondsEarned);
 
 return (
 <div style={styles.wrapper}>
 <div style={styles.notice}>
-<strong>
-Demo Study Guide
-</strong>
-
+<strong>Demo Study Guide</strong>
 <p>
-Leaving before completion
-resets progress.
+Stay on this page for {requiredSeconds} seconds to complete this demo
+guide. If you leave before it completes, the timer restarts.
 </p>
 </div>
 
 <div style={styles.timerBox}>
-{completed ? (
-<strong>
-Completed ✅
-</strong>
+{complete ? (
+<strong>Completed ✅</strong>
 ) : (
-<strong>
-Time Remaining:
-{" "}
-0:
-{String(
-Math.max(0, remaining)
-).padStart(2, "0")}
-</strong>
+<strong>Time Remaining: 0:{secondsLeft.toString().padStart(2, "0")}</strong>
 )}
 </div>
 
-<div style={styles.bar}>
+<div style={styles.progressBar}>
 <div
 style={{
-...styles.fill,
-width: `${
-(seconds /
-requiredSeconds) *
-100
-}%`,
+...styles.progressFill,
+width: `${Math.min(100, (secondsEarned / requiredSeconds) * 100)}%`,
 }}
 />
 </div>
 
-<p style={styles.small}>
-{seconds}/
-{requiredSeconds}
-{" "}
-sec
+<p style={styles.progressText}>
+{secondsEarned}/{requiredSeconds} seconds completed
 </p>
 </div>
 );
 }
 
-const styles: Record<
-string,
-React.CSSProperties
-> = {
-wrapper:{
-marginTop:20
+const styles: Record<string, React.CSSProperties> = {
+wrapper: {
+margin: "16px 0",
 },
-
-notice:{
-padding:14,
-borderRadius:12,
-background:
-"rgba(125,183,255,.12)"
+notice: {
+padding: 14,
+borderRadius: 14,
+background: "rgba(125,183,255,.12)",
+border: "1px solid rgba(125,183,255,.22)",
+marginBottom: 12,
 },
-
-timerBox:{
-marginTop:10,
-padding:15,
-borderRadius:12,
-background:
-"rgba(255,255,255,.06)"
+timerBox: {
+padding: 14,
+borderRadius: 14,
+background: "rgba(255,255,255,.08)",
 },
-
-bar:{
-height:10,
-borderRadius:999,
-overflow:"hidden",
-background:
-"rgba(255,255,255,.08)",
-marginTop:10
+progressBar: {
+height: 10,
+background: "rgba(255,255,255,.10)",
+borderRadius: 999,
+overflow: "hidden",
+marginTop: 12,
 },
-
-fill:{
-height:"100%",
-background:"#7db7ff"
+progressFill: {
+height: "100%",
+background: "#7db7ff",
 },
-
-small:{
-opacity:.7,
-fontSize:12
-}
+progressText: {
+fontSize: 13,
+opacity: 0.75,
+},
 };
