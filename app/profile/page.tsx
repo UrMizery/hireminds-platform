@@ -134,7 +134,6 @@ const FONTS = [
 const EMPTY_SLOTS: ResumeSlot[] = [
   { id: "slot1", label: "Resume 1 — General", resumeUrl: null, resumeData: null, isVisible: false, createdAt: null },
   { id: "slot2", label: "Resume 2 — Tailored", resumeUrl: null, resumeData: null, isVisible: false, createdAt: null },
-  { id: "slot3", label: "Resume 3 — Alternate", resumeUrl: null, resumeData: null, isVisible: false, createdAt: null },
 ];
 
 // ─── Section Flag ─────────────────────────────────────────────────────────────
