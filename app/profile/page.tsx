@@ -870,7 +870,7 @@ export default function ProfilePage() {
           </div>
           <button onClick={handleSignOut} style={st.secondaryButton}>Sign Out</button>
         </section>
-
+<ConnectExplore />
         {/* Profile Strip */}
         <section style={st.profileStrip}>
           <div style={st.profileStripLeft}>
