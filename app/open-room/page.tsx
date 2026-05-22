@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function OpenRoomLobbyPage() {
+export default function OpenRoomPage() {
 const router = useRouter();
 const [opening, setOpening] = useState(false);
 
@@ -12,19 +12,21 @@ setOpening(true);
 
 setTimeout(() => {
 router.push("/open-room/live");
-}, 1200);
+}, 1100);
 }
 
 return (
 <main className="page">
-<section className="lobby">
+<section className="hero">
 <div className="left">
-<div className="badge">● LIVE COMMUNITY SPACE</div>
+<div className="badge">
+<span /> LIVE COMMUNITY SPACE
+</div>
 
 <h1>
 OPEN
 <br />
-ROOM
+<strong>ROOM</strong>
 </h1>
 
 <p>
@@ -33,209 +35,242 @@ career conversations, updates, resources, and random cool moments.
 </p>
 
 <div className="info">
-<span>📅 Last Tuesday monthly</span>
-<span>⏰ 6PM–7PM</span>
-<span>🚪 Opens 5:50PM</span>
+<div>📅 Last Tuesday monthly</div>
+<div>⏰ 6PM – 7PM</div>
+<div>🚪 Opens 5:50PM</div>
 </div>
 
 <div className="vibe">✨ Come curious. Leave sharper.</div>
 </div>
 
 <button
-className={`doorArea ${opening ? "open" : ""}`}
 onClick={enterRoom}
+className={`doorArea ${opening ? "open" : ""}`}
 aria-label="Enter Open Room"
 >
-<span className="backLight" />
-<span className="floorLight" />
+<div className="wallGlow" />
+<div className="floorLight" />
 
-<span className="doorFrame">
-<span className="doorPanel">
-<span className="doorInset top" />
-<span className="doorInset bottom" />
-<span className="doorHandle" />
-</span>
-</span>
-
-<span className="doorText">Click the door to enter</span>
+<div className="doorFrame">
+<div className="lightInside" />
+<div className="doorPanel">
+<div className="doorInset top" />
+<div className="doorInset bottom" />
+<div className="doorKnob" />
+</div>
+</div>
 </button>
 
 <div className="right">
-<p className="ready">Ready to walk in?</p>
-<p className="rightText">
-Click the door and step into Open Room.
+<h2>Ready to walk in?</h2>
+<p>
+Click the door to enter <span>Open Room</span>
 </p>
-
-<div className="simpleList">
-<span>Live Q&A</span>
-<span>Job leads</span>
-<span>Resource drops</span>
-<span>Networking</span>
-</div>
+<div className="line" />
 </div>
 </section>
 
 <style jsx>{`
 .page {
 min-height: 100vh;
-padding: 40px;
+padding: 38px;
 background:
-radial-gradient(circle at 72% 22%, rgba(0, 229, 255, 0.14), transparent 26%),
-radial-gradient(circle at 48% 82%, rgba(255, 190, 80, 0.1), transparent 22%),
-linear-gradient(135deg, #040811, #08111f 48%, #04060c);
+radial-gradient(circle at 78% 22%, rgba(0, 229, 255, 0.12), transparent 28%),
+radial-gradient(circle at 20% 90%, rgba(255, 210, 73, 0.08), transparent 32%),
+linear-gradient(135deg, #020712, #06111f 50%, #02050c);
 color: white;
+overflow: hidden;
 }
 
-.lobby {
-min-height: calc(100vh - 80px);
-border-radius: 38px;
-padding: 56px 64px;
+.hero {
+position: relative;
+min-height: calc(100vh - 76px);
+border-radius: 34px;
+padding: 70px 70px 50px;
 display: grid;
-grid-template-columns: 1fr 430px 0.75fr;
-gap: 56px;
+grid-template-columns: 0.9fr 1.1fr 0.8fr;
 align-items: center;
-border: 1px solid rgba(255, 255, 255, 0.1);
-background:
-linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
-rgba(4, 8, 17, 0.92);
-box-shadow: 0 0 90px rgba(0, 229, 255, 0.08);
+gap: 38px;
 overflow: hidden;
+background:
+linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+#050b15;
+border: 1px solid rgba(255, 255, 255, 0.1);
+box-shadow:
+inset 0 0 70px rgba(0, 229, 255, 0.04),
+0 0 80px rgba(0, 0, 0, 0.45);
+}
+
+.hero::before {
+content: "";
+position: absolute;
+inset: 0;
+background:
+linear-gradient(to bottom, transparent 76%, rgba(255, 255, 255, 0.045) 77%, transparent 78%),
+linear-gradient(to right, transparent 76%, rgba(255, 255, 255, 0.035) 77%, transparent 78%);
+background-size: 120px 120px;
+opacity: 0.2;
+pointer-events: none;
+transform: perspective(900px) rotateX(58deg) translateY(170px);
+transform-origin: bottom;
+}
+
+.left,
+.right,
+.doorArea {
+position: relative;
+z-index: 2;
 }
 
 .badge {
 display: inline-flex;
 align-items: center;
-gap: 8px;
-padding: 10px 15px;
+gap: 9px;
+padding: 10px 16px;
 border-radius: 999px;
-background: rgba(0, 229, 255, 0.08);
-border: 1px solid rgba(0, 229, 255, 0.28);
-color: white;
+background: rgba(255, 255, 255, 0.055);
+border: 1px solid rgba(255, 255, 255, 0.14);
 font-weight: 900;
-font-size: 0.85rem;
+font-size: 0.8rem;
 }
 
-.badge::first-letter {
-color: #10f3ff;
+.badge span {
+width: 10px;
+height: 10px;
+border-radius: 999px;
+background: #00e5ff;
+box-shadow: 0 0 12px #00e5ff;
 }
 
 h1 {
-margin: 26px 0 20px;
-font-size: clamp(4.5rem, 9vw, 8rem);
-line-height: 0.86;
-letter-spacing: -0.07em;
+margin: 28px 0 22px;
+font-size: clamp(4.5rem, 8vw, 8.5rem);
+line-height: 0.82;
+letter-spacing: -0.08em;
+font-weight: 950;
 }
 
-h1 br + * {
-color: #10f3ff;
+h1 strong {
+color: #00dff7;
+text-shadow: 0 0 28px rgba(0, 229, 255, 0.35);
 }
 
-p {
-max-width: 560px;
-font-size: 1.12rem;
+.left p {
+max-width: 520px;
+font-size: 1.13rem;
 line-height: 1.7;
 color: rgba(255, 255, 255, 0.78);
-font-weight: 700;
+font-weight: 650;
 }
 
 .info {
 display: flex;
 flex-wrap: wrap;
 gap: 12px;
-margin-top: 30px;
+margin-top: 28px;
 }
 
-.info span {
-padding: 12px 14px;
-border-radius: 14px;
-background: rgba(255, 255, 255, 0.055);
-border: 1px solid rgba(255, 255, 255, 0.11);
+.info div {
+padding: 14px 16px;
+border-radius: 16px;
+background: rgba(255, 255, 255, 0.045);
+border: 1px solid rgba(255, 255, 255, 0.1);
 font-weight: 850;
-font-size: 0.9rem;
 }
 
 .vibe {
-margin-top: 18px;
-color: #ffd36a;
+margin-top: 34px;
+color: #ffd249;
 font-weight: 900;
 }
 
 .doorArea {
-position: relative;
-width: 430px;
+width: 360px;
 height: 590px;
+margin: auto;
 border: none;
 background: transparent;
 cursor: pointer;
-perspective: 1500px;
-margin: auto;
+perspective: 1600px;
 }
 
-.backLight {
+.wallGlow {
 position: absolute;
 left: 50%;
-top: 104px;
-transform: translateX(-50%);
-width: 210px;
-height: 370px;
-border-radius: 6px;
-background:
-radial-gradient(circle at center, rgba(255, 255, 255, 1), rgba(255, 224, 150, 0.96) 35%, rgba(255, 189, 92, 0.48) 62%, transparent 78%);
-filter: blur(2px);
-opacity: 0.92;
-box-shadow:
-0 0 60px rgba(255, 255, 255, 0.55),
-0 0 115px rgba(255, 189, 92, 0.34);
-transition: opacity 0.7s ease;
+top: 48%;
+width: 390px;
+height: 520px;
+transform: translate(-50%, -50%);
+background: radial-gradient(circle, rgba(255, 210, 110, 0.32), rgba(0, 229, 255, 0.08) 45%, transparent 70%);
+filter: blur(30px);
+opacity: 0.8;
 }
 
 .floorLight {
 position: absolute;
 left: 50%;
-bottom: 30px;
-transform: translateX(-50%);
-width: 145px;
-height: 190px;
-background: linear-gradient(180deg, rgba(255, 221, 150, 0.7), transparent 84%);
-clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
-opacity: 0.65;
-filter: blur(4px);
-transition: opacity 0.7s ease;
+bottom: 0;
+width: 170px;
+height: 260px;
+transform: translateX(-50%) perspective(300px) rotateX(62deg);
+background: linear-gradient(180deg, rgba(255, 233, 190, 0.75), transparent);
+filter: blur(12px);
+opacity: 0.7;
+transform-origin: top;
 }
 
 .doorFrame {
 position: absolute;
 left: 50%;
-top: 68px;
-transform: translateX(-50%);
+top: 45px;
 width: 250px;
-height: 420px;
-border: 14px solid #111824;
-border-bottom: 18px solid #111824;
-background: rgba(0, 0, 0, 0.25);
+height: 430px;
+transform: translateX(-50%);
+background: #030711;
+border: 14px solid #101722;
 box-shadow:
-0 0 0 1px rgba(255, 255, 255, 0.08),
-0 26px 55px rgba(0, 0, 0, 0.55),
-inset 0 0 28px rgba(255, 255, 255, 0.08);
+0 0 0 2px rgba(255, 255, 255, 0.06),
+0 0 45px rgba(0, 0, 0, 0.8),
+inset 0 0 18px rgba(255, 255, 255, 0.05);
 overflow: visible;
+}
+
+.doorFrame::before {
+content: "";
+position: absolute;
+inset: -26px;
+border: 1px solid rgba(255, 255, 255, 0.06);
+box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.8);
+}
+
+.lightInside {
+position: absolute;
+inset: 0;
+background:
+radial-gradient(circle at 60% 35%, rgba(255, 255, 255, 0.98), transparent 20%),
+linear-gradient(180deg, #fff6d8, #ffd68a 55%, #ffffff);
+box-shadow:
+0 0 70px rgba(255, 225, 150, 0.9),
+inset 0 0 30px rgba(255, 255, 255, 0.9);
 }
 
 .doorPanel {
 position: absolute;
-top: 0;
 left: 0;
-width: 100%;
+top: 0;
+width: 82%;
 height: 100%;
-background:
-linear-gradient(100deg, #07101c 0%, #172233 45%, #0b111c 100%);
-border: 1px solid rgba(255, 255, 255, 0.12);
 transform-origin: left center;
-transform: rotateY(-22deg);
-transition: transform 1s ease;
+transform: rotateY(-28deg);
+transition: transform 0.95s ease;
+background:
+linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent 16%),
+linear-gradient(135deg, #0b1018, #1a2431 46%, #060912);
+border: 2px solid rgba(255, 255, 255, 0.12);
 box-shadow:
-inset -26px 0 32px rgba(0, 0, 0, 0.42),
-inset 10px 0 18px rgba(255, 255, 255, 0.08),
-12px 0 30px rgba(0, 0, 0, 0.35);
+inset -22px 0 30px rgba(0, 0, 0, 0.55),
+inset 8px 0 18px rgba(255, 255, 255, 0.06),
+18px 0 32px rgba(0, 0, 0, 0.52);
 }
 
 .open .doorPanel {
@@ -244,90 +279,78 @@ transform: rotateY(-72deg);
 
 .doorInset {
 position: absolute;
-left: 34px;
-right: 34px;
-border: 2px solid rgba(255, 255, 255, 0.1);
+left: 42px;
+right: 30px;
+border: 2px solid rgba(255, 255, 255, 0.11);
 box-shadow:
-inset 0 0 0 14px rgba(0, 0, 0, 0.08),
-inset 0 0 20px rgba(255, 255, 255, 0.035);
+inset 0 0 0 12px rgba(0, 0, 0, 0.15),
+inset 0 0 22px rgba(255, 255, 255, 0.05);
 }
 
 .doorInset.top {
-top: 56px;
-height: 128px;
+top: 58px;
+height: 145px;
 }
 
 .doorInset.bottom {
 bottom: 58px;
-height: 150px;
+height: 145px;
 }
 
-.doorHandle {
+.doorKnob {
 position: absolute;
-right: 28px;
+right: 25px;
 top: 50%;
-width: 14px;
-height: 14px;
+width: 15px;
+height: 15px;
 border-radius: 999px;
-background: #c99a43;
-box-shadow: 0 0 14px rgba(255, 211, 106, 0.65);
-}
-
-.doorText {
-position: absolute;
-left: 50%;
-bottom: 0;
-transform: translateX(-50%);
-color: #10f3ff;
-font-weight: 950;
-letter-spacing: 0.06em;
-white-space: nowrap;
-text-shadow: 0 0 16px rgba(16, 243, 255, 0.62);
+background: #b98d38;
+box-shadow:
+0 0 12px rgba(255, 210, 73, 0.8),
+inset 0 0 3px rgba(255, 255, 255, 0.7);
 }
 
 .right {
-max-width: 420px;
+max-width: 430px;
 }
 
-.ready {
+.right h2 {
 font-size: 1.8rem;
-color: white;
-margin: 0 0 8px;
-font-weight: 950;
+margin: 0 0 12px;
 }
 
-.rightText {
-margin: 0 0 30px;
+.right p {
+color: rgba(255, 255, 255, 0.78);
+font-size: 1.05rem;
+line-height: 1.6;
 }
 
-.simpleList {
-display: flex;
-flex-wrap: wrap;
-gap: 10px;
+.right span {
+color: #00e5ff;
 }
 
-.simpleList span {
-padding: 11px 14px;
+.line {
+margin-top: 28px;
+width: 85px;
+height: 3px;
 border-radius: 999px;
-background: rgba(255, 255, 255, 0.055);
-border: 1px solid rgba(255, 255, 255, 0.1);
-font-weight: 850;
-font-size: 0.9rem;
+background: #00e5ff;
+box-shadow: 0 0 18px rgba(0, 229, 255, 0.75);
 }
 
-@media (max-width: 1150px) {
-.lobby {
+@media (max-width: 1100px) {
+.hero {
 grid-template-columns: 1fr;
-padding: 36px;
+padding: 40px;
 }
 
 .doorArea {
-width: 360px;
-height: 540px;
+width: 320px;
+height: 520px;
 }
 
 .right {
-max-width: 100%;
+max-width: none;
 }
 }
 `}</style>
