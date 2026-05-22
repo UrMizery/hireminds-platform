@@ -27,6 +27,7 @@ Monthly HireMinds recap and Q&A. No registration required.
 Join Open Room
 </a>
 
+  
 <Link href="/profile" style={styles.back}>
 Back to My Profile
 </Link>
