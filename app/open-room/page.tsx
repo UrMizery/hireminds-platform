@@ -11,7 +11,7 @@ function enterRoom() {
 setOpening(true);
 setTimeout(() => {
 router.push("/open-room/live");
-}, 900);
+}, 1200);
 }
 
 return (
@@ -19,7 +19,9 @@ return (
 <section className="lobby">
 <div className="left">
 <div className="badge">🔴 LIVE COMMUNITY SPACE</div>
+
 <h1>OPEN ROOM</h1>
+
 <p>
 A live interactive space for networking, support, opportunities,
 career conversations, updates, resources, and random cool moments.
@@ -30,22 +32,35 @@ career conversations, updates, resources, and random cool moments.
 <span>⏰ 6PM–7PM</span>
 <span>🚪 Opens 5:50PM</span>
 </div>
+
+<div className="vibe">✨ Come curious. Leave sharper.</div>
 </div>
 
 <button
-className={`door ${opening ? "open" : ""}`}
+className={`doorWrap ${opening ? "open" : ""}`}
 onClick={enterRoom}
 aria-label="Enter Open Room"
 >
-<span className="light" />
-<span className="panel">
-<span className="knob" />
-<strong>ENTER<br />OPEN ROOM</strong>
+<span className="doorLight" />
+
+<span className="doorFrame">
+<span className="door doorLeft">
+<span className="panelLines" />
+<span className="knob leftKnob" />
 </span>
+
+<span className="door doorRight">
+<span className="panelLines" />
+<span className="knob rightKnob" />
+</span>
+</span>
+
+<span className="enterText">ENTER OPEN ROOM</span>
 </button>
 
 <div className="right">
 <h2>What happens inside?</h2>
+
 <div className="list">
 <span>🎤 Live Q&A</span>
 <span>💼 Job leads</span>
@@ -56,6 +71,15 @@ aria-label="Enter Open Room"
 <span>🌟 Partner highlights</span>
 <span>📢 HireMinds updates</span>
 </div>
+
+<h2>Who should join?</h2>
+
+<div className="list smallList">
+<span>Participants</span>
+<span>Partners</span>
+<span>Employers</span>
+<span>Community</span>
+</div>
 </div>
 </section>
 
@@ -64,8 +88,8 @@ aria-label="Enter Open Room"
 min-height: 100vh;
 padding: 40px;
 background:
-radial-gradient(circle at 80% 20%, rgba(0, 229, 255, .18), transparent 30%),
-radial-gradient(circle at 30% 90%, rgba(255, 210, 73, .12), transparent 28%),
+radial-gradient(circle at 80% 20%, rgba(0, 229, 255, 0.16), transparent 30%),
+radial-gradient(circle at 30% 90%, rgba(255, 210, 73, 0.12), transparent 28%),
 linear-gradient(135deg, #050814, #0b1220, #05060d);
 color: white;
 }
@@ -75,35 +99,36 @@ min-height: calc(100vh - 80px);
 border-radius: 38px;
 padding: 48px;
 display: grid;
-grid-template-columns: 1fr 330px 1fr;
+grid-template-columns: 1fr 390px 1fr;
 gap: 42px;
 align-items: center;
-border: 1px solid rgba(255,255,255,.12);
-background: rgba(255,255,255,.045);
-box-shadow: 0 0 90px rgba(0,229,255,.12);
+border: 1px solid rgba(255, 255, 255, 0.12);
+background: rgba(255, 255, 255, 0.045);
+box-shadow: 0 0 90px rgba(0, 229, 255, 0.12);
+overflow: hidden;
 }
 
 .badge {
 display: inline-block;
 padding: 10px 15px;
 border-radius: 999px;
-background: rgba(255,255,255,.07);
-border: 1px solid rgba(255,255,255,.14);
+background: rgba(255, 255, 255, 0.07);
+border: 1px solid rgba(255, 255, 255, 0.14);
 font-weight: 900;
 }
 
 h1 {
 margin: 24px 0;
 font-size: clamp(4rem, 9vw, 8rem);
-line-height: .82;
-letter-spacing: -.07em;
+line-height: 0.82;
+letter-spacing: -0.07em;
 }
 
 p {
 max-width: 560px;
 font-size: 1.25rem;
 line-height: 1.6;
-color: rgba(255,255,255,.8);
+color: rgba(255, 255, 255, 0.8);
 font-weight: 700;
 }
 
@@ -115,71 +140,146 @@ margin-top: 28px;
 }
 
 .info span,
-.list span {
+.list span,
+.vibe {
 padding: 12px 14px;
 border-radius: 18px;
-background: rgba(255,255,255,.07);
-border: 1px solid rgba(255,255,255,.12);
+background: rgba(255, 255, 255, 0.07);
+border: 1px solid rgba(255, 255, 255, 0.12);
 font-weight: 850;
 }
 
-.door {
-height: 430px;
-width: 280px;
+.vibe {
+display: inline-block;
+margin-top: 18px;
+color: #ffd249;
+}
+
+.doorWrap {
+position: relative;
+width: 350px;
+height: 470px;
 border: none;
 background: transparent;
-position: relative;
 cursor: pointer;
-perspective: 900px;
+perspective: 1300px;
+margin: auto;
 }
 
-.light {
+.doorLight {
 position: absolute;
-inset: -24px;
-border-radius: 40px;
-background: linear-gradient(135deg, #10f3ff, #ffd249);
-filter: blur(35px);
-opacity: .45;
-}
-
-.panel {
-position: absolute;
-inset: 0;
-border-radius: 120px 120px 14px 14px;
+left: 50%;
+top: 42px;
+transform: translateX(-50%);
+width: 250px;
+height: 360px;
 background:
-linear-gradient(145deg, #07111f, #101b2e);
-border: 3px solid rgba(16,243,255,.8);
+radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 1), rgba(255, 210, 73, 0.9) 26%, rgba(0, 229, 255, 0.28) 58%, transparent 76%);
+filter: blur(4px);
+opacity: 0.95;
 box-shadow:
-inset 0 0 35px rgba(16,243,255,.18),
-0 0 35px rgba(16,243,255,.28);
-transform-origin: left center;
-transition: transform .85s ease;
-display: flex;
-align-items: center;
-justify-content: center;
-color: #10f3ff;
-font-size: 1.35rem;
-text-shadow: 0 0 18px rgba(16,243,255,.7);
+0 0 80px rgba(255, 255, 255, 0.75),
+0 0 130px rgba(255, 210, 73, 0.5);
 }
 
-.door.open .panel {
-transform: rotateY(-78deg);
+.doorFrame {
+position: absolute;
+left: 50%;
+top: 20px;
+transform: translateX(-50%);
+width: 300px;
+height: 390px;
+border: 10px solid #202836;
+border-bottom: none;
+background: rgba(0, 0, 0, 0.2);
+box-shadow:
+0 0 35px rgba(0, 0, 0, 0.6),
+inset 0 0 35px rgba(255, 255, 255, 0.08);
+overflow: visible;
+}
+
+.door {
+position: absolute;
+top: 0;
+width: 50%;
+height: 100%;
+background:
+linear-gradient(135deg, #151b25, #38404b 48%, #111722);
+border: 2px solid rgba(255, 255, 255, 0.22);
+box-shadow:
+inset 0 0 24px rgba(255, 255, 255, 0.08),
+0 0 22px rgba(0, 0, 0, 0.45);
+transition: transform 1s ease;
+transform-style: preserve-3d;
+}
+
+.doorLeft {
+left: 0;
+transform-origin: left center;
+}
+
+.doorRight {
+right: 0;
+transform-origin: right center;
+}
+
+.open .doorLeft {
+transform: rotateY(-72deg);
+}
+
+.open .doorRight {
+transform: rotateY(72deg);
+}
+
+.panelLines {
+position: absolute;
+inset: 45px 25px;
+border: 2px solid rgba(255, 255, 255, 0.13);
+box-shadow:
+inset 0 0 0 18px rgba(0, 0, 0, 0.08),
+inset 0 0 0 42px rgba(255, 255, 255, 0.04);
 }
 
 .knob {
 position: absolute;
-right: 34px;
 top: 52%;
-width: 17px;
-height: 17px;
+width: 12px;
+height: 12px;
 border-radius: 999px;
-background: #ffd249;
-box-shadow: 0 0 18px #ffd249;
+background: #111;
+border: 2px solid #ffd249;
+box-shadow: 0 0 12px rgba(255, 210, 73, 0.9);
+}
+
+.leftKnob {
+right: 12px;
+}
+
+.rightKnob {
+left: 12px;
+}
+
+.enterText {
+position: absolute;
+left: 50%;
+bottom: 8px;
+transform: translateX(-50%);
+color: #10f3ff;
+font-weight: 950;
+letter-spacing: 0.08em;
+text-shadow: 0 0 18px rgba(16, 243, 255, 0.85);
+white-space: nowrap;
 }
 
 .right h2 {
 color: #ffd249;
 text-transform: uppercase;
+font-size: 1rem;
+margin: 0 0 14px;
+}
+
+.right h2:nth-of-type(2) {
+margin-top: 28px;
 }
 
 .list {
@@ -188,9 +288,17 @@ grid-template-columns: 1fr 1fr;
 gap: 12px;
 }
 
-@media(max-width: 1000px) {
+.smallList span {
+text-align: center;
+}
+
+@media (max-width: 1100px) {
 .lobby {
 grid-template-columns: 1fr;
+}
+
+.doorWrap {
+width: 320px;
 }
 }
 `}</style>
