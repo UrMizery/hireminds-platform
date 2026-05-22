@@ -1,206 +1,382 @@
 "use client";
 
+import { useState } from "react";
+import { CSSProperties } from "react";
 import Link from "next/link";
-import { CSSProperties, useState } from "react";
 
-type BoardItem = {
-id: number;
-title: string;
-type: string;
-text: string;
-likes: number;
-};
+type BoardPost = {
+id:number
+title:string
+content:string
+type:"flyer"|"note"
+likes:number
+x:number
+y:number
+}
 
-export default function LiveBoardPage() {
-const [items, setItems] = useState<BoardItem[]>([
+export default function LiveBoard(){
+
+const [posts,setPosts]=useState<BoardPost[]>([
+
 {
-id: 1,
-title: "HireMinds™ Open Room",
-type: "Flyer",
-text: "Last Tuesday of every month • 6–7 PM • Room opens 5:50 PM",
-likes: 0,
+id:1,
+title:"HireMinds™ Open Room",
+content:"Last Tuesday of every month • 6–7PM • Room opens 5:50PM",
+type:"flyer",
+likes:8,
+x:30,
+y:30
 },
+
 {
-id: 2,
-title: "Workforce Opportunity",
-type: "Announcement",
-text: "Post hiring events, partner updates, training reminders, and community opportunities here.",
-likes: 0,
+id:2,
+title:"Customer Service Demo Training",
+content:"Preview customer service pathways and assessments.",
+type:"flyer",
+likes:4,
+x:350,
+y:90
 },
-]);
 
-const [thought, setThought] = useState("");
+{
+id:3,
+title:"Community Question",
+content:"What new HireMinds feature would you like to see?",
+type:"note",
+likes:2,
+x:650,
+y:180
+}
 
-function likeItem(id: number) {
-setItems((prev) =>
-prev.map((item) =>
-item.id === id ? { ...item, likes: item.likes + 1 } : item
+])
+
+const [thought,setThought]=useState("")
+
+function addPost(){
+
+if(!thought.trim()) return
+
+setPosts([
+...posts,
+{
+id:Date.now(),
+title:"Community Thought",
+content:thought,
+type:"note",
+likes:0,
+x:200,
+y:300
+}
+])
+
+setThought("")
+
+}
+
+function likePost(id:number){
+
+setPosts(prev=>
+prev.map(post=>
+post.id===id
+?{...post,likes:post.likes+1}
+:post
 )
-);
+)
+
 }
 
-function addThought() {
-if (!thought.trim()) return;
+function movePost(
+id:number,
+direction:string
+){
 
-setItems((prev) => [
-...prev,
-{
-id: Date.now(),
-title: "Community Thought",
-type: "Question / Feedback",
-text: thought,
-likes: 0,
-},
-]);
+setPosts(prev=>
+prev.map(post=>{
 
-setThought("");
+if(post.id!==id) return post
+
+if(direction==="up")
+return {...post,y:post.y-25}
+
+if(direction==="down")
+return {...post,y:post.y+25}
+
+if(direction==="left")
+return {...post,x:post.x-25}
+
+if(direction==="right")
+return {...post,x:post.x+25}
+
+return post
+
+})
+)
+
 }
 
-return (
+return(
+
 <main style={styles.page}>
-<section style={styles.header}>
-<p style={styles.kicker}>HireMinds™</p>
-<h1 style={styles.title}>Live Board</h1>
-<p style={styles.subtitle}>
-Interactive flyers, announcements, questions, reactions, and feedback.
+
+<section style={styles.hero}>
+
+<p style={styles.kicker}>
+HireMinds™ Community
 </p>
+
+<h1 style={styles.title}>
+Live Bulletin Board
+</h1>
+
+<p style={styles.subtitle}>
+Flyers, opportunities, discussions and community updates.
+Move items around, react and share thoughts.
+</p>
+
 </section>
 
 <section style={styles.postBox}>
-<h2 style={styles.postTitle}>Post a Thought, Question, or Feedback</h2>
+
+<h3 style={styles.postTitle}>
+Share a thought, question or feedback
+</h3>
 
 <textarea
 value={thought}
-onChange={(e) => setThought(e.target.value)}
-placeholder="Share a question, thought, or feedback..."
+onChange={(e)=>setThought(e.target.value)}
+placeholder="Share a thought..."
 style={styles.textarea}
 />
 
-<button onClick={addThought} style={styles.button}>
-Post to Live Board
+<button
+onClick={addPost}
+style={styles.postButton}
+>
+
+Post Note
+
 </button>
+
 </section>
 
-<section style={styles.grid}>
-{items.map((item) => (
-<article key={item.id} style={styles.card}>
-<p style={styles.type}>{item.type}</p>
-<h2 style={styles.cardTitle}>{item.title}</h2>
-<p style={styles.cardText}>{item.text}</p>
+<section style={styles.board}>
 
-<button onClick={() => likeItem(item.id)} style={styles.likeButton}>
-👍 {item.likes}
+{posts.map(post=>(
+
+<div
+key={post.id}
+style={{
+...styles.post,
+left:post.x,
+top:post.y,
+background:
+post.type==="flyer"
+? "#1e293b"
+:"#fef3c7",
+color:
+post.type==="flyer"
+?"white"
+:"#111"
+}}
+>
+
+<p style={{
+fontSize:"11px",
+fontWeight:700,
+textTransform:"uppercase",
+opacity:.7
+}}>
+
+{post.type}
+
+</p>
+
+<h3 style={{
+marginTop:"8px"
+}}>
+
+{post.title}
+
+</h3>
+
+<p style={{
+lineHeight:1.5
+}}>
+
+{post.content}
+
+</p>
+
+<div style={{
+display:"flex",
+gap:"6px",
+flexWrap:"wrap",
+marginTop:"15px"
+}}>
+
+<button
+style={styles.smallBtn}
+onClick={()=>likePost(post.id)}
+>
+
+👍 {post.likes}
+
 </button>
-</article>
+
+<button
+style={styles.smallBtn}
+onClick={()=>movePost(post.id,"up")}
+>
+
+↑
+
+</button>
+
+<button
+style={styles.smallBtn}
+onClick={()=>movePost(post.id,"down")}
+>
+
+↓
+
+</button>
+
+<button
+style={styles.smallBtn}
+onClick={()=>movePost(post.id,"left")}
+>
+
+←
+
+</button>
+
+<button
+style={styles.smallBtn}
+onClick={()=>movePost(post.id,"right")}
+>
+
+→
+
+</button>
+
+</div>
+
+</div>
+
 ))}
+
 </section>
 
-<Link href="/profile" style={styles.back}>
-Back to My Profile
+<Link
+href="/profile"
+style={styles.back}
+>
+
+Back to Profile
+
 </Link>
+
 </main>
-);
+
+)
+
 }
 
-const styles: Record<string, CSSProperties> = {
-page: {
-minHeight: "100vh",
-background: "linear-gradient(135deg,#030712,#111827,#312e81)",
-color: "white",
-padding: "50px 24px",
+const styles:Record<string,CSSProperties>={
+
+page:{
+minHeight:"100vh",
+background:"linear-gradient(180deg,#050505,#111827)",
+padding:"40px",
+color:"white"
 },
-header: {
-maxWidth: "1050px",
-margin: "0 auto 28px",
+
+hero:{
+maxWidth:"1200px",
+margin:"0 auto 30px"
 },
-kicker: {
-color: "#c084fc",
-textTransform: "uppercase",
-letterSpacing: ".18em",
-fontWeight: 800,
+
+kicker:{
+color:"#60a5fa",
+fontWeight:800,
+textTransform:"uppercase",
+fontSize:"12px",
+letterSpacing:"2px"
 },
-title: {
-fontSize: "48px",
-margin: "0 0 12px",
+
+title:{
+fontSize:"54px",
+marginBottom:"10px"
 },
-subtitle: {
-color: "#d1d5db",
-fontSize: "18px",
-lineHeight: 1.7,
+
+subtitle:{
+color:"#d1d5db",
+lineHeight:1.8
 },
-postBox: {
-maxWidth: "1050px",
-margin: "0 auto 28px",
-background: "rgba(255,255,255,.06)",
-border: "1px solid rgba(255,255,255,.12)",
-borderRadius: "24px",
-padding: "24px",
+
+postBox:{
+maxWidth:"1200px",
+margin:"0 auto 30px",
+background:"rgba(255,255,255,.05)",
+padding:"25px",
+borderRadius:"25px"
 },
-postTitle: {
-marginTop: 0,
+
+postTitle:{
+marginTop:0
 },
-textarea: {
-width: "100%",
-minHeight: "120px",
-borderRadius: "16px",
-border: "1px solid rgba(255,255,255,.14)",
-background: "rgba(0,0,0,.35)",
-color: "white",
-padding: "16px",
-fontSize: "15px",
-boxSizing: "border-box",
+
+textarea:{
+width:"100%",
+height:"120px",
+borderRadius:"15px",
+padding:"15px",
+background:"#111",
+color:"white",
+border:"1px solid #333"
 },
-button: {
-marginTop: "14px",
-padding: "13px 20px",
-borderRadius: "999px",
-border: "none",
-background: "#7c3aed",
-color: "white",
-fontWeight: 800,
-cursor: "pointer",
+
+postButton:{
+marginTop:"15px",
+padding:"12px 20px",
+borderRadius:"999px",
+border:"none",
+background:"#2563eb",
+color:"white",
+fontWeight:700,
+cursor:"pointer"
 },
-grid: {
-maxWidth: "1050px",
-margin: "0 auto",
-display: "grid",
-gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
-gap: "18px",
+
+board:{
+position:"relative",
+height:"900px",
+background:"#0f172a",
+borderRadius:"30px",
+overflow:"hidden",
+maxWidth:"1200px",
+margin:"0 auto"
 },
-card: {
-background: "rgba(255,255,255,.07)",
-border: "1px solid rgba(255,255,255,.12)",
-borderRadius: "22px",
-padding: "22px",
+
+post:{
+position:"absolute",
+width:"260px",
+padding:"20px",
+borderRadius:"20px",
+boxShadow:"0 15px 40px rgba(0,0,0,.35)"
 },
-type: {
-color: "#f0abfc",
-fontWeight: 800,
-fontSize: "12px",
-textTransform: "uppercase",
-letterSpacing: ".12em",
+
+smallBtn:{
+padding:"6px 10px",
+borderRadius:"999px",
+border:"none",
+cursor:"pointer"
 },
-cardTitle: {
-fontSize: "22px",
-},
-cardText: {
-color: "#e5e7eb",
-lineHeight: 1.6,
-},
-likeButton: {
-marginTop: "12px",
-padding: "10px 14px",
-borderRadius: "999px",
-border: "1px solid rgba(255,255,255,.18)",
-background: "rgba(255,255,255,.08)",
-color: "white",
-cursor: "pointer",
-},
-back: {
-display: "block",
-maxWidth: "1050px",
-margin: "28px auto 0",
-color: "#c4b5fd",
-textDecoration: "none",
-},
-};
+
+back:{
+display:"block",
+maxWidth:"1200px",
+margin:"30px auto",
+color:"#93c5fd"
+}
+
+}
