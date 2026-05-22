@@ -37,7 +37,7 @@ y: 60,
 {
 id: 2,
 tag: "TRAINING PREVIEW",
-title: "CUSTOMER SERVICE DEMO",
+title: "CUSTOMER SERVICE",
 description: "Practice pathways, sharpen skills, and preview assessments.",
 likes: 17,
 saved: false,
