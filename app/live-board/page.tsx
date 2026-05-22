@@ -1,126 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import { CSSProperties, useMemo, useState } from "react";
+import { useState } from "react";
 
 type Flyer = {
   id: number;
-  title: string;
   tag: string;
-  details: string;
-  accent: string;
-  glow: string;
+  title: string;
+  description: string;
   likes: number;
   saved: boolean;
-  x: number;
-  y: number;
+  color: "pink" | "blue" | "yellow" | "purple" | "green";
 };
 
-export default function LiveBoardPage() {
-  const [draggingId, setDraggingId] = useState<number | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
+export default function LiveBulletinBoardPage() {
   const [flyers, setFlyers] = useState<Flyer[]>([
     {
       id: 1,
-      title: "Open Room",
-      tag: "Monthly Q&A",
-      details: "Last Tuesday • 6–7 PM • Room opens 5:50 PM",
-      accent: "#ff2bd6",
-      glow: "#ff2bd6",
+      tag: "MONTHLY Q&A",
+      title: "OPEN ROOM",
+      description: "Last Tuesday • 6–7 PM • Room opens 5:50 PM",
       likes: 24,
       saved: false,
-      x: 55,
-      y: 60,
+      color: "pink",
     },
     {
       id: 2,
-      title: "Customer Service Demo",
-      tag: "Training Preview",
-      details: "Practice pathways, sharpen skills, and preview assessments.",
-      accent: "#22d3ee",
-      glow: "#22d3ee",
-      likes: 16,
+      tag: "TRAINING PREVIEW",
+      title: "CUSTOMER SERVICE DEMO",
+      description: "Practice pathways, sharpen skills, and preview assessments.",
+      likes: 17,
       saved: false,
-      x: 355,
-      y: 95,
+      color: "blue",
     },
     {
       id: 3,
-      title: "Hiring Event",
-      tag: "Opportunity",
-      details: "Multiple positions available. Come ready. Let’s talk.",
-      accent: "#a3ff12",
-      glow: "#a3ff12",
+      tag: "OPPORTUNITY",
+      title: "HIRING EVENT",
+      description: "Multiple positions available. Come ready. Let’s talk.",
       likes: 31,
       saved: false,
-      x: 660,
-      y: 70,
+      color: "green",
     },
     {
       id: 4,
-      title: "Partner Spotlight",
-      tag: "Community",
-      details: "Highlighting partners creating visibility and opportunity.",
-      accent: "#facc15",
-      glow: "#facc15",
-      likes: 18,
+      tag: "COMMUNITY",
+      title: "PARTNER SPOTLIGHT",
+      description: "Highlighting partners creating visibility and opportunity.",
+      likes: 10,
       saved: false,
-      x: 210,
-      y: 390,
+      color: "yellow",
     },
     {
       id: 5,
-      title: "Digital Literacy",
-      tag: "Skill Builder",
-      details: "Build online confidence, career readiness, and tool navigation.",
-      accent: "#8b5cf6",
-      glow: "#8b5cf6",
+      tag: "SKILL BUILDER",
+      title: "DIGITAL LITERACY",
+      description: "Build online confidence, career readiness, and tool navigation.",
       likes: 12,
       saved: false,
-      x: 520,
-      y: 410,
+      color: "purple",
     },
   ]);
 
-  const savedFlyers = useMemo(
-    () => flyers.filter((flyer) => flyer.saved),
-    [flyers]
-  );
-
-  function startDrag(
-    e: React.MouseEvent<HTMLDivElement>,
-    id: number
-  ) {
-    const flyer = flyers.find((item) => item.id === id);
-    if (!flyer) return;
-
-    setDraggingId(id);
-    setDragOffset({
-      x: e.clientX - flyer.x,
-      y: e.clientY - flyer.y,
-    });
-  }
-
-  function dragFlyer(e: React.MouseEvent<HTMLDivElement>) {
-    if (draggingId === null) return;
-
-    setFlyers((prev) =>
-      prev.map((flyer) =>
-        flyer.id === draggingId
-          ? {
-              ...flyer,
-              x: Math.max(10, Math.min(e.clientX - dragOffset.x, 850)),
-              y: Math.max(10, Math.min(e.clientY - dragOffset.y, 560)),
-            }
-          : flyer
-      )
-    );
-  }
-
-  function stopDrag() {
-    setDraggingId(null);
-  }
+  const [newFlyer, setNewFlyer] = useState({
+    tag: "",
+    title: "",
+    description: "",
+    color: "pink" as Flyer["color"],
+  });
 
   function likeFlyer(id: number) {
     setFlyers((prev) =>
@@ -133,308 +80,448 @@ export default function LiveBoardPage() {
   function saveFlyer(id: number) {
     setFlyers((prev) =>
       prev.map((flyer) =>
-        flyer.id === id ? { ...flyer, saved: !flyer.saved } : flyer
+        flyer.id === id ? { ...flyer, saved: true } : flyer
       )
     );
   }
 
+  function removeSavedFlyer(id: number) {
+    setFlyers((prev) =>
+      prev.map((flyer) =>
+        flyer.id === id ? { ...flyer, saved: false } : flyer
+      )
+    );
+  }
+
+  function addFlyer() {
+    if (!newFlyer.title.trim()) return;
+
+    setFlyers((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        tag: newFlyer.tag || "NEW DROP",
+        title: newFlyer.title,
+        description: newFlyer.description,
+        likes: 0,
+        saved: false,
+        color: newFlyer.color,
+      },
+    ]);
+
+    setNewFlyer({
+      tag: "",
+      title: "",
+      description: "",
+      color: "pink",
+    });
+  }
+
   return (
-    <main style={styles.page}>
-      <section style={styles.hero}>
-        <p style={styles.kicker}>HireMinds™ Social Space</p>
-        <h1 style={styles.title}>Live Bulletin Board</h1>
-        <p style={styles.subtitle}>
-          A vibrant space for mini flyers, updates, opportunities, reactions,
-          saves, questions, and quick feedback.
-        </p>
-
-        <div style={styles.iconRow}>
-          <button style={styles.iconButton}>💋 Comment</button>
-          <button style={styles.iconButton}>⁉️ Question</button>
-          <button style={styles.iconButton}>‼️ Feedback</button>
-        </div>
-      </section>
-
-      <section
-        style={styles.board}
-        onMouseMove={dragFlyer}
-        onMouseUp={stopDrag}
-        onMouseLeave={stopDrag}
-      >
-        <div style={styles.neonText}>Drag. Like. Save. Explore.</div>
-
-        {flyers.map((flyer) => (
-          <div
-            key={flyer.id}
-            onMouseDown={(e) => startDrag(e, flyer.id)}
-            style={{
-              ...styles.flyer,
-              left: flyer.x,
-              top: flyer.y,
-              borderColor: flyer.accent,
-              boxShadow: `0 0 22px ${flyer.glow}, 0 20px 50px rgba(0,0,0,.55)`,
-              cursor: draggingId === flyer.id ? "grabbing" : "grab",
-            }}
-          >
-            <div style={styles.pin} />
-
-            <p style={{ ...styles.flyerTag, color: flyer.accent }}>
-              {flyer.tag}
-            </p>
-
-            <h2 style={styles.flyerTitle}>{flyer.title}</h2>
-
-            <p style={styles.flyerText}>{flyer.details}</p>
-
-            <div
-              style={styles.actionRow}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => likeFlyer(flyer.id)}
-                style={styles.actionButton}
-              >
-                👍 {flyer.likes}
-              </button>
-
-              <button
-                onClick={() => saveFlyer(flyer.id)}
-                style={{
-                  ...styles.actionButton,
-                  background: flyer.saved
-                    ? "rgba(250,204,21,.28)"
-                    : "rgba(255,255,255,.12)",
-                }}
-              >
-                {flyer.saved ? "Saved ★" : "Save ☆"}
-              </button>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      <section style={styles.savedPanel}>
+    <main className="page">
+      <section className="hero">
         <div>
-          <p style={styles.savedKicker}>Saved Flyers</p>
-          <h2 style={styles.savedTitle}>Keep what matters to you</h2>
+          <p className="eyebrow">HireMinds™ Open Room</p>
+          <h1>Live Bulletin Board</h1>
+          <p className="summary">
+            A vibrant interactive wall for mini flyers, updates, opportunities,
+            likes, saves, quick reactions, and new drops.
+          </p>
         </div>
 
-        <div style={styles.savedGrid}>
-          {savedFlyers.length === 0 ? (
-            <p style={styles.emptySaved}>
-              Tap “Save” on a flyer and it will show here.
-            </p>
-          ) : (
-            savedFlyers.map((flyer) => (
-              <div key={flyer.id} style={styles.savedCard}>
-                <strong>{flyer.title}</strong>
-                <span>{flyer.tag}</span>
-              </div>
-            ))
-          )}
+        <Link href="/profile" className="profileLink">
+          ← Back to My Profile
+        </Link>
+      </section>
+
+      <section className="adminBox">
+        <div>
+          <p className="eyebrow">Add to the board</p>
+          <h2>Drop a New Flyer</h2>
+        </div>
+
+        <div className="formGrid">
+          <input
+            placeholder="Flyer tag"
+            value={newFlyer.tag}
+            onChange={(e) =>
+              setNewFlyer({ ...newFlyer, tag: e.target.value })
+            }
+          />
+
+          <input
+            placeholder="Flyer title"
+            value={newFlyer.title}
+            onChange={(e) =>
+              setNewFlyer({ ...newFlyer, title: e.target.value })
+            }
+          />
+
+          <select
+            value={newFlyer.color}
+            onChange={(e) =>
+              setNewFlyer({
+                ...newFlyer,
+                color: e.target.value as Flyer["color"],
+              })
+            }
+          >
+            <option value="pink">Pink Glow</option>
+            <option value="blue">Blue Glow</option>
+            <option value="yellow">Yellow Glow</option>
+            <option value="purple">Purple Glow</option>
+            <option value="green">Green Glow</option>
+          </select>
+
+          <textarea
+            placeholder="Flyer details"
+            value={newFlyer.description}
+            onChange={(e) =>
+              setNewFlyer({ ...newFlyer, description: e.target.value })
+            }
+          />
+
+          <button onClick={addFlyer}>Add Flyer</button>
         </div>
       </section>
 
-      <Link href="/profile" style={styles.back}>
-        ← Back to My Profile
-      </Link>
+      <section className="boardWrap">
+        <div className="boardHeader">
+          <p>Drag. Like. Save. Explore.</p>
+          <span>💋 ⁉️ ‼️</span>
+        </div>
+
+        <div className="bulletinWall">
+          {flyers.map((flyer) => (
+            <article
+              key={flyer.id}
+              className={`flyerCard ${flyer.color} ${
+                flyer.saved ? "isSaved" : ""
+              }`}
+              draggable
+            >
+              <div className="pin" />
+
+              {flyer.saved && <div className="savedBadge">Saved ⭐</div>}
+
+              <p className="flyerTag">{flyer.tag}</p>
+              <h2>{flyer.title}</h2>
+              <p className="flyerDescription">{flyer.description}</p>
+
+              <div className="flyerActions">
+                <button onClick={() => likeFlyer(flyer.id)}>
+                  👍 {flyer.likes}
+                </button>
+
+                {!flyer.saved ? (
+                  <button onClick={() => saveFlyer(flyer.id)}>Save ⭐</button>
+                ) : (
+                  <button onClick={() => removeSavedFlyer(flyer.id)}>
+                    🗑 Remove
+                  </button>
+                )}
+
+                <button className="lipsButton">💋⁉️‼️</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <style jsx>{`
+        .page {
+          min-height: 100vh;
+          width: 100%;
+          padding: 38px 4vw 60px;
+          background:
+            radial-gradient(circle at top left, rgba(255, 0, 214, 0.22), transparent 35%),
+            radial-gradient(circle at top right, rgba(0, 229, 255, 0.18), transparent 30%),
+            linear-gradient(135deg, #12091f, #10131f 45%, #090b13);
+          color: white;
+        }
+
+        .hero {
+          max-width: 1700px;
+          margin: 0 auto 26px;
+          display: flex;
+          justify-content: space-between;
+          gap: 24px;
+          align-items: flex-end;
+        }
+
+        .eyebrow {
+          margin: 0 0 8px;
+          color: #60f7ff;
+          font-size: 0.8rem;
+          font-weight: 900;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+        }
+
+        h1 {
+          margin: 0;
+          font-size: clamp(3rem, 6vw, 6.8rem);
+          line-height: 0.92;
+          font-weight: 950;
+          letter-spacing: -0.06em;
+        }
+
+        .summary {
+          max-width: 950px;
+          margin: 20px 0 0;
+          font-size: 1.2rem;
+          color: rgba(255, 255, 255, 0.78);
+          font-weight: 700;
+        }
+
+        .profileLink {
+          color: white;
+          text-decoration: none;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          border-radius: 999px;
+          padding: 13px 18px;
+          background: rgba(255, 255, 255, 0.07);
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .adminBox {
+          max-width: 1700px;
+          margin: 0 auto 28px;
+          padding: 24px;
+          border-radius: 30px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          box-shadow: 0 0 40px rgba(255, 0, 214, 0.12);
+        }
+
+        .adminBox h2 {
+          margin: 0 0 18px;
+          font-size: 2rem;
+        }
+
+        .formGrid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 220px;
+          gap: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+          width: 100%;
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 18px;
+          padding: 15px 16px;
+          background: rgba(0, 0, 0, 0.28);
+          color: white;
+          font-weight: 800;
+          outline: none;
+        }
+
+        textarea {
+          grid-column: span 2;
+          min-height: 70px;
+          resize: vertical;
+        }
+
+        .formGrid button {
+          border: none;
+          border-radius: 18px;
+          padding: 15px 20px;
+          background: linear-gradient(135deg, #ff3bd5, #31e7ff);
+          color: white;
+          font-weight: 950;
+          cursor: pointer;
+        }
+
+        .boardWrap {
+          max-width: 1700px;
+          margin: 0 auto;
+          border-radius: 44px;
+          padding: 26px;
+          background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+            rgba(10, 12, 23, 0.92);
+          border: 1px solid rgba(255, 255, 255, 0.13);
+          box-shadow:
+            0 0 90px rgba(157, 73, 255, 0.22),
+            inset 0 0 60px rgba(255, 255, 255, 0.04);
+        }
+
+        .boardHeader {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 12px 22px;
+          font-size: 1.4rem;
+          font-weight: 950;
+          color: #f7ff38;
+        }
+
+        .boardHeader p {
+          margin: 0;
+        }
+
+        .boardHeader span {
+          font-size: 1.7rem;
+        }
+
+        .bulletinWall {
+          min-height: 82vh;
+          padding: 58px;
+          border-radius: 36px;
+          position: relative;
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+          gap: 58px;
+          background:
+            radial-gradient(circle at 20% 20%, rgba(255, 49, 214, 0.16), transparent 34%),
+            radial-gradient(circle at 80% 70%, rgba(49, 231, 255, 0.13), transparent 34%),
+            linear-gradient(135deg, rgba(25, 28, 44, 0.96), rgba(13, 17, 32, 0.98));
+        }
+
+        .flyerCard {
+          min-height: 310px;
+          padding: 34px 30px 26px;
+          border-radius: 30px;
+          position: relative;
+          cursor: grab;
+          backdrop-filter: blur(14px);
+          transition: 0.25s ease;
+          border: 2px solid currentColor;
+          background: rgba(255, 255, 255, 0.055);
+          box-shadow:
+            0 0 28px currentColor,
+            inset 0 0 28px rgba(255, 255, 255, 0.05);
+        }
+
+        .flyerCard:hover {
+          transform: scale(1.045) rotate(-1deg);
+          z-index: 5;
+        }
+
+        .pink {
+          color: #ff4fe0;
+        }
+
+        .blue {
+          color: #35e7ff;
+        }
+
+        .yellow {
+          color: #ffe946;
+        }
+
+        .purple {
+          color: #9c7cff;
+        }
+
+        .green {
+          color: #b7ff2a;
+        }
+
+        .pin {
+          position: absolute;
+          top: -16px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 30px;
+          height: 30px;
+          border-radius: 999px;
+          background: #ff5dec;
+          box-shadow: 0 0 25px #ff5dec;
+        }
+
+        .savedBadge {
+          position: absolute;
+          top: 18px;
+          right: 18px;
+          padding: 8px 12px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.14);
+          color: white;
+          font-size: 0.75rem;
+          font-weight: 950;
+        }
+
+        .flyerTag {
+          margin: 0 0 14px;
+          font-size: 0.82rem;
+          font-weight: 950;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+
+        .flyerCard h2 {
+          margin: 0;
+          color: white;
+          font-size: 2.25rem;
+          line-height: 0.95;
+          font-weight: 950;
+          letter-spacing: -0.04em;
+          text-transform: uppercase;
+        }
+
+        .flyerDescription {
+          margin: 20px 0 28px;
+          color: rgba(255, 255, 255, 0.82);
+          font-size: 1rem;
+          line-height: 1.5;
+          font-weight: 750;
+        }
+
+        .flyerActions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          position: absolute;
+          left: 28px;
+          right: 28px;
+          bottom: 24px;
+        }
+
+        .flyerActions button {
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 999px;
+          padding: 10px 14px;
+          background: rgba(255, 255, 255, 0.12);
+          color: white;
+          font-weight: 950;
+          cursor: pointer;
+        }
+
+        .lipsButton {
+          margin-left: auto;
+        }
+
+        .isSaved {
+          background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05)),
+            rgba(255, 255, 255, 0.04);
+        }
+
+        @media (max-width: 900px) {
+          .hero {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .formGrid {
+            grid-template-columns: 1fr;
+          }
+
+          textarea {
+            grid-column: span 1;
+          }
+
+          .bulletinWall {
+            padding: 30px;
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </main>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(circle at 20% 10%, rgba(255,43,214,.24), transparent 25%), radial-gradient(circle at 80% 20%, rgba(34,211,238,.22), transparent 24%), linear-gradient(180deg,#050008,#0f1028 45%,#050505)",
-    color: "white",
-    padding: "42px 24px 60px",
-    overflowX: "hidden",
-  },
-
-  hero: {
-    maxWidth: "1150px",
-    margin: "0 auto 26px",
-  },
-
-  kicker: {
-    color: "#22d3ee",
-    textTransform: "uppercase",
-    letterSpacing: ".18em",
-    fontWeight: 900,
-    fontSize: "12px",
-  },
-
-  title: {
-    margin: "0",
-    fontSize: "58px",
-    lineHeight: 1,
-    letterSpacing: "-.04em",
-    textShadow: "0 0 24px rgba(255,43,214,.75)",
-  },
-
-  subtitle: {
-    color: "#e5e7eb",
-    fontSize: "17px",
-    lineHeight: 1.7,
-    maxWidth: "760px",
-  },
-
-  iconRow: {
-    display: "flex",
-    gap: "14px",
-    flexWrap: "wrap",
-    marginTop: "18px",
-  },
-
-  iconButton: {
-    border: "1px solid rgba(255,255,255,.18)",
-    background: "rgba(255,255,255,.08)",
-    color: "white",
-    borderRadius: "999px",
-    padding: "12px 18px",
-    fontWeight: 900,
-    boxShadow: "0 0 18px rgba(255,43,214,.22)",
-  },
-
-  board: {
-    position: "relative",
-    maxWidth: "1150px",
-    height: "720px",
-    margin: "0 auto",
-    borderRadius: "34px",
-    border: "2px solid rgba(255,255,255,.16)",
-    background:
-      "radial-gradient(circle at 30% 30%, rgba(255,43,214,.2), transparent 28%), radial-gradient(circle at 70% 40%, rgba(34,211,238,.18), transparent 24%), linear-gradient(135deg,#171025,#101827,#1f1238)",
-    boxShadow:
-      "0 0 35px rgba(168,85,247,.45), inset 0 0 50px rgba(255,255,255,.04)",
-    overflow: "hidden",
-  },
-
-  neonText: {
-    position: "absolute",
-    right: "34px",
-    top: "28px",
-    color: "#facc15",
-    fontSize: "22px",
-    fontWeight: 900,
-    transform: "rotate(-4deg)",
-    textShadow: "0 0 18px rgba(250,204,21,.9)",
-  },
-
-  flyer: {
-    position: "absolute",
-    width: "245px",
-    minHeight: "220px",
-    padding: "22px",
-    borderRadius: "22px",
-    border: "2px solid",
-    background:
-      "linear-gradient(145deg, rgba(15,23,42,.96), rgba(30,41,59,.88))",
-    userSelect: "none",
-  },
-
-  pin: {
-    position: "absolute",
-    top: "-12px",
-    left: "50%",
-    width: "24px",
-    height: "24px",
-    borderRadius: "50%",
-    background: "#ff2bd6",
-    boxShadow: "0 0 16px rgba(255,43,214,.9)",
-  },
-
-  flyerTag: {
-    margin: "0 0 8px",
-    fontSize: "11px",
-    textTransform: "uppercase",
-    letterSpacing: ".16em",
-    fontWeight: 900,
-  },
-
-  flyerTitle: {
-    margin: "0 0 12px",
-    fontSize: "28px",
-    lineHeight: 1.05,
-    textTransform: "uppercase",
-  },
-
-  flyerText: {
-    margin: 0,
-    color: "#e5e7eb",
-    fontSize: "14px",
-    lineHeight: 1.6,
-  },
-
-  actionRow: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
-    marginTop: "20px",
-  },
-
-  actionButton: {
-    border: "1px solid rgba(255,255,255,.2)",
-    background: "rgba(255,255,255,.12)",
-    color: "white",
-    borderRadius: "999px",
-    padding: "9px 13px",
-    cursor: "pointer",
-    fontWeight: 900,
-  },
-
-  savedPanel: {
-    maxWidth: "1150px",
-    margin: "24px auto 0",
-    padding: "24px",
-    borderRadius: "28px",
-    border: "1px solid rgba(255,255,255,.14)",
-    background: "rgba(255,255,255,.06)",
-    display: "grid",
-    gap: "16px",
-  },
-
-  savedKicker: {
-    margin: 0,
-    color: "#22d3ee",
-    textTransform: "uppercase",
-    letterSpacing: ".14em",
-    fontSize: "12px",
-    fontWeight: 900,
-  },
-
-  savedTitle: {
-    margin: "6px 0 0",
-  },
-
-  savedGrid: {
-    display: "flex",
-    gap: "12px",
-    flexWrap: "wrap",
-  },
-
-  emptySaved: {
-    color: "#cbd5e1",
-    margin: 0,
-  },
-
-  savedCard: {
-    border: "1px solid rgba(255,255,255,.14)",
-    background: "rgba(0,0,0,.24)",
-    borderRadius: "16px",
-    padding: "14px 16px",
-    display: "grid",
-    gap: "4px",
-    minWidth: "180px",
-  },
-
-  back: {
-    display: "block",
-    maxWidth: "1150px",
-    margin: "28px auto 0",
-    color: "#c084fc",
-    textDecoration: "none",
-    fontWeight: 900,
-  },
-};
