@@ -21,7 +21,7 @@ return (
 <button>👥 Network</button>
 <button>📁 Resources</button>
 <button>💼 Lets Talk Opportunities</button>
-<button>⭐ Highlights</button>
+<button>⭐ New Features on HireMinds</button>
 
 <button className="exit" onClick={() => router.push("/open-room")}>
 🚪 Exit Room
