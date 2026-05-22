@@ -1,284 +1,272 @@
 "use client";
 
-import Link from "next/link";
-import { CSSProperties, useEffect, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-const MEETING_LINK = "https://hire-minds.whereby.com/hireminds-open-room";
+export default function OpenRoomLivePage() {
+const router = useRouter();
 
-function getLastTuesday(year: number, month: number) {
-  const lastDay = new Date(year, month + 1, 0);
-  const day = lastDay.getDay();
-  const diff = (day - 2 + 7) % 7;
-  lastDay.setDate(lastDay.getDate() - diff);
-  return lastDay;
+const [roomLink, setRoomLink] = useState(
+"https://hire-minds.whereby.com/hireminds-open-room"
+);
+
+return (
+<main className="page">
+<aside className="side">
+<h2>OPEN ROOM</h2>
+<p className="live">● LIVE NOW</p>
+
+<button className="active">🏠 Room</button>
+<button>💬 Chat</button>
+<button>👥 People</button>
+<button>📁 Resources</button>
+<button>💼 Opportunities</button>
+<button>⭐ Highlights</button>
+
+<button className="exit" onClick={() => router.push("/open-room")}>
+🚪 Exit Room
+</button>
+</aside>
+
+<section className="main">
+<p className="eyebrow">You’re inside</p>
+<h1>OPEN ROOM 🎉</h1>
+
+<p className="intro">
+This is the live HireMinds™ community space for real-time support,
+career conversations, networking, shoutouts, quick updates, resource
+drops, job leads, and partner highlights.
+</p>
+
+<div className="joinBox">
+<div>
+<p className="eyebrow">Live meeting window</p>
+<h2>Join the Room</h2>
+<p>
+The meeting link can be Zoom, Microsoft Teams, Google Meet,
+Whereby, or any live room link you want to use.
+</p>
+</div>
+
+<input
+value={roomLink}
+onChange={(e) => setRoomLink(e.target.value)}
+placeholder="Paste Zoom, Teams, Google Meet, or Whereby link"
+/>
+
+<a href={roomLink} target="_blank" className="joinBtn">
+🚪 Enter Live Room
+</a>
+</div>
+
+<div className="cards">
+<div>
+<h3>🎤 What happens here?</h3>
+<p>Live Q&A, career support, quick tips, and real-time updates.</p>
+</div>
+
+<div>
+<h3>💼 Opportunities</h3>
+<p>Job leads, hiring events, partner drops, and announcements.</p>
+</div>
+
+<div>
+<h3>📁 Resources</h3>
+<p>Useful links, guides, worksheets, and tools shared during room time.</p>
+</div>
+
+<div>
+<h3>🔥 Community Vibes</h3>
+<p>Wins, shoutouts, mini challenges, and networking moments.</p>
+</div>
+</div>
+</section>
+
+<section className="right">
+<h2>Room Details</h2>
+
+<div className="detail">
+<strong>Schedule</strong>
+<span>Last Tuesday monthly</span>
+</div>
+
+<div className="detail">
+<strong>Time</strong>
+<span>6:00PM – 7:00PM</span>
+</div>
+
+<div className="detail">
+<strong>Doors Open</strong>
+<span>5:50PM</span>
+</div>
+
+<div className="detail">
+<strong>Bring</strong>
+<span>Questions, wins, goals, updates, ideas, or just pull up.</span>
+</div>
+</section>
+
+<style jsx>{`
+.page {
+min-height: 100vh;
+display: grid;
+grid-template-columns: 240px 1fr 360px;
+gap: 24px;
+padding: 28px;
+background:
+radial-gradient(circle at top right, rgba(0, 229, 255, 0.16), transparent 30%),
+linear-gradient(135deg, #050814, #0b1220, #05060d);
+color: white;
 }
 
-function getNextOpenRoomDate() {
-  const now = new Date();
-  let openRoomDate = getLastTuesday(now.getFullYear(), now.getMonth());
-
-  const closeTime = new Date(openRoomDate);
-  closeTime.setHours(18, 15, 0, 0);
-
-  if (now > closeTime) {
-    openRoomDate = getLastTuesday(now.getFullYear(), now.getMonth() + 1);
-  }
-
-  return openRoomDate;
+.side,
+.main,
+.right {
+border-radius: 28px;
+background: rgba(255, 255, 255, 0.055);
+border: 1px solid rgba(255, 255, 255, 0.12);
+padding: 24px;
 }
 
-function formatCountdown(target: Date) {
-  const now = new Date();
-  const diff = target.getTime() - now.getTime();
-
-  if (diff <= 0) return "Now";
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
-
-  return `${days} days • ${hours} hrs • ${minutes} min`;
+.side {
+display: flex;
+flex-direction: column;
+gap: 12px;
 }
 
-export default function OpenRoomPage() {
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 30000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const openRoomDate = getNextOpenRoomDate();
-
-  const roomOpens = new Date(openRoomDate);
-  roomOpens.setHours(17, 50, 0, 0);
-
-  const sessionStarts = new Date(openRoomDate);
-  sessionStarts.setHours(18, 0, 0, 0);
-
-  const doorsClose = new Date(openRoomDate);
-  doorsClose.setHours(18, 15, 0, 0);
-
-  const sessionEnds = new Date(openRoomDate);
-  sessionEnds.setHours(19, 0, 0, 0);
-
-  const canJoin = now >= roomOpens && now <= doorsClose;
-  const beforeOpen = now < roomOpens;
-  const afterClose = now > doorsClose && now < sessionEnds;
-  const afterSession = now >= sessionEnds;
-
-  return (
-    <main style={styles.page}>
-      <section style={styles.card}>
-        <p style={styles.kicker}>HireMinds™</p>
-
-        <h1 style={styles.title}>Open Room</h1>
-
-        <p style={styles.text}>
-          HireMinds™ Open Room is a monthly live discussion space where users can
-          learn more about HireMinds features, ask questions, hear updates, and
-          connect with the community in a relaxed setting.
-        </p>
-
-        <p style={styles.summary}>
-          This is not a workshop and no registration is required. Simply log in
-          to HireMinds and join the conversation. Topics may include platform
-          updates, Career Passport questions, tool guidance, partner updates,
-          and general Q&A.
-        </p>
-
-        <div style={styles.infoBox}>
-          <p><strong>When:</strong> Last Tuesday of every month</p>
-          <p><strong>Time:</strong> 6:00 PM – 7:00 PM EST</p>
-          <p><strong>Room Opens:</strong> 5:50 PM EST</p>
-          <p><strong>Doors Close:</strong> 6:15 PM EST</p>
-        </div>
-
-        <div style={styles.statusBox}>
-          {beforeOpen && (
-            <>
-              <h3 style={styles.statusTitle}>Next Open Room starts in:</h3>
-              <p style={styles.countdown}>{formatCountdown(roomOpens)}</p>
-              <p style={styles.statusText}>
-                The Join button will open at 5:50 PM EST.
-              </p>
-            </>
-          )}
-
-          {canJoin && (
-            <>
-              <h3 style={styles.statusTitle}>The room is open.</h3>
-              <p style={styles.statusText}>
-                You may join now. Doors close at 6:15 PM EST.
-              </p>
-            </>
-          )}
-
-          {afterClose && (
-            <>
-              <h3 style={styles.statusTitle}>Doors are now closed.</h3>
-              <p style={styles.statusText}>
-                The Open Room is currently in session. Join us next month.
-              </p>
-            </>
-          )}
-
-          {afterSession && (
-            <>
-              <h3 style={styles.statusTitle}>This month’s Open Room has ended.</h3>
-              <p style={styles.statusText}>
-                Join us again on the last Tuesday of next month.
-              </p>
-            </>
-          )}
-        </div>
-
-        <div style={styles.buttonRow}>
-          {canJoin ? (
-            <a
-              href={MEETING_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={styles.button}
-            >
-              Join Open Room
-            </a>
-          ) : (
-            <button style={styles.disabledButton} disabled>
-              Join Open Room
-            </button>
-          )}
-
-          <Link href="/profile" style={styles.backButton}>
-            Back to My Profile
-          </Link>
-        </div>
-
-        <p style={styles.note}>
-          Entry closes 15 minutes after start time to help keep the conversation
-          focused and flowing.
-        </p>
-      </section>
-    </main>
-  );
+.live {
+color: #3cff82;
+font-weight: 900;
 }
 
-const styles: Record<string, CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background: "linear-gradient(135deg,#030712,#111827,#1e1b4b)",
-    color: "white",
-    padding: "50px 24px",
-  },
+button {
+padding: 13px 14px;
+border-radius: 16px;
+border: 1px solid rgba(255, 255, 255, 0.12);
+background: rgba(255, 255, 255, 0.06);
+color: white;
+font-weight: 850;
+text-align: left;
+cursor: pointer;
+}
 
-  card: {
-    maxWidth: "900px",
-    margin: "0 auto",
-    background: "rgba(255,255,255,.06)",
-    border: "1px solid rgba(255,255,255,.12)",
-    borderRadius: "30px",
-    padding: "36px",
-  },
+.active {
+background: rgba(0, 229, 255, 0.18);
+color: #10f3ff;
+}
 
-  kicker: {
-    color: "#93c5fd",
-    textTransform: "uppercase",
-    letterSpacing: ".18em",
-    fontWeight: 800,
-  },
+.exit {
+margin-top: auto;
+color: #ff7474;
+border-color: rgba(255, 116, 116, 0.35);
+}
 
-  title: {
-    fontSize: "48px",
-    margin: "0 0 14px",
-  },
+.eyebrow {
+color: #10f3ff;
+font-weight: 900;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+}
 
-  text: {
-    color: "#e5e7eb",
-    fontSize: "18px",
-    lineHeight: 1.7,
-    maxWidth: "820px",
-  },
+h1 {
+font-size: clamp(3rem, 7vw, 6rem);
+margin: 0;
+color: #10f3ff;
+}
 
-  summary: {
-    marginTop: "16px",
-    color: "#cbd5e1",
-    lineHeight: 1.8,
-    fontSize: "15px",
-    maxWidth: "850px",
-  },
+.intro {
+max-width: 780px;
+line-height: 1.7;
+color: rgba(255, 255, 255, 0.82);
+font-size: 1.15rem;
+}
 
-  infoBox: {
-    marginTop: "26px",
-    padding: "24px",
-    borderRadius: "20px",
-    background: "rgba(255,255,255,.08)",
-    color: "#e5e7eb",
-    lineHeight: 1.8,
-  },
+.joinBox {
+margin: 28px 0;
+padding: 28px;
+border-radius: 28px;
+background:
+linear-gradient(135deg, rgba(0, 229, 255, 0.12), rgba(255, 210, 73, 0.08)),
+rgba(255, 255, 255, 0.055);
+border: 1px solid rgba(0, 229, 255, 0.2);
+box-shadow: 0 0 45px rgba(0, 229, 255, 0.1);
+}
 
-  statusBox: {
-    marginTop: "22px",
-    padding: "22px",
-    borderRadius: "20px",
-    background: "rgba(37,99,235,.16)",
-    border: "1px solid rgba(147,197,253,.22)",
-  },
+.joinBox h2 {
+margin: 0 0 8px;
+font-size: 2rem;
+}
 
-  statusTitle: {
-    margin: "0 0 8px",
-    fontSize: "20px",
-  },
+.joinBox p {
+color: rgba(255, 255, 255, 0.78);
+line-height: 1.5;
+}
 
-  countdown: {
-    margin: "0 0 8px",
-    fontSize: "28px",
-    fontWeight: 900,
-    color: "#93c5fd",
-  },
+input {
+width: 100%;
+margin: 14px 0;
+padding: 15px;
+border-radius: 999px;
+border: 1px solid rgba(255, 255, 255, 0.16);
+background: rgba(0, 0, 0, 0.3);
+color: white;
+font-weight: 800;
+}
 
-  statusText: {
-    margin: 0,
-    color: "#dbeafe",
-    lineHeight: 1.6,
-  },
+.joinBtn {
+display: inline-flex;
+padding: 14px 22px;
+border-radius: 999px;
+background: linear-gradient(135deg, #10f3ff, #ffd249);
+color: #06111f;
+text-decoration: none;
+font-weight: 950;
+}
 
-  buttonRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "24px",
-    flexWrap: "wrap",
-    marginTop: "28px",
-  },
+.cards {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 16px;
+}
 
-  button: {
-    display: "inline-block",
-    padding: "15px 24px",
-    borderRadius: "999px",
-    background: "#2563eb",
-    color: "white",
-    textDecoration: "none",
-    fontWeight: 800,
-  },
+.cards div,
+.detail {
+padding: 18px;
+border-radius: 20px;
+background: rgba(255, 255, 255, 0.06);
+border: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-  disabledButton: {
-    padding: "15px 24px",
-    borderRadius: "999px",
-    background: "rgba(255,255,255,.14)",
-    color: "#9ca3af",
-    border: "1px solid rgba(255,255,255,.18)",
-    fontWeight: 800,
-    cursor: "not-allowed",
-  },
+.cards p {
+color: rgba(255, 255, 255, 0.75);
+line-height: 1.5;
+}
 
-  backButton: {
-    color: "#93c5fd",
-    textDecoration: "none",
-    fontWeight: 700,
-  },
+.right h2 {
+color: #ffd249;
+}
 
-  note: {
-    color: "#cbd5e1",
-    marginTop: "18px",
-    lineHeight: 1.6,
-  },
-};
+.detail {
+display: grid;
+gap: 6px;
+margin-bottom: 14px;
+}
+
+.detail span {
+color: rgba(255, 255, 255, 0.78);
+line-height: 1.4;
+}
+
+@media (max-width: 1100px) {
+.page {
+grid-template-columns: 1fr;
+}
+
+.cards {
+grid-template-columns: 1fr;
+}
+}
+`}</style>
+</main>
+);
+}
