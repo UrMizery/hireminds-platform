@@ -17,10 +17,10 @@ return (
 <p className="live">● LIVE NOW</p>
 
 <button className="active">🏠 Room</button>
-<button>💬 Chat</button>
-<button>👥 People</button>
+<button>💬 Q&As</button>
+<button>👥 Network</button>
 <button>📁 Resources</button>
-<button>💼 Opportunities</button>
+<button>💼 Lets Talk Opportunities</button>
 <button>⭐ Highlights</button>
 
 <button className="exit" onClick={() => router.push("/open-room")}>
