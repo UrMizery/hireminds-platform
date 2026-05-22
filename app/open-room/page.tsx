@@ -1,3 +1,8 @@
+"use client";
+
+export default function OpenRoomPage() {
+return (
+<>
 <section className="openRoomHero">
 
 <div className="openGlow"/>
@@ -13,9 +18,9 @@ OPEN ROOM
 </h1>
 
 <p className="sub">
-HireMinds™ Open Room is a live interactive space built for networking,
-community conversations, opportunities, support, career discussions,
-quick help, and random cool moments.
+HireMinds™ Open Room is a live interactive space built for
+networking, community conversations, opportunities, support,
+career discussions, quick help, and random cool moments.
 </p>
 
 <div className="statsRow">
@@ -45,7 +50,6 @@ quick help, and random cool moments.
 <div className="openGrid">
 
 <div className="roomCard">
-
 <h2>🎤 Inside Open Room</h2>
 
 <ul>
@@ -60,54 +64,46 @@ quick help, and random cool moments.
 <li>Resource sharing</li>
 <li>HireMinds updates</li>
 </ul>
-
 </div>
 
 <div className="roomCard">
-
 <h2>🌟 Who Should Join?</h2>
 
 <ul>
 <li>Participants</li>
-<li>Employers</li>
 <li>Partners</li>
+<li>Employers</li>
 <li>Community Members</li>
-<li>Future professionals</li>
+<li>Future Professionals</li>
 </ul>
-
 </div>
 
 <div className="roomCard">
-
 <h2>👜 Bring:</h2>
 
 <ul>
 <li>Questions</li>
 <li>Wins</li>
 <li>Goals</li>
-<li>Updates</li>
 <li>Ideas</li>
-<li>Or just pull up</li>
+<li>Updates</li>
+<li>Or just pull up and vibe</li>
 </ul>
-
 </div>
 
 </div>
 
 </div>
+
+</section>
 
 <style jsx>{`
 
 .openRoomHero{
-
 position:relative;
-
 overflow:hidden;
-
 padding:60px;
-
 border-radius:45px;
-
 background:
 linear-gradient(
 135deg,
@@ -120,8 +116,9 @@ border:1px solid rgba(255,255,255,.08);
 box-shadow:
 0 0 90px rgba(255,0,204,.15);
 
-margin-bottom:40px;
+min-height:100vh;
 
+color:white;
 }
 
 .openGlow{
@@ -162,7 +159,7 @@ margin-bottom:20px;
 
 }
 
-.openContent h1{
+h1{
 
 font-size:90px;
 
@@ -239,15 +236,7 @@ border:
 
 }
 
-.roomCard h2{
-
-margin-bottom:20px;
-
-}
-
 .roomCard ul{
-
-padding-left:20px;
 
 line-height:2;
 
@@ -262,7 +251,7 @@ grid-template-columns:1fr;
 
 }
 
-.openContent h1{
+h1{
 
 font-size:58px;
 
@@ -271,5 +260,6 @@ font-size:58px;
 }
 
 `}</style>
-
-</section>
+</>
+);
+}
