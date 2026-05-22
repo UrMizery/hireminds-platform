@@ -27,10 +27,6 @@ Monthly HireMinds recap and Q&A. No registration required.
 Join Open Room
 </a>
 
-<p style={styles.note}>
-Please log in to HireMinds before joining. Entry closes 15 minutes after start time.
-</p>
-
 <Link href="/profile" style={styles.back}>
 Back to My Profile
 </Link>
