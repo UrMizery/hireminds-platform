@@ -43,15 +43,12 @@ drops, job leads, and partner highlights.
 <p className="eyebrow">Live meeting window</p>
 <h2>Join the Room</h2>
 <p>
-The meeting link can be Zoom, Microsoft Teams, Google Meet,
-Whereby, or any live room link you want to use.
-</p>
 </div>
 
 <input
 value={roomLink}
 onChange={(e) => setRoomLink(e.target.value)}
-placeholder="Paste Zoom, Teams, Google Meet, or Whereby link"
+placeholder="Paste Whereby link"
 />
 
 <a href={roomLink} target="_blank" className="joinBtn">
