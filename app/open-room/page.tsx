@@ -38,6 +38,7 @@ career conversations, updates, resources, and random cool moments.
 <div>📅 Last Tuesday monthly</div>
 <div>⏰ 6PM – 7PM</div>
 <div>🚪 Opens 5:50PM</div>
+<div>🚪 Close 6:15PM</div>
 </div>
 
 <div className="vibe">✨ Come curious. Leave sharper.</div>
