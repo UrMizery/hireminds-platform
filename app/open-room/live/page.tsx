@@ -99,7 +99,11 @@ placeholder="Paste Zoom, Teams, Google Meet, or Whereby link"
 <strong>Doors Open</strong>
 <span>5:50PM</span>
 </div>
-
+<div className="detail">
+<strong>Doors Close</strong>
+<span>6:15PM</span>
+</div>
+  
 <div className="detail">
 <strong>Bring</strong>
 <span>Questions, wins, goals, updates, ideas, or just pull up.</span>
