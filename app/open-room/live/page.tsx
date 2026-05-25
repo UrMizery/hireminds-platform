@@ -7,7 +7,7 @@ export default function OpenRoomLivePage() {
 const router = useRouter();
 
 const [roomLink, setRoomLink] = useState(
-"https://hire-minds.whereby.com/hireminds-open-room"
+"https://whereby.com/hireminds-open-room"
 );
 
 return (
@@ -30,7 +30,6 @@ return (
 
 <section className="main">
 <p className="eyebrow">You’re inside</p>
-
 <h1>OPEN ROOM 🎉</h1>
 
 <p className="intro">
@@ -42,19 +41,17 @@ drops, job leads, and partner highlights.
 <div className="joinBox">
 <div>
 <p className="eyebrow">Live meeting window</p>
-
 <h2>Join the Room</h2>
-
 <p>
-Join the HireMinds Open Room for live discussions,
-support, networking, updates, and guided conversations.
+The meeting link can be Zoom, Microsoft Teams, Google Meet,
+Whereby, or any live room link you want to use.
 </p>
 </div>
 
 <input
 value={roomLink}
 onChange={(e) => setRoomLink(e.target.value)}
-placeholder="Paste Whereby link"
+placeholder="Paste Zoom, Teams, Google Meet, or Whereby link"
 />
 
 <a href={roomLink} target="_blank" className="joinBtn">
@@ -101,11 +98,6 @@ placeholder="Paste Whereby link"
 <div className="detail">
 <strong>Doors Open</strong>
 <span>5:50PM</span>
-</div>
-
-<div className="detail">
-<strong>Doors Close</strong>
-<span>6:15PM</span>
 </div>
 
 <div className="detail">
