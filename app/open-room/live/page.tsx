@@ -23,7 +23,7 @@ return (
 <button>💼 Opportunities</button>
 <button>⭐ Highlights</button>
 
-<button className="exit" onClick={() => router.push("/open-room")}>
+<button className="exit" onClick={() => router.push("/profile")}>
 🚪 Exit Room
 </button>
 </aside>
