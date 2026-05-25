@@ -1,276 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function OpenRoomLivePage() {
-const router = useRouter();
-
-const [roomLink, setRoomLink] = useState(
-"https://whereby.com/hireminds-open-room"
-);
-
+export default function OpenRoomDoorPage() {
 return (
-<main className="page">
-<aside className="side">
-<h2>OPEN ROOM</h2>
-<p className="live">● LIVE NOW</p>
+<main style={styles.page}>
+<div style={styles.glow}></div>
 
-<button className="active">🏠 Room</button>
-<button>💬 Chat</button>
-<button>👥 People</button>
-<button>📁 Resources</button>
-<button>💼 Opportunities</button>
-<button>⭐ Highlights</button>
+<section style={styles.content}>
+<p style={styles.kicker}>HireMinds™ Community Space</p>
 
-<button className="exit" onClick={() => router.push("/open-room")}>
-🚪 Exit Room
-</button>
-</aside>
+<h1 style={styles.title}>
+Open Room
+</h1>
 
-<section className="main">
-<p className="eyebrow">You’re inside</p>
-<h1>OPEN ROOM 🎉</h1>
-
-<p className="intro">
-This is the live HireMinds™ community space for real-time support,
-career conversations, networking, shoutouts, quick updates, resource
-drops, job leads, and partner highlights.
+<p style={styles.subtitle}>
+Conversations. Networking. Support. Career wins. Resources.
+Click the door and enter the room.
 </p>
 
-<div className="joinBox">
-<div>
-<p className="eyebrow">Live meeting window</p>
-<h2>Join the Room</h2>
-<p>
-The meeting link can be Zoom, Microsoft Teams, Google Meet,
-Whereby, or any live room link you want to use.
+<Link href="/open-room/live" style={styles.doorWrap}>
+<div style={styles.door}>
+<div style={styles.doorInner}/>
+<div style={styles.knob}/>
+</div>
+</Link>
+
+<p style={styles.enter}>
+🚪 Tap Door To Enter
 </p>
-</div>
-
-<input
-value={roomLink}
-onChange={(e) => setRoomLink(e.target.value)}
-placeholder="Paste Zoom, Teams, Google Meet, or Whereby link"
-/>
-
-<a href={roomLink} target="_blank" className="joinBtn">
-🚪 Enter Live Room
-</a>
-</div>
-
-<div className="cards">
-<div>
-<h3>🎤 What happens here?</h3>
-<p>Live Q&A, career support, quick tips, and real-time updates.</p>
-</div>
-
-<div>
-<h3>💼 Opportunities</h3>
-<p>Job leads, hiring events, partner drops, and announcements.</p>
-</div>
-
-<div>
-<h3>📁 Resources</h3>
-<p>Useful links, guides, worksheets, and tools shared during room time.</p>
-</div>
-
-<div>
-<h3>🔥 Community Vibes</h3>
-<p>Wins, shoutouts, mini challenges, and networking moments.</p>
-</div>
-</div>
 </section>
-
-<section className="right">
-<h2>Room Details</h2>
-
-<div className="detail">
-<strong>Schedule</strong>
-<span>Last Tuesday monthly</span>
-</div>
-
-<div className="detail">
-<strong>Time</strong>
-<span>6:00PM – 7:00PM</span>
-</div>
-
-<div className="detail">
-<strong>Doors Open</strong>
-<span>5:50PM</span>
-</div>
-<div className="detail">
-<strong>Doors Close</strong>
-<span>6:15PM</span>
-</div>
-  
-<div className="detail">
-<strong>Bring</strong>
-<span>Questions, wins, goals, updates, ideas, or just pull up.</span>
-</div>
-</section>
-
-<style jsx>{`
-.page {
-min-height: 100vh;
-display: grid;
-grid-template-columns: 240px 1fr 360px;
-gap: 24px;
-padding: 28px;
-background:
-radial-gradient(circle at top right, rgba(0, 229, 255, 0.16), transparent 30%),
-linear-gradient(135deg, #050814, #0b1220, #05060d);
-color: white;
-}
-
-.side,
-.main,
-.right {
-border-radius: 28px;
-background: rgba(255, 255, 255, 0.055);
-border: 1px solid rgba(255, 255, 255, 0.12);
-padding: 24px;
-}
-
-.side {
-display: flex;
-flex-direction: column;
-gap: 12px;
-}
-
-.live {
-color: #3cff82;
-font-weight: 900;
-}
-
-button {
-padding: 13px 14px;
-border-radius: 16px;
-border: 1px solid rgba(255, 255, 255, 0.12);
-background: rgba(255, 255, 255, 0.06);
-color: white;
-font-weight: 850;
-text-align: left;
-cursor: pointer;
-}
-
-.active {
-background: rgba(0, 229, 255, 0.18);
-color: #10f3ff;
-}
-
-.exit {
-margin-top: auto;
-color: #ff7474;
-border-color: rgba(255, 116, 116, 0.35);
-}
-
-.eyebrow {
-color: #10f3ff;
-font-weight: 900;
-text-transform: uppercase;
-letter-spacing: 0.08em;
-}
-
-h1 {
-font-size: clamp(3rem, 7vw, 6rem);
-margin: 0;
-color: #10f3ff;
-}
-
-.intro {
-max-width: 780px;
-line-height: 1.7;
-color: rgba(255, 255, 255, 0.82);
-font-size: 1.15rem;
-}
-
-.joinBox {
-margin: 28px 0;
-padding: 28px;
-border-radius: 28px;
-background:
-linear-gradient(135deg, rgba(0, 229, 255, 0.12), rgba(255, 210, 73, 0.08)),
-rgba(255, 255, 255, 0.055);
-border: 1px solid rgba(0, 229, 255, 0.2);
-box-shadow: 0 0 45px rgba(0, 229, 255, 0.1);
-}
-
-.joinBox h2 {
-margin: 0 0 8px;
-font-size: 2rem;
-}
-
-.joinBox p {
-color: rgba(255, 255, 255, 0.78);
-line-height: 1.5;
-}
-
-input {
-width: 100%;
-margin: 14px 0;
-padding: 15px;
-border-radius: 999px;
-border: 1px solid rgba(255, 255, 255, 0.16);
-background: rgba(0, 0, 0, 0.3);
-color: white;
-font-weight: 800;
-}
-
-.joinBtn {
-display: inline-flex;
-padding: 14px 22px;
-border-radius: 999px;
-background: linear-gradient(135deg, #10f3ff, #ffd249);
-color: #06111f;
-text-decoration: none;
-font-weight: 950;
-}
-
-.cards {
-display: grid;
-grid-template-columns: repeat(2, 1fr);
-gap: 16px;
-}
-
-.cards div,
-.detail {
-padding: 18px;
-border-radius: 20px;
-background: rgba(255, 255, 255, 0.06);
-border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.cards p {
-color: rgba(255, 255, 255, 0.75);
-line-height: 1.5;
-}
-
-.right h2 {
-color: #ffd249;
-}
-
-.detail {
-display: grid;
-gap: 6px;
-margin-bottom: 14px;
-}
-
-.detail span {
-color: rgba(255, 255, 255, 0.78);
-line-height: 1.4;
-}
-
-@media (max-width: 1100px) {
-.page {
-grid-template-columns: 1fr;
-}
-
-.cards {
-grid-template-columns: 1fr;
-}
-}
-`}</style>
 </main>
 );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+
+page:{
+minHeight:"100vh",
+background:
+"radial-gradient(circle at center, rgba(0,229,255,.16), transparent 20%), linear-gradient(180deg,#020202,#07121d)",
+display:"flex",
+justifyContent:"center",
+alignItems:"center",
+overflow:"hidden",
+position:"relative"
+},
+
+glow:{
+position:"absolute",
+width:700,
+height:700,
+borderRadius:"50%",
+background:"rgba(0,229,255,.10)",
+filter:"blur(100px)"
+},
+
+content:{
+position:"relative",
+zIndex:2,
+textAlign:"center",
+color:"white"
+},
+
+kicker:{
+color:"#10f3ff",
+fontWeight:900,
+letterSpacing:2,
+textTransform:"uppercase"
+},
+
+title:{
+fontSize:"clamp(3rem,8vw,5rem)",
+margin:"8px 0"
+},
+
+subtitle:{
+maxWidth:700,
+lineHeight:1.6,
+opacity:.8,
+marginBottom:40
+},
+
+doorWrap:{
+display:"inline-block",
+textDecoration:"none"
+},
+
+door:{
+height:340,
+width:220,
+background:
+"linear-gradient(180deg,#2b1c10,#1a120c)",
+borderRadius:"10px 10px 2px 2px",
+position:"relative",
+boxShadow:"0 0 80px rgba(0,229,255,.15)",
+animation:"swing 3s ease-in-out infinite"
+},
+
+doorInner:{
+position:"absolute",
+left:20,
+top:20,
+right:20,
+bottom:20,
+border:"2px solid rgba(255,255,255,.15)"
+},
+
+knob:{
+position:"absolute",
+right:24,
+top:"50%",
+height:18,
+width:18,
+borderRadius:"50%",
+background:"#ffd249"
+},
+
+enter:{
+marginTop:25,
+fontWeight:800
+}
+
+};
