@@ -30,6 +30,7 @@ return (
 
 <section className="main">
 <p className="eyebrow">You’re inside</p>
+
 <h1>OPEN ROOM 🎉</h1>
 
 <p className="intro">
@@ -41,8 +42,13 @@ drops, job leads, and partner highlights.
 <div className="joinBox">
 <div>
 <p className="eyebrow">Live meeting window</p>
+
 <h2>Join the Room</h2>
+
 <p>
+Join the HireMinds Open Room for live discussions,
+support, networking, updates, and guided conversations.
+</p>
 </div>
 
 <input
@@ -96,11 +102,12 @@ placeholder="Paste Whereby link"
 <strong>Doors Open</strong>
 <span>5:50PM</span>
 </div>
+
 <div className="detail">
 <strong>Doors Close</strong>
 <span>6:15PM</span>
 </div>
-  
+
 <div className="detail">
 <strong>Bring</strong>
 <span>Questions, wins, goals, updates, ideas, or just pull up.</span>
