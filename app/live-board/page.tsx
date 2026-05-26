@@ -112,10 +112,13 @@ id:5,
 
 tag:"SKILL BUILDER",
 
-title:"DIGITAL LITERACY",
+title:"The Right Questions. Strong Answers.",
 
 description:
-"Build confidence. Strengthen confidence. Prepare for what's next.",
+"Be Curious. Be Confident. Be you.",
+
+details:
+"You Bring The Drive. We Help You Get Hired",
 
 likes:12,
 
