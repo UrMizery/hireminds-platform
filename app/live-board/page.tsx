@@ -68,7 +68,7 @@ y:90
 id:3,
 tag:"OPPORTUNITY",
 
-title:"HIRING EVENT\nJune 13th",
+title:"HIRING EVENT<br/>June 13th</>,
 
 description:
 "Multiple employers. Multiple openings. Pull up ready.",
