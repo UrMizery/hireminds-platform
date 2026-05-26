@@ -65,7 +65,7 @@ y:90
 id:3,
 tag:"OPPORTUNITY",
 
-title:"HIRING EVENT",
+title:"HIRING EVENT June 13th",
 
 description:
 "Multiple employers. Multiple openings. Pull up ready.",
@@ -106,7 +106,7 @@ tag:"SKILL BUILDER",
 title:"DIGITAL LITERACY",
 
 description:
-"Build confidence with digital tools and workforce technology.",
+"Build confidence. Strengthen confidence. Prepare for what's next.",
 
 likes:12,
 
