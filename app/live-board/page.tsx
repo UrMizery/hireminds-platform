@@ -68,10 +68,10 @@ y:90
 id:3,
 tag:"OPPORTUNITY",
 
-title:<>HIRING EVENT<br />June 13th</>,
+title:"HIRING EVENT",
 
 description:
-"Multiple employers. Multiple openings. Pull up ready.",
+"June 13th\n\Multiple employers. Multiple openings. Pull up ready.",
 
 details:
 "For information email info@hireminds.app",
