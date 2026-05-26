@@ -48,7 +48,7 @@ y:70
 {
 id:2,
 tag:"TRAINING PREVIEW",
-title:"CUSTOMER SERVICE DEMO",
+title:"FREE COVID-19 & Workplace Safety Awareness",
 
 description:
 "Preview pathways, practice skills and test out live assessments.",
