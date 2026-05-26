@@ -50,6 +50,9 @@ id:2,
 tag:"TRAINING PREVIEW",
 title:"FREE COVID-19 & Workplace Safety Awareness",
 
+details:
+"To register email info@hireminds.app",
+
 description:
 "Preview pathways, practice skills and test out live assessments.",
 
@@ -70,6 +73,9 @@ title:"HIRING EVENT June 13th",
 description:
 "Multiple employers. Multiple openings. Pull up ready.",
 
+details:
+"For information email info@hireminds.app",
+
 likes:31,
 saved:false,
 
@@ -87,6 +93,9 @@ title:"PARTNER SPOTLIGHT",
 
 description:
 "Organizations creating visibility and opportunity.",
+
+details:
+"Last Tuesday • 6PM–7PM • Room Opens • Surprise drops + Partners + Employers",
 
 likes:10,
 
