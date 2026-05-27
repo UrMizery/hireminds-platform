@@ -54,7 +54,7 @@ details:
 "To register email info@hireminds.app",
 
 description:
-"This training provides foundational knowledge on COVID-19 and general respiratory illness prevention in workplace environments",
+"This training provides foundational knowledge on COVID-19 and general respiratory illness prevention.",
 
 likes:17,
 saved:false,
