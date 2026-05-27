@@ -58,7 +58,7 @@ description:
 
 likes:17,
 saved:false,
-color:"blue",
+color:"white",
 
 x:470,
 y:90
