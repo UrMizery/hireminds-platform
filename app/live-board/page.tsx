@@ -68,7 +68,7 @@ y:90
 id:3,
 tag:"OPPORTUNITY",
 
-title:"HIRING EVENT", subtitle:"June 13th",
+title:"HIRING EVENT",
 
 description:
 "June 13th - Multiple employers. Multiple openings. Pull up ready.",
