@@ -7,7 +7,7 @@ export default function OpenRoomLivePage() {
 const router = useRouter();
 
 const [roomLink, setRoomLink] = useState(
-"https://whereby.com/hireminds-open-room"
+"https://hire-minds.whereby.com/hireminds-open-room"
 );
 
 return (
