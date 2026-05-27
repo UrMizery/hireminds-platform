@@ -127,7 +127,7 @@ saved:false,
 color:"purple",
 
 x:760,
-y:500
+y:500,
 },
 
 {
