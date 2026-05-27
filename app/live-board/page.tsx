@@ -130,24 +130,6 @@ x:760,
 y:500,
 },
 
-{
-id:6,
-tag:"TRAINING",
-title:"FREE IT TRAINING",
-
-details:
-"To register email info@hireminds.app",
-
-description:
-"Preview pathways, practice skills and test out live assessments.",
-
-likes:17,
-saved:false,
-color:"white",
-
-x:650,
-y:180
-},
 ]);
 
 function likeFlyer(id:number){
