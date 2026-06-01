@@ -498,7 +498,7 @@ const styles: Record<string, CSSProperties> = {
     margin: "0 auto",
     padding: "16px 24px",
     display: "grid",
-    gridTemplateColumns: "240px 1fr auto",
+    gridTemplateColumns: "auto 1fr auto",
     alignItems: "center",
     gap: "20px",
   },
