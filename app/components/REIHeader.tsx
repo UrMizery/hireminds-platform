@@ -39,7 +39,7 @@ export default function REIHeader() {
       {/* REI ICON */}
       <button
         onClick={() => setOpen(!open)}
-        className="group relative flex items-center gap-2 rounded-full border border-blue-500/30 bg-slate-950/90 px-3 py-2 shadow-lg shadow-blue-500/20 transition hover:scale-105"
+        className="group relative flex items-center gap-2 rounded-full border border-blue-500/30 bg-red-500 px-3 py-2 shadow-lg shadow-blue-500/20 transition hover:scale-105"
       >
         {/* Floating Glow */}
         <div className="absolute inset-0 rounded-full bg-blue-500/10 blur-xl" />
