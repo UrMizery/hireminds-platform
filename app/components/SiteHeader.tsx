@@ -1,9 +1,11 @@
+```tsx
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
+import REIHeader from "./REIHeader";
 
 type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
 
@@ -270,9 +272,13 @@ export default function SiteHeader() {
   return (
     <header style={styles.header}>
       <div style={styles.inner}>
-        <a href="/" style={styles.logo}>
-          HireMinds
-        </a>
+        <div style={styles.logoWrap}>
+          <a href="/" style={styles.logo}>
+            HireMinds
+          </a>
+
+          <REIHeader />
+        </div>
 
         <div style={styles.centerNav}>
           <a href="/" style={styles.link}>
@@ -486,6 +492,7 @@ const styles: Record<string, CSSProperties> = {
     backdropFilter: "blur(10px)",
     borderBottom: "1px solid #1f1f1f",
   },
+
   inner: {
     maxWidth: "1520px",
     margin: "0 auto",
@@ -495,6 +502,13 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     gap: "20px",
   },
+
+  logoWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+  },
+
   logo: {
     color: "#f5f5f5",
     fontSize: "26px",
@@ -502,6 +516,7 @@ const styles: Record<string, CSSProperties> = {
     textDecoration: "none",
     letterSpacing: "0.2px",
   },
+
   centerNav: {
     display: "flex",
     gap: "22px",
@@ -509,6 +524,7 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: "center",
     flexWrap: "wrap",
   },
+
   rightNav: {
     display: "flex",
     gap: "18px",
@@ -516,6 +532,7 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: "flex-end",
     flexWrap: "wrap",
   },
+
   link: {
     color: "#d4d4d8",
     textDecoration: "none",
@@ -523,6 +540,7 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
+
   notesButtonLike: {
     border: "1px solid #a1a1aa",
     background: "#ffffff",
@@ -537,11 +555,13 @@ const styles: Record<string, CSSProperties> = {
     WebkitAppearance: "none",
     boxShadow: "0 0 0 1px rgba(255,255,255,0.15) inset",
   },
+
   dropdownWrap: {
     position: "relative",
     display: "inline-flex",
     alignItems: "center",
   },
+
   dropdownTrigger: {
     border: "none",
     background: "transparent",
@@ -556,11 +576,13 @@ const styles: Record<string, CSSProperties> = {
     appearance: "none",
     WebkitAppearance: "none",
   },
+
   dropdownChevron: {
     fontSize: "10px",
     transition: "transform 0.2s ease",
     display: "inline-block",
   },
+
   dropdownMenu: {
     position: "absolute",
     top: "calc(100% + 10px)",
@@ -575,6 +597,7 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gap: "4px",
   },
+
   dropdownItem: {
     color: "#e4e4e7",
     textDecoration: "none",
@@ -584,11 +607,13 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: "nowrap",
     background: "transparent",
   },
+
   lockedLink: {
     color: "#7c7c85",
     fontSize: "15px",
     whiteSpace: "nowrap",
   },
+
   logoutButton: {
     background: "transparent",
     border: "1px solid #3f3f46",
@@ -600,3 +625,4 @@ const styles: Record<string, CSSProperties> = {
     padding: "8px 12px",
   },
 };
+```
