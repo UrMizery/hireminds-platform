@@ -4,467 +4,542 @@ import Image from "next/image";
 import { useLanguage } from "./lib/language-context";
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t } = useLanguage();
 
-  return (
-    <main style={styles.page}>
-      {/* HERO */}
-      <section style={styles.hero}>
-        <p style={styles.heroEyebrow}>
-          WORKFORCE INFRASTRUCTURE PLATFORM
-        </p>
+  return (
+    <main style={styles.page}>
+      {/* HERO */}
+      <section style={styles.hero}>
+        <p style={styles.heroEyebrow}>
+          WORKFORCE INFRASTRUCTURE PLATFORM
+        </p>
 
-        <h1 style={styles.title}>
-          {t.title}
-        </h1>
+        <h1 style={styles.title}>
+          {t.title}
+        </h1>
 
-        <p style={styles.subtitle}>
-          HireMinds helps people strengthen visibility,
-          organize career tools, prepare for opportunities,
-          and keep momentum moving forward.
-        </p>
+        <p style={styles.subtitle}>
+          HireMinds helps people strengthen visibility,
+          organize career tools, prepare for opportunities,
+          and keep momentum moving forward.
+        </p>
 
-        <div style={styles.buttonRow}>
-          <a href="/sign-up" style={styles.primaryButton}>
-            Create Career Passport / Sign Up
-          </a>
-        </div>
+        <div style={styles.buttonRow}>
+          <a href="/sign-up" style={styles.primaryButton}>
+            Create Career Passport / Sign Up
+          </a>
+        </div>
 
-        {/* LOGO */}
-        <div style={styles.heroLogoWrap}>
-          <Image
-            src="/hm-logo.png"
-            alt="HireMinds"
-            width={420}
-            height={420}
-            style={styles.heroLogo}
-          />
-        </div>
-      </section>
+        {/* FLOATING HM LOGO */}
+        <div style={styles.heroLogoWrap}>
+          <Image
+            src="/hm-logo.png"
+            alt="HireMinds"
+            width={420}
+            height={420}
+            style={styles.heroLogo}
+          />
+        </div>
+      </section>
 
-      {/* WHO WE ARE */}
-      <section style={styles.bridgeSection}>
-        <div style={styles.whoWrap}>
-          <div style={styles.line} />
+      {/* WHO WE ARE */}
+      <section style={styles.bridgeSection}>
+        <div style={styles.whoWrap}>
+          <div style={styles.line} />
 
-          <p style={styles.whoTag}>
-            WHO WE ARE
-          </p>
+          <p style={styles.whoTag}>
+            WHO WE ARE
+          </p>
 
-          <div style={styles.line} />
-        </div>
+          <div style={styles.line} />
+        </div>
 
-        <h2 style={styles.sectionHeading}>
-          The Bridge Between Potential and Opportunity
-        </h2>
+        <h2 style={styles.sectionHeading}>
+          The Bridge Between Potential and Opportunity
+        </h2>
 
-        <p style={styles.sectionText}>
-          HireMinds is a workforce infrastructure platform
-          that connects people, purpose, and opportunity.
-          We bridge the gap between Participants,
-          Justice Impact Partners, Nonprofits, and Employers
-          through one unified ecosystem built for real outcomes.
-        </p>
+        <p style={styles.sectionText}>
+          HireMinds is a workforce infrastructure platform
+          that connects people, purpose, and opportunity.
+          We bridge the gap between Participants,
+          Justice Impact Partners, Nonprofits, and Employers
+          through one unified ecosystem built for real outcomes.
+        </p>
 
-        {/* BRIDGE */}
-        <div style={styles.bridgeWrap}>
-          <img
-            src="/hm-bridge.png"
-            alt="bridge"
-            style={styles.bridgeImage}
-          />
+        {/* BRIDGE */}
+        <div style={styles.bridgeWrap}>
 
-          {/* PARTICIPANTS */}
-          <div
-            style={{
-              ...styles.node,
-              left: "4%",
-              top: "195px",
-              borderColor: "#1d8fff",
-              boxShadow:
-                "0 0 35px rgba(29,143,255,.95)",
-            }}
-          >
-            <span style={styles.nodeEmoji}>👤</span>
-          </div>
+          {/* GLOW */}
+          <div style={styles.bridgeGlow} />
 
-          {/* JUSTICE */}
-          <div
-            style={{
-              ...styles.node,
-              left: "27%",
-              top: "168px",
-              borderColor: "#53ff7c",
-              boxShadow:
-                "0 0 35px rgba(83,255,124,.95)",
-            }}
-          >
-            <span style={styles.nodeEmoji}>🤝</span>
-          </div>
+          {/* SVG BRIDGE */}
+          <svg
+            viewBox="0 0 1600 520"
+            preserveAspectRatio="none"
+            style={styles.bridgeSvg}
+          >
 
-          {/* CENTER ORB */}
-          <div style={styles.centerOrb}>
-            <Image
-              src="/hm-logo.png"
-              alt="HireMinds"
-              width={170}
-              height={170}
-              style={{
-                objectFit: "contain",
-              }}
-            />
-          </div>
+            {/* MAIN BRIDGE */}
+            <path
+              d="
+                M 0 270
+                C 180 80,
+                  420 80,
+                  800 250
+                S 1380 420,
+                  1600 180
+              "
+              fill="none"
+              stroke="rgba(70,150,255,.95)"
+              strokeWidth="4"
+            />
 
-          {/* NONPROFITS */}
-          <div
-            style={{
-              ...styles.node,
-              right: "27%",
-              top: "168px",
-              borderColor: "#d45eff",
-              boxShadow:
-                "0 0 35px rgba(212,94,255,.95)",
-            }}
-          >
-            <span style={styles.nodeEmoji}>💜</span>
-          </div>
+            <path
+              d="
+                M 0 295
+                C 180 110,
+                  420 110,
+                  800 275
+                S 1380 450,
+                  1600 205
+              "
+              fill="none"
+              stroke="rgba(180,120,255,.85)"
+              strokeWidth="3"
+            />
 
-          {/* EMPLOYERS */}
-          <div
-            style={{
-              ...styles.node,
-              right: "4%",
-              top: "195px",
-              borderColor: "#18d8ff",
-              boxShadow:
-                "0 0 35px rgba(24,216,255,.95)",
-            }}
-          >
-            <span style={styles.nodeEmoji}>💼</span>
-          </div>
-        </div>
+            <path
+              d="
+                M 0 320
+                C 180 170,
+                  420 170,
+                  800 320
+                S 1380 500,
+                  1600 260
+              "
+              fill="none"
+              stroke="rgba(0,220,255,.95)"
+              strokeWidth="5"
+            />
 
-        {/* CARDS */}
-        <div style={styles.cardGrid}>
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              Participants
-            </h3>
+            <path
+              d="
+                M 0 340
+                C 180 210,
+                  420 210,
+                  800 350
+                S 1380 520,
+                  1600 290
+              "
+              fill="none"
+              stroke="rgba(70,130,255,.35)"
+              strokeWidth="2"
+            />
+          </svg>
 
-            <p style={styles.cardText}>
-              Build visibility,
-              access tools,
-              and prepare for meaningful
-              career opportunities.
-            </p>
-          </div>
+          {/* PARTICIPANTS */}
+          <div
+            style={{
+              ...styles.node,
+              left: "4%",
+              top: "210px",
+              borderColor: "#1d8fff",
+              boxShadow:
+                "0 0 35px rgba(29,143,255,.95)",
+            }}
+          >
+            <span style={styles.nodeEmoji}>👤</span>
+          </div>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              Justice Impact
-              <br />
-              Partners
-            </h3>
+          {/* JUSTICE */}
+          <div
+            style={{
+              ...styles.node,
+              left: "28%",
+              top: "165px",
+              borderColor: "#53ff7c",
+              boxShadow:
+                "0 0 35px rgba(83,255,124,.95)",
+            }}
+          >
+            <span style={styles.nodeEmoji}>🤝</span>
+          </div>
 
-            <p style={styles.cardText}>
-              Connect individuals
-              to support,
-              resources,
-              and pathways that
-              drive real change.
-            </p>
-          </div>
+          {/* HM CENTER */}
+          <div style={styles.centerOrb}>
+            <Image
+              src="/hm-logo.png"
+              alt="HireMinds"
+              width={230}
+              height={230}
+              style={{
+                objectFit: "contain",
+              }}
+            />
+          </div>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              HireMinds
-            </h3>
+          {/* NONPROFITS */}
+          <div
+            style={{
+              ...styles.node,
+              right: "28%",
+              top: "165px",
+              borderColor: "#d45eff",
+              boxShadow:
+                "0 0 35px rgba(212,94,255,.95)",
+            }}
+          >
+            <span style={styles.nodeEmoji}>💜</span>
+          </div>
 
-            <p style={styles.centerText}>
-              One Platform.
-            </p>
+          {/* EMPLOYERS */}
+          <div
+            style={{
+              ...styles.node,
+              right: "4%",
+              top: "210px",
+              borderColor: "#18d8ff",
+              boxShadow:
+                "0 0 35px rgba(24,216,255,.95)",
+            }}
+          >
+            <span style={styles.nodeEmoji}>💼</span>
+          </div>
+        </div>
 
-            <p style={styles.centerBlue}>
-              Unlimited Impact.
-            </p>
-          </div>
+        {/* INFO GRID */}
+        <div style={styles.cardGrid}>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              Nonprofits
-            </h3>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              Participants
+            </h3>
 
-            <p style={styles.cardText}>
-              Coordinate support,
-              program management,
-              and community impact
-              at scale.
-            </p>
-          </div>
+            <p style={styles.cardText}>
+              Build visibility,
+              access tools,
+              and prepare for meaningful
+              career opportunities.
+            </p>
+          </div>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              Employers
-            </h3>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              Justice Impact
+              <br />
+              Partners
+            </h3>
 
-            <p style={styles.cardText}>
-              Discover prepared talent,
-              build stronger teams,
-              and create lasting impact.
-            </p>
-          </div>
-        </div>
+            <p style={styles.cardText}>
+              Connect individuals
+              to support,
+              resources,
+              and pathways that
+              drive real change.
+            </p>
+          </div>
 
-        {/* BOTTOM */}
-        <div style={styles.bottomWrap}>
-          <p style={styles.bottomMain}>
-            HireMinds isn’t just a platform — it’s a{" "}
-            <span style={styles.bridgeWord}>
-              bridge.
-            </span>
-          </p>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              HireMinds
+            </h3>
 
-          <p style={styles.bottomSub}>
-            One infrastructure.
-            One mission.
-            Unlimited potential.
-          </p>
-        </div>
-      </section>
-    </main>
-  );
+            <p style={styles.centerText}>
+              One Platform.
+            </p>
+
+            <p style={styles.centerBlue}>
+              Unlimited Impact.
+            </p>
+          </div>
+
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              Nonprofits
+            </h3>
+
+            <p style={styles.cardText}>
+              Coordinate support,
+              program management,
+              and community impact
+              at scale.
+            </p>
+          </div>
+
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              Employers
+            </h3>
+
+            <p style={styles.cardText}>
+              Discover prepared talent,
+              build stronger teams,
+              and create lasting impact.
+            </p>
+          </div>
+        </div>
+
+        {/* BOTTOM */}
+        <div style={styles.bottomWrap}>
+          <p style={styles.bottomMain}>
+            HireMinds isn’t just a platform — it’s a{" "}
+            <span style={styles.bridgeWord}>
+              bridge.
+            </span>
+          </p>
+
+          <p style={styles.bottomSub}>
+            One infrastructure.
+            One mission.
+            Unlimited potential.
+          </p>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top, rgba(0,82,255,.15) 0%, #000000 45%)",
-    color: "#ffffff",
-    padding: "0 24px 100px",
-    overflow: "hidden",
-    fontFamily:
-      'Inter, ui-sans-serif, system-ui, sans-serif',
-  },
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at top, rgba(0,82,255,.15) 0%, #000000 45%)",
+    color: "#ffffff",
+    padding: "0 24px 100px",
+    overflow: "hidden",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, sans-serif',
+  },
 
-  hero: {
-    maxWidth: "1400px",
-    margin: "0 auto",
-    textAlign: "center",
-    paddingTop: "40px",
-  },
+  hero: {
+    maxWidth: "1500px",
+    margin: "0 auto",
+    textAlign: "center",
+    paddingTop: "40px",
+  },
 
-  heroEyebrow: {
-    color: "#2f8fff",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.25em",
-    marginBottom: "20px",
-  },
+  heroEyebrow: {
+    color: "#2f8fff",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.28em",
+    marginBottom: "20px",
+  },
 
-  title: {
-    margin: 0,
-    fontSize: "clamp(4rem,8vw,6.8rem)",
-    fontWeight: 900,
-    lineHeight: 0.95,
-    letterSpacing: "-0.06em",
-    color: "#f5f5f5",
-  },
+  title: {
+    margin: 0,
+    fontSize: "clamp(4rem,8vw,6.8rem)",
+    fontWeight: 900,
+    lineHeight: 0.95,
+    letterSpacing: "-0.06em",
+    color: "#f5f5f5",
+  },
 
-  subtitle: {
-    maxWidth: "820px",
-    margin: "24px auto 0",
-    color: "#d7d7d7",
-    lineHeight: 1.8,
-    fontSize: "20px",
-  },
+  subtitle: {
+    maxWidth: "820px",
+    margin: "24px auto 0",
+    color: "#d7d7d7",
+    lineHeight: 1.8,
+    fontSize: "20px",
+  },
 
-  buttonRow: {
-    display: "flex",
-    justifyContent: "center",
-    marginTop: "36px",
-  },
+  buttonRow: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "36px",
+  },
 
-  primaryButton: {
-    padding: "18px 42px",
-    borderRadius: "18px",
-    background:
-      "linear-gradient(180deg,#ffffff 0%,#d8d8e2 100%)",
-    color: "#000",
-    textDecoration: "none",
-    fontWeight: 900,
-    fontSize: "18px",
-    boxShadow:
-      "0 0 35px rgba(255,255,255,.18)",
-  },
+  primaryButton: {
+    padding: "18px 42px",
+    borderRadius: "18px",
+    background:
+      "linear-gradient(180deg,#ffffff 0%,#d8d8e2 100%)",
+    color: "#000",
+    textDecoration: "none",
+    fontWeight: 900,
+    fontSize: "18px",
+    boxShadow:
+      "0 0 35px rgba(255,255,255,.18)",
+  },
 
-  heroLogoWrap: {
-    marginTop: "45px",
-    display: "flex",
-    justifyContent: "center",
-  },
+  heroLogoWrap: {
+    marginTop: "40px",
+    display: "flex",
+    justifyContent: "center",
+  },
 
-  heroLogo: {
-    objectFit: "contain",
-    filter:
-      "drop-shadow(0 0 24px rgba(38,114,255,.45))",
-  },
+  heroLogo: {
+    objectFit: "contain",
+    filter:
+      "drop-shadow(0 0 40px rgba(38,114,255,.55))",
+  },
 
-  bridgeSection: {
-    maxWidth: "1500px",
-    margin: "0 auto",
-    textAlign: "center",
-    marginTop: "10px",
-  },
+  bridgeSection: {
+    maxWidth: "1600px",
+    margin: "0 auto",
+    textAlign: "center",
+    marginTop: "-10px",
+  },
 
-  whoWrap: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "20px",
-    marginBottom: "20px",
-  },
+  whoWrap: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "20px",
+    marginBottom: "20px",
+  },
 
-  line: {
-    width: "220px",
-    height: "1px",
-    background:
-      "linear-gradient(90deg,transparent,#2f8fff,transparent)",
-  },
+  line: {
+    width: "220px",
+    height: "1px",
+    background:
+      "linear-gradient(90deg,transparent,#2f8fff,transparent)",
+  },
 
-  whoTag: {
-    color: "#2f8fff",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.28em",
-  },
+  whoTag: {
+    color: "#2f8fff",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.28em",
+  },
 
-  sectionHeading: {
-    fontSize: "clamp(2.7rem,5vw,4.5rem)",
-    fontWeight: 900,
-    marginBottom: "20px",
-    lineHeight: 1.05,
-  },
+  sectionHeading: {
+    fontSize: "clamp(2.7rem,5vw,4.5rem)",
+    fontWeight: 900,
+    marginBottom: "20px",
+    lineHeight: 1.05,
+  },
 
-  sectionText: {
-    maxWidth: "1050px",
-    margin: "0 auto",
-    color: "#d7d7d7",
-    fontSize: "24px",
-    lineHeight: 1.65,
-  },
+  sectionText: {
+    maxWidth: "1050px",
+    margin: "0 auto",
+    color: "#d7d7d7",
+    fontSize: "24px",
+    lineHeight: 1.65,
+  },
 
-  bridgeWrap: {
-    position: "relative",
-    marginTop: "70px",
-    height: "570px",
-    width: "100%",
-    overflow: "hidden",
-  },
+  bridgeWrap: {
+    position: "relative",
+    width: "100%",
+    height: "560px",
+    marginTop: "60px",
+    overflow: "hidden",
+  },
 
-  bridgeImage: {
-    position: "absolute",
-    width: "100%",
-    left: 0,
-    top: "85px",
-    opacity: 1,
-    pointerEvents: "none",
-    filter:
-      "drop-shadow(0 0 22px rgba(43,120,255,.5))",
-  },
+  bridgeGlow: {
+    position: "absolute",
+    left: "50%",
+    top: "220px",
+    transform: "translateX(-50%)",
+    width: "700px",
+    height: "240px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(30,120,255,.35) 0%, rgba(30,120,255,0) 70%)",
+    filter: "blur(40px)",
+  },
 
-  node: {
-    position: "absolute",
-    width: "120px",
-    height: "120px",
-    borderRadius: "50%",
-    border: "3px solid",
-    background:
-      "radial-gradient(circle at top,#101010 0%,#000000 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 5,
-  },
+  bridgeSvg: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    left: 0,
+    top: 0,
+    overflow: "visible",
+    filter:
+      "drop-shadow(0 0 18px rgba(0,140,255,.5))",
+  },
 
-  nodeEmoji: {
-    fontSize: "52px",
-  },
+  node: {
+    position: "absolute",
+    width: "120px",
+    height: "120px",
+    borderRadius: "50%",
+    border: "3px solid",
+    background:
+      "radial-gradient(circle at top,#111111 0%,#000000 100%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
 
-  centerOrb: {
-    position: "absolute",
-    left: "50%",
-    top: "220px",
-    transform: "translateX(-50%)",
-    width: "240px",
-    height: "240px",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle at top,#0f172a 0%,#020202 80%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 20,
-    boxShadow:
-      "0 0 95px rgba(29,143,255,.75)",
-  },
+  nodeEmoji: {
+    fontSize: "50px",
+  },
 
-  cardGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(240px,1fr))",
-    gap: "28px",
-    marginTop: "-40px",
-    alignItems: "start",
-  },
+  centerOrb: {
+    position: "absolute",
+    left: "50%",
+    top: "220px",
+    transform: "translateX(-50%)",
+    width: "260px",
+    height: "260px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 20,
+    filter:
+      "drop-shadow(0 0 55px rgba(43,120,255,.85))",
+  },
 
-  card: {
-    textAlign: "center",
-  },
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(240px,1fr))",
+    gap: "26px",
+    marginTop: "-20px",
+    alignItems: "start",
+  },
 
-  cardTitle: {
-    fontSize: "28px",
-    fontWeight: 900,
-    marginBottom: "16px",
-    lineHeight: 1.15,
-  },
+  card: {
+    textAlign: "center",
+  },
 
-  cardText: {
-    color: "#e0e0e0",
-    lineHeight: 1.8,
-    fontSize: "18px",
-  },
+  cardTitle: {
+    fontSize: "30px",
+    fontWeight: 900,
+    marginBottom: "14px",
+    lineHeight: 1.1,
+  },
 
-  centerText: {
-    color: "#ffffff",
-    fontSize: "24px",
-    marginBottom: "6px",
-  },
+  cardText: {
+    color: "#dddddd",
+    lineHeight: 1.8,
+    fontSize: "18px",
+  },
 
-  centerBlue: {
-    color: "#2f8fff",
-    fontSize: "24px",
-    fontWeight: 900,
-  },
+  centerText: {
+    color: "#ffffff",
+    fontSize: "24px",
+    marginBottom: "6px",
+  },
 
-  bottomWrap: {
-    marginTop: "50px",
-    textAlign: "center",
-  },
+  centerBlue: {
+    color: "#2f8fff",
+    fontSize: "24px",
+    fontWeight: 900,
+  },
 
-  bottomMain: {
-    fontSize: "32px",
-    fontWeight: 800,
-    marginBottom: "12px",
-  },
+  bottomWrap: {
+    marginTop: "50px",
+    textAlign: "center",
+  },
 
-  bridgeWord: {
-    color: "#2f8fff",
-  },
+  bottomMain: {
+    fontSize: "32px",
+    fontWeight: 800,
+    marginBottom: "12px",
+  },
 
-  bottomSub: {
-    color: "#d0d0d0",
-    fontSize: "24px",
-    lineHeight: 1.7,
-  },
+  bridgeWord: {
+    color: "#2f8fff",
+  },
+
+  bottomSub: {
+    color: "#d0d0d0",
+    fontSize: "24px",
+    lineHeight: 1.7,
+  },
 };
