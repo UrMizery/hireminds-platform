@@ -4,10 +4,10 @@ import Image from "next/image";
 import { useLanguage } from "./lib/language-context";
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t } = useLanguage();
 
-  return (
-    <main style={styles.page}>
+  return (
+    <main style={styles.page}>
       {/* HERO */}
       <section style={styles.hero}>
         <p style={styles.heroEyebrow}>
