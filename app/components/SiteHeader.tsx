@@ -5,7 +5,6 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
-import REIHeader from "./REIHeader";
 
 type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
 
