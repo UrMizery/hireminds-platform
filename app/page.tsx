@@ -66,13 +66,141 @@ export default function HomePage() {
           through one unified ecosystem built for real outcomes.
         </p>
 
-        {/* BRIDGE */}
-        <div style={styles.bridgeWrap}>
-          <img
-            src="/hm-bridge.png"
-            alt="bridge"
-            style={styles.bridgeImage}
-          />
+       {/* REAL CODED SUSPENSION BRIDGE */}
+<svg
+  viewBox="0 0 1600 650"
+  preserveAspectRatio="none"
+  style={styles.bridgeImage}
+>
+  <defs>
+    <linearGradient
+      id="bridgeGlow"
+      x1="0%"
+      y1="0%"
+      x2="100%"
+      y2="0%"
+    >
+      <stop offset="0%" stopColor="#1d8fff" />
+      <stop offset="28%" stopColor="#53ff7c" />
+      <stop offset="50%" stopColor="#4da3ff" />
+      <stop offset="72%" stopColor="#d45eff" />
+      <stop offset="100%" stopColor="#18d8ff" />
+    </linearGradient>
+  </defs>
+
+  {/* LEFT TOWER */}
+  <rect
+    x="170"
+    y="120"
+    width="10"
+    height="320"
+    rx="20"
+    fill="#4db2ff"
+  />
+
+  {/* RIGHT TOWER */}
+  <rect
+    x="1420"
+    y="120"
+    width="10"
+    height="320"
+    rx="20"
+    fill="#4db2ff"
+  />
+
+  {/* MAIN SUSPENSION CABLE */}
+  <path
+    d="
+      M 175 120
+      Q 800 -40
+      1425 120
+    "
+    fill="none"
+    stroke="url(#bridgeGlow)"
+    strokeWidth="5"
+    strokeLinecap="round"
+  />
+
+  {/* SECONDARY GLOW */}
+  <path
+    d="
+      M 175 132
+      Q 800 -28
+      1425 132
+    "
+    fill="none"
+    stroke="rgba(120,180,255,.35)"
+    strokeWidth="2"
+  />
+
+  {/* HANGING LINES */}
+  <line x1="280" y1="92" x2="280" y2="410" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="380" y1="70" x2="380" y2="425" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="480" y1="48" x2="480" y2="438" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="580" y1="28" x2="580" y2="448" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="680" y1="12" x2="680" y2="458" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="780" y1="0" x2="780" y2="466" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="880" y1="0" x2="880" y2="466" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="980" y1="12" x2="980" y2="458" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="1080" y1="28" x2="1080" y2="448" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="1180" y1="48" x2="1180" y2="438" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="1280" y1="70" x2="1280" y2="425" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+  <line x1="1380" y1="92" x2="1380" y2="410" stroke="rgba(160,220,255,.7)" strokeWidth="2" />
+
+  {/* BRIDGE DECK */}
+  <path
+    d="
+      M 80 420
+      Q 800 540
+      1520 420
+    "
+    fill="none"
+    stroke="#1d8fff"
+    strokeWidth="10"
+    strokeLinecap="round"
+  />
+
+  {/* LOWER GLOW */}
+  <path
+    d="
+      M 80 438
+      Q 800 558
+      1520 438
+    "
+    fill="none"
+    stroke="rgba(29,143,255,.35)"
+    strokeWidth="4"
+  />
+
+  {/* WIREFRAME LAYERS */}
+  <path
+    d="
+      M 120 350
+      Q 800 520
+      1480 350
+    "
+    fill="none"
+    stroke="rgba(255,255,255,.18)"
+    strokeWidth="1"
+  />
+
+  <path
+    d="
+      M 180 325
+      Q 800 495
+      1420 325
+    "
+    fill="none"
+    stroke="rgba(255,255,255,.12)"
+    strokeWidth="1"
+  />
+
+  {/* GLOW LIGHTS */}
+  <circle cx="180" cy="200" r="9" fill="#1d8fff" />
+  <circle cx="460" cy="330" r="9" fill="#53ff7c" />
+  <circle cx="1140" cy="330" r="9" fill="#d45eff" />
+  <circle cx="1420" cy="200" r="9" fill="#18d8ff" />
+</svg>
 
        {/* PARTICIPANTS */}
           <div
@@ -362,16 +490,18 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
   },
 
-  bridgeImage: {
-    position: "absolute",
-    width: "100%",
-    left: 0,
-    top: "85px",
-    opacity: 1,
-    pointerEvents: "none",
-    filter:
-      "drop-shadow(0 0 22px rgba(43,120,255,.5))",
-  },
+ bridgeImage: {
+  position: "absolute",
+  width: "100%",
+  height: "100%",
+  left: 0,
+  top: 0,
+  overflow: "visible",
+  opacity: 1,
+  pointerEvents: "none",
+  filter:
+    "drop-shadow(0 0 22px rgba(43,120,255,.55))",
+},
 
   node: {
     position: "absolute",
