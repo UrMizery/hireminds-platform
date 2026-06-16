@@ -622,4 +622,3 @@ const styles: Record<string, CSSProperties> = {
     padding: "8px 12px",
   },
 };
-```
