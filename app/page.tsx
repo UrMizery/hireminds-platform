@@ -4,605 +4,461 @@ import Image from "next/image";
 import { useLanguage } from "./lib/language-context";
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t } = useLanguage();
 
-  return (
-    <main style={styles.page}>
-      {/* HERO */}
-      <section style={styles.hero}>
-        <p style={styles.heroEyebrow}>
-          WORKFORCE INFRASTRUCTURE PLATFORM
-        </p>
+  return (
+    <main style={styles.page}>
+      {/* HERO */}
+      <section style={styles.hero}>
+        <p style={styles.heroEyebrow}>
+          WORKFORCE INFRASTRUCTURE PLATFORM
+        </p>
 
-        <h1 style={styles.title}>
-          {t.title}
-        </h1>
+        <h1 style={styles.title}>
+          {t.title}
+        </h1>
 
-        <p style={styles.subtitle}>
-          HireMinds helps people strengthen visibility,
-          organize career tools, prepare for opportunities,
-          and keep momentum moving forward.
-        </p>
+        <p style={styles.subtitle}>
+          HireMinds helps people strengthen visibility,
+          organize career tools, prepare for opportunities,
+          and keep momentum moving forward.
+        </p>
 
-        <div style={styles.buttonRow}>
-          <a href="/sign-up" style={styles.primaryButton}>
-            Create Career Passport / Sign Up
-          </a>
-        </div>
+        <div style={styles.buttonRow}>
+          <a href="/sign-up" style={styles.primaryButton}>
+            Create Career Passport / Sign Up
+          </a>
+        </div>
 
-        {/* FLOATING LOGO */}
-        <div style={styles.heroLogoWrap}>
-          <Image
-            src="/hm-logo.png"
-            alt="HireMinds"
-            width={380}
-            height={380}
-            style={styles.heroLogo}
-          />
-        </div>
-      </section>
+        {/* LOGO */}
+        <div style={styles.heroLogoWrap}>
+          <Image
+            src="/hm-logo.png"
+            alt="HireMinds"
+            width={420}
+            height={420}
+            style={styles.heroLogo}
+          />
+        </div>
+      </section>
 
-      {/* WHO WE ARE */}
-      <section style={styles.bridgeSection}>
-        <div style={styles.whoWrap}>
-          <div style={styles.line} />
+      {/* WHO WE ARE */}
+      <section style={styles.bridgeSection}>
+        <div style={styles.whoWrap}>
+          <div style={styles.line} />
 
-          <p style={styles.whoTag}>
-            WHO WE ARE
-          </p>
+          <p style={styles.whoTag}>
+            WHO WE ARE
+          </p>
 
-          <div style={styles.line} />
-        </div>
+          <div style={styles.line} />
+        </div>
 
-        <h2 style={styles.sectionHeading}>
-          The Bridge Between Potential and Opportunity
-        </h2>
+        <h2 style={styles.sectionHeading}>
+          The Bridge Between Potential and Opportunity
+        </h2>
 
-        <p style={styles.sectionText}>
-          HireMinds is a workforce infrastructure platform
-          that connects people, purpose, and opportunity.
-          We bridge the gap between Participants,
-          Justice Impact Partners, Nonprofits, and Employers
-          through one unified ecosystem built for real outcomes.
-        </p>
+        <p style={styles.sectionText}>
+          HireMinds is a workforce infrastructure platform
+          that connects people, purpose, and opportunity.
+          We bridge the gap between Participants,
+          Justice Impact Partners, Nonprofits, and Employers
+          through one unified ecosystem built for real outcomes.
+        </p>
 
-        {/* BRIDGE SECTION */}
-        <div style={styles.bridgeWrap}>
+        {/* BRIDGE */}
+        <div style={styles.bridgeWrap}>
+          <img
+            src="/hm-bridge.png"
+            alt="bridge"
+            style={styles.bridgeImage}
+          />
 
-          {/* FULL SUSPENSION BRIDGE */}
-        <svg
-  viewBox="0 0 1600 650"
-  preserveAspectRatio="none"
-  style={styles.bridgeSvg}
->
-  {/* LEFT SUPPORT */}
-  <circle
-    cx="120"
-    cy="350"
-    r="8"
-    fill="#3fa7ff"
-  />
-
-  {/* RIGHT SUPPORT */}
-  <circle
-    cx="1480"
-    cy="350"
-    r="8"
-    fill="#3fa7ff"
-  />
-
-  {/* MAIN BRIDGE CURVE */}
-  <path
-    d="
-      M 40 360
-      C 240 160,
-        480 160,
-        800 350
-      S 1360 520,
-        1560 320
-    "
-    fill="none"
-    stroke="rgba(80,170,255,.95)"
-    strokeWidth="5"
-  />
-
-  {/* SECOND GLOW CURVE */}
-  <path
-    d="
-      M 40 385
-      C 240 185,
-        480 185,
-        800 375
-      S 1360 545,
-        1560 345
-    "
-    fill="none"
-    stroke="rgba(140,110,255,.65)"
-    strokeWidth="3"
-  />
-
-  {/* LOWER DECK */}
-  <path
-    d="
-      M 80 455
-      C 360 505,
-        620 530,
-        800 520
-      S 1280 505,
-        1520 455
-    "
-    fill="none"
-    stroke="rgba(40,160,255,.95)"
-    strokeWidth="7"
-  />
-
-  {/* LOWER GLOW */}
-  <path
-    d="
-      M 80 455
-      C 360 505,
-        620 530,
-        800 520
-      S 1280 505,
-        1520 455
-    "
-    fill="none"
-    stroke="rgba(0,140,255,.35)"
-    strokeWidth="24"
-  />
-
-  {/* WIREFRAME BRIDGE MESH */}
-  <path
-    d="
-      M 120 390
-      C 320 220,
-        520 220,
-        800 395
-      S 1280 545,
-        1480 390
-    "
-    fill="none"
-    stroke="rgba(170,220,255,.25)"
-    strokeWidth="1.5"
-  />
-
-  <path
-    d="
-      M 120 405
-      C 320 240,
-        520 240,
-        800 410
-      S 1280 555,
-        1480 405
-    "
-    fill="none"
-    stroke="rgba(170,220,255,.18)"
-    strokeWidth="1.5"
-  />
-
-  <path
-    d="
-      M 120 420
-      C 320 260,
-        520 260,
-        800 425
-      S 1280 565,
-        1480 420
-    "
-    fill="none"
-    stroke="rgba(170,220,255,.12)"
-    strokeWidth="1.5"
-  />
-
-  {/* LEFT LIGHT */}
-  <circle
-    cx="150"
-    cy="320"
-    r="14"
-    fill="#48a8ff"
-  />
-
-  {/* MID LEFT LIGHT */}
-  <circle
-    cx="460"
-    cy="380"
-    r="12"
-    fill="#53ff7c"
-  />
-
-  {/* MID RIGHT LIGHT */}
-  <circle
-    cx="1140"
-    cy="380"
-    r="12"
-    fill="#d45eff"
-  />
-
-  {/* RIGHT LIGHT */}
-  <circle
-    cx="1360"
-    cy="320"
-    r="14"
-    fill="#18d8ff"
-  />
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="8" r="4" stroke="#1d8fff" strokeWidth="1.8"/>
+  <path d="M5 20c1.5-4 12.5-4 14 0" stroke="#1d8fff" strokeWidth="1.8" strokeLinecap="round"/>
 </svg>
+          >
+            <span style={styles.nodeEmoji}>👤</span>
+          </div>
 
-     {/* PARTICIPANTS */}
-<div
-  style={{
-    ...styles.node,
-    left: "5%",
-    top: "250px",
-    borderColor: "#1d8fff",
-    boxShadow:
-      "0 0 35px rgba(29,143,255,.95)",
-    color: "#1d8fff",
-  }}
->
-  <span style={styles.outlineIcon}>◌</span>
-  <span style={styles.nodeEmoji}>⌔</span>
-</div>
+          {/* JUSTICE */}
+          <div
+            style={{
+              ...styles.node,
+              left: "27%",
+              top: "168px",
+              borderColor: "#53ff7c",
+              boxShadow:
+                "0 0 35px rgba(83,255,124,.95)",
+            }}
+          >
+            <span style={styles.nodeEmoji}>🤝</span>
+          </div>
 
-{/* JUSTICE */}
-<div
-  style={{
-    ...styles.node,
-    left: "28%",
-    top: "210px",
-    borderColor: "#53ff7c",
-    boxShadow:
-      "0 0 35px rgba(83,255,124,.95)",
-    color: "#53ff7c",
-  }}
->
-  <span style={styles.outlineIcon}>◌</span>
-  <span style={styles.nodeEmoji}>⟡</span>
-</div>
+          {/* CENTER ORB */}
+          <div style={styles.centerOrb}>
+            <Image
+              src="/hm-logo.png"
+              alt="HireMinds"
+              width={170}
+              height={170}
+              style={{
+                objectFit: "contain",
+              }}
+            />
+          </div>
 
-{/* NONPROFITS */}
-<div
-  style={{
-    ...styles.node,
-    right: "28%",
-    top: "210px",
-    borderColor: "#d45eff",
-    boxShadow:
-      "0 0 35px rgba(212,94,255,.95)",
-    color: "#d45eff",
-  }}
->
-  <span style={styles.outlineIcon}>◌</span>
-  <span style={styles.nodeEmoji}>♡</span>
-</div>
+          {/* NONPROFITS */}
+          <div
+            style={{
+              ...styles.node,
+              right: "27%",
+              top: "168px",
+              borderColor: "#d45eff",
+              boxShadow:
+                "0 0 35px rgba(212,94,255,.95)",
+            }}
+          >
+            <span style={styles.nodeEmoji}>💜</span>
+          </div>
 
-{/* EMPLOYERS */}
-<div
-  style={{
-    ...styles.node,
-    right: "5%",
-    top: "250px",
-    borderColor: "#18d8ff",
-    boxShadow:
-      "0 0 35px rgba(24,216,255,.95)",
-    color: "#18d8ff",
-  }}
->
-  <span style={styles.outlineIcon}>◌</span>
-  <span style={styles.nodeEmoji}>▣</span>
-</div>
-        </div>
+          {/* EMPLOYERS */}
+          <div
+            style={{
+              ...styles.node,
+              right: "4%",
+              top: "195px",
+              borderColor: "#18d8ff",
+              boxShadow:
+                "0 0 35px rgba(24,216,255,.95)",
+            }}
+          >
+            <span style={styles.nodeEmoji}>💼</span>
+          </div>
+        </div>
 
-        {/* INFO */}
-        <div style={styles.cardGrid}>
+        {/* CARDS */}
+        <div style={styles.cardGrid}>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              Participants
+            </h3>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              Participants
-            </h3>
+            <p style={styles.cardText}>
+              Build visibility,
+              access tools,
+              and prepare for meaningful
+              career opportunities.
+            </p>
+          </div>
 
-            <p style={styles.cardText}>
-              Build visibility,
-              access tools,
-              and prepare for meaningful
-              career opportunities.
-            </p>
-          </div>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              Justice Impact
+              <br />
+              Partners
+            </h3>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              Justice Impact
-              <br />
-              Partners
-            </h3>
+            <p style={styles.cardText}>
+              Connect individuals
+              to support,
+              resources,
+              and pathways that
+              drive real change.
+            </p>
+          </div>
 
-            <p style={styles.cardText}>
-              Connect individuals
-              to support,
-              resources,
-              and pathways that
-              drive real change.
-            </p>
-          </div>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              HireMinds
+            </h3>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              HireMinds
-            </h3>
+            <p style={styles.centerText}>
+              One Platform.
+            </p>
 
-            <p style={styles.centerText}>
-              One Platform.
-            </p>
+            <p style={styles.centerBlue}>
+              Unlimited Impact.
+            </p>
+          </div>
 
-            <p style={styles.centerBlue}>
-              Unlimited Impact.
-            </p>
-          </div>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              Nonprofits
+            </h3>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              Nonprofits
-            </h3>
+            <p style={styles.cardText}>
+              Coordinate support,
+              program management,
+              and community impact
+              at scale.
+            </p>
+          </div>
 
-            <p style={styles.cardText}>
-              Coordinate support,
-              program management,
-              and community impact
-              at scale.
-            </p>
-          </div>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>
+              Employers
+            </h3>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>
-              Employers
-            </h3>
+            <p style={styles.cardText}>
+              Discover prepared talent,
+              build stronger teams,
+              and create lasting impact.
+            </p>
+          </div>
+        </div>
 
-            <p style={styles.cardText}>
-              Discover prepared talent,
-              build stronger teams,
-              and create lasting impact.
-            </p>
-          </div>
-        </div>
+        {/* BOTTOM */}
+        <div style={styles.bottomWrap}>
+          <p style={styles.bottomMain}>
+            HireMinds isn’t just a platform — it’s a{" "}
+            <span style={styles.bridgeWord}>
+              bridge.
+            </span>
+          </p>
 
-        {/* BOTTOM */}
-        <div style={styles.bottomWrap}>
-          <p style={styles.bottomMain}>
-            HireMinds isn’t just a platform — it’s a{" "}
-            <span style={styles.bridgeWord}>
-              bridge.
-            </span>
-          </p>
-
-          <p style={styles.bottomSub}>
-            One infrastructure.
-            One mission.
-            Unlimited potential.
-          </p>
-        </div>
-      </section>
-    </main>
-  );
+          <p style={styles.bottomSub}>
+            One infrastructure.
+            One mission.
+            Unlimited potential.
+          </p>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top, rgba(0,82,255,.15) 0%, #000000 45%)",
-    color: "#ffffff",
-    padding: "0 24px 100px",
-    overflow: "hidden",
-    fontFamily:
-      'Inter, ui-sans-serif, system-ui, sans-serif',
-  },
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at top, rgba(0,82,255,.15) 0%, #000000 45%)",
+    color: "#ffffff",
+    padding: "0 24px 100px",
+    overflow: "hidden",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, sans-serif',
+  },
 
-  hero: {
-    maxWidth: "1500px",
-    margin: "0 auto",
-    textAlign: "center",
-    paddingTop: "40px",
-  },
+  hero: {
+    maxWidth: "1400px",
+    margin: "0 auto",
+    textAlign: "center",
+    paddingTop: "40px",
+  },
 
-  heroEyebrow: {
-    color: "#2f8fff",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.28em",
-    marginBottom: "20px",
-  },
+  heroEyebrow: {
+    color: "#2f8fff",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.25em",
+    marginBottom: "20px",
+  },
 
-  title: {
-    margin: 0,
-    fontSize: "clamp(4rem,8vw,6.8rem)",
-    fontWeight: 900,
-    lineHeight: 0.95,
-    letterSpacing: "-0.06em",
-    color: "#f5f5f5",
-  },
+  title: {
+    margin: 0,
+    fontSize: "clamp(4rem,8vw,6.8rem)",
+    fontWeight: 900,
+    lineHeight: 0.95,
+    letterSpacing: "-0.06em",
+    color: "#f5f5f5",
+  },
 
-  subtitle: {
-    maxWidth: "820px",
-    margin: "24px auto 0",
-    color: "#d7d7d7",
-    lineHeight: 1.8,
-    fontSize: "20px",
-  },
+  subtitle: {
+    maxWidth: "820px",
+    margin: "24px auto 0",
+    color: "#d7d7d7",
+    lineHeight: 1.8,
+    fontSize: "20px",
+  },
 
-  buttonRow: {
-    display: "flex",
-    justifyContent: "center",
-    marginTop: "36px",
-  },
+  buttonRow: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "36px",
+  },
 
-  primaryButton: {
-    padding: "18px 42px",
-    borderRadius: "18px",
-    background:
-      "linear-gradient(180deg,#ffffff 0%,#d8d8e2 100%)",
-    color: "#000",
-    textDecoration: "none",
-    fontWeight: 900,
-    fontSize: "18px",
-    boxShadow:
-      "0 0 35px rgba(255,255,255,.18)",
-  },
+  primaryButton: {
+    padding: "18px 42px",
+    borderRadius: "18px",
+    background:
+      "linear-gradient(180deg,#ffffff 0%,#d8d8e2 100%)",
+    color: "#000",
+    textDecoration: "none",
+    fontWeight: 900,
+    fontSize: "18px",
+    boxShadow:
+      "0 0 35px rgba(255,255,255,.18)",
+  },
 
-  heroLogoWrap: {
-    marginTop: "35px",
-    display: "flex",
-    justifyContent: "center",
-  },
+  heroLogoWrap: {
+    marginTop: "45px",
+    display: "flex",
+    justifyContent: "center",
+  },
 
-  heroLogo: {
-    objectFit: "contain",
-    filter:
-      "drop-shadow(0 0 45px rgba(38,114,255,.65))",
-  },
+  heroLogo: {
+    objectFit: "contain",
+    filter:
+      "drop-shadow(0 0 24px rgba(38,114,255,.45))",
+  },
 
-  bridgeSection: {
-    maxWidth: "1650px",
-    margin: "0 auto",
-    textAlign: "center",
-    marginTop: "-10px",
-  },
+  bridgeSection: {
+    maxWidth: "1500px",
+    margin: "0 auto",
+    textAlign: "center",
+    marginTop: "10px",
+  },
 
-  whoWrap: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "20px",
-    marginBottom: "20px",
-  },
+  whoWrap: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "20px",
+    marginBottom: "20px",
+  },
 
-  line: {
-    width: "220px",
-    height: "1px",
-    background:
-      "linear-gradient(90deg,transparent,#2f8fff,transparent)",
-  },
+  line: {
+    width: "220px",
+    height: "1px",
+    background:
+      "linear-gradient(90deg,transparent,#2f8fff,transparent)",
+  },
 
-  whoTag: {
-    color: "#2f8fff",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.28em",
-  },
+  whoTag: {
+    color: "#2f8fff",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.28em",
+  },
 
-  sectionHeading: {
-    fontSize: "clamp(2.7rem,5vw,4.5rem)",
-    fontWeight: 900,
-    marginBottom: "20px",
-    lineHeight: 1.05,
-  },
+  sectionHeading: {
+    fontSize: "clamp(2.7rem,5vw,4.5rem)",
+    fontWeight: 900,
+    marginBottom: "20px",
+    lineHeight: 1.05,
+  },
 
-  sectionText: {
-    maxWidth: "1050px",
-    margin: "0 auto",
-    color: "#d7d7d7",
-    fontSize: "24px",
-    lineHeight: 1.65,
-  },
+  sectionText: {
+    maxWidth: "1050px",
+    margin: "0 auto",
+    color: "#d7d7d7",
+    fontSize: "24px",
+    lineHeight: 1.65,
+  },
 
-  bridgeWrap: {
-    position: "relative",
-    width: "100%",
-    height: "640px",
-    marginTop: "40px",
-  },
+  bridgeWrap: {
+    position: "relative",
+    marginTop: "70px",
+    height: "570px",
+    width: "100%",
+    overflow: "hidden",
+  },
 
-  bridgeSvg: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    left: 0,
-    top: 0,
-    filter:
-      "drop-shadow(0 0 25px rgba(0,140,255,.5))",
-  },
+  bridgeImage: {
+    position: "absolute",
+    width: "100%",
+    left: 0,
+    top: "85px",
+    opacity: 1,
+    pointerEvents: "none",
+    filter:
+      "drop-shadow(0 0 22px rgba(43,120,255,.5))",
+  },
 
-node: {
-  position: "absolute",
-  width: "130px",
-  height: "130px",
-  borderRadius: "50%",
-  border: "3px solid",
-  background:
-    "radial-gradient(circle at top,#090909 0%,#000000 100%)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 20,
-},
+  node: {
+    position: "absolute",
+    width: "120px",
+    height: "120px",
+    borderRadius: "50%",
+    border: "3px solid",
+    background:
+      "radial-gradient(circle at top,#101010 0%,#000000 100%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
+  },
 
-outlineIcon: {
-  position: "absolute",
-  fontSize: "120px",
-  opacity: 0.18,
-},
+  nodeEmoji: {
+    fontSize: "52px",
+  },
 
-nodeEmoji: {
-  position: "relative",
-  fontSize: "52px",
-  fontWeight: 300,
-  filter: "drop-shadow(0 0 10px currentColor)",
-},
+  centerOrb: {
+    position: "absolute",
+    left: "50%",
+    top: "220px",
+    transform: "translateX(-50%)",
+    width: "240px",
+    height: "240px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle at top,#0f172a 0%,#020202 80%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 20,
+    boxShadow:
+      "0 0 95px rgba(29,143,255,.75)",
+  },
 
-  cardGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(240px,1fr))",
-    gap: "26px",
-    marginTop: "-70px",
-    alignItems: "start",
-  },
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(240px,1fr))",
+    gap: "28px",
+    marginTop: "-40px",
+    alignItems: "start",
+  },
 
-  card: {
-    textAlign: "center",
-  },
+  card: {
+    textAlign: "center",
+  },
 
-  cardTitle: {
-    fontSize: "30px",
-    fontWeight: 900,
-    marginBottom: "14px",
-    lineHeight: 1.1,
-  },
+  cardTitle: {
+    fontSize: "28px",
+    fontWeight: 900,
+    marginBottom: "16px",
+    lineHeight: 1.15,
+  },
 
-  cardText: {
-    color: "#dddddd",
-    lineHeight: 1.8,
-    fontSize: "18px",
-  },
+  cardText: {
+    color: "#e0e0e0",
+    lineHeight: 1.8,
+    fontSize: "18px",
+  },
 
-  centerText: {
-    color: "#ffffff",
-    fontSize: "24px",
-    marginBottom: "6px",
-  },
+  centerText: {
+    color: "#ffffff",
+    fontSize: "24px",
+    marginBottom: "6px",
+  },
 
-  centerBlue: {
-    color: "#2f8fff",
-    fontSize: "24px",
-    fontWeight: 900,
-  },
+  centerBlue: {
+    color: "#2f8fff",
+    fontSize: "24px",
+    fontWeight: 900,
+  },  
 
-  bottomWrap: {
-    marginTop: "40px",
-    textAlign: "center",
-  },
+  bottomWrap: {
+    marginTop: "50px",
+    textAlign: "center",
+  },
 
-  bottomMain: {
-    fontSize: "32px",
-    fontWeight: 800,
-    marginBottom: "12px",
-  },
+  bottomMain: {
+    fontSize: "32px",
+    fontWeight: 800,
+    marginBottom: "12px",
+  },
 
-  bridgeWord: {
-    color: "#2f8fff",
-  },
+  bridgeWord: {
+    color: "#2f8fff",
+  },
 
-  bottomSub: {
-    color: "#d0d0d0",
-    fontSize: "24px",
-    lineHeight: 1.7,
-  },
+  bottomSub: {
+    color: "#d0d0d0",
+    fontSize: "24px",
+    lineHeight: 1.7,
+  },
 };
