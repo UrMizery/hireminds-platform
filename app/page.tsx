@@ -30,7 +30,7 @@ export default function HomePage() {
           </a>
         </div>
 
-        {/* LOGO */}
+        {/* FLOATING HM LOGO */}
         <div style={styles.heroLogoWrap}>
           <Image
             src="/hm-logo.png"
@@ -68,18 +68,81 @@ export default function HomePage() {
 
         {/* BRIDGE */}
         <div style={styles.bridgeWrap}>
-          <img
-            src="/hm-bridge.png"
-            alt="bridge"
-            style={styles.bridgeImage}
-          />
+
+          {/* GLOW */}
+          <div style={styles.bridgeGlow} />
+
+          {/* SVG BRIDGE */}
+          <svg
+            viewBox="0 0 1600 520"
+            preserveAspectRatio="none"
+            style={styles.bridgeSvg}
+          >
+
+            {/* MAIN BRIDGE */}
+            <path
+              d="
+                M 0 270
+                C 180 80,
+                  420 80,
+                  800 250
+                S 1380 420,
+                  1600 180
+              "
+              fill="none"
+              stroke="rgba(70,150,255,.95)"
+              strokeWidth="4"
+            />
+
+            <path
+              d="
+                M 0 295
+                C 180 110,
+                  420 110,
+                  800 275
+                S 1380 450,
+                  1600 205
+              "
+              fill="none"
+              stroke="rgba(180,120,255,.85)"
+              strokeWidth="3"
+            />
+
+            <path
+              d="
+                M 0 320
+                C 180 170,
+                  420 170,
+                  800 320
+                S 1380 500,
+                  1600 260
+              "
+              fill="none"
+              stroke="rgba(0,220,255,.95)"
+              strokeWidth="5"
+            />
+
+            <path
+              d="
+                M 0 340
+                C 180 210,
+                  420 210,
+                  800 350
+                S 1380 520,
+                  1600 290
+              "
+              fill="none"
+              stroke="rgba(70,130,255,.35)"
+              strokeWidth="2"
+            />
+          </svg>
 
           {/* PARTICIPANTS */}
           <div
             style={{
               ...styles.node,
               left: "4%",
-              top: "195px",
+              top: "210px",
               borderColor: "#1d8fff",
               boxShadow:
                 "0 0 35px rgba(29,143,255,.95)",
@@ -92,8 +155,8 @@ export default function HomePage() {
           <div
             style={{
               ...styles.node,
-              left: "27%",
-              top: "168px",
+              left: "28%",
+              top: "165px",
               borderColor: "#53ff7c",
               boxShadow:
                 "0 0 35px rgba(83,255,124,.95)",
@@ -102,13 +165,13 @@ export default function HomePage() {
             <span style={styles.nodeEmoji}>🤝</span>
           </div>
 
-          {/* CENTER ORB */}
+          {/* HM CENTER */}
           <div style={styles.centerOrb}>
             <Image
               src="/hm-logo.png"
               alt="HireMinds"
-              width={170}
-              height={170}
+              width={230}
+              height={230}
               style={{
                 objectFit: "contain",
               }}
@@ -119,8 +182,8 @@ export default function HomePage() {
           <div
             style={{
               ...styles.node,
-              right: "27%",
-              top: "168px",
+              right: "28%",
+              top: "165px",
               borderColor: "#d45eff",
               boxShadow:
                 "0 0 35px rgba(212,94,255,.95)",
@@ -134,7 +197,7 @@ export default function HomePage() {
             style={{
               ...styles.node,
               right: "4%",
-              top: "195px",
+              top: "210px",
               borderColor: "#18d8ff",
               boxShadow:
                 "0 0 35px rgba(24,216,255,.95)",
@@ -144,8 +207,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* CARDS */}
+        {/* INFO GRID */}
         <div style={styles.cardGrid}>
+
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>
               Participants
@@ -248,7 +312,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   hero: {
-    maxWidth: "1400px",
+    maxWidth: "1500px",
     margin: "0 auto",
     textAlign: "center",
     paddingTop: "40px",
@@ -258,7 +322,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#2f8fff",
     fontSize: "12px",
     fontWeight: 900,
-    letterSpacing: "0.25em",
+    letterSpacing: "0.28em",
     marginBottom: "20px",
   },
 
@@ -299,7 +363,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   heroLogoWrap: {
-    marginTop: "45px",
+    marginTop: "40px",
     display: "flex",
     justifyContent: "center",
   },
@@ -307,14 +371,14 @@ const styles: Record<string, React.CSSProperties> = {
   heroLogo: {
     objectFit: "contain",
     filter:
-      "drop-shadow(0 0 24px rgba(38,114,255,.45))",
+      "drop-shadow(0 0 40px rgba(38,114,255,.55))",
   },
 
   bridgeSection: {
-    maxWidth: "1500px",
+    maxWidth: "1600px",
     margin: "0 auto",
     textAlign: "center",
-    marginTop: "10px",
+    marginTop: "-10px",
   },
 
   whoWrap: {
@@ -356,21 +420,34 @@ const styles: Record<string, React.CSSProperties> = {
 
   bridgeWrap: {
     position: "relative",
-    marginTop: "70px",
-    height: "570px",
     width: "100%",
+    height: "560px",
+    marginTop: "60px",
     overflow: "hidden",
   },
 
-  bridgeImage: {
+  bridgeGlow: {
+    position: "absolute",
+    left: "50%",
+    top: "220px",
+    transform: "translateX(-50%)",
+    width: "700px",
+    height: "240px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(30,120,255,.35) 0%, rgba(30,120,255,0) 70%)",
+    filter: "blur(40px)",
+  },
+
+  bridgeSvg: {
     position: "absolute",
     width: "100%",
+    height: "100%",
     left: 0,
-    top: "85px",
-    opacity: 1,
-    pointerEvents: "none",
+    top: 0,
+    overflow: "visible",
     filter:
-      "drop-shadow(0 0 22px rgba(43,120,255,.5))",
+      "drop-shadow(0 0 18px rgba(0,140,255,.5))",
   },
 
   node: {
@@ -380,15 +457,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "50%",
     border: "3px solid",
     background:
-      "radial-gradient(circle at top,#101010 0%,#000000 100%)",
+      "radial-gradient(circle at top,#111111 0%,#000000 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 5,
+    zIndex: 10,
   },
 
   nodeEmoji: {
-    fontSize: "52px",
+    fontSize: "50px",
   },
 
   centerOrb: {
@@ -396,25 +473,23 @@ const styles: Record<string, React.CSSProperties> = {
     left: "50%",
     top: "220px",
     transform: "translateX(-50%)",
-    width: "240px",
-    height: "240px",
+    width: "260px",
+    height: "260px",
     borderRadius: "50%",
-    background:
-      "radial-gradient(circle at top,#0f172a 0%,#020202 80%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 20,
-    boxShadow:
-      "0 0 95px rgba(29,143,255,.75)",
+    filter:
+      "drop-shadow(0 0 55px rgba(43,120,255,.85))",
   },
 
   cardGrid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(auto-fit,minmax(240px,1fr))",
-    gap: "28px",
-    marginTop: "-40px",
+    gap: "26px",
+    marginTop: "-20px",
     alignItems: "start",
   },
 
@@ -423,14 +498,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   cardTitle: {
-    fontSize: "28px",
+    fontSize: "30px",
     fontWeight: 900,
-    marginBottom: "16px",
-    lineHeight: 1.15,
+    marginBottom: "14px",
+    lineHeight: 1.1,
   },
 
   cardText: {
-    color: "#e0e0e0",
+    color: "#dddddd",
     lineHeight: 1.8,
     fontSize: "18px",
   },
