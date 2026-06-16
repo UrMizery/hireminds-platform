@@ -15,7 +15,7 @@ export default function HomePage() {
         </p>
 
         <h1 style={styles.title}>
-          Build Your Career Passport
+          {t.title}
         </h1>
 
         <p style={styles.subtitle}>
@@ -24,183 +24,91 @@ export default function HomePage() {
           and keep momentum moving forward.
         </p>
 
-        <a href="/sign-up" style={styles.primaryButton}>
-          Create Career Passport / Sign Up
-        </a>
+        <div style={styles.buttonRow}>
+          <a href="/sign-up" style={styles.primaryButton}>
+            Create Career Passport / Sign Up
+          </a>
+        </div>
 
-        <div style={styles.logoWrap}>
+        {/* LOGO */}
+        <div style={styles.heroLogoWrap}>
           <Image
             src="/hm-logo.png"
             alt="HireMinds"
             width={420}
             height={420}
-            style={styles.logoImage}
+            style={styles.heroLogo}
           />
         </div>
       </section>
 
       {/* WHO WE ARE */}
       <section style={styles.bridgeSection}>
-        <div style={styles.headingRow}>
+        <div style={styles.whoWrap}>
           <div style={styles.line} />
-          <p style={styles.sectionTag}>
+
+          <p style={styles.whoTag}>
             WHO WE ARE
           </p>
+
           <div style={styles.line} />
         </div>
 
-        <h2 style={styles.bridgeTitle}>
+        <h2 style={styles.sectionHeading}>
           The Bridge Between Potential and Opportunity
         </h2>
 
-        <p style={styles.bridgeText}>
+        <p style={styles.sectionText}>
           HireMinds is a workforce infrastructure platform
           that connects people, purpose, and opportunity.
           We bridge the gap between Participants,
-          Justice Impact Partners, Nonprofits,
-          and Employers through one unified ecosystem
-          built for real outcomes.
+          Justice Impact Partners, Nonprofits, and Employers
+          through one unified ecosystem built for real outcomes.
         </p>
 
         {/* BRIDGE */}
         <div style={styles.bridgeWrap}>
-          <div style={styles.bridgeGlow} />
-
-          <svg
-            viewBox="0 0 1600 500"
-            style={styles.bridgeSvg}
-          >
-            <defs>
-              <linearGradient
-                id="bridgeGradient"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stopColor="#1d8fff" />
-                <stop offset="30%" stopColor="#5aff75" />
-                <stop offset="55%" stopColor="#5ea8ff" />
-                <stop offset="75%" stopColor="#d45eff" />
-                <stop offset="100%" stopColor="#18d8ff" />
-              </linearGradient>
-            </defs>
-
-            {/* MAIN BRIDGE DECK */}
-            <path
-              d="M120 250 L1480 250"
-              stroke="url(#bridgeGradient)"
-              strokeWidth="6"
-              fill="none"
-              opacity="0.95"
-            />
-
-            {/* LEFT TOWER */}
-            <line
-              x1="300"
-              y1="120"
-              x2="300"
-              y2="250"
-              stroke="#38a3ff"
-              strokeWidth="4"
-              opacity="0.9"
-            />
-
-            {/* RIGHT TOWER */}
-            <line
-              x1="1300"
-              y1="120"
-              x2="1300"
-              y2="250"
-              stroke="#38a3ff"
-              strokeWidth="4"
-              opacity="0.9"
-            />
-
-            {/* MAIN TOP CABLE */}
-            <path
-              d="
-              M120 250
-              C350 40 550 40 800 130
-              C1050 40 1250 40 1480 250
-              "
-              stroke="url(#bridgeGradient)"
-              strokeWidth="3"
-              fill="none"
-              opacity="0.9"
-            />
-
-            {/* SECONDARY CABLE */}
-            <path
-              d="
-              M120 250
-              C350 70 550 70 800 150
-              C1050 70 1250 70 1480 250
-              "
-              stroke="url(#bridgeGradient)"
-              strokeWidth="1.5"
-              fill="none"
-              opacity="0.45"
-            />
-
-            {/* LEFT SUSPENSION */}
-            <line x1="220" y1="180" x2="220" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
-            <line x1="320" y1="110" x2="320" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
-            <line x1="420" y1="90" x2="420" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
-            <line x1="520" y1="95" x2="520" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
-            <line x1="620" y1="115" x2="620" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
-
-            {/* CENTER */}
-            <line x1="800" y1="130" x2="800" y2="250" stroke="#5ea8ff" strokeWidth="1.5" opacity="0.8" />
-
-            {/* RIGHT SUSPENSION */}
-            <line x1="980" y1="115" x2="980" y2="250" stroke="#d45eff" strokeWidth="1" opacity="0.6" />
-            <line x1="1080" y1="95" x2="1080" y2="250" stroke="#d45eff" strokeWidth="1" opacity="0.6" />
-            <line x1="1180" y1="90" x2="1180" y2="250" stroke="#d45eff" strokeWidth="1" opacity="0.6" />
-            <line x1="1280" y1="110" x2="1280" y2="250" stroke="#18d8ff" strokeWidth="1" opacity="0.6" />
-            <line x1="1380" y1="180" x2="1380" y2="250" stroke="#18d8ff" strokeWidth="1" opacity="0.6" />
-
-            {/* GLOW POINTS */}
-            <circle cx="300" cy="120" r="8" fill="#38a3ff" />
-            <circle cx="1300" cy="120" r="8" fill="#18d8ff" />
-            <circle cx="800" cy="130" r="7" fill="#5ea8ff" />
-          </svg>
+          <img
+            src="/hm-bridge.png"
+            alt="bridge"
+            style={styles.bridgeImage}
+          />
 
           {/* PARTICIPANTS */}
           <div
             style={{
               ...styles.node,
               left: "4%",
-              top: "175px",
+              top: "195px",
               borderColor: "#1d8fff",
               boxShadow:
-                "0 0 35px rgba(29,143,255,.7)",
+                "0 0 35px rgba(29,143,255,.95)",
             }}
           >
-            👤
+            <span style={styles.nodeEmoji}>👤</span>
           </div>
 
           {/* JUSTICE */}
           <div
             style={{
               ...styles.node,
-              left: "30%",
-              top: "135px",
+              left: "27%",
+              top: "168px",
               borderColor: "#53ff7c",
               boxShadow:
-                "0 0 35px rgba(83,255,124,.7)",
+                "0 0 35px rgba(83,255,124,.95)",
             }}
           >
-            🤝
+            <span style={styles.nodeEmoji}>🤝</span>
           </div>
 
-          {/* CENTER LOGO */}
+          {/* CENTER ORB */}
           <div style={styles.centerOrb}>
             <Image
               src="/hm-logo.png"
               alt="HireMinds"
-              width={160}
-              height={160}
+              width={170}
+              height={170}
               style={{
                 objectFit: "contain",
               }}
@@ -211,34 +119,34 @@ export default function HomePage() {
           <div
             style={{
               ...styles.node,
-              right: "28%",
-              top: "145px",
+              right: "27%",
+              top: "168px",
               borderColor: "#d45eff",
               boxShadow:
-                "0 0 35px rgba(212,94,255,.7)",
+                "0 0 35px rgba(212,94,255,.95)",
             }}
           >
-            💜
+            <span style={styles.nodeEmoji}>💜</span>
           </div>
 
           {/* EMPLOYERS */}
           <div
             style={{
               ...styles.node,
-              right: "3%",
-              top: "175px",
+              right: "4%",
+              top: "195px",
               borderColor: "#18d8ff",
               boxShadow:
-                "0 0 35px rgba(24,216,255,.7)",
+                "0 0 35px rgba(24,216,255,.95)",
             }}
           >
-            💼
+            <span style={styles.nodeEmoji}>💼</span>
           </div>
         </div>
 
-        {/* LABELS */}
+        {/* CARDS */}
         <div style={styles.cardGrid}>
-          <div style={styles.infoCard}>
+          <div style={styles.card}>
             <h3 style={styles.cardTitle}>
               Participants
             </h3>
@@ -251,20 +159,23 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div style={styles.infoCard}>
+          <div style={styles.card}>
             <h3 style={styles.cardTitle}>
-              Justice Impact Partners
+              Justice Impact
+              <br />
+              Partners
             </h3>
 
             <p style={styles.cardText}>
               Connect individuals
-              to support, resources,
+              to support,
+              resources,
               and pathways that
               drive real change.
             </p>
           </div>
 
-          <div style={styles.infoCardCenter}>
+          <div style={styles.card}>
             <h3 style={styles.cardTitle}>
               HireMinds
             </h3>
@@ -278,7 +189,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div style={styles.infoCard}>
+          <div style={styles.card}>
             <h3 style={styles.cardTitle}>
               Nonprofits
             </h3>
@@ -291,7 +202,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div style={styles.infoCard}>
+          <div style={styles.card}>
             <h3 style={styles.cardTitle}>
               Employers
             </h3>
@@ -304,12 +215,20 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div style={styles.bottomText}>
-          HireMinds isn’t just a platform —
-          it’s a bridge.
-          <br />
-          One infrastructure. One mission.
-          Unlimited potential.
+        {/* BOTTOM */}
+        <div style={styles.bottomWrap}>
+          <p style={styles.bottomMain}>
+            HireMinds isn’t just a platform — it’s a{" "}
+            <span style={styles.bridgeWord}>
+              bridge.
+            </span>
+          </p>
+
+          <p style={styles.bottomSub}>
+            One infrastructure.
+            One mission.
+            Unlimited potential.
+          </p>
         </div>
       </section>
     </main>
@@ -320,79 +239,85 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at top, rgba(0,102,255,.12), transparent 20%), #020202",
+      "radial-gradient(circle at top, rgba(0,82,255,.15) 0%, #000000 45%)",
     color: "#ffffff",
-    padding: "30px 20px 80px",
+    padding: "0 24px 100px",
     overflow: "hidden",
     fontFamily:
-      'Inter, sans-serif',
+      'Inter, ui-sans-serif, system-ui, sans-serif',
   },
 
   hero: {
-    textAlign: "center",
-    maxWidth: "1200px",
+    maxWidth: "1400px",
     margin: "0 auto",
+    textAlign: "center",
+    paddingTop: "40px",
   },
 
   heroEyebrow: {
     color: "#2f8fff",
-    letterSpacing: ".25em",
     fontSize: "12px",
-    fontWeight: 800,
+    fontWeight: 900,
+    letterSpacing: "0.25em",
     marginBottom: "20px",
   },
 
   title: {
-    fontSize: "clamp(3.5rem,8vw,6.5rem)",
-    lineHeight: ".95",
+    margin: 0,
+    fontSize: "clamp(4rem,8vw,6.8rem)",
     fontWeight: 900,
-    marginBottom: "24px",
+    lineHeight: 0.95,
     letterSpacing: "-0.06em",
+    color: "#f5f5f5",
   },
 
   subtitle: {
-    maxWidth: "860px",
-    margin: "0 auto",
-    color: "#d3d3d3",
-    lineHeight: "1.8",
-    fontSize: "22px",
+    maxWidth: "820px",
+    margin: "24px auto 0",
+    color: "#d7d7d7",
+    lineHeight: 1.8,
+    fontSize: "20px",
+  },
+
+  buttonRow: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "36px",
   },
 
   primaryButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: "36px",
     padding: "18px 42px",
     borderRadius: "18px",
     background:
-      "linear-gradient(180deg,#ffffff 0%,#d9d9e4 100%)",
-    color: "#050505",
+      "linear-gradient(180deg,#ffffff 0%,#d8d8e2 100%)",
+    color: "#000",
     textDecoration: "none",
-    fontWeight: 800,
+    fontWeight: 900,
     fontSize: "18px",
     boxShadow:
-      "0 10px 40px rgba(255,255,255,.2)",
+      "0 0 35px rgba(255,255,255,.18)",
   },
 
-  logoWrap: {
-    marginTop: "30px",
+  heroLogoWrap: {
+    marginTop: "45px",
     display: "flex",
     justifyContent: "center",
   },
 
-  logoImage: {
+  heroLogo: {
     objectFit: "contain",
+    filter:
+      "drop-shadow(0 0 24px rgba(38,114,255,.45))",
   },
 
   bridgeSection: {
-    maxWidth: "1600px",
+    maxWidth: "1500px",
     margin: "0 auto",
-    paddingTop: "40px",
     textAlign: "center",
+    marginTop: "10px",
   },
 
-  headingRow: {
+  whoWrap: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -401,53 +326,51 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   line: {
-    width: "140px",
+    width: "220px",
     height: "1px",
     background:
-      "linear-gradient(90deg, transparent, #2f8fff, transparent)",
+      "linear-gradient(90deg,transparent,#2f8fff,transparent)",
   },
 
-  sectionTag: {
+  whoTag: {
     color: "#2f8fff",
-    fontWeight: 800,
-    letterSpacing: ".22em",
     fontSize: "12px",
-  },
-
-  bridgeTitle: {
-    fontSize: "clamp(3rem,6vw,5rem)",
     fontWeight: 900,
-    letterSpacing: "-0.05em",
-    marginBottom: "24px",
+    letterSpacing: "0.28em",
   },
 
-  bridgeText: {
-    maxWidth: "980px",
+  sectionHeading: {
+    fontSize: "clamp(2.7rem,5vw,4.5rem)",
+    fontWeight: 900,
+    marginBottom: "20px",
+    lineHeight: 1.05,
+  },
+
+  sectionText: {
+    maxWidth: "1050px",
     margin: "0 auto",
-    color: "#d5d5d5",
-    lineHeight: "1.7",
+    color: "#d7d7d7",
     fontSize: "24px",
+    lineHeight: 1.65,
   },
 
   bridgeWrap: {
     position: "relative",
-    marginTop: "80px",
-    height: "500px",
+    marginTop: "70px",
+    height: "570px",
+    width: "100%",
+    overflow: "hidden",
   },
 
-  bridgeGlow: {
-    position: "absolute",
-    inset: 0,
-    background:
-      "radial-gradient(circle at center, rgba(29,143,255,.16), transparent 70%)",
-    filter: "blur(40px)",
-  },
-
-  bridgeSvg: {
+  bridgeImage: {
     position: "absolute",
     width: "100%",
-    height: "100%",
-    inset: 0,
+    left: 0,
+    top: "85px",
+    opacity: 1,
+    pointerEvents: "none",
+    filter:
+      "drop-shadow(0 0 22px rgba(43,120,255,.5))",
   },
 
   node: {
@@ -456,80 +379,92 @@ const styles: Record<string, React.CSSProperties> = {
     height: "120px",
     borderRadius: "50%",
     border: "3px solid",
-    background: "#050505",
+    background:
+      "radial-gradient(circle at top,#101010 0%,#000000 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "42px",
     zIndex: 5,
+  },
+
+  nodeEmoji: {
+    fontSize: "52px",
   },
 
   centerOrb: {
     position: "absolute",
     left: "50%",
-    top: "170px",
+    top: "220px",
     transform: "translateX(-50%)",
     width: "240px",
     height: "240px",
     borderRadius: "50%",
     background:
-      "radial-gradient(circle at top, #111827 0%, #050505 80%)",
+      "radial-gradient(circle at top,#0f172a 0%,#020202 80%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 20,
     boxShadow:
-      "0 0 90px rgba(29,143,255,.6)",
-    zIndex: 10,
+      "0 0 95px rgba(29,143,255,.75)",
   },
 
   cardGrid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(auto-fit,minmax(240px,1fr))",
-    gap: "20px",
-    marginTop: "-20px",
+    gap: "28px",
+    marginTop: "-40px",
     alignItems: "start",
   },
 
-  infoCard: {
+  card: {
     textAlign: "center",
-    padding: "10px",
-  },
-
-  infoCardCenter: {
-    textAlign: "center",
-    padding: "10px",
   },
 
   cardTitle: {
     fontSize: "28px",
     fontWeight: 900,
-    marginBottom: "14px",
+    marginBottom: "16px",
+    lineHeight: 1.15,
   },
 
   cardText: {
-    color: "#d5d5d5",
-    lineHeight: "1.7",
+    color: "#e0e0e0",
+    lineHeight: 1.8,
     fontSize: "18px",
   },
 
   centerText: {
     color: "#ffffff",
-    fontSize: "22px",
+    fontSize: "24px",
     marginBottom: "6px",
   },
 
   centerBlue: {
     color: "#2f8fff",
-    fontSize: "22px",
-    fontWeight: 800,
+    fontSize: "24px",
+    fontWeight: 900,
   },
 
-  bottomText: {
-    marginTop: "60px",
-    color: "#d0d0d0",
-    lineHeight: "1.8",
-    fontSize: "24px",
+  bottomWrap: {
+    marginTop: "50px",
     textAlign: "center",
+  },
+
+  bottomMain: {
+    fontSize: "32px",
+    fontWeight: 800,
+    marginBottom: "12px",
+  },
+
+  bridgeWord: {
+    color: "#2f8fff",
+  },
+
+  bottomSub: {
+    color: "#d0d0d0",
+    fontSize: "24px",
+    lineHeight: 1.7,
   },
 };
