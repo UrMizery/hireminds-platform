@@ -1,223 +1,475 @@
-'use client';
+"use client";
 
-import { Briefcase, Heart, Handshake, User } from 'lucide-react';
+import Image from "next/image";
+import { useLanguage } from "./lib/language-context";
 
 export default function HomePage() {
+  const { t } = useLanguage();
+
   return (
-    <main className="min-h-screen bg-black text-white overflow-hidden">
-      {/* NAVBAR */}
-      <nav className="w-full border-b border-white/10 px-10 py-5 flex items-center justify-between bg-black">
-        <div className="text-4xl font-semibold tracking-tight">
-          HireMinds
-        </div>
-
-        <div className="hidden md:flex items-center gap-12 text-lg">
-          <a href="#" className="hover:text-blue-400 transition">
-            Home
-          </a>
-
-          <a href="#" className="hover:text-blue-400 transition">
-            Sign In
-          </a>
-
-          <a href="#" className="hover:text-blue-400 transition">
-            Partner
-          </a>
-
-          <a href="#" className="hover:text-blue-400 transition">
-            with HireMinds
-          </a>
-
-          <a href="#" className="hover:text-blue-400 transition">
-            Contact Us
-          </a>
-        </div>
-
-        <div className="flex items-center gap-10 text-lg">
-          <div className="flex items-center gap-2">
-            <span>Job Board</span>
-            <span className="text-yellow-400">🔒</span>
-          </div>
-
-          <a href="#" className="hover:text-blue-400 transition">
-            Employer / Partner Sign In
-          </a>
-        </div>
-      </nav>
-
+    <main style={styles.page}>
       {/* HERO */}
-      <section className="relative flex flex-col items-center text-center px-6 pt-14 pb-32">
-        {/* Background glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,102,255,0.25),transparent_60%)] pointer-events-none" />
-
-        <p className="text-[#1E90FF] tracking-[0.35em] uppercase text-sm font-semibold mb-6">
-          Workforce Infrastructure Platform
+      <section style={styles.hero}>
+        <p style={styles.heroEyebrow}>
+          WORKFORCE INFRASTRUCTURE PLATFORM
         </p>
 
-        <h1 className="text-6xl md:text-8xl font-extrabold leading-none tracking-tight max-w-7xl">
+        <h1 style={styles.title}>
           Build Your Career Passport
         </h1>
 
-        <p className="mt-8 text-2xl text-white/80 max-w-4xl leading-relaxed">
-          HireMinds helps people strengthen visibility, organize career tools,
-          prepare for opportunities, and keep momentum moving forward.
+        <p style={styles.subtitle}>
+          HireMinds helps people strengthen visibility,
+          organize career tools, prepare for opportunities,
+          and keep momentum moving forward.
         </p>
 
-        {/* BUTTON */}
-        <button className="mt-12 px-12 py-5 rounded-2xl bg-white text-black text-2xl font-semibold shadow-[0_0_35px_rgba(255,255,255,0.4)] hover:scale-105 transition">
+        <a href="/sign-up" style={styles.primaryButton}>
           Create Career Passport / Sign Up
-        </button>
+        </a>
 
-        {/* LOGO */}
-        <div className="mt-20 relative">
-          <div className="absolute -inset-10 bg-blue-500/20 blur-3xl rounded-full" />
+        <div style={styles.logoWrap}>
+          <Image
+            src="/hm-logo.png"
+            alt="HireMinds"
+            width={420}
+            height={420}
+            style={styles.logoImage}
+          />
+        </div>
+      </section>
 
-          <div className="relative text-center">
-            <div className="text-[12rem] md:text-[18rem] font-black leading-none bg-gradient-to-b from-white via-gray-300 to-blue-500 bg-clip-text text-transparent tracking-tight">
-              HM
-            </div>
+      {/* WHO WE ARE */}
+      <section style={styles.bridgeSection}>
+        <div style={styles.headingRow}>
+          <div style={styles.line} />
+          <p style={styles.sectionTag}>WHO WE ARE</p>
+          <div style={styles.line} />
+        </div>
 
-            <div className="absolute right-0 bottom-10 w-10 h-10 rounded-full bg-blue-400 blur-sm shadow-[0_0_40px_15px_rgba(59,130,246,0.9)]" />
+        <h2 style={styles.bridgeTitle}>
+          The Bridge Between Potential and Opportunity
+        </h2>
 
-            <div className="text-5xl md:text-6xl tracking-[0.4em] font-semibold mt-2">
-              HIRE
-              <span className="text-blue-500">MINDS</span>
-            </div>
+        <p style={styles.bridgeText}>
+          HireMinds is a workforce infrastructure platform
+          that connects people, purpose, and opportunity.
+          We bridge the gap between Participants,
+          Justice Impact Partners, Nonprofits,
+          and Employers through one unified ecosystem
+          built for real outcomes.
+        </p>
+
+        {/* BRIDGE */}
+        <div style={styles.bridgeWrap}>
+          <div style={styles.bridgeGlow} />
+
+          <svg
+            viewBox="0 0 1400 340"
+            style={styles.bridgeSvg}
+          >
+            <defs>
+              <linearGradient
+                id="bridgeGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#1d8fff" />
+                <stop offset="30%" stopColor="#5aff75" />
+                <stop offset="50%" stopColor="#6ca8ff" />
+                <stop offset="70%" stopColor="#d45eff" />
+                <stop offset="100%" stopColor="#18d8ff" />
+              </linearGradient>
+            </defs>
+
+            <path
+              d="M0 200 C180 40 320 320 520 180 S880 120 1400 200"
+              stroke="url(#bridgeGradient)"
+              strokeWidth="3"
+              fill="none"
+              opacity="0.95"
+            />
+
+            <path
+              d="M0 220 C180 60 320 340 520 200 S880 140 1400 220"
+              stroke="url(#bridgeGradient)"
+              strokeWidth="1"
+              fill="none"
+              opacity="0.45"
+            />
+
+            <path
+              d="M0 180 C180 20 320 300 520 160 S880 100 1400 180"
+              stroke="url(#bridgeGradient)"
+              strokeWidth="1"
+              fill="none"
+              opacity="0.3"
+            />
+          </svg>
+
+          {/* PARTICIPANTS */}
+          <div
+            style={{
+              ...styles.node,
+              left: "4%",
+              top: "120px",
+              borderColor: "#1d8fff",
+              boxShadow:
+                "0 0 35px rgba(29,143,255,.7)",
+            }}
+          >
+            👤
+          </div>
+
+          {/* JUSTICE */}
+          <div
+            style={{
+              ...styles.node,
+              left: "30%",
+              top: "95px",
+              borderColor: "#53ff7c",
+              boxShadow:
+                "0 0 35px rgba(83,255,124,.7)",
+            }}
+          >
+            🤝
+          </div>
+
+          {/* CENTER LOGO */}
+          <div style={styles.centerOrb}>
+            <Image
+              src="/hm-logo.png"
+              alt="HireMinds"
+              width={160}
+              height={160}
+              style={{
+                objectFit: "contain",
+              }}
+            />
+          </div>
+
+          {/* NONPROFITS */}
+          <div
+            style={{
+              ...styles.node,
+              right: "28%",
+              top: "105px",
+              borderColor: "#d45eff",
+              boxShadow:
+                "0 0 35px rgba(212,94,255,.7)",
+            }}
+          >
+            💜
+          </div>
+
+          {/* EMPLOYERS */}
+          <div
+            style={{
+              ...styles.node,
+              right: "3%",
+              top: "120px",
+              borderColor: "#18d8ff",
+              boxShadow:
+                "0 0 35px rgba(24,216,255,.7)",
+            }}
+          >
+            💼
           </div>
         </div>
 
-        {/* WHO WE ARE */}
-        <div className="mt-20 w-full max-w-6xl">
-          <div className="flex items-center justify-center gap-6 mb-8">
-            <div className="h-[2px] w-52 bg-blue-500" />
+        {/* LABELS */}
+        <div style={styles.cardGrid}>
+          <div style={styles.infoCard}>
+            <h3 style={styles.cardTitle}>
+              Participants
+            </h3>
 
-            <span className="uppercase tracking-[0.35em] text-[#1E90FF] font-semibold text-lg">
-              Who We Are
-            </span>
-
-            <div className="h-[2px] w-52 bg-blue-500" />
+            <p style={styles.cardText}>
+              Build visibility, access tools,
+              and prepare for meaningful
+              career opportunities.
+            </p>
           </div>
 
-          <h2 className="text-5xl md:text-6xl font-bold">
-            The Bridge Between Potential and Opportunity
-          </h2>
+          <div style={styles.infoCard}>
+            <h3 style={styles.cardTitle}>
+              Justice Impact Partners
+            </h3>
 
-          <p className="mt-8 text-2xl text-white/80 leading-relaxed max-w-5xl mx-auto">
-            HireMinds is a workforce infrastructure platform that connects
-            people, purpose, and opportunity. We bridge the gap between
-            Participants, Justice Impact Partners, Nonprofits, and Employers
-            through one unified ecosystem built for real outcomes.
-          </p>
-        </div>
+            <p style={styles.cardText}>
+              Connect individuals to support,
+              resources, and pathways
+              that drive real change.
+            </p>
+          </div>
 
-        {/* CONNECTION WAVE */}
-        <div className="relative w-full max-w-[1800px] mt-24">
-          {/* glowing line */}
-          <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-400 blur-sm" />
+          <div style={styles.infoCardCenter}>
+            <h3 style={styles.cardTitle}>
+              HireMinds
+            </h3>
 
-          {/* ICON SECTION */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-start relative z-10">
-            {/* Participants */}
-            <div className="flex flex-col items-center">
-              <div className="w-36 h-36 rounded-full border-4 border-blue-500 flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.8)]">
-                <User size={60} className="text-blue-400" />
-              </div>
+            <p style={styles.centerText}>
+              One Platform.
+            </p>
 
-              <h3 className="mt-8 text-4xl font-bold">Participants</h3>
+            <p style={styles.centerBlue}>
+              Unlimited Impact.
+            </p>
+          </div>
 
-              <p className="mt-5 text-xl text-white/75 leading-relaxed max-w-sm">
-                Build visibility, access tools, and prepare for meaningful
-                career opportunities.
-              </p>
+          <div style={styles.infoCard}>
+            <h3 style={styles.cardTitle}>
+              Nonprofits
+            </h3>
 
-              <div className="mt-8 w-32 h-[3px] bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)]" />
-            </div>
+            <p style={styles.cardText}>
+              Coordinate support,
+              program management,
+              and community impact at scale.
+            </p>
+          </div>
 
-            {/* Justice Impact */}
-            <div className="flex flex-col items-center">
-              <div className="w-36 h-36 rounded-full border-4 border-green-500 flex items-center justify-center shadow-[0_0_40px_rgba(34,197,94,0.8)]">
-                <Handshake size={60} className="text-green-400" />
-              </div>
+          <div style={styles.infoCard}>
+            <h3 style={styles.cardTitle}>
+              Employers
+            </h3>
 
-              <h3 className="mt-8 text-4xl font-bold text-center">
-                Justice Impact
-                <br />
-                Partners
-              </h3>
-
-              <p className="mt-5 text-xl text-white/75 leading-relaxed max-w-sm">
-                Connect individuals to support, resources, and pathways that
-                drive real change.
-              </p>
-
-              <div className="mt-8 w-32 h-[3px] bg-green-500 shadow-[0_0_20px_rgba(34,197,94,1)]" />
-            </div>
-
-            {/* CENTER */}
-            <div className="flex flex-col items-center -mt-10">
-              <div className="relative w-72 h-72 rounded-full border-4 border-blue-500 bg-black flex items-center justify-center shadow-[0_0_70px_rgba(59,130,246,0.8)]">
-                <div className="absolute inset-0 rounded-full bg-blue-500/10 blur-2xl" />
-
-                <div className="text-[7rem] font-black bg-gradient-to-b from-white via-gray-300 to-blue-500 bg-clip-text text-transparent">
-                  HM
-                </div>
-              </div>
-
-              <h3 className="mt-8 text-5xl font-bold">HireMinds</h3>
-
-              <p className="text-2xl mt-3">
-                One Platform.
-                <br />
-                <span className="text-blue-400">Unlimited</span> Impact.
-              </p>
-            </div>
-
-            {/* Nonprofits */}
-            <div className="flex flex-col items-center">
-              <div className="w-36 h-36 rounded-full border-4 border-fuchsia-500 flex items-center justify-center shadow-[0_0_40px_rgba(217,70,239,0.8)]">
-                <Heart size={60} className="text-fuchsia-400" />
-              </div>
-
-              <h3 className="mt-8 text-4xl font-bold">Nonprofits</h3>
-
-              <p className="mt-5 text-xl text-white/75 leading-relaxed max-w-sm">
-                Coordinate support, program management, and community impact at
-                scale.
-              </p>
-
-              <div className="mt-8 w-32 h-[3px] bg-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,1)]" />
-            </div>
-
-            {/* Employers */}
-            <div className="flex flex-col items-center">
-              <div className="w-36 h-36 rounded-full border-4 border-cyan-400 flex items-center justify-center shadow-[0_0_40px_rgba(34,211,238,0.8)]">
-                <Briefcase size={60} className="text-cyan-300" />
-              </div>
-
-              <h3 className="mt-8 text-4xl font-bold">Employers</h3>
-
-              <p className="mt-5 text-xl text-white/75 leading-relaxed max-w-sm">
-                Discover prepared talent, build stronger teams, and create
-                lasting impact.
-              </p>
-
-              <div className="mt-8 w-32 h-[3px] bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,1)]" />
-            </div>
+            <p style={styles.cardText}>
+              Discover prepared talent,
+              build stronger teams,
+              and create lasting impact.
+            </p>
           </div>
         </div>
 
-        {/* FOOTER TEXT */}
-        <div className="mt-24 text-center">
-          <h3 className="text-4xl md:text-5xl font-bold">
-            HireMinds isn’t just a platform — it’s a{' '}
-            <span className="text-blue-400">bridge.</span>
-          </h3>
-
-          <p className="mt-5 text-3xl text-white/80">
-            One infrastructure. One mission. Unlimited potential.
-          </p>
+        <div style={styles.bottomText}>
+          HireMinds isn’t just a platform —
+          it’s a bridge.
+          <br />
+          One infrastructure. One mission.
+          Unlimited potential.
         </div>
       </section>
     </main>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at top, rgba(0,102,255,.12), transparent 20%), #020202",
+    color: "#ffffff",
+    padding: "30px 20px 80px",
+    overflow: "hidden",
+    fontFamily:
+      'Inter, sans-serif',
+  },
+
+  hero: {
+    textAlign: "center",
+    maxWidth: "1200px",
+    margin: "0 auto",
+  },
+
+  heroEyebrow: {
+    color: "#2f8fff",
+    letterSpacing: ".25em",
+    fontSize: "12px",
+    fontWeight: 800,
+    marginBottom: "20px",
+  },
+
+  title: {
+    fontSize: "clamp(3.5rem,8vw,6.5rem)",
+    lineHeight: ".95",
+    fontWeight: 900,
+    marginBottom: "24px",
+    letterSpacing: "-0.06em",
+  },
+
+  subtitle: {
+    maxWidth: "860px",
+    margin: "0 auto",
+    color: "#d3d3d3",
+    lineHeight: "1.8",
+    fontSize: "22px",
+  },
+
+  primaryButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: "36px",
+    padding: "18px 42px",
+    borderRadius: "18px",
+    background:
+      "linear-gradient(180deg,#ffffff 0%,#d9d9e4 100%)",
+    color: "#050505",
+    textDecoration: "none",
+    fontWeight: 800,
+    fontSize: "18px",
+    boxShadow:
+      "0 10px 40px rgba(255,255,255,.2)",
+  },
+
+  logoWrap: {
+    marginTop: "30px",
+    display: "flex",
+    justifyContent: "center",
+  },
+
+  logoImage: {
+    objectFit: "contain",
+  },
+
+  bridgeSection: {
+    maxWidth: "1500px",
+    margin: "0 auto",
+    paddingTop: "40px",
+    textAlign: "center",
+  },
+
+  headingRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "20px",
+    marginBottom: "20px",
+  },
+
+  line: {
+    width: "140px",
+    height: "1px",
+    background:
+      "linear-gradient(90deg, transparent, #2f8fff, transparent)",
+  },
+
+  sectionTag: {
+    color: "#2f8fff",
+    fontWeight: 800,
+    letterSpacing: ".22em",
+    fontSize: "12px",
+  },
+
+  bridgeTitle: {
+    fontSize: "clamp(3rem,6vw,5rem)",
+    fontWeight: 900,
+    letterSpacing: "-0.05em",
+    marginBottom: "24px",
+  },
+
+  bridgeText: {
+    maxWidth: "980px",
+    margin: "0 auto",
+    color: "#d5d5d5",
+    lineHeight: "1.7",
+    fontSize: "24px",
+  },
+
+  bridgeWrap: {
+    position: "relative",
+    marginTop: "60px",
+    height: "340px",
+  },
+
+  bridgeGlow: {
+    position: "absolute",
+    inset: 0,
+    background:
+      "radial-gradient(circle at center, rgba(29,143,255,.16), transparent 70%)",
+    filter: "blur(40px)",
+  },
+
+  bridgeSvg: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    inset: 0,
+  },
+
+  node: {
+    position: "absolute",
+    width: "120px",
+    height: "120px",
+    borderRadius: "50%",
+    border: "3px solid",
+    background: "#090909",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "42px",
+    zIndex: 5,
+  },
+
+  centerOrb: {
+    position: "absolute",
+    left: "50%",
+    top: "135px",
+    transform: "translateX(-50%)",
+    width: "220px",
+    height: "220px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle at top, #111827 0%, #050505 80%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow:
+      "0 0 70px rgba(29,143,255,.55)",
+    zIndex: 10,
+  },
+
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(240px,1fr))",
+    gap: "20px",
+    marginTop: "20px",
+    alignItems: "start",
+  },
+
+  infoCard: {
+    textAlign: "center",
+    padding: "10px",
+  },
+
+  infoCardCenter: {
+    textAlign: "center",
+    padding: "10px",
+  },
+
+  cardTitle: {
+    fontSize: "28px",
+    fontWeight: 900,
+    marginBottom: "14px",
+  },
+
+  cardText: {
+    color: "#d5d5d5",
+    lineHeight: "1.7",
+    fontSize: "18px",
+  },
+
+  centerText: {
+    color: "#ffffff",
+    fontSize: "22px",
+    marginBottom: "6px",
+  },
+
+  centerBlue: {
+    color: "#2f8fff",
+    fontSize: "22px",
+    fontWeight: 800,
+  },
+
+  bottomText: {
+    marginTop: "60px",
+    color: "#d0d0d0",
+    lineHeight: "1.8",
+    fontSize: "24px",
+    textAlign: "center",
+  },
+};
