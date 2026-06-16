@@ -52,7 +52,7 @@ export default function HomePage() {
           </p>
 
           <div style={styles.line} />
-        </div>
+        </div>  
 
         <h2 style={styles.sectionHeading}>
           The Bridge Between Potential and Opportunity
@@ -65,7 +65,8 @@ export default function HomePage() {
           Justice Impact Partners, Nonprofits, and Employers
           through one unified ecosystem built for real outcomes.
         </p>
-
+<div style={styles.bridgeWrap}>
+  
        {/* REAL CODED SUSPENSION BRIDGE */}
 <svg
   viewBox="0 0 1600 650"
