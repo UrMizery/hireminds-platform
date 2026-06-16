@@ -74,10 +74,16 @@ export default function HomePage() {
             style={styles.bridgeImage}
           />
 
-          <svg width="42" height="42" viewBox="0 0 24 24" fill="none">
-  <circle cx="12" cy="8" r="4" stroke="#1d8fff" strokeWidth="1.8"/>
-  <path d="M5 20c1.5-4 12.5-4 14 0" stroke="#1d8fff" strokeWidth="1.8" strokeLinecap="round"/>
-</svg>
+       {/* PARTICIPANTS */}
+          <div
+            style={{
+              ...styles.node,
+              left: "4%",
+              top: "195px",
+              borderColor: "#1d8fff",
+              boxShadow:
+                "0 0 35px rgba(29,143,255,.95)",
+            }}
           >
             <span style={styles.nodeEmoji}>👤</span>
           </div>
