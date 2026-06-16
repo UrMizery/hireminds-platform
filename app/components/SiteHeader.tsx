@@ -276,7 +276,6 @@ export default function SiteHeader() {
             HireMinds
           </a>
 
-          <REIHeader />
         </div>
 
         <div style={styles.centerNav}>
