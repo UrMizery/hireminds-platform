@@ -70,161 +70,142 @@ export default function HomePage() {
         <div style={styles.bridgeWrap}>
 
           {/* FULL SUSPENSION BRIDGE */}
-          <svg
-            viewBox="0 0 1600 600"
-            preserveAspectRatio="none"
-            style={styles.bridgeSvg}
-          >
+         <svg
+  viewBox="0 0 1600 650"
+  preserveAspectRatio="none"
+  style={styles.bridgeSvg}
+>
+  {/* LEFT TOWER */}
+  <rect
+    x="170"
+    y="120"
+    width="10"
+    height="340"
+    rx="10"
+    fill="rgba(90,180,255,.95)"
+  />
 
-            {/* LEFT TOWER */}
-            <line
-              x1="180"
-              y1="170"
-              x2="180"
-              y2="420"
-              stroke="rgba(80,180,255,.95)"
-              strokeWidth="4"
-            />
+  {/* RIGHT TOWER */}
+  <rect
+    x="1420"
+    y="120"
+    width="10"
+    height="340"
+    rx="10"
+    fill="rgba(90,180,255,.95)"
+  />
 
-            {/* RIGHT TOWER */}
-            <line
-              x1="1420"
-              y1="170"
-              x2="1420"
-              y2="420"
-              stroke="rgba(80,180,255,.95)"
-              strokeWidth="4"
-            />
+  {/* MAIN TOP CABLE */}
+  <path
+    d="
+      M 175 120
+      Q 800 -20 1425 120
+    "
+    fill="none"
+    stroke="rgba(70,160,255,.95)"
+    strokeWidth="5"
+  />
 
-            {/* MAIN TOP CABLE */}
-            <path
-              d="
-                M 180 170
-                Q 800 20 1420 170
-              "
-              fill="none"
-              stroke="rgba(80,180,255,.95)"
-              strokeWidth="4"
-            />
+  {/* ROADWAY */}
+  <path
+    d="
+      M 120 420
+      Q 800 520 1480 420
+    "
+    fill="none"
+    stroke="rgba(70,160,255,.95)"
+    strokeWidth="6"
+  />
 
-            {/* ROADWAY */}
-            <path
-              d="
-                M 180 420
-                Q 800 500 1420 420
-              "
-              fill="none"
-              stroke="rgba(80,180,255,.95)"
-              strokeWidth="5"
-            />
+  {/* HANGING CABLES */}
+  <line x1="260" y1="92" x2="260" y2="442" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="360" y1="72" x2="360" y2="455" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="460" y1="52" x2="460" y2="470" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="560" y1="35" x2="560" y2="482" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="660" y1="20" x2="660" y2="492" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="760" y1="5" x2="760" y2="500" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="860" y1="5" x2="860" y2="500" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="960" y1="20" x2="960" y2="492" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="1060" y1="35" x2="1060" y2="482" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="1160" y1="52" x2="1160" y2="470" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="1260" y1="72" x2="1260" y2="455" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  <line x1="1360" y1="92" x2="1360" y2="442" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
 
-            {/* SUSPENSION CABLES */}
-            <line x1="300" y1="125" x2="300" y2="438" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
-            <line x1="420" y1="95" x2="420" y2="455" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
-            <line x1="540" y1="70" x2="540" y2="470" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
-            <line x1="660" y1="48" x2="660" y2="482" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
-            <line x1="780" y1="30" x2="780" y2="492" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
-            <line x1="900" y1="35" x2="900" y2="492" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
-            <line x1="1020" y1="52" x2="1020" y2="482" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
-            <line x1="1140" y1="75" x2="1140" y2="470" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
-            <line x1="1260" y1="105" x2="1260" y2="452" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+  {/* FLOOR GLOW */}
+  <path
+    d="
+      M 120 420
+      Q 800 520 1480 420
+    "
+    fill="none"
+    stroke="rgba(0,150,255,.35)"
+    strokeWidth="20"
+  />
+</svg>
 
-            {/* GLOW LINE */}
-            <path
-              d="
-                M 180 420
-                Q 800 500 1420 420
-              "
-              fill="none"
-              stroke="rgba(0,150,255,.45)"
-              strokeWidth="16"
-            />
-          </svg>
+     {/* PARTICIPANTS */}
+<div
+  style={{
+    ...styles.node,
+    left: "5%",
+    top: "250px",
+    borderColor: "#1d8fff",
+    boxShadow:
+      "0 0 35px rgba(29,143,255,.95)",
+    color: "#1d8fff",
+  }}
+>
+  <span style={styles.outlineIcon}>◌</span>
+  <span style={styles.nodeEmoji}>⌔</span>
+</div>
 
-          {/* PARTICIPANTS */}
-          <div
-            style={{
-              ...styles.node,
-              left: "6%",
-              top: "245px",
-              borderColor: "#1d8fff",
-              boxShadow:
-                "0 0 35px rgba(29,143,255,.95)",
-            }}
-          >
-            <span style={styles.outlineEmoji}>◯</span>
+{/* JUSTICE */}
+<div
+  style={{
+    ...styles.node,
+    left: "28%",
+    top: "210px",
+    borderColor: "#53ff7c",
+    boxShadow:
+      "0 0 35px rgba(83,255,124,.95)",
+    color: "#53ff7c",
+  }}
+>
+  <span style={styles.outlineIcon}>◌</span>
+  <span style={styles.nodeEmoji}>⟡</span>
+</div>
 
-            <span style={styles.iconInside}>
-              👤
-            </span>
-          </div>
+{/* NONPROFITS */}
+<div
+  style={{
+    ...styles.node,
+    right: "28%",
+    top: "210px",
+    borderColor: "#d45eff",
+    boxShadow:
+      "0 0 35px rgba(212,94,255,.95)",
+    color: "#d45eff",
+  }}
+>
+  <span style={styles.outlineIcon}>◌</span>
+  <span style={styles.nodeEmoji}>♡</span>
+</div>
 
-          {/* JUSTICE */}
-          <div
-            style={{
-              ...styles.node,
-              left: "28%",
-              top: "210px",
-              borderColor: "#53ff7c",
-              boxShadow:
-                "0 0 35px rgba(83,255,124,.95)",
-            }}
-          >
-            <span style={styles.outlineEmoji}>◯</span>
-
-            <span style={styles.iconInside}>
-              🤝
-            </span>
-          </div>
-
-          {/* CENTER HM */}
-          <div style={styles.centerOrb}>
-            <Image
-              src="/hm-logo.png"
-              alt="HireMinds"
-              width={240}
-              height={240}
-              style={{
-                objectFit: "contain",
-              }}
-            />
-          </div>
-
-          {/* NONPROFITS */}
-          <div
-            style={{
-              ...styles.node,
-              right: "28%",
-              top: "210px",
-              borderColor: "#d45eff",
-              boxShadow:
-                "0 0 35px rgba(212,94,255,.95)",
-            }}
-          >
-            <span style={styles.outlineEmoji}>◯</span>
-
-            <span style={styles.iconInside}>
-              ♡
-            </span>
-          </div>
-
-          {/* EMPLOYERS */}
-          <div
-            style={{
-              ...styles.node,
-              right: "6%",
-              top: "245px",
-              borderColor: "#18d8ff",
-              boxShadow:
-                "0 0 35px rgba(24,216,255,.95)",
-            }}
-          >
-            <span style={styles.outlineEmoji}>◯</span>
-
-            <span style={styles.iconInside}>
-              💼
-            </span>
-          </div>
+{/* EMPLOYERS */}
+<div
+  style={{
+    ...styles.node,
+    right: "5%",
+    top: "250px",
+    borderColor: "#18d8ff",
+    boxShadow:
+      "0 0 35px rgba(24,216,255,.95)",
+    color: "#18d8ff",
+  }}
+>
+  <span style={styles.outlineIcon}>◌</span>
+  <span style={styles.nodeEmoji}>▣</span>
+</div>
         </div>
 
         {/* INFO */}
@@ -455,46 +436,32 @@ const styles: Record<string, React.CSSProperties> = {
       "drop-shadow(0 0 25px rgba(0,140,255,.5))",
   },
 
-  node: {
-    position: "absolute",
-    width: "130px",
-    height: "130px",
-    borderRadius: "50%",
-    border: "3px solid",
-    background:
-      "radial-gradient(circle at top,#0a0a0a 0%,#000000 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 20,
-  },
+node: {
+  position: "absolute",
+  width: "130px",
+  height: "130px",
+  borderRadius: "50%",
+  border: "3px solid",
+  background:
+    "radial-gradient(circle at top,#090909 0%,#000000 100%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 20,
+},
 
-  outlineEmoji: {
-    position: "absolute",
-    fontSize: "110px",
-    opacity: 0.15,
-  },
+outlineIcon: {
+  position: "absolute",
+  fontSize: "120px",
+  opacity: 0.18,
+},
 
-  iconInside: {
-    fontSize: "52px",
-    zIndex: 2,
-  },
-
-  centerOrb: {
-    position: "absolute",
-    left: "50%",
-    top: "250px",
-    transform: "translateX(-50%)",
-    width: "260px",
-    height: "260px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 30,
-    filter:
-      "drop-shadow(0 0 65px rgba(43,120,255,.9))",
-  },
+nodeEmoji: {
+  position: "relative",
+  fontSize: "52px",
+  fontWeight: 300,
+  filter: "drop-shadow(0 0 10px currentColor)",
+},
 
   cardGrid: {
     display: "grid",
