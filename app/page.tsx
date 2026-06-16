@@ -1,3 +1,4 @@
+```tsx id="hmfullbridge"
 "use client";
 
 import { useLanguage } from "./lib/language-context";
@@ -21,7 +22,7 @@ export default function HomePage() {
         </p>
 
         <h1 style={styles.title}>
-          {t.title}
+          Build Your Career Passport
         </h1>
 
         <p style={styles.subtitle}>
@@ -41,7 +42,7 @@ export default function HomePage() {
           </a>
         </div>
 
-        {/* LOGO */}
+        {/* MAIN LOGO */}
         <div style={styles.heroLogoWrap}>
           <img
             src="/hm-logo.png"
@@ -76,19 +77,30 @@ export default function HomePage() {
           built for real outcomes.
         </p>
 
-        {/* BRIDGE */}
+        {/* BRIDGE AREA */}
         <div style={styles.bridgeWrapper}>
           
-          {/* BRIDGE GLOW */}
+          {/* BACKGROUND GLOW */}
           <div style={styles.bridgeGlow} />
 
-          {/* BRIDGE LINES */}
-          <div style={styles.bridgeArc} />
-          <div style={styles.bridgeArc2} />
+          {/* MESH */}
+          <div style={styles.bridgeMesh} />
+
+          {/* BRIDGE WAVES */}
+          <div style={styles.bridgeWave1} />
+          <div style={styles.bridgeWave2} />
+          <div style={styles.bridgeWave3} />
+          <div style={styles.bridgeWave4} />
+
+          {/* LEFT SUPPORT */}
+          <div style={styles.leftSupportGlow} />
+
+          {/* RIGHT SUPPORT */}
+          <div style={styles.rightSupportGlow} />
 
           {/* CENTER HM */}
           <div style={styles.centerLogoWrap}>
-            <div style={styles.centerLogoGlow} />
+            <div style={styles.centerLogoBaseGlow} />
 
             <img
               src="/hm-logo.png"
@@ -107,7 +119,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* LEFT */}
+          {/* NODES */}
           <div style={styles.bridgeGrid}>
             
             {/* PARTICIPANTS */}
@@ -115,9 +127,9 @@ export default function HomePage() {
               <div
                 style={{
                   ...styles.nodeCircle,
-                  border: "2px solid #2b8cff",
+                  border: "2px solid #1e90ff",
                   boxShadow:
-                    "0 0 35px rgba(43,140,255,.7)",
+                    "0 0 45px rgba(30,144,255,.9)",
                 }}
               >
                 👤
@@ -133,6 +145,14 @@ export default function HomePage() {
                 and prepare for meaningful
                 career opportunities.
               </p>
+
+              <div
+                style={{
+                  ...styles.nodeGlowLine,
+                  background:
+                    "linear-gradient(to right, transparent, #1e90ff, transparent)",
+                }}
+              />
             </div>
 
             {/* JUSTICE */}
@@ -142,7 +162,7 @@ export default function HomePage() {
                   ...styles.nodeCircle,
                   border: "2px solid #58ff73",
                   boxShadow:
-                    "0 0 35px rgba(88,255,115,.7)",
+                    "0 0 45px rgba(88,255,115,.9)",
                 }}
               >
                 🤝
@@ -156,10 +176,19 @@ export default function HomePage() {
 
               <p style={styles.nodeText}>
                 Connect individuals
-                to support, resources,
+                to support,
+                resources,
                 and pathways that
                 drive real change.
               </p>
+
+              <div
+                style={{
+                  ...styles.nodeGlowLine,
+                  background:
+                    "linear-gradient(to right, transparent, #58ff73, transparent)",
+                }}
+              />
             </div>
 
             {/* NONPROFITS */}
@@ -167,9 +196,9 @@ export default function HomePage() {
               <div
                 style={{
                   ...styles.nodeCircle,
-                  border: "2px solid #d15cff",
+                  border: "2px solid #d65cff",
                   boxShadow:
-                    "0 0 35px rgba(209,92,255,.7)",
+                    "0 0 45px rgba(214,92,255,.9)",
                 }}
               >
                 💜
@@ -185,6 +214,14 @@ export default function HomePage() {
                 and community impact
                 at scale.
               </p>
+
+              <div
+                style={{
+                  ...styles.nodeGlowLine,
+                  background:
+                    "linear-gradient(to right, transparent, #d65cff, transparent)",
+                }}
+              />
             </div>
 
             {/* EMPLOYERS */}
@@ -192,9 +229,9 @@ export default function HomePage() {
               <div
                 style={{
                   ...styles.nodeCircle,
-                  border: "2px solid #32e0ff",
+                  border: "2px solid #29e0ff",
                   boxShadow:
-                    "0 0 35px rgba(50,224,255,.7)",
+                    "0 0 45px rgba(41,224,255,.9)",
                 }}
               >
                 💼
@@ -209,6 +246,14 @@ export default function HomePage() {
                 build stronger teams,
                 and create lasting impact.
               </p>
+
+              <div
+                style={{
+                  ...styles.nodeGlowLine,
+                  background:
+                    "linear-gradient(to right, transparent, #29e0ff, transparent)",
+                }}
+              />
             </div>
           </div>
         </div>
@@ -233,16 +278,16 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at top, rgba(0,110,255,.12), transparent 25%), #020202",
+      "radial-gradient(circle at top, rgba(0,110,255,.14), transparent 22%), #000",
     color: "#f5f5f5",
-    padding: "30px 24px 100px",
+    padding: "32px 24px 100px",
     overflow: "hidden",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, sans-serif',
   },
 
   hero: {
-    maxWidth: "1300px",
+    maxWidth: "1450px",
     margin: "0 auto",
     paddingTop: "20px",
   },
@@ -252,52 +297,52 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#2f8dff",
     fontSize: "11px",
     fontWeight: 900,
-    letterSpacing: ".25em",
+    letterSpacing: ".28em",
   },
 
   title: {
-    margin: "0 0 22px",
-    fontSize: "clamp(3rem,7vw,6rem)",
-    lineHeight: ".95",
+    margin: "0 0 18px",
+    fontSize: "clamp(3.5rem,8vw,6.7rem)",
+    lineHeight: ".94",
     fontWeight: 800,
-    letterSpacing: "-.07em",
+    letterSpacing: "-.08em",
   },
 
   subtitle: {
-    maxWidth: "900px",
+    maxWidth: "920px",
     margin: "0 auto",
-    color: "#c9c9cf",
-    fontSize: "20px",
-    lineHeight: 1.8,
+    color: "#d2d2d8",
+    fontSize: "22px",
+    lineHeight: 1.7,
   },
 
   buttonRow: {
     display: "flex",
-    marginTop: "35px",
+    marginTop: "34px",
   },
 
   primaryButton: {
-    padding: "16px 38px",
+    padding: "18px 40px",
     borderRadius: "18px",
     background:
-      "linear-gradient(180deg,#f3f3f6 0%,#cfcfd6 100%)",
+      "linear-gradient(180deg,#f3f3f6 0%,#d6d6de 100%)",
     color: "#050505",
     textDecoration: "none",
     fontWeight: 900,
-    fontSize: "16px",
+    fontSize: "17px",
     border: "1px solid rgba(255,255,255,.15)",
     boxShadow:
-      "0 10px 35px rgba(255,255,255,.12)",
+      "0 10px 40px rgba(255,255,255,.12)",
   },
 
   heroLogoWrap: {
     display: "flex",
     justifyContent: "center",
-    marginTop: "45px",
+    marginTop: "40px",
   },
 
   heroLogo: {
-    width: "340px",
+    width: "420px",
     maxWidth: "90%",
     objectFit: "contain",
     filter:
@@ -305,9 +350,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   bridgeSection: {
-    maxWidth: "1500px",
+    maxWidth: "1600px",
     margin: "0 auto",
-    paddingTop: "40px",
+    paddingTop: "20px",
     textAlign: "center",
   },
 
@@ -316,171 +361,256 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     gap: "18px",
-    marginBottom: "20px",
+    marginBottom: "18px",
   },
 
   headingLine: {
-    width: "140px",
+    width: "220px",
     height: "1px",
     background:
-      "linear-gradient(to right, transparent, #1f7cff, transparent)",
+      "linear-gradient(to right, transparent, #1e90ff, transparent)",
   },
 
   bridgeTag: {
     color: "#2f8dff",
-    fontSize: "12px",
+    fontSize: "13px",
     fontWeight: 900,
-    letterSpacing: ".22em",
+    letterSpacing: ".24em",
   },
 
   bridgeTitle: {
-    fontSize: "clamp(2.5rem,5vw,4.5rem)",
-    marginBottom: "24px",
+    fontSize: "clamp(2.8rem,5vw,5rem)",
+    marginBottom: "22px",
     fontWeight: 800,
     letterSpacing: "-.06em",
   },
 
   bridgeText: {
-    maxWidth: "980px",
+    maxWidth: "1100px",
     margin: "0 auto",
     color: "#d0d0d0",
     lineHeight: 1.7,
-    fontSize: "22px",
+    fontSize: "24px",
   },
 
   bridgeWrapper: {
     position: "relative",
-    marginTop: "80px",
-    paddingTop: "100px",
-    paddingBottom: "40px",
+    marginTop: "120px",
+    paddingTop: "140px",
+    paddingBottom: "60px",
+    overflow: "hidden",
   },
 
   bridgeGlow: {
     position: "absolute",
-    inset: 0,
+    left: "-10%",
+    right: "-10%",
+    top: "120px",
+    height: "280px",
     background:
-      "radial-gradient(circle at center, rgba(0,132,255,.12), transparent 55%)",
-    filter: "blur(40px)",
+      "radial-gradient(circle at center, rgba(0,132,255,.22), transparent 70%)",
+    filter: "blur(60px)",
+    zIndex: 1,
   },
 
-  bridgeArc: {
+  bridgeMesh: {
     position: "absolute",
     left: "5%",
     right: "5%",
-    top: "80px",
-    height: "180px",
-    borderTop:
-      "3px solid rgba(74,144,255,.95)",
-    borderRadius: "50% 50% 0 0",
-    boxShadow:
-      "0 0 25px rgba(74,144,255,.8)",
-    opacity: 0.9,
+    top: "120px",
+    height: "170px",
+    background:
+      "repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0px, rgba(255,255,255,.08) 1px, transparent 1px, transparent 26px)",
+    opacity: .22,
+    transform:
+      "perspective(1000px) rotateX(68deg)",
+    zIndex: 1,
   },
 
-  bridgeArc2: {
+  bridgeWave1: {
     position: "absolute",
-    left: "7%",
-    right: "7%",
+    left: "-5%",
+    right: "-5%",
     top: "105px",
-    height: "140px",
+    height: "170px",
+    borderTop: "3px solid rgba(61,146,255,.95)",
+    borderRadius: "50%",
+    boxShadow:
+      "0 0 30px rgba(61,146,255,.95)",
+    zIndex: 2,
+  },
+
+  bridgeWave2: {
+    position: "absolute",
+    left: "-3%",
+    right: "-3%",
+    top: "120px",
+    height: "160px",
     borderTop:
-      "1px solid rgba(255,255,255,.45)",
-    borderRadius: "50% 50% 0 0",
-    opacity: 0.4,
+      "2px solid rgba(255,255,255,.35)",
+    borderRadius: "50%",
+    opacity: .7,
+    zIndex: 2,
+  },
+
+  bridgeWave3: {
+    position: "absolute",
+    left: "2%",
+    right: "2%",
+    top: "150px",
+    height: "120px",
+    borderTop:
+      "2px solid rgba(90,255,160,.7)",
+    borderRadius: "50%",
+    boxShadow:
+      "0 0 25px rgba(90,255,160,.6)",
+    opacity: .8,
+    zIndex: 2,
+  },
+
+  bridgeWave4: {
+    position: "absolute",
+    left: "1%",
+    right: "1%",
+    top: "165px",
+    height: "110px",
+    borderTop:
+      "2px solid rgba(190,90,255,.75)",
+    borderRadius: "50%",
+    boxShadow:
+      "0 0 25px rgba(190,90,255,.55)",
+    opacity: .75,
+    zIndex: 2,
+  },
+
+  leftSupportGlow: {
+    position: "absolute",
+    left: "10%",
+    top: "110px",
+    width: "12px",
+    height: "12px",
+    borderRadius: "50%",
+    background: "#2f8dff",
+    boxShadow:
+      "0 0 35px rgba(47,141,255,1)",
+    zIndex: 4,
+  },
+
+  rightSupportGlow: {
+    position: "absolute",
+    right: "10%",
+    top: "110px",
+    width: "12px",
+    height: "12px",
+    borderRadius: "50%",
+    background: "#2f8dff",
+    boxShadow:
+      "0 0 35px rgba(47,141,255,1)",
+    zIndex: 4,
   },
 
   bridgeGrid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit,minmax(240px,1fr))",
+      "repeat(auto-fit,minmax(250px,1fr))",
     gap: "20px",
     alignItems: "start",
     position: "relative",
-    zIndex: 2,
+    zIndex: 5,
   },
 
   bridgeNode: {
     textAlign: "center",
-    paddingTop: "80px",
+    paddingTop: "90px",
   },
 
   nodeCircle: {
-    width: "110px",
-    height: "110px",
-    margin: "0 auto 24px",
+    width: "120px",
+    height: "120px",
+    margin: "0 auto 28px",
     borderRadius: "50%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "40px",
+    fontSize: "44px",
     background:
       "radial-gradient(circle at top, rgba(255,255,255,.08), rgba(255,255,255,.02))",
     backdropFilter: "blur(12px)",
   },
 
   nodeTitle: {
-    fontSize: "34px",
-    lineHeight: 1.1,
+    fontSize: "28px",
+    lineHeight: 1.15,
     fontWeight: 800,
-    marginBottom: "16px",
+    marginBottom: "18px",
   },
 
   nodeText: {
-    color: "#c9c9cf",
-    lineHeight: 1.9,
+    color: "#d0d0d0",
+    lineHeight: 1.8,
     fontSize: "18px",
     maxWidth: "320px",
     margin: "0 auto",
   },
 
+  nodeGlowLine: {
+    width: "120px",
+    height: "3px",
+    margin: "26px auto 0",
+    borderRadius: "999px",
+  },
+
   centerLogoWrap: {
     position: "absolute",
     left: "50%",
-    top: "120px",
+    top: "155px",
     transform: "translateX(-50%)",
-    zIndex: 5,
+    zIndex: 10,
     textAlign: "center",
   },
 
-  centerLogoGlow: {
+  centerLogoBaseGlow: {
     position: "absolute",
-    inset: "-20px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    bottom: "-10px",
+    width: "220px",
+    height: "50px",
+    borderRadius: "50%",
     background:
-      "radial-gradient(circle, rgba(0,132,255,.25), transparent 70%)",
-    filter: "blur(20px)",
+      "radial-gradient(circle, rgba(0,132,255,.5), transparent 70%)",
+    filter: "blur(12px)",
   },
 
   centerLogo: {
-    width: "220px",
-    height: "220px",
+    width: "240px",
+    height: "240px",
     objectFit: "contain",
-    position: "relative",
-    zIndex: 2,
     filter:
-      "drop-shadow(0 0 35px rgba(0,132,255,.65))",
+      "drop-shadow(0 0 40px rgba(0,132,255,.7))",
   },
 
   centerLogoTitle: {
     marginTop: "10px",
-    fontSize: "42px",
+    fontSize: "40px",
     fontWeight: 800,
   },
 
   centerLogoText: {
     color: "#d0d0d0",
     lineHeight: 1.7,
-    fontSize: "20px",
+    fontSize: "22px",
   },
 
   footerStatement: {
-    marginTop: "120px",
+    marginTop: "80px",
     textAlign: "center",
   },
 
   footerTitle: {
     fontSize: "34px",
     fontWeight: 700,
-    marginBottom: "12px",
+    marginBottom: "10px",
   },
 
   footerText: {
@@ -488,3 +618,4 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "22px",
   },
 };
+```
