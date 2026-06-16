@@ -43,7 +43,9 @@ export default function HomePage() {
       <section style={styles.bridgeSection}>
         <div style={styles.headingRow}>
           <div style={styles.line} />
-          <p style={styles.sectionTag}>WHO WE ARE</p>
+          <p style={styles.sectionTag}>
+            WHO WE ARE
+          </p>
           <div style={styles.line} />
         </div>
 
@@ -65,7 +67,7 @@ export default function HomePage() {
           <div style={styles.bridgeGlow} />
 
           <svg
-            viewBox="0 0 1400 340"
+            viewBox="0 0 1600 500"
             style={styles.bridgeSvg}
           >
             <defs>
@@ -78,35 +80,90 @@ export default function HomePage() {
               >
                 <stop offset="0%" stopColor="#1d8fff" />
                 <stop offset="30%" stopColor="#5aff75" />
-                <stop offset="50%" stopColor="#6ca8ff" />
-                <stop offset="70%" stopColor="#d45eff" />
+                <stop offset="55%" stopColor="#5ea8ff" />
+                <stop offset="75%" stopColor="#d45eff" />
                 <stop offset="100%" stopColor="#18d8ff" />
               </linearGradient>
             </defs>
 
+            {/* MAIN BRIDGE DECK */}
             <path
-              d="M0 200 C180 40 320 320 520 180 S880 120 1400 200"
+              d="M120 250 L1480 250"
               stroke="url(#bridgeGradient)"
-              strokeWidth="3"
+              strokeWidth="6"
               fill="none"
               opacity="0.95"
             />
 
+            {/* LEFT TOWER */}
+            <line
+              x1="300"
+              y1="120"
+              x2="300"
+              y2="250"
+              stroke="#38a3ff"
+              strokeWidth="4"
+              opacity="0.9"
+            />
+
+            {/* RIGHT TOWER */}
+            <line
+              x1="1300"
+              y1="120"
+              x2="1300"
+              y2="250"
+              stroke="#38a3ff"
+              strokeWidth="4"
+              opacity="0.9"
+            />
+
+            {/* MAIN TOP CABLE */}
             <path
-              d="M0 220 C180 60 320 340 520 200 S880 140 1400 220"
+              d="
+              M120 250
+              C350 40 550 40 800 130
+              C1050 40 1250 40 1480 250
+              "
               stroke="url(#bridgeGradient)"
-              strokeWidth="1"
+              strokeWidth="3"
+              fill="none"
+              opacity="0.9"
+            />
+
+            {/* SECONDARY CABLE */}
+            <path
+              d="
+              M120 250
+              C350 70 550 70 800 150
+              C1050 70 1250 70 1480 250
+              "
+              stroke="url(#bridgeGradient)"
+              strokeWidth="1.5"
               fill="none"
               opacity="0.45"
             />
 
-            <path
-              d="M0 180 C180 20 320 300 520 160 S880 100 1400 180"
-              stroke="url(#bridgeGradient)"
-              strokeWidth="1"
-              fill="none"
-              opacity="0.3"
-            />
+            {/* LEFT SUSPENSION */}
+            <line x1="220" y1="180" x2="220" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
+            <line x1="320" y1="110" x2="320" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
+            <line x1="420" y1="90" x2="420" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
+            <line x1="520" y1="95" x2="520" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
+            <line x1="620" y1="115" x2="620" y2="250" stroke="#38a3ff" strokeWidth="1" opacity="0.6" />
+
+            {/* CENTER */}
+            <line x1="800" y1="130" x2="800" y2="250" stroke="#5ea8ff" strokeWidth="1.5" opacity="0.8" />
+
+            {/* RIGHT SUSPENSION */}
+            <line x1="980" y1="115" x2="980" y2="250" stroke="#d45eff" strokeWidth="1" opacity="0.6" />
+            <line x1="1080" y1="95" x2="1080" y2="250" stroke="#d45eff" strokeWidth="1" opacity="0.6" />
+            <line x1="1180" y1="90" x2="1180" y2="250" stroke="#d45eff" strokeWidth="1" opacity="0.6" />
+            <line x1="1280" y1="110" x2="1280" y2="250" stroke="#18d8ff" strokeWidth="1" opacity="0.6" />
+            <line x1="1380" y1="180" x2="1380" y2="250" stroke="#18d8ff" strokeWidth="1" opacity="0.6" />
+
+            {/* GLOW POINTS */}
+            <circle cx="300" cy="120" r="8" fill="#38a3ff" />
+            <circle cx="1300" cy="120" r="8" fill="#18d8ff" />
+            <circle cx="800" cy="130" r="7" fill="#5ea8ff" />
           </svg>
 
           {/* PARTICIPANTS */}
@@ -114,7 +171,7 @@ export default function HomePage() {
             style={{
               ...styles.node,
               left: "4%",
-              top: "120px",
+              top: "175px",
               borderColor: "#1d8fff",
               boxShadow:
                 "0 0 35px rgba(29,143,255,.7)",
@@ -128,7 +185,7 @@ export default function HomePage() {
             style={{
               ...styles.node,
               left: "30%",
-              top: "95px",
+              top: "135px",
               borderColor: "#53ff7c",
               boxShadow:
                 "0 0 35px rgba(83,255,124,.7)",
@@ -155,7 +212,7 @@ export default function HomePage() {
             style={{
               ...styles.node,
               right: "28%",
-              top: "105px",
+              top: "145px",
               borderColor: "#d45eff",
               boxShadow:
                 "0 0 35px rgba(212,94,255,.7)",
@@ -169,7 +226,7 @@ export default function HomePage() {
             style={{
               ...styles.node,
               right: "3%",
-              top: "120px",
+              top: "175px",
               borderColor: "#18d8ff",
               boxShadow:
                 "0 0 35px rgba(24,216,255,.7)",
@@ -187,7 +244,8 @@ export default function HomePage() {
             </h3>
 
             <p style={styles.cardText}>
-              Build visibility, access tools,
+              Build visibility,
+              access tools,
               and prepare for meaningful
               career opportunities.
             </p>
@@ -199,9 +257,10 @@ export default function HomePage() {
             </h3>
 
             <p style={styles.cardText}>
-              Connect individuals to support,
-              resources, and pathways
-              that drive real change.
+              Connect individuals
+              to support, resources,
+              and pathways that
+              drive real change.
             </p>
           </div>
 
@@ -227,7 +286,8 @@ export default function HomePage() {
             <p style={styles.cardText}>
               Coordinate support,
               program management,
-              and community impact at scale.
+              and community impact
+              at scale.
             </p>
           </div>
 
@@ -326,7 +386,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   bridgeSection: {
-    maxWidth: "1500px",
+    maxWidth: "1600px",
     margin: "0 auto",
     paddingTop: "40px",
     textAlign: "center",
@@ -371,8 +431,8 @@ const styles: Record<string, React.CSSProperties> = {
 
   bridgeWrap: {
     position: "relative",
-    marginTop: "60px",
-    height: "340px",
+    marginTop: "80px",
+    height: "500px",
   },
 
   bridgeGlow: {
@@ -396,7 +456,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: "120px",
     borderRadius: "50%",
     border: "3px solid",
-    background: "#090909",
+    background: "#050505",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -407,10 +467,10 @@ const styles: Record<string, React.CSSProperties> = {
   centerOrb: {
     position: "absolute",
     left: "50%",
-    top: "135px",
+    top: "170px",
     transform: "translateX(-50%)",
-    width: "220px",
-    height: "220px",
+    width: "240px",
+    height: "240px",
     borderRadius: "50%",
     background:
       "radial-gradient(circle at top, #111827 0%, #050505 80%)",
@@ -418,7 +478,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     boxShadow:
-      "0 0 70px rgba(29,143,255,.55)",
+      "0 0 90px rgba(29,143,255,.6)",
     zIndex: 10,
   },
 
@@ -427,7 +487,7 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns:
       "repeat(auto-fit,minmax(240px,1fr))",
     gap: "20px",
-    marginTop: "20px",
+    marginTop: "-20px",
     alignItems: "start",
   },
 
