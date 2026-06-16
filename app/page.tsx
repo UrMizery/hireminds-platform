@@ -70,76 +70,160 @@ export default function HomePage() {
         <div style={styles.bridgeWrap}>
 
           {/* FULL SUSPENSION BRIDGE */}
-         <svg
+        <svg
   viewBox="0 0 1600 650"
   preserveAspectRatio="none"
   style={styles.bridgeSvg}
 >
-  {/* LEFT TOWER */}
-  <rect
-    x="170"
-    y="120"
-    width="10"
-    height="340"
-    rx="10"
-    fill="rgba(90,180,255,.95)"
+  {/* LEFT SUPPORT */}
+  <circle
+    cx="120"
+    cy="350"
+    r="8"
+    fill="#3fa7ff"
   />
 
-  {/* RIGHT TOWER */}
-  <rect
-    x="1420"
-    y="120"
-    width="10"
-    height="340"
-    rx="10"
-    fill="rgba(90,180,255,.95)"
+  {/* RIGHT SUPPORT */}
+  <circle
+    cx="1480"
+    cy="350"
+    r="8"
+    fill="#3fa7ff"
   />
 
-  {/* MAIN TOP CABLE */}
+  {/* MAIN BRIDGE CURVE */}
   <path
     d="
-      M 175 120
-      Q 800 -20 1425 120
+      M 40 360
+      C 240 160,
+        480 160,
+        800 350
+      S 1360 520,
+        1560 320
     "
     fill="none"
-    stroke="rgba(70,160,255,.95)"
+    stroke="rgba(80,170,255,.95)"
     strokeWidth="5"
   />
 
-  {/* ROADWAY */}
+  {/* SECOND GLOW CURVE */}
   <path
     d="
-      M 120 420
-      Q 800 520 1480 420
+      M 40 385
+      C 240 185,
+        480 185,
+        800 375
+      S 1360 545,
+        1560 345
     "
     fill="none"
-    stroke="rgba(70,160,255,.95)"
-    strokeWidth="6"
+    stroke="rgba(140,110,255,.65)"
+    strokeWidth="3"
   />
 
-  {/* HANGING CABLES */}
-  <line x1="260" y1="92" x2="260" y2="442" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="360" y1="72" x2="360" y2="455" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="460" y1="52" x2="460" y2="470" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="560" y1="35" x2="560" y2="482" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="660" y1="20" x2="660" y2="492" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="760" y1="5" x2="760" y2="500" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="860" y1="5" x2="860" y2="500" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="960" y1="20" x2="960" y2="492" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="1060" y1="35" x2="1060" y2="482" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="1160" y1="52" x2="1160" y2="470" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="1260" y1="72" x2="1260" y2="455" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
-  <line x1="1360" y1="92" x2="1360" y2="442" stroke="rgba(140,220,255,.65)" strokeWidth="2" />
+  {/* LOWER DECK */}
+  <path
+    d="
+      M 80 455
+      C 360 505,
+        620 530,
+        800 520
+      S 1280 505,
+        1520 455
+    "
+    fill="none"
+    stroke="rgba(40,160,255,.95)"
+    strokeWidth="7"
+  />
 
-  {/* FLOOR GLOW */}
+  {/* LOWER GLOW */}
+  <path
+    d="
+      M 80 455
+      C 360 505,
+        620 530,
+        800 520
+      S 1280 505,
+        1520 455
+    "
+    fill="none"
+    stroke="rgba(0,140,255,.35)"
+    strokeWidth="24"
+  />
+
+  {/* WIREFRAME BRIDGE MESH */}
+  <path
+    d="
+      M 120 390
+      C 320 220,
+        520 220,
+        800 395
+      S 1280 545,
+        1480 390
+    "
+    fill="none"
+    stroke="rgba(170,220,255,.25)"
+    strokeWidth="1.5"
+  />
+
+  <path
+    d="
+      M 120 405
+      C 320 240,
+        520 240,
+        800 410
+      S 1280 555,
+        1480 405
+    "
+    fill="none"
+    stroke="rgba(170,220,255,.18)"
+    strokeWidth="1.5"
+  />
+
   <path
     d="
       M 120 420
-      Q 800 520 1480 420
+      C 320 260,
+        520 260,
+        800 425
+      S 1280 565,
+        1480 420
     "
     fill="none"
-    stroke="rgba(0,150,255,.35)"
-    strokeWidth="20"
+    stroke="rgba(170,220,255,.12)"
+    strokeWidth="1.5"
+  />
+
+  {/* LEFT LIGHT */}
+  <circle
+    cx="150"
+    cy="320"
+    r="14"
+    fill="#48a8ff"
+  />
+
+  {/* MID LEFT LIGHT */}
+  <circle
+    cx="460"
+    cy="380"
+    r="12"
+    fill="#53ff7c"
+  />
+
+  {/* MID RIGHT LIGHT */}
+  <circle
+    cx="1140"
+    cy="380"
+    r="12"
+    fill="#d45eff"
+  />
+
+  {/* RIGHT LIGHT */}
+  <circle
+    cx="1360"
+    cy="320"
+    r="14"
+    fill="#18d8ff"
   />
 </svg>
 
