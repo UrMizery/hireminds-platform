@@ -1,12 +1,5 @@
 'use client';
 
-import {
-  Briefcase,
-  Heart,
-  Handshake,
-  User,
-} from 'lucide-react';
-
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-black text-white overflow-x-hidden">
@@ -149,11 +142,9 @@ export default function HomePage() {
 
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[3px] border-blue-500 flex items-center justify-center bg-black shadow-[0_0_45px_rgba(59,130,246,0.85)]">
 
-                <User
-                  size={62}
-                  className="text-blue-400"
-                  strokeWidth={1.5}
-                />
+                <span className="text-6xl">
+                  👤
+                </span>
 
               </div>
 
@@ -172,11 +163,9 @@ export default function HomePage() {
 
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[3px] border-green-500 flex items-center justify-center bg-black shadow-[0_0_45px_rgba(34,197,94,0.8)]">
 
-                <Handshake
-                  size={62}
-                  className="text-green-400"
-                  strokeWidth={1.5}
-                />
+                <span className="text-6xl">
+                  🤝
+                </span>
 
               </div>
 
@@ -227,11 +216,9 @@ export default function HomePage() {
 
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[3px] border-fuchsia-500 flex items-center justify-center bg-black shadow-[0_0_45px_rgba(217,70,239,0.8)]">
 
-                <Heart
-                  size={62}
-                  className="text-fuchsia-400"
-                  strokeWidth={1.5}
-                />
+                <span className="text-6xl">
+                  💜
+                </span>
 
               </div>
 
@@ -250,11 +237,9 @@ export default function HomePage() {
 
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[3px] border-cyan-400 flex items-center justify-center bg-black shadow-[0_0_45px_rgba(34,211,238,0.8)]">
 
-                <Briefcase
-                  size={62}
-                  className="text-cyan-300"
-                  strokeWidth={1.5}
-                />
+                <span className="text-6xl">
+                  💼
+                </span>
 
               </div>
 
