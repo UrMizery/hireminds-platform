@@ -30,13 +30,13 @@ export default function HomePage() {
           </a>
         </div>
 
-        {/* FLOATING HM LOGO */}
+        {/* FLOATING LOGO */}
         <div style={styles.heroLogoWrap}>
           <Image
             src="/hm-logo.png"
             alt="HireMinds"
-            width={420}
-            height={420}
+            width={380}
+            height={380}
             style={styles.heroLogo}
           />
         </div>
@@ -66,74 +66,78 @@ export default function HomePage() {
           through one unified ecosystem built for real outcomes.
         </p>
 
-        {/* BRIDGE */}
+        {/* BRIDGE SECTION */}
         <div style={styles.bridgeWrap}>
 
-          {/* GLOW */}
-          <div style={styles.bridgeGlow} />
-
-          {/* SVG BRIDGE */}
+          {/* FULL SUSPENSION BRIDGE */}
           <svg
-            viewBox="0 0 1600 520"
+            viewBox="0 0 1600 600"
             preserveAspectRatio="none"
             style={styles.bridgeSvg}
           >
 
-            {/* MAIN BRIDGE */}
-            <path
-              d="
-                M 0 270
-                C 180 80,
-                  420 80,
-                  800 250
-                S 1380 420,
-                  1600 180
-              "
-              fill="none"
-              stroke="rgba(70,150,255,.95)"
+            {/* LEFT TOWER */}
+            <line
+              x1="180"
+              y1="170"
+              x2="180"
+              y2="420"
+              stroke="rgba(80,180,255,.95)"
               strokeWidth="4"
             />
 
-            <path
-              d="
-                M 0 295
-                C 180 110,
-                  420 110,
-                  800 275
-                S 1380 450,
-                  1600 205
-              "
-              fill="none"
-              stroke="rgba(180,120,255,.85)"
-              strokeWidth="3"
+            {/* RIGHT TOWER */}
+            <line
+              x1="1420"
+              y1="170"
+              x2="1420"
+              y2="420"
+              stroke="rgba(80,180,255,.95)"
+              strokeWidth="4"
             />
 
+            {/* MAIN TOP CABLE */}
             <path
               d="
-                M 0 320
-                C 180 170,
-                  420 170,
-                  800 320
-                S 1380 500,
-                  1600 260
+                M 180 170
+                Q 800 20 1420 170
               "
               fill="none"
-              stroke="rgba(0,220,255,.95)"
+              stroke="rgba(80,180,255,.95)"
+              strokeWidth="4"
+            />
+
+            {/* ROADWAY */}
+            <path
+              d="
+                M 180 420
+                Q 800 500 1420 420
+              "
+              fill="none"
+              stroke="rgba(80,180,255,.95)"
               strokeWidth="5"
             />
 
+            {/* SUSPENSION CABLES */}
+            <line x1="300" y1="125" x2="300" y2="438" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+            <line x1="420" y1="95" x2="420" y2="455" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+            <line x1="540" y1="70" x2="540" y2="470" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+            <line x1="660" y1="48" x2="660" y2="482" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+            <line x1="780" y1="30" x2="780" y2="492" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+            <line x1="900" y1="35" x2="900" y2="492" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+            <line x1="1020" y1="52" x2="1020" y2="482" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+            <line x1="1140" y1="75" x2="1140" y2="470" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+            <line x1="1260" y1="105" x2="1260" y2="452" stroke="rgba(120,200,255,.55)" strokeWidth="1.5" />
+
+            {/* GLOW LINE */}
             <path
               d="
-                M 0 340
-                C 180 210,
-                  420 210,
-                  800 350
-                S 1380 520,
-                  1600 290
+                M 180 420
+                Q 800 500 1420 420
               "
               fill="none"
-              stroke="rgba(70,130,255,.35)"
-              strokeWidth="2"
+              stroke="rgba(0,150,255,.45)"
+              strokeWidth="16"
             />
           </svg>
 
@@ -141,14 +145,18 @@ export default function HomePage() {
           <div
             style={{
               ...styles.node,
-              left: "4%",
-              top: "210px",
+              left: "6%",
+              top: "245px",
               borderColor: "#1d8fff",
               boxShadow:
                 "0 0 35px rgba(29,143,255,.95)",
             }}
           >
-            <span style={styles.nodeEmoji}>👤</span>
+            <span style={styles.outlineEmoji}>◯</span>
+
+            <span style={styles.iconInside}>
+              👤
+            </span>
           </div>
 
           {/* JUSTICE */}
@@ -156,22 +164,26 @@ export default function HomePage() {
             style={{
               ...styles.node,
               left: "28%",
-              top: "165px",
+              top: "210px",
               borderColor: "#53ff7c",
               boxShadow:
                 "0 0 35px rgba(83,255,124,.95)",
             }}
           >
-            <span style={styles.nodeEmoji}>🤝</span>
+            <span style={styles.outlineEmoji}>◯</span>
+
+            <span style={styles.iconInside}>
+              🤝
+            </span>
           </div>
 
-          {/* HM CENTER */}
+          {/* CENTER HM */}
           <div style={styles.centerOrb}>
             <Image
               src="/hm-logo.png"
               alt="HireMinds"
-              width={230}
-              height={230}
+              width={240}
+              height={240}
               style={{
                 objectFit: "contain",
               }}
@@ -183,31 +195,39 @@ export default function HomePage() {
             style={{
               ...styles.node,
               right: "28%",
-              top: "165px",
+              top: "210px",
               borderColor: "#d45eff",
               boxShadow:
                 "0 0 35px rgba(212,94,255,.95)",
             }}
           >
-            <span style={styles.nodeEmoji}>💜</span>
+            <span style={styles.outlineEmoji}>◯</span>
+
+            <span style={styles.iconInside}>
+              ♡
+            </span>
           </div>
 
           {/* EMPLOYERS */}
           <div
             style={{
               ...styles.node,
-              right: "4%",
-              top: "210px",
+              right: "6%",
+              top: "245px",
               borderColor: "#18d8ff",
               boxShadow:
                 "0 0 35px rgba(24,216,255,.95)",
             }}
           >
-            <span style={styles.nodeEmoji}>💼</span>
+            <span style={styles.outlineEmoji}>◯</span>
+
+            <span style={styles.iconInside}>
+              💼
+            </span>
           </div>
         </div>
 
-        {/* INFO GRID */}
+        {/* INFO */}
         <div style={styles.cardGrid}>
 
           <div style={styles.card}>
@@ -363,7 +383,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   heroLogoWrap: {
-    marginTop: "40px",
+    marginTop: "35px",
     display: "flex",
     justifyContent: "center",
   },
@@ -371,11 +391,11 @@ const styles: Record<string, React.CSSProperties> = {
   heroLogo: {
     objectFit: "contain",
     filter:
-      "drop-shadow(0 0 40px rgba(38,114,255,.55))",
+      "drop-shadow(0 0 45px rgba(38,114,255,.65))",
   },
 
   bridgeSection: {
-    maxWidth: "1600px",
+    maxWidth: "1650px",
     margin: "0 auto",
     textAlign: "center",
     marginTop: "-10px",
@@ -421,22 +441,8 @@ const styles: Record<string, React.CSSProperties> = {
   bridgeWrap: {
     position: "relative",
     width: "100%",
-    height: "560px",
-    marginTop: "60px",
-    overflow: "hidden",
-  },
-
-  bridgeGlow: {
-    position: "absolute",
-    left: "50%",
-    top: "220px",
-    transform: "translateX(-50%)",
-    width: "700px",
-    height: "240px",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(30,120,255,.35) 0%, rgba(30,120,255,0) 70%)",
-    filter: "blur(40px)",
+    height: "640px",
+    marginTop: "40px",
   },
 
   bridgeSvg: {
@@ -445,33 +451,39 @@ const styles: Record<string, React.CSSProperties> = {
     height: "100%",
     left: 0,
     top: 0,
-    overflow: "visible",
     filter:
-      "drop-shadow(0 0 18px rgba(0,140,255,.5))",
+      "drop-shadow(0 0 25px rgba(0,140,255,.5))",
   },
 
   node: {
     position: "absolute",
-    width: "120px",
-    height: "120px",
+    width: "130px",
+    height: "130px",
     borderRadius: "50%",
     border: "3px solid",
     background:
-      "radial-gradient(circle at top,#111111 0%,#000000 100%)",
+      "radial-gradient(circle at top,#0a0a0a 0%,#000000 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
+    zIndex: 20,
   },
 
-  nodeEmoji: {
-    fontSize: "50px",
+  outlineEmoji: {
+    position: "absolute",
+    fontSize: "110px",
+    opacity: 0.15,
+  },
+
+  iconInside: {
+    fontSize: "52px",
+    zIndex: 2,
   },
 
   centerOrb: {
     position: "absolute",
     left: "50%",
-    top: "220px",
+    top: "250px",
     transform: "translateX(-50%)",
     width: "260px",
     height: "260px",
@@ -479,9 +491,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 20,
+    zIndex: 30,
     filter:
-      "drop-shadow(0 0 55px rgba(43,120,255,.85))",
+      "drop-shadow(0 0 65px rgba(43,120,255,.9))",
   },
 
   cardGrid: {
@@ -489,7 +501,7 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns:
       "repeat(auto-fit,minmax(240px,1fr))",
     gap: "26px",
-    marginTop: "-20px",
+    marginTop: "-70px",
     alignItems: "start",
   },
 
@@ -523,7 +535,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   bottomWrap: {
-    marginTop: "50px",
+    marginTop: "40px",
     textAlign: "center",
   },
 
