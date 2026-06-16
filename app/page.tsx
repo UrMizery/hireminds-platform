@@ -1,18 +1,17 @@
 'use client';
 
+import { Briefcase, Heart, Handshake, User } from 'lucide-react';
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-black text-white overflow-hidden">
-
       {/* NAVBAR */}
-      <nav className="w-full border-b border-white/10 px-10 py-5 flex items-center justify-between bg-black relative z-20">
-
+      <nav className="w-full border-b border-white/10 px-10 py-5 flex items-center justify-between bg-black">
         <div className="text-4xl font-semibold tracking-tight">
           HireMinds
         </div>
 
         <div className="hidden md:flex items-center gap-12 text-lg">
-
           <a href="#" className="hover:text-blue-400 transition">
             Home
           </a>
@@ -35,7 +34,6 @@ export default function HomePage() {
         </div>
 
         <div className="flex items-center gap-10 text-lg">
-
           <div className="flex items-center gap-2">
             <span>Job Board</span>
             <span className="text-yellow-400">🔒</span>
@@ -48,56 +46,56 @@ export default function HomePage() {
       </nav>
 
       {/* HERO */}
-      <section className="relative flex flex-col items-center text-center px-6 pt-14 pb-32 overflow-hidden">
+      <section className="relative flex flex-col items-center text-center px-6 pt-14 pb-32">
+        {/* Background glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,102,255,0.25),transparent_60%)] pointer-events-none" />
 
-        {/* BACKGROUND GLOW */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,102,255,0.18),transparent_65%)] pointer-events-none" />
-
-        {/* TOP LABEL */}
-        <p className="text-[#1E90FF] tracking-[0.35em] uppercase text-sm font-semibold mb-6 relative z-10">
+        <p className="text-[#1E90FF] tracking-[0.35em] uppercase text-sm font-semibold mb-6">
           Workforce Infrastructure Platform
         </p>
 
-        {/* MAIN TITLE */}
-        <h1 className="text-6xl md:text-8xl font-extrabold leading-none tracking-tight max-w-7xl relative z-10">
+        <h1 className="text-6xl md:text-8xl font-extrabold leading-none tracking-tight max-w-7xl">
           Build Your Career Passport
         </h1>
 
-        {/* SUBTEXT */}
-        <p className="mt-8 text-2xl text-white/80 max-w-4xl leading-relaxed relative z-10">
+        <p className="mt-8 text-2xl text-white/80 max-w-4xl leading-relaxed">
           HireMinds helps people strengthen visibility, organize career tools,
           prepare for opportunities, and keep momentum moving forward.
         </p>
 
         {/* BUTTON */}
-        <button className="mt-12 px-12 py-5 rounded-2xl bg-white text-black text-2xl font-semibold shadow-[0_0_35px_rgba(255,255,255,0.4)] hover:scale-105 transition relative z-10">
+        <button className="mt-12 px-12 py-5 rounded-2xl bg-white text-black text-2xl font-semibold shadow-[0_0_35px_rgba(255,255,255,0.4)] hover:scale-105 transition">
           Create Career Passport / Sign Up
         </button>
 
         {/* LOGO */}
-        <div className="mt-16 relative z-10 flex flex-col items-center">
+        <div className="mt-20 relative">
+          <div className="absolute -inset-10 bg-blue-500/20 blur-3xl rounded-full" />
 
-          <div className="absolute w-[650px] h-[650px] rounded-full bg-blue-500/10 blur-[120px]" />
+          <div className="relative text-center">
+            <div className="text-[12rem] md:text-[18rem] font-black leading-none bg-gradient-to-b from-white via-gray-300 to-blue-500 bg-clip-text text-transparent tracking-tight">
+              HM
+            </div>
 
-          <img
-            src="/hm-logo.png.jpeg"
-            alt="HireMinds"
-            className="w-[380px] md:w-[620px] drop-shadow-[0_0_55px_rgba(59,130,246,0.9)]"
-          />
+            <div className="absolute right-0 bottom-10 w-10 h-10 rounded-full bg-blue-400 blur-sm shadow-[0_0_40px_15px_rgba(59,130,246,0.9)]" />
+
+            <div className="text-5xl md:text-6xl tracking-[0.4em] font-semibold mt-2">
+              HIRE
+              <span className="text-blue-500">MINDS</span>
+            </div>
+          </div>
         </div>
 
         {/* WHO WE ARE */}
-        <div className="mt-8 w-full max-w-6xl relative z-10">
-
+        <div className="mt-20 w-full max-w-6xl">
           <div className="flex items-center justify-center gap-6 mb-8">
-
-            <div className="h-[2px] w-52 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+            <div className="h-[2px] w-52 bg-blue-500" />
 
             <span className="uppercase tracking-[0.35em] text-[#1E90FF] font-semibold text-lg">
               Who We Are
             </span>
 
-            <div className="h-[2px] w-52 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+            <div className="h-[2px] w-52 bg-blue-500" />
           </div>
 
           <h2 className="text-5xl md:text-6xl font-bold">
@@ -112,53 +110,20 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* BRIDGE SECTION */}
-        <div className="relative w-full max-w-[1800px] mt-24 h-[520px]">
+        {/* CONNECTION WAVE */}
+        <div className="relative w-full max-w-[1800px] mt-24">
+          {/* glowing line */}
+          <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-400 blur-sm" />
 
-          {/* GLOWING BRIDGE */}
-          <svg
-            className="absolute top-[80px] left-0 w-full h-[220px]"
-            viewBox="0 0 1600 220"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M0 140 C200 40, 400 220, 800 110 C1200 0, 1400 200, 1600 90"
-              stroke="url(#paint0_linear)"
-              strokeWidth="3"
-              fill="none"
-              opacity="0.9"
-            />
-
-            <path
-              d="M0 145 C200 45, 400 225, 800 115 C1200 5, 1400 205, 1600 95"
-              stroke="rgba(255,255,255,0.2)"
-              strokeWidth="1"
-              fill="none"
-            />
-
-            <defs>
-              <linearGradient id="paint0_linear" x1="0" y1="0" x2="1600" y2="0">
-                <stop stopColor="#1D4ED8" />
-                <stop offset="0.5" stopColor="#A855F7" />
-                <stop offset="1" stopColor="#22D3EE" />
-              </linearGradient>
-            </defs>
-          </svg>
-
-          {/* ICON GRID */}
-          <div className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-5 gap-8 items-start z-10">
-
-            {/* PARTICIPANTS */}
-            <div className="flex flex-col items-center mt-24">
-
-              <div className="w-36 h-36 rounded-full border-4 border-blue-500 flex items-center justify-center bg-black shadow-[0_0_45px_rgba(59,130,246,0.9)]">
-                <span className="text-6xl">👤</span>
+          {/* ICON SECTION */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-start relative z-10">
+            {/* Participants */}
+            <div className="flex flex-col items-center">
+              <div className="w-36 h-36 rounded-full border-4 border-blue-500 flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.8)]">
+                <User size={60} className="text-blue-400" />
               </div>
 
-              <h3 className="mt-8 text-4xl font-bold">
-                Participants
-              </h3>
+              <h3 className="mt-8 text-4xl font-bold">Participants</h3>
 
               <p className="mt-5 text-xl text-white/75 leading-relaxed max-w-sm">
                 Build visibility, access tools, and prepare for meaningful
@@ -168,11 +133,10 @@ export default function HomePage() {
               <div className="mt-8 w-32 h-[3px] bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)]" />
             </div>
 
-            {/* JUSTICE */}
-            <div className="flex flex-col items-center mt-16">
-
-              <div className="w-36 h-36 rounded-full border-4 border-green-500 flex items-center justify-center bg-black shadow-[0_0_45px_rgba(34,197,94,0.9)]">
-                <span className="text-6xl">🤝</span>
+            {/* Justice Impact */}
+            <div className="flex flex-col items-center">
+              <div className="w-36 h-36 rounded-full border-4 border-green-500 flex items-center justify-center shadow-[0_0_40px_rgba(34,197,94,0.8)]">
+                <Handshake size={60} className="text-green-400" />
               </div>
 
               <h3 className="mt-8 text-4xl font-bold text-center">
@@ -190,22 +154,16 @@ export default function HomePage() {
             </div>
 
             {/* CENTER */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center -mt-10">
+              <div className="relative w-72 h-72 rounded-full border-4 border-blue-500 bg-black flex items-center justify-center shadow-[0_0_70px_rgba(59,130,246,0.8)]">
+                <div className="absolute inset-0 rounded-full bg-blue-500/10 blur-2xl" />
 
-              <div className="relative w-72 h-72 rounded-full border-4 border-blue-500 bg-black flex items-center justify-center shadow-[0_0_80px_rgba(59,130,246,0.9)]">
-
-                <div className="absolute inset-0 rounded-full bg-blue-500/10 blur-3xl" />
-
-                <img
-                  src="/hm-logo.png.jpeg"
-                  alt="HM"
-                  className="w-44 relative z-10"
-                />
+                <div className="text-[7rem] font-black bg-gradient-to-b from-white via-gray-300 to-blue-500 bg-clip-text text-transparent">
+                  HM
+                </div>
               </div>
 
-              <h3 className="mt-8 text-5xl font-bold">
-                HireMinds
-              </h3>
+              <h3 className="mt-8 text-5xl font-bold">HireMinds</h3>
 
               <p className="text-2xl mt-3">
                 One Platform.
@@ -214,16 +172,13 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* NONPROFITS */}
-            <div className="flex flex-col items-center mt-16">
-
-              <div className="w-36 h-36 rounded-full border-4 border-fuchsia-500 flex items-center justify-center bg-black shadow-[0_0_45px_rgba(217,70,239,0.9)]">
-                <span className="text-6xl">💜</span>
+            {/* Nonprofits */}
+            <div className="flex flex-col items-center">
+              <div className="w-36 h-36 rounded-full border-4 border-fuchsia-500 flex items-center justify-center shadow-[0_0_40px_rgba(217,70,239,0.8)]">
+                <Heart size={60} className="text-fuchsia-400" />
               </div>
 
-              <h3 className="mt-8 text-4xl font-bold">
-                Nonprofits
-              </h3>
+              <h3 className="mt-8 text-4xl font-bold">Nonprofits</h3>
 
               <p className="mt-5 text-xl text-white/75 leading-relaxed max-w-sm">
                 Coordinate support, program management, and community impact at
@@ -233,16 +188,13 @@ export default function HomePage() {
               <div className="mt-8 w-32 h-[3px] bg-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,1)]" />
             </div>
 
-            {/* EMPLOYERS */}
-            <div className="flex flex-col items-center mt-24">
-
-              <div className="w-36 h-36 rounded-full border-4 border-cyan-400 flex items-center justify-center bg-black shadow-[0_0_45px_rgba(34,211,238,0.9)]">
-                <span className="text-6xl">💼</span>
+            {/* Employers */}
+            <div className="flex flex-col items-center">
+              <div className="w-36 h-36 rounded-full border-4 border-cyan-400 flex items-center justify-center shadow-[0_0_40px_rgba(34,211,238,0.8)]">
+                <Briefcase size={60} className="text-cyan-300" />
               </div>
 
-              <h3 className="mt-8 text-4xl font-bold">
-                Employers
-              </h3>
+              <h3 className="mt-8 text-4xl font-bold">Employers</h3>
 
               <p className="mt-5 text-xl text-white/75 leading-relaxed max-w-sm">
                 Discover prepared talent, build stronger teams, and create
@@ -255,8 +207,7 @@ export default function HomePage() {
         </div>
 
         {/* FOOTER TEXT */}
-        <div className="mt-20 text-center relative z-10">
-
+        <div className="mt-24 text-center">
           <h3 className="text-4xl md:text-5xl font-bold">
             HireMinds isn’t just a platform — it’s a{' '}
             <span className="text-blue-400">bridge.</span>
