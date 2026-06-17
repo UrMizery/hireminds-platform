@@ -38,6 +38,7 @@ export default function HomePage() {
             width={420}
             height={420}
             style={styles.heroLogo}
+            priority
           />
         </div>
       </section>
@@ -65,90 +66,108 @@ export default function HomePage() {
           Justice Impact Partners, Nonprofits, and Employers
           through one unified ecosystem built for real outcomes.
         </p>
-  
-{/* BRIDGE IMAGE */}
-<div style={styles.bridgeImageWrap}>
-  <Image
-    src="/bridge-network.png"
-    alt="HireMinds Bridge"
-    width={2000}
-    height={900}
-    style={styles.bridgeImage}
-  />
 
-  {/* OVERLAY TEXT */}
-  <div style={styles.bridgeOverlay}>
+        {/* BRIDGE IMAGE */}
+        <div style={styles.bridgeImageSection}>
 
-    <div style={styles.overlayCard}>
-      <h3 style={styles.cardTitle}>
-        Participants
-      </h3>
+          <Image
+            src="/bridge-network.png"
+            alt="HireMinds Bridge"
+            width={2200}
+            height={950}
+            priority
+            style={styles.bridgeImage}
+          />
 
-      <p style={styles.cardText}>
-        Build visibility,
-        access tools,
-        and prepare for meaningful
-        career opportunities.
-      </p>
-    </div>
+          {/* OVERLAY CONTENT */}
+          <div style={styles.bridgeOverlay}>
 
-    <div style={styles.overlayCard}>
-      <h3 style={styles.cardTitle}>
-        Justice Impact
-        <br />
-        Partners
-      </h3>
+            {/* PARTICIPANTS */}
+            <div style={styles.bridgeCard}>
+              <h3 style={styles.bridgeTitle}>
+                Participants
+              </h3>
 
-      <p style={styles.cardText}>
-        Connect individuals
-        to support,
-        resources,
-        and pathways that
-        drive real change.
-      </p>
-    </div>
+              <p style={styles.bridgeText}>
+                Build visibility, access tools,
+                and prepare for meaningful
+                career opportunities.
+              </p>
+            </div>
 
-    <div style={styles.overlayCenter}>
-      <h3 style={styles.cardTitle}>
-        HireMinds
-      </h3>
+            {/* JUSTICE */}
+            <div style={styles.bridgeCard}>
+              <h3 style={styles.bridgeTitle}>
+                Justice Impact
+                <br />
+                Partners
+              </h3>
 
-      <p style={styles.centerText}>
-        One Platform.
-      </p>
+              <p style={styles.bridgeText}>
+                Connect individuals to support,
+                resources, and pathways that
+                drive real change.
+              </p>
+            </div>
 
-      <p style={styles.centerBlue}>
-        Unlimited Impact.
-      </p>
-    </div>
+            {/* CENTER */}
+            <div style={styles.bridgeCenter}>
+              <h3 style={styles.bridgeCenterTitle}>
+                HireMinds
+              </h3>
 
-    <div style={styles.overlayCard}>
-      <h3 style={styles.cardTitle}>
-        Nonprofits
-      </h3>
+              <p style={styles.bridgeCenterText}>
+                One Platform.
+              </p>
 
-      <p style={styles.cardText}>
-        Coordinate support,
-        program management,
-        and community impact
-        at scale.
-      </p>
-    </div>
+              <p style={styles.bridgeCenterBlue}>
+                Unlimited Impact.
+              </p>
+            </div>
 
-    <div style={styles.overlayCard}>
-      <h3 style={styles.cardTitle}>
-        Employers
-      </h3>
+            {/* NONPROFITS */}
+            <div style={styles.bridgeCard}>
+              <h3 style={styles.bridgeTitle}>
+                Nonprofits
+              </h3>
 
-      <p style={styles.cardText}>
-        Discover prepared talent,
-        build stronger teams,
-        and create lasting impact.
-      </p>
-    </div>
+              <p style={styles.bridgeText}>
+                Coordinate support,
+                program management,
+                and community impact
+                at scale.
+              </p>
+            </div>
 
-  </div>
-</div>
+            {/* EMPLOYERS */}
+            <div style={styles.bridgeCard}>
+              <h3 style={styles.bridgeTitle}>
+                Employers
+              </h3>
+
+              <p style={styles.bridgeText}>
+                Discover prepared talent,
+                build stronger teams,
+                and create lasting impact.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* BOTTOM VERBIAGE */}
+        <div style={styles.bottomWrap}>
+          <p style={styles.bottomMain}>
+            HireMinds isn’t just a platform — it’s a{" "}
+            <span style={styles.bridgeWord}>
+              bridge.
+            </span>
+          </p>
+
+          <p style={styles.bottomSub}>
+            One infrastructure. One mission. Unlimited potential.
+          </p>
+        </div>
 
       </section>
     </main>
@@ -219,19 +238,23 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   heroLogoWrap: {
-    marginTop: "40px",
+    marginTop: "20px",
+    marginBottom: "-10px",
     display: "flex",
     justifyContent: "center",
+    animation: "float 5s ease-in-out infinite",
   },
 
   heroLogo: {
+    width: "420px",
+    height: "auto",
     objectFit: "contain",
     filter:
-      "drop-shadow(0 0 40px rgba(38,114,255,.55))",
+      "drop-shadow(0 0 45px rgba(38,114,255,.7))",
   },
 
   bridgeSection: {
-    maxWidth: "1600px",
+    maxWidth: "1700px",
     margin: "0 auto",
     textAlign: "center",
     marginTop: "-10px",
@@ -274,123 +297,85 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.65,
   },
 
-  bridgeImageWrap: {
-  position: "relative",
-  width: "100%",
-  marginTop: "60px",
-},
-
-bridgeImage: {
-  width: "100%",
-  height: "auto",
-  objectFit: "contain",
-  filter:
-    "drop-shadow(0 0 35px rgba(0,120,255,.45))",
-},
-
-bridgeOverlay: {
-  position: "absolute",
-  bottom: "0",
-  left: 0,
-  width: "100%",
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(5,minmax(180px,1fr))",
-  gap: "20px",
-  padding: "0 40px 10px",
-  alignItems: "end",
-},
-
-overlayCard: {
-  textAlign: "center",
-},
-
-overlayCenter: {
-  textAlign: "center",
-  transform: "translateY(-10px)",
-},
-
-  node: {
-    position: "absolute",
-    width: "120px",
-    height: "120px",
-    borderRadius: "50%",
-    border: "3px solid",
-    background:
-      "radial-gradient(circle at top,#111111 0%,#000000 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
+  bridgeImageSection: {
+    position: "relative",
+    width: "100%",
+    maxWidth: "1800px",
+    margin: "70px auto 0",
+    overflow: "visible",
   },
 
-  nodeEmoji: {
-    fontSize: "50px",
-  },
-
-  centerOrb: {
-    position: "absolute",
-    left: "50%",
-    top: "220px",
-    transform: "translateX(-50%)",
-    width: "260px",
-    height: "260px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 20,
+  bridgeImage: {
+    width: "100%",
+    height: "auto",
+    display: "block",
+    objectFit: "contain",
     filter:
-      "drop-shadow(0 0 55px rgba(43,120,255,.85))",
+      "drop-shadow(0 0 45px rgba(0,120,255,.25))",
   },
 
-  cardGrid: {
+  bridgeOverlay: {
+    position: "absolute",
+    bottom: "3%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "95%",
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit,minmax(240px,1fr))",
-    gap: "26px",
-    marginTop: "-20px",
-    alignItems: "start",
+      "repeat(5,minmax(180px,1fr))",
+    gap: "10px",
+    alignItems: "end",
   },
 
-  card: {
+  bridgeCard: {
     textAlign: "center",
+    padding: "0 8px",
   },
 
-  cardTitle: {
-    fontSize: "30px",
+  bridgeTitle: {
+    fontSize: "clamp(22px,2vw,48px)",
     fontWeight: 900,
-    marginBottom: "14px",
     lineHeight: 1.1,
+    marginBottom: "16px",
   },
 
-  cardText: {
-    color: "#dddddd",
-    lineHeight: 1.8,
-    fontSize: "18px",
+  bridgeText: {
+    fontSize: "clamp(13px,1vw,24px)",
+    lineHeight: 1.7,
+    color: "#f1f1f1",
   },
 
-  centerText: {
-    color: "#ffffff",
-    fontSize: "24px",
-    marginBottom: "6px",
+  bridgeCenter: {
+    textAlign: "center",
+    transform: "translateY(-10px)",
   },
 
-  centerBlue: {
-    color: "#2f8fff",
-    fontSize: "24px",
+  bridgeCenterTitle: {
+    fontSize: "clamp(24px,2vw,50px)",
     fontWeight: 900,
+    marginBottom: "16px",
+  },
+
+  bridgeCenterText: {
+    fontSize: "clamp(18px,1.4vw,34px)",
+    marginBottom: "8px",
+  },
+
+  bridgeCenterBlue: {
+    fontSize: "clamp(20px,1.5vw,36px)",
+    fontWeight: 900,
+    color: "#1f8fff",
   },
 
   bottomWrap: {
-    marginTop: "50px",
+    marginTop: "20px",
     textAlign: "center",
   },
 
   bottomMain: {
-    fontSize: "32px",
-    fontWeight: 800,
-    marginBottom: "12px",
+    fontSize: "38px",
+    fontWeight: 900,
+    marginBottom: "10px",
   },
 
   bridgeWord: {
@@ -399,7 +384,8 @@ overlayCenter: {
 
   bottomSub: {
     color: "#d0d0d0",
-    fontSize: "24px",
+    fontSize: "28px",
     lineHeight: 1.7,
+    marginBottom: "40px",
   },
 };
