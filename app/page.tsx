@@ -237,25 +237,21 @@ const styles: Record<string, React.CSSProperties> = {
       "0 0 35px rgba(255,255,255,.18)",
   },
 
-heroLogoWrap: {
-  marginTop: "18px",
-  marginBottom: "-20px",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  animation: "float 5s ease-in-out infinite",
-},
+  heroLogoWrap: {
+    marginTop: "20px",
+    marginBottom: "-10px",
+    display: "flex",
+    justifyContent: "center",
+    animation: "float 5s ease-in-out infinite",
+  },
 
-heroLogo: {
-  width: "430px",
-  height: "auto",
-  objectFit: "contain",
-  background: "transparent",
-  border: "none",
-  boxShadow: "none",
-  filter:
-    "drop-shadow(0 0 60px rgba(38,114,255,.65))",
-},
+  heroLogo: {
+    width: "420px",
+    height: "auto",
+    objectFit: "contain",
+    filter:
+      "drop-shadow(0 0 45px rgba(38,114,255,.7))",
+  },
 
   bridgeSection: {
     maxWidth: "1700px",
@@ -309,36 +305,32 @@ heroLogo: {
     overflow: "visible",
   },
 
-bridgeImage: {
-  width: "100%",
-  height: "auto",
-  display: "block",
-  objectFit: "contain",
-  marginLeft: "auto",
-  marginRight: "auto",
-  filter:
-    "drop-shadow(0 0 45px rgba(0,120,255,.25))",
-},
+  bridgeImage: {
+    width: "100%",
+    height: "auto",
+    display: "block",
+    objectFit: "contain",
+    filter:
+      "drop-shadow(0 0 45px rgba(0,120,255,.25))",
+  },
 
- bridgeOverlay: {
-  position: "absolute",
-  bottom: "5%",
-  left: "50%",
-  transform: "translateX(-50%)",
-  width: "94%",
-  display: "grid",
-  gridTemplateColumns:
-    "1fr 1fr 1.15fr 1fr 1fr",
-  alignItems: "end",
-},
+  bridgeOverlay: {
+    position: "absolute",
+    bottom: "3%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "95%",
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(5,minmax(180px,1fr))",
+    gap: "10px",
+    alignItems: "end",
+  },
 
-bridgeCard: {
-  textAlign: "center",
-  padding: "0 16px",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "flex-end",
-},
+  bridgeCard: {
+    textAlign: "center",
+    padding: "0 8px",
+  },
 
   bridgeTitle: {
     fontSize: "clamp(22px,2vw,48px)",
@@ -353,22 +345,16 @@ bridgeCard: {
     color: "#f1f1f1",
   },
 
-bridgeCenter: {
-  textAlign: "center",
-  transform: "translateY(-22px)",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-},
+  bridgeCenter: {
+    textAlign: "center",
+    transform: "translateY(-10px)",
+  },
 
-bridgeCenterTitle: {
-  fontSize: "clamp(28px,2vw,52px)",
-  fontWeight: 900,
-  marginBottom: "14px",
-  lineHeight: 1,
-  textAlign: "center",
-},
+  bridgeCenterTitle: {
+    fontSize: "clamp(24px,2vw,50px)",
+    fontWeight: 900,
+    marginBottom: "16px",
+  },
 
   bridgeCenterText: {
     fontSize: "clamp(18px,1.4vw,34px)",
