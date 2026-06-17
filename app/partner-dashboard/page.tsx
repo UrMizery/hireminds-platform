@@ -344,26 +344,46 @@ if (!silent) setLoading(false);
 return;
 }
 
-const { data: participantRows, error: participantError } = await supabase
+let participantQuery = supabase
 .from("candidate_profiles")
 .select("id, user_id, full_name, email, phone, created_at")
-.eq("referral_code", partnerRow.referral_code)
 .order("created_at", { ascending: false });
+
+if (partnerRow.account_type !== "super_admin") {
+participantQuery = participantQuery.eq(
+  "referral_code",
+  partnerRow.referral_code
+);
+}
+
+const { data: participantRows, error: participantError } =
+await participantQuery;
 
 if (participantError) {
 if (mountedRef.current) {
-setMessage(participantError.message);
-if (!silent) setLoading(false);
+  setMessage(participantError.message);
+  if (!silent) setLoading(false);
 }
 return;
 }
 
-const { data: activityRows, error: activityError } = await supabase
+let activityQuery = supabase
 .from("user_activity")
-.select("id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at")
-.eq("referral_code", partnerRow.referral_code)
+.select(
+  "id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at"
+)
 .order("created_at", { ascending: false })
 .limit(5000);
+
+if (partnerRow.account_type !== "super_admin") {
+activityQuery = activityQuery.eq(
+  "referral_code",
+  partnerRow.referral_code
+);
+}
+
+const { data: activityRows, error: activityError } =
+await activityQuery;
 
 if (activityError) {
 if (mountedRef.current) {
