@@ -152,66 +152,78 @@ title: string;
 text: string;
 }) {
 const [open, setOpen] = useState(false);
-return (
 
+return (
+<span style={styles.infoWrap}>
 <button
 type="button"
 onClick={() => setOpen((prev) => !prev)}
 style={styles.infoButton}
-aria-label={About ${title}}
-title={About ${title}}
+aria-label={`About ${title}`}
+title={`About ${title}`}
+>
 i
+</button>
 
 {open ? (
-export default function PartnerDashboardPage() {
-const [loading, setLoading] = useState(true);
-const [loadingLogout, setLoadingLogout] = useState(false);
-const [message, setMessage] = useState("");
-const [activeTab, setActiveTab] = useState("overview");
-const [partner, setPartner] = useState<PartnerRow | null>(null);
-const [participants, setParticipants] = useState<ParticipantRow[]>([]);
-const [activity, setActivity] = useState<ActivityRow[]>([]);
-const [period, setPeriod] = useState("month");
-const [platformUseView, setPlatformUseView] = useState<"day" | "week" | "month">("month");
-const [lastUpdated, setLastUpdated] = useState("");
-const [rangeMode, setRangeMode] = useState("period");
-const [customStartDate, setCustomStartDate] = useState("");
-const [customEndDate, setCustomEndDate] = useState("");
-const [participantSearch, setParticipantSearch] = useState("");
-const [historyParticipantSearch, setHistoryParticipantSearch] = useState("");
-const [historyToolFilter, setHistoryToolFilter] = useState("all");
-const [historyStartDate, setHistoryStartDate] = useState("");
-const [historyEndDate, setHistoryEndDate] = useState("");
-const [supportActions, setSupportActions] = useState<SupportAction[]>([]);
-const [supportType, setSupportType] = useState("task");
-const [supportParticipantKey, setSupportParticipantKey] = useState("");
-const [supportParticipantName, setSupportParticipantName] = useState("");
-const [supportParticipantEmail, setSupportParticipantEmail] = useState("");
-const [supportParticipantPhone, setSupportParticipantPhone] = useState("");
-const [supportTitle, setSupportTitle] = useState("");
-const [supportMessage, setSupportMessage] = useState("");
-const [supportDueDate, setSupportDueDate] = useState("");
-const [participantOutcomes, setParticipantOutcomes] = useState<ParticipantOutcome[]>([]);
-const [outcomeParticipantKey, setOutcomeParticipantKey] = useState("");
-const [outcomeParticipantName, setOutcomeParticipantName] = useState("");
-const [outcomeParticipantEmail, setOutcomeParticipantEmail] = useState("");
-const [outcomeParticipantPhone, setOutcomeParticipantPhone] = useState("");
-const [startedWorkingDate, setStartedWorkingDate] = useState("");
-const [company, setCompany] = useState("");
-const [position, setPosition] = useState("");
-const [workLocation, setWorkLocation] = useState("");
-const [startedTrainingDate, setStartedTrainingDate] = useState("");
-const [program, setProgram] = useState("");
-const [trainingLocation, setTrainingLocation] = useState("");
-const [outcomeNotes, setOutcomeNotes] = useState("");
-const mountedRef = useRef(true);
-const supportStorageKey = useMemo(() => {
-const code = partner?.referral_code || "partner";
-return hireminds-partner-support-actions-${code};
-}, [partner?.referral_code]);
-const outcomesStorageKey = useMemo(() => {
-const code = partner?.referral_code || "partner";
-return hireminds-partner-outcomes-${code};
+<div style={styles.infoPopup}>
+<p style={styles.infoTitle}>{title}</p>
+<p style={styles.infoText}>{text}</p>
+</div>
+) : null}
+
+</span>
+);
+}
+  export default function PartnerDashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [loadingLogout, setLoadingLogout] = useState(false);
+  const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [partner, setPartner] = useState<PartnerRow | null>(null);
+  const [participants, setParticipants] = useState<ParticipantRow[]>([]);
+  const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [period, setPeriod] = useState("month");
+  const [platformUseView, setPlatformUseView] = useState<"day" | "week" | "month">("month");
+  const [lastUpdated, setLastUpdated] = useState("");
+  const [rangeMode, setRangeMode] = useState("period");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [participantSearch, setParticipantSearch] = useState("");
+  const [historyParticipantSearch, setHistoryParticipantSearch] = useState("");
+  const [historyToolFilter, setHistoryToolFilter] = useState("all");
+  const [historyStartDate, setHistoryStartDate] = useState("");
+  const [historyEndDate, setHistoryEndDate] = useState("");
+  const [supportActions, setSupportActions] = useState<SupportAction[]>([]);
+  const [supportType, setSupportType] = useState("task");
+  const [supportParticipantKey, setSupportParticipantKey] = useState("");
+  const [supportParticipantName, setSupportParticipantName] = useState("");
+  const [supportParticipantEmail, setSupportParticipantEmail] = useState("");
+  const [supportParticipantPhone, setSupportParticipantPhone] = useState("");
+  const [supportTitle, setSupportTitle] = useState("");
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportDueDate, setSupportDueDate] = useState("");
+  const [participantOutcomes, setParticipantOutcomes] = useState<ParticipantOutcome[]>([]);
+  const [outcomeParticipantKey, setOutcomeParticipantKey] = useState("");
+  const [outcomeParticipantName, setOutcomeParticipantName] = useState("");
+  const [outcomeParticipantEmail, setOutcomeParticipantEmail] = useState("");
+  const [outcomeParticipantPhone, setOutcomeParticipantPhone] = useState("");
+  const [startedWorkingDate, setStartedWorkingDate] = useState("");
+  const [company, setCompany] = useState("");
+  const [position, setPosition] = useState("");
+  const [workLocation, setWorkLocation] = useState("");
+  const [startedTrainingDate, setStartedTrainingDate] = useState("");
+  const [program, setProgram] = useState("");
+  const [trainingLocation, setTrainingLocation] = useState("");
+  const [outcomeNotes, setOutcomeNotes] = useState("");
+  const mountedRef = useRef(true);
+  const supportStorageKey = useMemo(() => {
+  const code = partner?.referral_code || "partner";
+  return hireminds-partner-support-actions-${code};
+  }, [partner?.referral_code]);
+  const outcomesStorageKey = useMemo(() => {
+  const code = partner?.referral_code || "partner";
+  return hireminds-partner-outcomes-${code};
 }, [partner?.referral_code]);
 useEffect(() => {
 mountedRef.current = true;
