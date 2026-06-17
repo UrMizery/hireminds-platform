@@ -65,147 +65,90 @@ export default function HomePage() {
           Justice Impact Partners, Nonprofits, and Employers
           through one unified ecosystem built for real outcomes.
         </p>
+  
+{/* BRIDGE IMAGE */}
+<div style={styles.bridgeImageWrap}>
+  <Image
+    src="/bridge-network.png"
+    alt="HireMinds Bridge"
+    width={2000}
+    height={900}
+    style={styles.bridgeImage}
+  />
 
-        {/* BRIDGE */}
-        <div style={styles.bridgeWrap}>
+  {/* OVERLAY TEXT */}
+  <div style={styles.bridgeOverlay}>
 
-          {/* GLOW */}
-          <div style={styles.bridgeGlow} />
+    <div style={styles.overlayCard}>
+      <h3 style={styles.cardTitle}>
+        Participants
+      </h3>
 
-          {/* SVG BRIDGE */}
-          <svg
-            viewBox="0 0 1600 520"
-            preserveAspectRatio="none"
-            style={styles.bridgeSvg}
-          >
+      <p style={styles.cardText}>
+        Build visibility,
+        access tools,
+        and prepare for meaningful
+        career opportunities.
+      </p>
+    </div>
 
-            {/* MAIN BRIDGE */}
-            <path
-              d="
-                M 0 270
-                C 180 80,
-                  420 80,
-                  800 250
-                S 1380 420,
-                  1600 180
-              "
-              fill="none"
-              stroke="rgba(70,150,255,.95)"
-              strokeWidth="4"
-            />
+    <div style={styles.overlayCard}>
+      <h3 style={styles.cardTitle}>
+        Justice Impact
+        <br />
+        Partners
+      </h3>
 
-            <path
-              d="
-                M 0 295
-                C 180 110,
-                  420 110,
-                  800 275
-                S 1380 450,
-                  1600 205
-              "
-              fill="none"
-              stroke="rgba(180,120,255,.85)"
-              strokeWidth="3"
-            />
+      <p style={styles.cardText}>
+        Connect individuals
+        to support,
+        resources,
+        and pathways that
+        drive real change.
+      </p>
+    </div>
 
-            <path
-              d="
-                M 0 320
-                C 180 170,
-                  420 170,
-                  800 320
-                S 1380 500,
-                  1600 260
-              "
-              fill="none"
-              stroke="rgba(0,220,255,.95)"
-              strokeWidth="5"
-            />
+    <div style={styles.overlayCenter}>
+      <h3 style={styles.cardTitle}>
+        HireMinds
+      </h3>
 
-            <path
-              d="
-                M 0 340
-                C 180 210,
-                  420 210,
-                  800 350
-                S 1380 520,
-                  1600 290
-              "
-              fill="none"
-              stroke="rgba(70,130,255,.35)"
-              strokeWidth="2"
-            />
-          </svg>
+      <p style={styles.centerText}>
+        One Platform.
+      </p>
 
-          {/* PARTICIPANTS */}
-          <div
-            style={{
-              ...styles.node,
-              left: "4%",
-              top: "210px",
-              borderColor: "#1d8fff",
-              boxShadow:
-                "0 0 35px rgba(29,143,255,.95)",
-            }}
-          >
-            <span style={styles.nodeEmoji}>👤</span>
-          </div>
+      <p style={styles.centerBlue}>
+        Unlimited Impact.
+      </p>
+    </div>
 
-          {/* JUSTICE */}
-          <div
-            style={{
-              ...styles.node,
-              left: "28%",
-              top: "165px",
-              borderColor: "#53ff7c",
-              boxShadow:
-                "0 0 35px rgba(83,255,124,.95)",
-            }}
-          >
-            <span style={styles.nodeEmoji}>🤝</span>
-          </div>
+    <div style={styles.overlayCard}>
+      <h3 style={styles.cardTitle}>
+        Nonprofits
+      </h3>
 
-          {/* HM CENTER */}
-          <div style={styles.centerOrb}>
-            <Image
-              src="/hm-logo.png"
-              alt="HireMinds"
-              width={230}
-              height={230}
-              style={{
-                objectFit: "contain",
-              }}
-            />
-          </div>
+      <p style={styles.cardText}>
+        Coordinate support,
+        program management,
+        and community impact
+        at scale.
+      </p>
+    </div>
 
-          {/* NONPROFITS */}
-          <div
-            style={{
-              ...styles.node,
-              right: "28%",
-              top: "165px",
-              borderColor: "#d45eff",
-              boxShadow:
-                "0 0 35px rgba(212,94,255,.95)",
-            }}
-          >
-            <span style={styles.nodeEmoji}>💜</span>
-          </div>
+    <div style={styles.overlayCard}>
+      <h3 style={styles.cardTitle}>
+        Employers
+      </h3>
 
-          {/* EMPLOYERS */}
-          <div
-            style={{
-              ...styles.node,
-              right: "4%",
-              top: "210px",
-              borderColor: "#18d8ff",
-              boxShadow:
-                "0 0 35px rgba(24,216,255,.95)",
-            }}
-          >
-            <span style={styles.nodeEmoji}>💼</span>
-          </div>
-        </div>
+      <p style={styles.cardText}>
+        Discover prepared talent,
+        build stronger teams,
+        and create lasting impact.
+      </p>
+    </div>
+
+  </div>
+</div>
 
         {/* INFO GRID */}
         <div style={styles.cardGrid}>
@@ -418,37 +361,41 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.65,
   },
 
-  bridgeWrap: {
-    position: "relative",
-    width: "100%",
-    height: "560px",
-    marginTop: "60px",
-    overflow: "hidden",
-  },
+  bridgeImageWrap: {
+  position: "relative",
+  width: "100%",
+  marginTop: "60px",
+},
 
-  bridgeGlow: {
-    position: "absolute",
-    left: "50%",
-    top: "220px",
-    transform: "translateX(-50%)",
-    width: "700px",
-    height: "240px",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(30,120,255,.35) 0%, rgba(30,120,255,0) 70%)",
-    filter: "blur(40px)",
-  },
+bridgeImage: {
+  width: "100%",
+  height: "auto",
+  objectFit: "contain",
+  filter:
+    "drop-shadow(0 0 35px rgba(0,120,255,.45))",
+},
 
-  bridgeSvg: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    left: 0,
-    top: 0,
-    overflow: "visible",
-    filter:
-      "drop-shadow(0 0 18px rgba(0,140,255,.5))",
-  },
+bridgeOverlay: {
+  position: "absolute",
+  bottom: "0",
+  left: 0,
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(5,minmax(180px,1fr))",
+  gap: "20px",
+  padding: "0 40px 10px",
+  alignItems: "end",
+},
+
+overlayCard: {
+  textAlign: "center",
+},
+
+overlayCenter: {
+  textAlign: "center",
+  transform: "translateY(-10px)",
+},
 
   node: {
     position: "absolute",
