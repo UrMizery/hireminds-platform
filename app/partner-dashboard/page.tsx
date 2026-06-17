@@ -356,18 +356,6 @@ participantQuery = participantQuery.eq(
 );
 }
 
-let participantQuery = supabase
-.from("candidate_profiles")
-.select("id, user_id, full_name, email, phone, created_at")
-.order("created_at", { ascending: false });
-
-if (partnerRow.account_type !== "super_admin") {
-participantQuery = participantQuery.eq(
-  "referral_code",
-  partnerRow.referral_code
-);
-}
-
 const { data: participantRows, error: participantError } =
 await participantQuery;
 
