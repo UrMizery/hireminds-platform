@@ -356,6 +356,18 @@ participantQuery = participantQuery.eq(
 );
 }
 
+let participantQuery = supabase
+.from("candidate_profiles")
+.select("id, user_id, full_name, email, phone, created_at")
+.order("created_at", { ascending: false });
+
+if (partnerRow.account_type !== "super_admin") {
+participantQuery = participantQuery.eq(
+  "referral_code",
+  partnerRow.referral_code
+);
+}
+
 const { data: participantRows, error: participantError } =
 await participantQuery;
 
@@ -374,6 +386,16 @@ let activityQuery = supabase
 )
 .order("created_at", { ascending: false })
 .limit(5000);
+
+if (partnerRow.account_type !== "super_admin") {
+activityQuery = activityQuery.eq(
+  "referral_code",
+  partnerRow.referral_code
+);
+}
+
+const { data: activityRows, error: activityError } =
+await activityQuery;
 
 if (partnerRow.account_type !== "super_admin") {
 activityQuery = activityQuery.eq(
