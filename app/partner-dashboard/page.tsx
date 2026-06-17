@@ -397,16 +397,6 @@ activityQuery = activityQuery.eq(
 const { data: activityRows, error: activityError } =
 await activityQuery;
 
-if (partnerRow.account_type !== "super_admin") {
-activityQuery = activityQuery.eq(
-  "referral_code",
-  partnerRow.referral_code
-);
-}
-
-const { data: activityRows, error: activityError } =
-await activityQuery;
-
 if (activityError) {
 if (mountedRef.current) {
 setMessage(activityError.message);
