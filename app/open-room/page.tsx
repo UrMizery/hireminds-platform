@@ -8,7 +8,7 @@ export default function OpenRoomPage() {
       <section className="left">
         <p className="eyebrow">LIVE CAREER CONNECTIONS</p>
 
-        <h1>OPEN THE DOOR</h1>
+        <h1>ENTER</h1>
 
         <p className="description">
           Step into a space designed to help you connect, prepare,
@@ -75,7 +75,7 @@ export default function OpenRoomPage() {
         </div>
 
         <div className="enterText">
-          OPEN THE DOOR
+          Career Connect
 
           <div className="small">
             Your next conversation, connection, resource, or opportunity
