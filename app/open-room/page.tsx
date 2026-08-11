@@ -3,290 +3,465 @@
 import Link from "next/link";
 
 export default function OpenRoomPage() {
-return (
-<main className="page">
-<section className="left">
-<p className="eyebrow">LIVE COMMUNITY SPACE</p>
+  return (
+    <main className="page">
+      <section className="left">
+        <p className="eyebrow">LIVE COMMUNITY + CAREER SUPPORT</p>
 
-<h1>OPEN ROOM</h1>
+        <h1>OPEN ROOM</h1>
 
-<p className="description">
-Live Q&A, networking, resource drops, updates, and community
-conversations.
-</p>
+        <p className="description">
+          Open Room is the monthly live HireMinds community space for
+          questions, networking, updates, resources, and career
+          conversations.
+        </p>
 
-<div className="note">
-This is not a workshop.
-<br />
-Pull up, ask questions, network, hear updates, and connect.
-</div>
+        <div className="note">
+          <strong>This is not a workshop.</strong>
+          <br />
+          Pull up, ask questions, network, hear updates, share wins,
+          discover resources, and connect.
+        </div>
 
-<div className="details">
-<span>🗓 Last Tuesday Monthly</span>
-<span>⏰ 6:00PM–7:00PM</span>
-<span>🚪 Doors close 6:15PM</span>
-</div>
-</section>
+        <div className="behindDoor">
+          <p className="behindLabel">WHAT'S BEHIND THE DOOR?</p>
 
-<section className="center">
-<Link href="/open-room/live" className="doorLink">
-<div className="doorGlow" />
+          <h2>Career Connect</h2>
 
-<div className="door">
-<div className="brand">HireMinds</div>
+          <p>
+            The door also takes you into HireMinds Career Connect —
+            the live services space where participants can check in
+            for scheduled support and meetings.
+          </p>
 
-<div className="sub">
-OPEN ROOM
-</div>
+          <div className="serviceList">
+            <span>📄 Resume Support</span>
+            <span>💬 1:1 Career Coaching</span>
+            <span>🎤 Mock Interviews</span>
+            <span>💼 Job Search Assistance</span>
+            <span>🚪 Open Room</span>
+            <span>✨ Other Scheduled Meetings</span>
+          </div>
 
-<div className="knob" />
-</div>
-</Link>
-</section>
+          <p className="requestNote">
+            Need support but don't already have a meeting? You can
+            also request a meeting once you're inside.
+          </p>
+        </div>
 
-<section className="right">
-<div className="arrow">
-←
-</div>
+        <div className="details">
+          <span>🗓 Last Tuesday Monthly</span>
+          <span>⏰ 6:00PM–7:00PM</span>
+          <span>🚪 Doors close 6:15PM</span>
+        </div>
+      </section>
 
-<div className="enterText">
-ENTER OPEN ROOM
+      <section className="center">
+        <Link href="/open-room/live" className="doorLink">
+          <div className="doorGlow" />
 
-<div className="small">
-Step in for live questions,
-connections, resources,
-and conversation.
-</div>
-</div>
-</section>
+          <div className="door">
+            <div className="brand">HireMinds</div>
 
-<style jsx>{`
+            <div className="sub">
+              OPEN ROOM
+            </div>
 
-.page{
-min-height:100vh;
-display:grid;
-grid-template-columns:1fr 420px 1fr;
-align-items:center;
-gap:60px;
-padding:60px;
+            <div className="doorHint">
+              Career Connect Inside
+            </div>
 
-background:
-radial-gradient(
-circle at center,
-rgba(0,122,255,.08),
-transparent 28%
-),
-linear-gradient(
-180deg,
-#050505,
-#0b0c10,
-#121317
-);
+            <div className="knob" />
+          </div>
+        </Link>
+      </section>
 
-color:white;
-overflow:hidden;
-}
+      <section className="right">
+        <div className="arrow">
+          ←
+        </div>
 
-.left{
-max-width:520px;
-}
+        <div className="enterText">
+          ENTER OPEN ROOM
 
-.eyebrow{
-font-size:12px;
-font-weight:900;
-letter-spacing:.15em;
-color:#93bfff;
-}
+          <div className="small">
+            Step through the door for Open Room, live career support,
+            scheduled meetings, check-in, resources, and connections.
+          </div>
 
-h1{
-font-size:clamp(4rem,8vw,7rem);
-margin:14px 0;
-line-height:.9;
-font-weight:950;
-}
+          <div className="insideTag">
+            OPEN ROOM + CAREER CONNECT
+          </div>
+        </div>
+      </section>
 
-.description{
-line-height:1.8;
-opacity:.82;
-font-size:1.05rem;
-}
+      <style jsx>{`
+        .page {
+          min-height: 100vh;
+          display: grid;
+          grid-template-columns: 1fr 420px 1fr;
+          align-items: center;
+          gap: 60px;
+          padding: 60px;
 
-.note{
-margin-top:22px;
-padding:18px;
-background:
-rgba(255,255,255,.05);
+          background:
+            radial-gradient(
+              circle at center,
+              rgba(0, 122, 255, 0.08),
+              transparent 28%
+            ),
+            linear-gradient(
+              180deg,
+              #050505,
+              #0b0c10,
+              #121317
+            );
 
-border:
-1px solid rgba(255,255,255,.08);
+          color: white;
+          overflow: hidden;
+        }
 
-border-radius:14px;
+        .left {
+          max-width: 560px;
+        }
 
-line-height:1.6;
-font-weight:700;
-}
+        .eyebrow {
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.15em;
+          color: #93bfff;
+        }
 
-.details{
-display:flex;
-flex-wrap:wrap;
-gap:12px;
-margin-top:25px;
-}
+        h1 {
+          font-size: clamp(4rem, 8vw, 7rem);
+          margin: 14px 0;
+          line-height: 0.9;
+          font-weight: 950;
+        }
 
-.details span{
-padding:12px 14px;
-background:
-rgba(255,255,255,.06);
+        .description {
+          line-height: 1.8;
+          opacity: 0.82;
+          font-size: 1.05rem;
+        }
 
-border:
-1px solid rgba(255,255,255,.08);
+        .note {
+          margin-top: 22px;
+          padding: 18px;
 
-border-radius:999px;
+          background:
+            rgba(255, 255, 255, 0.05);
 
-font-size:13px;
-font-weight:800;
-}
+          border:
+            1px solid rgba(255, 255, 255, 0.08);
 
-.center{
-display:flex;
-justify-content:center;
-}
+          border-radius: 14px;
 
-.doorLink{
-position:relative;
-text-decoration:none;
-}
+          line-height: 1.6;
+          font-weight: 700;
+        }
 
-.doorGlow{
-position:absolute;
-inset:-70px;
-background:
-rgba(0,122,255,.16);
+        .behindDoor {
+          margin-top: 20px;
+          padding: 20px;
 
-filter:blur(90px);
-}
+          border-radius: 16px;
 
-.door{
+          background:
+            linear-gradient(
+              135deg,
+              rgba(0, 122, 255, 0.08),
+              rgba(139, 220, 255, 0.025)
+            ),
+            rgba(255, 255, 255, 0.035);
 
-width:320px;
-height:450px;
+          border:
+            1px solid rgba(139, 220, 255, 0.13);
+        }
 
-border-radius:10px;
+        .behindLabel {
+          margin: 0 0 8px;
 
-background:
-linear-gradient(
-180deg,
-#101827,
-#071018
-);
+          color: #8bdcff;
 
-border:
-2px solid rgba(
-122,
-214,
-255,
-.55
-);
+          font-size: 10px;
+          font-weight: 950;
 
-box-shadow:
-0 0 25px rgba(0,122,255,.4);
+          letter-spacing: 0.16em;
+        }
 
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;
+        .behindDoor h2 {
+          margin: 0 0 8px;
 
-position:relative;
+          font-size: 24px;
+        }
 
-transition:.3s;
-}
+        .behindDoor > p:not(.behindLabel) {
+          margin: 0;
 
-.door:hover{
+          color:
+            rgba(255, 255, 255, 0.72);
 
-transform:
-translateY(-8px);
+          line-height: 1.65;
 
-box-shadow:
-0 0 45px rgba(0,122,255,.6);
+          font-size: 13px;
+        }
 
-}
+        .serviceList {
+          display: grid;
 
-.brand{
-font-size:42px;
-font-weight:950;
-margin-bottom:16px;
-}
+          grid-template-columns:
+            repeat(2, minmax(0, 1fr));
 
-.sub{
-letter-spacing:.2em;
-font-size:16px;
-color:#8bdcff;
-font-weight:900;
-}
+          gap: 9px;
 
-.knob{
-position:absolute;
-right:30px;
-width:14px;
-height:14px;
-border-radius:50%;
-background:#ffd65f;
-}
+          margin-top: 16px;
+        }
 
-.right{
-display:flex;
-align-items:center;
-gap:20px;
-}
+        .serviceList span {
+          padding: 10px 11px;
 
-.arrow{
-font-size:90px;
-color:#82cfff;
-}
+          border-radius: 11px;
 
-.enterText{
-font-size:1.7rem;
-font-weight:950;
-line-height:1.3;
-max-width:330px;
-}
+          background:
+            rgba(255, 255, 255, 0.04);
 
-.small{
-margin-top:14px;
-font-size:1rem;
-line-height:1.7;
-font-weight:700;
-opacity:.75;
-}
+          border:
+            1px solid rgba(255, 255, 255, 0.07);
 
-@media(max-width:1000px){
+          color:
+            rgba(255, 255, 255, 0.86);
 
-.page{
-grid-template-columns:1fr;
-text-align:center;
-}
+          font-size: 11px;
+          font-weight: 750;
+        }
 
-.left{
-max-width:none;
-}
+        .requestNote {
+          margin-top: 15px !important;
 
-.right{
-justify-content:center;
-flex-direction:column;
-}
+          padding-top: 13px;
 
-.arrow{
-transform:rotate(90deg);
-}
+          border-top:
+            1px solid rgba(255, 255, 255, 0.07);
 
-.details{
-justify-content:center;
-}
+          color: #b7d8ff !important;
 
-}
+          font-size: 12px !important;
 
-`}</style>
+          font-weight: 700;
+        }
 
-</main>
-);
+        .details {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-top: 25px;
+        }
+
+        .details span {
+          padding: 12px 14px;
+
+          background:
+            rgba(255, 255, 255, 0.06);
+
+          border:
+            1px solid rgba(255, 255, 255, 0.08);
+
+          border-radius: 999px;
+
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .center {
+          display: flex;
+          justify-content: center;
+        }
+
+        .doorLink {
+          position: relative;
+          text-decoration: none;
+        }
+
+        .doorGlow {
+          position: absolute;
+          inset: -70px;
+
+          background:
+            rgba(0, 122, 255, 0.16);
+
+          filter: blur(90px);
+        }
+
+        .door {
+          width: 320px;
+          height: 450px;
+
+          border-radius: 10px;
+
+          background:
+            linear-gradient(
+              180deg,
+              #101827,
+              #071018
+            );
+
+          border:
+            2px solid rgba(
+              122,
+              214,
+              255,
+              0.55
+            );
+
+          box-shadow:
+            0 0 25px rgba(0, 122, 255, 0.4);
+
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          flex-direction: column;
+
+          position: relative;
+
+          transition: 0.3s;
+        }
+
+        .door:hover {
+          transform:
+            translateY(-8px);
+
+          box-shadow:
+            0 0 45px rgba(0, 122, 255, 0.6);
+        }
+
+        .brand {
+          font-size: 42px;
+          font-weight: 950;
+          margin-bottom: 16px;
+        }
+
+        .sub {
+          letter-spacing: 0.2em;
+          font-size: 16px;
+          color: #8bdcff;
+          font-weight: 900;
+        }
+
+        .doorHint {
+          margin-top: 18px;
+
+          padding: 7px 11px;
+
+          border-radius: 999px;
+
+          background:
+            rgba(139, 220, 255, 0.08);
+
+          border:
+            1px solid rgba(139, 220, 255, 0.16);
+
+          color:
+            rgba(255, 255, 255, 0.72);
+
+          font-size: 10px;
+          font-weight: 800;
+
+          letter-spacing: 0.05em;
+        }
+
+        .knob {
+          position: absolute;
+          right: 30px;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #ffd65f;
+        }
+
+        .right {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .arrow {
+          font-size: 90px;
+          color: #82cfff;
+        }
+
+        .enterText {
+          font-size: 1.7rem;
+          font-weight: 950;
+          line-height: 1.3;
+          max-width: 350px;
+        }
+
+        .small {
+          margin-top: 14px;
+
+          font-size: 1rem;
+
+          line-height: 1.7;
+
+          font-weight: 700;
+
+          opacity: 0.75;
+        }
+
+        .insideTag {
+          display: inline-block;
+
+          margin-top: 16px;
+
+          padding: 9px 12px;
+
+          border-radius: 999px;
+
+          background:
+            rgba(130, 207, 255, 0.08);
+
+          border:
+            1px solid rgba(130, 207, 255, 0.17);
+
+          color: #9fd7ff;
+
+          font-size: 10px;
+
+          font-weight: 900;
+
+          letter-spacing: 0.1em;
+        }
+
+        @media(max-width:1000px) {
+          .page {
+            grid-template-columns: 1fr;
+            text-align: center;
+            overflow: auto;
+          }
+
+          .left {
+            max-width: none;
+          }
+
+          .right {
+            justify-content: center;
+            flex-direction: column;
+          }
+
+          .arrow {
+            transform: rotate(90deg);
+          }
+
+          .details {
+            justify-content: center;
+          }
+
+          .serviceList {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </main>
+  );
 }
