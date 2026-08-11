@@ -18,9 +18,7 @@ export default function CareerMediaLibraryPage() {
         <div style={styles.comingSoonBox}>
           <span style={styles.badge}>COMING SOON</span>
 
-          <h2 style={styles.boxTitle}>
-            Something new is being built.
-          </h2>
+          <h2 style={styles.boxTitle}>Something new is being built.</h2>
 
           <p style={styles.boxText}>
             The HireMinds Career Media Library is growing. New career-focused
@@ -95,7 +93,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   boxTitle: {
-    fontSize: "clamp(28px,4vw,40px)",
+    fontSize: "clamp(28px, 4vw, 40px)",
     fontWeight: 950,
     margin: "20px 0 12px",
   },
