@@ -26,6 +26,13 @@ type PeriodKey =
   | "fiscal"
   | "custom";
 
+type OptionalMetricKey =
+  | "tool_engagements"
+  | "completed_activities"
+  | "activity_records"
+  | "code_comparison"
+  | "most_used_tool";
+
 type PartnerRow = {
   organization_name?: string | null;
   contact_email?: string | null;
@@ -54,6 +61,17 @@ type ActivityRow = {
   tool_name?: string | null;
   page_name?: string | null;
   created_at?: string | null;
+};
+
+type ParticipantSummaryRow = {
+  key: string;
+  participant: ParticipantRow;
+  referralCode: string;
+  signupDate?: string | null;
+  lastActivity?: string | null;
+  activityCount: number;
+  toolUses: number;
+  completions: number;
 };
 
 function formatDate(value?: string | null) {
@@ -176,10 +194,70 @@ function getPeriodStart(period: PeriodKey) {
   }
 }
 
+function getPeriodLabel(
+  period: PeriodKey,
+  startDate: string,
+  endDate: string
+) {
+  if (period === "all") {
+    return "All Time";
+  }
+
+  if (period === "day") {
+    return "Today";
+  }
+
+  if (period === "week") {
+    return "This Week";
+  }
+
+  if (period === "month") {
+    return "This Month";
+  }
+
+  if (period === "quarter") {
+    return "This Quarter";
+  }
+
+  if (period === "fiscal") {
+    return "Fiscal Year";
+  }
+
+  if (period === "custom") {
+    if (startDate && endDate) {
+      return `${formatShortDate(
+        `${startDate}T00:00:00`
+      )} – ${formatShortDate(
+        `${endDate}T00:00:00`
+      )}`;
+    }
+
+    return "Custom Date Range";
+  }
+
+  return "All Time";
+}
+
+function participantKey(
+  row:
+    | ParticipantRow
+    | ActivityRow
+) {
+  return (
+    row.user_id ||
+    row.email?.toLowerCase() ||
+    row.id ||
+    ""
+  );
+}
+
 export default function PartnerDashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [loadingLogout, setLoadingLogout] = useState(false);
-  const [message, setMessage] = useState("");
+  const [loadingLogout, setLoadingLogout] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
 
   const [activeTab, setActiveTab] =
     useState<DashboardTab>("overview");
@@ -196,24 +274,46 @@ export default function PartnerDashboardPage() {
   const [lastUpdated, setLastUpdated] =
     useState("");
 
-  const [participantSearch, setParticipantSearch] =
-    useState("");
+  const [
+    participantSearch,
+    setParticipantSearch,
+  ] = useState("");
 
-  // REPORTS
-  const [selectedCodes, setSelectedCodes] =
-    useState<string[]>([]);
+  // REPORT BUILDER
 
-  const [reportParticipantKey, setReportParticipantKey] =
-    useState("all");
+  const [
+    selectedCodes,
+    setSelectedCodes,
+  ] = useState<string[]>([]);
 
-  const [reportPeriod, setReportPeriod] =
-    useState<PeriodKey>("all");
+  const [
+    reportParticipantKey,
+    setReportParticipantKey,
+  ] = useState("all");
 
-  const [reportStartDate, setReportStartDate] =
-    useState("");
+  const [
+    reportPeriod,
+    setReportPeriod,
+  ] = useState<PeriodKey>("all");
 
-  const [reportEndDate, setReportEndDate] =
-    useState("");
+  const [
+    reportStartDate,
+    setReportStartDate,
+  ] = useState("");
+
+  const [
+    reportEndDate,
+    setReportEndDate,
+  ] = useState("");
+
+  const [
+    selectedOptionalMetrics,
+    setSelectedOptionalMetrics,
+  ] = useState<OptionalMetricKey[]>([
+    "tool_engagements",
+    "completed_activities",
+    "code_comparison",
+  ]);
 
   const mountedRef = useRef(true);
 
@@ -225,139 +325,167 @@ export default function PartnerDashboardPage() {
     };
   }, []);
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setMessage("");
+  const loadDashboard = useCallback(
+    async () => {
+      setLoading(true);
+      setMessage("");
 
-    const {
-      data: authData,
-      error: authError,
-    } = await supabase.auth.getUser();
+      const {
+        data: authData,
+        error: authError,
+      } =
+        await supabase.auth.getUser();
 
-    if (
-      authError ||
-      !authData.user?.email
-    ) {
-      window.location.href =
-        "/employer-partner-login";
+      if (
+        authError ||
+        !authData.user?.email
+      ) {
+        window.location.href =
+          "/employer-partner-login";
 
-      return;
-    }
+        return;
+      }
 
-    const email = authData.user.email;
+      const email =
+        authData.user.email;
 
-    const {
-      data: partnerRow,
-      error: partnerError,
-    } = await supabase
-      .from("partners")
-      .select("*")
-      .eq("contact_email", email)
-      .maybeSingle();
+      const {
+        data: partnerRow,
+        error: partnerError,
+      } = await supabase
+        .from("partners")
+        .select("*")
+        .eq(
+          "contact_email",
+          email
+        )
+        .maybeSingle();
 
-    if (partnerError) {
-      setMessage(partnerError.message);
-      setLoading(false);
-      return;
-    }
-
-    if (!partnerRow) {
-      setMessage(
-        "This account does not have Partner Dashboard access."
-      );
-      setLoading(false);
-      return;
-    }
-
-    let participantQuery = supabase
-      .from("candidate_profiles")
-      .select(
-        "id, user_id, full_name, email, phone, referral_code, created_at"
-      )
-      .order("created_at", {
-        ascending: false,
-      });
-
-    if (
-      partnerRow.account_type !==
-      "super_admin"
-    ) {
-      participantQuery =
-        participantQuery.eq(
-          "referral_code",
-          partnerRow.referral_code
+      if (partnerError) {
+        setMessage(
+          partnerError.message
         );
-    }
 
-    const {
-      data: participantRows,
-      error: participantError,
-    } = await participantQuery;
+        setLoading(false);
+        return;
+      }
 
-    if (participantError) {
-      setMessage(
-        participantError.message
-      );
-      setLoading(false);
-      return;
-    }
-
-    let activityQuery = supabase
-      .from("user_activity")
-      .select(
-        "id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at"
-      )
-      .order("created_at", {
-        ascending: false,
-      })
-      .limit(10000);
-
-    if (
-      partnerRow.account_type !==
-      "super_admin"
-    ) {
-      activityQuery =
-        activityQuery.eq(
-          "referral_code",
-          partnerRow.referral_code
+      if (!partnerRow) {
+        setMessage(
+          "This account does not have Partner Dashboard access."
         );
-    }
 
-    const {
-      data: activityRows,
-      error: activityError,
-    } = await activityQuery;
+        setLoading(false);
+        return;
+      }
 
-    if (activityError) {
-      setMessage(activityError.message);
+      let participantQuery =
+        supabase
+          .from(
+            "candidate_profiles"
+          )
+          .select(
+            "id, user_id, full_name, email, phone, referral_code, created_at"
+          )
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
+          );
+
+      if (
+        partnerRow.account_type !==
+        "super_admin"
+      ) {
+        participantQuery =
+          participantQuery.eq(
+            "referral_code",
+            partnerRow.referral_code
+          );
+      }
+
+      const {
+        data: participantRows,
+        error: participantError,
+      } =
+        await participantQuery;
+
+      if (participantError) {
+        setMessage(
+          participantError.message
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      let activityQuery =
+        supabase
+          .from("user_activity")
+          .select(
+            "id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at"
+          )
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
+          )
+          .limit(10000);
+
+      if (
+        partnerRow.account_type !==
+        "super_admin"
+      ) {
+        activityQuery =
+          activityQuery.eq(
+            "referral_code",
+            partnerRow.referral_code
+          );
+      }
+
+      const {
+        data: activityRows,
+        error: activityError,
+      } =
+        await activityQuery;
+
+      if (activityError) {
+        setMessage(
+          activityError.message
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setPartner(
+        partnerRow as PartnerRow
+      );
+
+      setParticipants(
+        (participantRows as
+          ParticipantRow[]) || []
+      );
+
+      setActivity(
+        (activityRows as
+          ActivityRow[]) || []
+      );
+
+      setLastUpdated(
+        new Date().toLocaleTimeString()
+      );
+
       setLoading(false);
-      return;
-    }
-
-    if (!mountedRef.current) {
-      return;
-    }
-
-    setPartner(
-      partnerRow as PartnerRow
-    );
-
-    setParticipants(
-      (participantRows as ParticipantRow[]) ||
-        []
-    );
-
-    setActivity(
-      (activityRows as ActivityRow[]) ||
-        []
-    );
-
-    setLastUpdated(
-      new Date().toLocaleTimeString()
-    );
-
-    setLoading(false);
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     loadDashboard();
@@ -374,29 +502,34 @@ export default function PartnerDashboardPage() {
 
   const referralCodes =
     useMemo(() => {
-      const codes = new Set<string>();
+      const codes =
+        new Set<string>();
 
-      participants.forEach((row) => {
-        const code =
-          row.referral_code?.trim();
+      participants.forEach(
+        (row) => {
+          const code =
+            row.referral_code?.trim();
 
-        if (code) {
-          codes.add(
-            code.toUpperCase()
-          );
+          if (code) {
+            codes.add(
+              code.toUpperCase()
+            );
+          }
         }
-      });
+      );
 
-      activity.forEach((row) => {
-        const code =
-          row.referral_code?.trim();
+      activity.forEach(
+        (row) => {
+          const code =
+            row.referral_code?.trim();
 
-        if (code) {
-          codes.add(
-            code.toUpperCase()
-          );
+          if (code) {
+            codes.add(
+              code.toUpperCase()
+            );
+          }
         }
-      });
+      );
 
       return [...codes].sort();
     }, [participants, activity]);
@@ -406,9 +539,14 @@ export default function PartnerDashboardPage() {
       selectedCodes.length === 0 &&
       referralCodes.length > 0
     ) {
-      setSelectedCodes(referralCodes);
+      setSelectedCodes(
+        referralCodes
+      );
     }
-  }, [referralCodes, selectedCodes.length]);
+  }, [
+    referralCodes,
+    selectedCodes.length,
+  ]);
 
   const uniqueParticipants =
     useMemo(() => {
@@ -418,21 +556,19 @@ export default function PartnerDashboardPage() {
           ParticipantRow
         >();
 
-      participants.forEach((row) => {
-        const key =
-          row.user_id ||
-          row.email ||
-          row.phone ||
-          row.id ||
-          "";
+      participants.forEach(
+        (row) => {
+          const key =
+            participantKey(row);
 
-        if (
-          key &&
-          !map.has(key)
-        ) {
-          map.set(key, row);
+          if (
+            key &&
+            !map.has(key)
+          ) {
+            map.set(key, row);
+          }
         }
-      });
+      );
 
       return [...map.values()];
     }, [participants]);
@@ -483,46 +619,6 @@ export default function PartnerDashboardPage() {
       uniqueParticipants,
     ]);
 
-  const reportParticipantOptions =
-    useMemo(() => {
-      return uniqueParticipants
-        .filter((row) => {
-          if (
-            selectedCodes.length ===
-            0
-          ) {
-            return false;
-          }
-
-          return selectedCodes.includes(
-            (
-              row.referral_code ||
-              ""
-            ).toUpperCase()
-          );
-        })
-        .map((row) => ({
-          key:
-            row.user_id ||
-            row.email ||
-            row.phone ||
-            row.id ||
-            "",
-
-          name:
-            row.full_name ||
-            row.email ||
-            "Participant",
-
-          referralCode:
-            row.referral_code ||
-            "",
-        }));
-    }, [
-      uniqueParticipants,
-      selectedCodes,
-    ]);
-
   function reportDateMatches(
     value?: string | null
   ) {
@@ -570,7 +666,7 @@ export default function PartnerDashboardPage() {
       : true;
   }
 
-  const reportParticipants =
+  const selectedParticipantUniverse =
     useMemo(() => {
       return uniqueParticipants.filter(
         (row) => {
@@ -592,33 +688,22 @@ export default function PartnerDashboardPage() {
             reportParticipantKey !==
             "all"
           ) {
-            const rowKey =
-              row.user_id ||
-              row.email ||
-              row.phone ||
-              row.id ||
-              "";
+            const key =
+              participantKey(row);
 
-            if (
-              rowKey !==
+            return (
+              key ===
               reportParticipantKey
-            ) {
-              return false;
-            }
+            );
           }
 
-          return reportDateMatches(
-            row.created_at
-          );
+          return true;
         }
       );
     }, [
       uniqueParticipants,
       selectedCodes,
       reportParticipantKey,
-      reportPeriod,
-      reportStartDate,
-      reportEndDate,
     ]);
 
   const reportActivity =
@@ -643,14 +728,11 @@ export default function PartnerDashboardPage() {
             reportParticipantKey !==
             "all"
           ) {
-            const rowKey =
-              row.user_id ||
-              row.email ||
-              row.id ||
-              "";
+            const key =
+              participantKey(row);
 
             if (
-              rowKey !==
+              key !==
               reportParticipantKey
             ) {
               return false;
@@ -671,10 +753,170 @@ export default function PartnerDashboardPage() {
       reportEndDate,
     ]);
 
+  const activityParticipantKeys =
+    useMemo(() => {
+      const keys =
+        new Set<string>();
+
+      reportActivity.forEach(
+        (row) => {
+          const key =
+            participantKey(row);
+
+          if (key) {
+            keys.add(key);
+          }
+        }
+      );
+
+      return keys;
+    }, [reportActivity]);
+
+  const newEnrollments =
+    useMemo(() => {
+      return selectedParticipantUniverse.filter(
+        (row) =>
+          reportDateMatches(
+            row.created_at
+          )
+      );
+    }, [
+      selectedParticipantUniverse,
+      reportPeriod,
+      reportStartDate,
+      reportEndDate,
+    ]);
+
+  const participantsServed =
+    useMemo(() => {
+      if (
+        reportPeriod === "all"
+      ) {
+        return selectedParticipantUniverse;
+      }
+
+      return selectedParticipantUniverse.filter(
+        (row) => {
+          const key =
+            participantKey(row);
+
+          const joinedInPeriod =
+            reportDateMatches(
+              row.created_at
+            );
+
+          const activeInPeriod =
+            key
+              ? activityParticipantKeys.has(
+                  key
+                )
+              : false;
+
+          return (
+            joinedInPeriod ||
+            activeInPeriod
+          );
+        }
+      );
+    }, [
+      selectedParticipantUniverse,
+      activityParticipantKeys,
+      reportPeriod,
+      reportStartDate,
+      reportEndDate,
+    ]);
+
+  const activeParticipants =
+    useMemo(() => {
+      return selectedParticipantUniverse.filter(
+        (row) => {
+          const key =
+            participantKey(row);
+
+          return key
+            ? activityParticipantKeys.has(
+                key
+              )
+            : false;
+        }
+      );
+    }, [
+      selectedParticipantUniverse,
+      activityParticipantKeys,
+    ]);
+
+  const trainingEnrollments =
+    useMemo(() => {
+      return newEnrollments.filter(
+        (row) =>
+          (
+            row.referral_code ||
+            ""
+          )
+            .toUpperCase()
+            .startsWith(
+              "COHORT"
+            )
+      );
+    }, [newEnrollments]);
+
+  const reportParticipantOptions =
+    useMemo(() => {
+      return uniqueParticipants
+        .filter((row) => {
+          const code =
+            (
+              row.referral_code ||
+              ""
+            ).toUpperCase();
+
+          return selectedCodes.includes(
+            code
+          );
+        })
+        .map((row) => ({
+          key:
+            participantKey(row),
+
+          name:
+            row.full_name ||
+            row.email ||
+            "Participant",
+
+          referralCode:
+            row.referral_code ||
+            "",
+        }))
+        .filter(
+          (item) =>
+            Boolean(item.key)
+        );
+    }, [
+      uniqueParticipants,
+      selectedCodes,
+    ]);
+
+  const individualParticipant =
+    useMemo(() => {
+      if (
+        reportParticipantKey ===
+        "all"
+      ) {
+        return null;
+      }
+
+      return uniqueParticipants.find(
+        (row) =>
+          participantKey(row) ===
+          reportParticipantKey
+      ) || null;
+    }, [
+      uniqueParticipants,
+      reportParticipantKey,
+    ]);
+
   const reportStats =
     useMemo(() => {
-      let logins = 0;
-      let pageViews = 0;
       let completions = 0;
       let toolUses = 0;
 
@@ -696,20 +938,6 @@ export default function PartnerDashboardPage() {
             ).toLowerCase();
 
           if (
-            event.includes("login") ||
-            event ===
-              "signed_in"
-          ) {
-            logins += 1;
-          }
-
-          if (
-            event.includes("page")
-          ) {
-            pageViews += 1;
-          }
-
-          if (
             event.includes(
               "complete"
             )
@@ -727,7 +955,7 @@ export default function PartnerDashboardPage() {
         }
       );
 
-      const topTool =
+      const topToolEntry =
         Object.entries(tools)
           .sort(
             (a, b) =>
@@ -735,29 +963,130 @@ export default function PartnerDashboardPage() {
           )[0] || null;
 
       return {
-        participants:
-          reportParticipants.length,
+        participantsServed:
+          participantsServed.length,
+
+        newEnrollments:
+          newEnrollments.length,
+
+        activeParticipants:
+          activeParticipants.length,
+
+        trainingEnrollments:
+          trainingEnrollments.length,
 
         activities:
           reportActivity.length,
 
-        logins,
-        pageViews,
-        completions,
         toolUses,
 
+        completions,
+
         topTool:
-          topTool
-            ? topTool[0]
+          topToolEntry
+            ? topToolEntry[0]
             : "—",
 
         topToolUses:
-          topTool
-            ? topTool[1]
+          topToolEntry
+            ? topToolEntry[1]
             : 0,
       };
     }, [
-      reportParticipants,
+      participantsServed,
+      newEnrollments,
+      activeParticipants,
+      trainingEnrollments,
+      reportActivity,
+    ]);
+
+  const participantSummary =
+    useMemo<
+      ParticipantSummaryRow[]
+    >(() => {
+      return participantsServed.map(
+        (participant) => {
+          const key =
+            participantKey(
+              participant
+            );
+
+          const personActivity =
+            reportActivity.filter(
+              (row) =>
+                participantKey(
+                  row
+                ) === key
+            );
+
+          const sortedActivity =
+            [...personActivity].sort(
+              (a, b) => {
+                const aTime =
+                  toDate(
+                    a.created_at
+                  )?.getTime() ||
+                  0;
+
+                const bTime =
+                  toDate(
+                    b.created_at
+                  )?.getTime() ||
+                  0;
+
+                return (
+                  bTime - aTime
+                );
+              }
+            );
+
+          const toolUses =
+            personActivity.filter(
+              (row) =>
+                Boolean(
+                  row.tool_name
+                )
+            ).length;
+
+          const completions =
+            personActivity.filter(
+              (row) =>
+                (
+                  row.event_type ||
+                  ""
+                )
+                  .toLowerCase()
+                  .includes(
+                    "complete"
+                  )
+            ).length;
+
+          return {
+            key,
+            participant,
+
+            referralCode:
+              participant.referral_code ||
+              "—",
+
+            signupDate:
+              participant.created_at,
+
+            lastActivity:
+              sortedActivity[0]
+                ?.created_at ||
+              null,
+
+            activityCount:
+              personActivity.length,
+
+            toolUses,
+            completions,
+          };
+        }
+      );
+    }, [
+      participantsServed,
       reportActivity,
     ]);
 
@@ -765,8 +1094,8 @@ export default function PartnerDashboardPage() {
     useMemo(() => {
       return selectedCodes.map(
         (code) => {
-          const people =
-            reportParticipants.filter(
+          const codeParticipants =
+            participantsServed.filter(
               (row) =>
                 (
                   row.referral_code ||
@@ -775,7 +1104,27 @@ export default function PartnerDashboardPage() {
                 code
             );
 
-          const acts =
+          const codeNew =
+            newEnrollments.filter(
+              (row) =>
+                (
+                  row.referral_code ||
+                  ""
+                ).toUpperCase() ===
+                code
+            );
+
+          const codeActive =
+            activeParticipants.filter(
+              (row) =>
+                (
+                  row.referral_code ||
+                  ""
+                ).toUpperCase() ===
+                code
+            );
+
+          const codeActivity =
             reportActivity.filter(
               (row) =>
                 (
@@ -785,84 +1134,56 @@ export default function PartnerDashboardPage() {
                 code
             );
 
-          const logins =
-            acts.filter((row) => {
-              const event =
-                (
-                  row.event_type ||
-                  ""
-                ).toLowerCase();
-
-              return (
-                event.includes(
-                  "login"
-                ) ||
-                event ===
-                  "signed_in"
-              );
-            }).length;
+          const toolUses =
+            codeActivity.filter(
+              (row) =>
+                Boolean(
+                  row.tool_name
+                )
+            ).length;
 
           return {
             code,
+
             participants:
-              people.length,
-            activities:
-              acts.length,
-            logins,
+              codeParticipants.length,
+
+            newEnrollments:
+              codeNew.length,
+
+            active:
+              codeActive.length,
+
+            toolUses,
           };
         }
       );
     }, [
       selectedCodes,
-      reportParticipants,
+      participantsServed,
+      newEnrollments,
+      activeParticipants,
       reportActivity,
-    ]);
-
-  const individualParticipant =
-    useMemo(() => {
-      if (
-        reportParticipantKey ===
-        "all"
-      ) {
-        return null;
-      }
-
-      return uniqueParticipants.find(
-        (row) => {
-          const key =
-            row.user_id ||
-            row.email ||
-            row.phone ||
-            row.id ||
-            "";
-
-          return (
-            key ===
-            reportParticipantKey
-          );
-        }
-      );
-    }, [
-      uniqueParticipants,
-      reportParticipantKey,
     ]);
 
   function toggleCode(
     code: string
   ) {
     setSelectedCodes(
-      (prev) => {
+      (previous) => {
         if (
-          prev.includes(code)
+          previous.includes(
+            code
+          )
         ) {
-          return prev.filter(
+          return previous.filter(
             (item) =>
               item !== code
           );
         }
 
         return [
-          ...prev,
+          ...previous,
           code,
         ];
       }
@@ -891,20 +1212,143 @@ export default function PartnerDashboardPage() {
     );
   }
 
+  function toggleOptionalMetric(
+    metric: OptionalMetricKey
+  ) {
+    setSelectedOptionalMetrics(
+      (previous) => {
+        if (
+          previous.includes(
+            metric
+          )
+        ) {
+          return previous.filter(
+            (item) =>
+              item !== metric
+          );
+        }
+
+        return [
+          ...previous,
+          metric,
+        ];
+      }
+    );
+  }
+
+  function hasOptionalMetric(
+    metric: OptionalMetricKey
+  ) {
+    return selectedOptionalMetrics.includes(
+      metric
+    );
+  }
+
+  const reportingPeriodLabel =
+    getPeriodLabel(
+      reportPeriod,
+      reportStartDate,
+      reportEndDate
+    );
+
   const reportSummaryText =
     useMemo(() => {
       if (
         individualParticipant
       ) {
-        return `${individualParticipant.full_name || "Participant"} is associated with referral code ${individualParticipant.referral_code || "—"} and has ${reportActivity.length} recorded HireMinds activities during the selected reporting period. Recorded activity includes ${reportStats.logins} login(s), ${reportStats.toolUses} tool use(s), and ${reportStats.completions} completion event(s). The participant's most frequently recorded tool for this period is ${reportStats.topTool}.`;
+        const name =
+          individualParticipant.full_name ||
+          "The participant";
+
+        let text =
+          `${name} is associated with referral code ` +
+          `${individualParticipant.referral_code || "—"}. ` +
+          `During the selected reporting period, ` +
+          `${reportStats.activeParticipants > 0 ? "the participant demonstrated recorded platform engagement" : "no platform engagement was recorded"}.`;
+
+        if (
+          hasOptionalMetric(
+            "tool_engagements"
+          )
+        ) {
+          text +=
+            ` ${reportStats.toolUses} career tool engagement(s) were recorded.`;
+        }
+
+        if (
+          hasOptionalMetric(
+            "completed_activities"
+          )
+        ) {
+          text +=
+            ` ${reportStats.completions} completed activity event(s) were recorded.`;
+        }
+
+        if (
+          hasOptionalMetric(
+            "most_used_tool"
+          ) &&
+          reportStats.topTool !==
+            "—"
+        ) {
+          text +=
+            ` The most frequently recorded tool was ${reportStats.topTool}.`;
+        }
+
+        return text;
       }
 
-      return `This HireMinds report includes ${reportStats.participants} participant(s) across ${selectedCodes.length} selected referral code(s). During the selected reporting period, the group generated ${reportStats.activities} recorded activities, including ${reportStats.logins} login(s), ${reportStats.toolUses} tool use(s), and ${reportStats.completions} completion event(s). The most frequently recorded tool was ${reportStats.topTool}.`;
+      let text =
+        `During ${reportingPeriodLabel.toLowerCase()}, HireMinds served ` +
+        `${reportStats.participantsServed} participant(s) across ` +
+        `${selectedCodes.length} selected referral code(s). ` +
+        `${reportStats.newEnrollments} new enrollment(s) were recorded, ` +
+        `and ${reportStats.activeParticipants} participant(s) demonstrated platform engagement.`;
+
+      if (
+        reportStats.trainingEnrollments >
+        0
+      ) {
+        text +=
+          ` ${reportStats.trainingEnrollments} training enrollment(s) were associated with COHORT referral codes.`;
+      }
+
+      if (
+        hasOptionalMetric(
+          "tool_engagements"
+        )
+      ) {
+        text +=
+          ` Participants generated ${reportStats.toolUses} career tool engagement(s).`;
+      }
+
+      if (
+        hasOptionalMetric(
+          "completed_activities"
+        )
+      ) {
+        text +=
+          ` ${reportStats.completions} completed activity event(s) were recorded.`;
+      }
+
+      if (
+        hasOptionalMetric(
+          "most_used_tool"
+        ) &&
+        reportStats.topTool !==
+          "—"
+      ) {
+        text +=
+          ` The most frequently recorded tool was ${reportStats.topTool}.`;
+      }
+
+      return text;
     }, [
       individualParticipant,
-      reportActivity.length,
       reportStats,
       selectedCodes.length,
+      reportingPeriodLabel,
+      selectedOptionalMetrics,
     ]);
 
   function printReport() {
@@ -917,21 +1361,27 @@ export default function PartnerDashboardPage() {
         "Participant",
         "Email",
         "Referral Code",
-        "Event",
-        "Tool",
-        "Page",
-        "Date",
+        "Sign-Up Date",
+        "Last Activity",
+        "Activity Count",
+        "Tool Engagements",
+        "Completed Activities",
       ],
 
-      ...reportActivity.map(
+      ...participantSummary.map(
         (row) => [
-          row.full_name || "",
-          row.email || "",
-          row.referral_code || "",
-          row.event_type || "",
-          row.tool_name || "",
-          row.page_name || "",
-          row.created_at || "",
+          row.participant
+            .full_name || "",
+          row.participant.email ||
+            "",
+          row.referralCode,
+          row.signupDate || "",
+          row.lastActivity || "",
+          String(
+            row.activityCount
+          ),
+          String(row.toolUses),
+          String(row.completions),
         ]
       ),
     ];
@@ -952,13 +1402,11 @@ export default function PartnerDashboardPage() {
       )
       .join("\n");
 
-    const blob = new Blob(
-      [csv],
-      {
+    const blob =
+      new Blob([csv], {
         type:
           "text/csv;charset=utf-8;",
-      }
-    );
+      });
 
     const url =
       URL.createObjectURL(
@@ -973,11 +1421,13 @@ export default function PartnerDashboardPage() {
     link.href = url;
 
     link.download =
-      "hireminds-report.csv";
+      "hireminds-participant-report.csv";
 
     link.click();
 
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(
+      url
+    );
   }
 
   if (loading) {
@@ -1012,68 +1462,118 @@ export default function PartnerDashboardPage() {
             left: 0;
             top: 0;
             width: 100%;
-            background: white !important;
-            color: black !important;
+            background: #ffffff !important;
+            color: #111827 !important;
+            border-radius: 0 !important;
           }
 
           .no-print {
             display: none !important;
           }
         }
+
+        @media (max-width: 850px) {
+          .hm-report-metrics {
+            grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+          }
+
+          .hm-report-meta {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
       <div style={styles.shell}>
-        <section style={styles.headerCard}>
+        <section
+          style={
+            styles.headerCard
+          }
+        >
           <div>
             <p style={styles.kicker}>
               HIREMINDS™ PARTNER DASHBOARD
             </p>
 
-            <h1 style={styles.title}>
+            <h1
+              style={
+                styles.title
+              }
+            >
               {partner?.organization_name ||
                 "Partner Dashboard"}
             </h1>
 
-            <p style={styles.subtitle}>
+            <p
+              style={
+                styles.subtitle
+              }
+            >
               Participant engagement,
               referral-code reporting,
               activity tracking, and
               workforce outcomes.
             </p>
 
-            <p style={styles.subtleLine}>
+            <p
+              style={
+                styles.subtleLine
+              }
+            >
               Account:{" "}
               {partner?.account_holder ||
                 partner?.contact_email ||
                 "Authorized Partner"}
             </p>
 
-            <p style={styles.subtleLine}>
+            <p
+              style={
+                styles.subtleLine
+              }
+            >
               Account Type:{" "}
               {partner?.account_type ||
                 "partner"}
             </p>
 
-            <p style={styles.subtleLine}>
+            <p
+              style={
+                styles.subtleLine
+              }
+            >
               Last Updated:{" "}
-              {lastUpdated || "—"}
+              {lastUpdated ||
+                "—"}
             </p>
           </div>
 
-          <div style={styles.headerActions}>
+          <div
+            style={
+              styles.headerActions
+            }
+          >
             <button
               type="button"
-              onClick={loadDashboard}
-              style={styles.secondaryButton}
+              onClick={
+                loadDashboard
+              }
+              style={
+                styles.secondaryButton
+              }
             >
               Refresh
             </button>
 
             <button
               type="button"
-              onClick={handleLogout}
-              style={styles.logoutButton}
-              disabled={loadingLogout}
+              onClick={
+                handleLogout
+              }
+              style={
+                styles.logoutButton
+              }
+              disabled={
+                loadingLogout
+              }
             >
               {loadingLogout
                 ? "Logging Off..."
@@ -1083,19 +1583,44 @@ export default function PartnerDashboardPage() {
         </section>
 
         {message ? (
-          <div style={styles.notice}>
+          <div
+            style={
+              styles.notice
+            }
+          >
             {message}
           </div>
         ) : null}
 
-        <section style={styles.card}>
-          <div style={styles.tabRow}>
+        <section
+          style={styles.card}
+        >
+          <div
+            style={
+              styles.tabRow
+            }
+          >
             {[
-              ["overview", "Overview"],
-              ["live", "Live Activity"],
-              ["history", "History"],
-              ["tools", "Tool Usage"],
-              ["reports", "Reports"],
+              [
+                "overview",
+                "Overview",
+              ],
+              [
+                "live",
+                "Live Activity",
+              ],
+              [
+                "history",
+                "History",
+              ],
+              [
+                "tools",
+                "Tool Usage",
+              ],
+              [
+                "reports",
+                "Reports",
+              ],
             ].map(
               ([key, label]) => (
                 <button
@@ -1108,6 +1633,7 @@ export default function PartnerDashboardPage() {
                   }
                   style={{
                     ...styles.tabButton,
+
                     ...(activeTab ===
                     key
                       ? styles.tabButtonActive
@@ -1124,37 +1650,77 @@ export default function PartnerDashboardPage() {
         {activeTab ===
         "overview" ? (
           <>
-            <section style={styles.summaryGrid}>
-              <div style={styles.metricCard}>
-                <p style={styles.metricLabel}>
+            <section
+              style={
+                styles.summaryGrid
+              }
+            >
+              <div
+                style={
+                  styles.metricCard
+                }
+              >
+                <p
+                  style={
+                    styles.metricLabel
+                  }
+                >
                   Participants
                 </p>
 
-                <p style={styles.metricValue}>
+                <p
+                  style={
+                    styles.metricValue
+                  }
+                >
                   {
                     uniqueParticipants.length
                   }
                 </p>
               </div>
 
-              <div style={styles.metricCard}>
-                <p style={styles.metricLabel}>
+              <div
+                style={
+                  styles.metricCard
+                }
+              >
+                <p
+                  style={
+                    styles.metricLabel
+                  }
+                >
                   Referral Codes
                 </p>
 
-                <p style={styles.metricValue}>
+                <p
+                  style={
+                    styles.metricValue
+                  }
+                >
                   {
                     referralCodes.length
                   }
                 </p>
               </div>
 
-              <div style={styles.metricCard}>
-                <p style={styles.metricLabel}>
+              <div
+                style={
+                  styles.metricCard
+                }
+              >
+                <p
+                  style={
+                    styles.metricLabel
+                  }
+                >
                   Activity Records
                 </p>
 
-                <p style={styles.metricValue}>
+                <p
+                  style={
+                    styles.metricValue
+                  }
+                >
                   {
                     activity.length
                   }
@@ -1162,8 +1728,14 @@ export default function PartnerDashboardPage() {
               </div>
             </section>
 
-            <section style={styles.card}>
-              <h2 style={styles.sectionTitle}>
+            <section
+              style={styles.card}
+            >
+              <h2
+                style={
+                  styles.sectionTitle
+                }
+              >
                 Participant List
               </h2>
 
@@ -1177,26 +1749,52 @@ export default function PartnerDashboardPage() {
                   )
                 }
                 placeholder="Search name, email, phone, or referral code"
-                style={styles.input}
+                style={
+                  styles.input
+                }
               />
 
-              <div style={styles.tableWrap}>
-                <table style={styles.table}>
+              <div
+                style={
+                  styles.tableWrap
+                }
+              >
+                <table
+                  style={
+                    styles.table
+                  }
+                >
                   <thead>
                     <tr>
-                      <th style={styles.th}>
+                      <th
+                        style={
+                          styles.th
+                        }
+                      >
                         Participant
                       </th>
 
-                      <th style={styles.th}>
+                      <th
+                        style={
+                          styles.th
+                        }
+                      >
                         Email
                       </th>
 
-                      <th style={styles.th}>
+                      <th
+                        style={
+                          styles.th
+                        }
+                      >
                         Referral Code
                       </th>
 
-                      <th style={styles.th}>
+                      <th
+                        style={
+                          styles.th
+                        }
+                      >
                         Joined
                       </th>
                     </tr>
@@ -1204,31 +1802,54 @@ export default function PartnerDashboardPage() {
 
                   <tbody>
                     {filteredParticipants.map(
-                      (row, index) => (
+                      (
+                        row,
+                        index
+                      ) => (
                         <tr
                           key={
                             row.id ||
                             `${row.email}-${index}`
                           }
                         >
-                          <td style={styles.td}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
                             {row.full_name ||
                               "Participant"}
                           </td>
 
-                          <td style={styles.td}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
                             {row.email ||
                               "—"}
                           </td>
 
-                          <td style={styles.td}>
-                            <span style={styles.codeBadge}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
+                            <span
+                              style={
+                                styles.codeBadge
+                              }
+                            >
                               {row.referral_code ||
                                 "—"}
                             </span>
                           </td>
 
-                          <td style={styles.td}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
                             {formatShortDate(
                               row.created_at
                             )}
@@ -1245,32 +1866,66 @@ export default function PartnerDashboardPage() {
 
         {activeTab ===
         "live" ? (
-          <section style={styles.card}>
-            <h2 style={styles.sectionTitle}>
+          <section
+            style={styles.card}
+          >
+            <h2
+              style={
+                styles.sectionTitle
+              }
+            >
               Live Activity
             </h2>
 
-            <div style={styles.tableWrap}>
-              <table style={styles.table}>
+            <div
+              style={
+                styles.tableWrap
+              }
+            >
+              <table
+                style={
+                  styles.table
+                }
+              >
                 <thead>
                   <tr>
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Participant
                     </th>
 
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Referral Code
                     </th>
 
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Event
                     </th>
 
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Tool
                     </th>
 
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Date
                     </th>
                   </tr>
@@ -1278,7 +1933,10 @@ export default function PartnerDashboardPage() {
 
                 <tbody>
                   {activity
-                    .slice(0, 100)
+                    .slice(
+                      0,
+                      100
+                    )
                     .map(
                       (
                         row,
@@ -1290,31 +1948,55 @@ export default function PartnerDashboardPage() {
                             `${row.created_at}-${index}`
                           }
                         >
-                          <td style={styles.td}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
                             {row.full_name ||
                               row.email ||
                               "Participant"}
                           </td>
 
-                          <td style={styles.td}>
-                            <span style={styles.codeBadge}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
+                            <span
+                              style={
+                                styles.codeBadge
+                              }
+                            >
                               {row.referral_code ||
                                 "—"}
                             </span>
                           </td>
 
-                          <td style={styles.td}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
                             {row.event_type ||
                               "—"}
                           </td>
 
-                          <td style={styles.td}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
                             {row.tool_name ||
                               row.page_name ||
                               "—"}
                           </td>
 
-                          <td style={styles.td}>
+                          <td
+                            style={
+                              styles.td
+                            }
+                          >
                             {formatDate(
                               row.created_at
                             )}
@@ -1330,32 +2012,66 @@ export default function PartnerDashboardPage() {
 
         {activeTab ===
         "history" ? (
-          <section style={styles.card}>
-            <h2 style={styles.sectionTitle}>
+          <section
+            style={styles.card}
+          >
+            <h2
+              style={
+                styles.sectionTitle
+              }
+            >
               Activity History
             </h2>
 
-            <div style={styles.tableWrap}>
-              <table style={styles.table}>
+            <div
+              style={
+                styles.tableWrap
+              }
+            >
+              <table
+                style={
+                  styles.table
+                }
+              >
                 <thead>
                   <tr>
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Participant
                     </th>
 
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Referral Code
                     </th>
 
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Event
                     </th>
 
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Tool/Page
                     </th>
 
-                    <th style={styles.th}>
+                    <th
+                      style={
+                        styles.th
+                      }
+                    >
                       Date
                     </th>
                   </tr>
@@ -1373,31 +2089,55 @@ export default function PartnerDashboardPage() {
                           `${row.created_at}-${index}`
                         }
                       >
-                        <td style={styles.td}>
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
                           {row.full_name ||
                             row.email ||
                             "Participant"}
                         </td>
 
-                        <td style={styles.td}>
-                          <span style={styles.codeBadge}>
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
+                          <span
+                            style={
+                              styles.codeBadge
+                            }
+                          >
                             {row.referral_code ||
                               "—"}
                           </span>
                         </td>
 
-                        <td style={styles.td}>
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
                           {row.event_type ||
                             "—"}
                         </td>
 
-                        <td style={styles.td}>
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
                           {row.tool_name ||
                             row.page_name ||
                             "—"}
                         </td>
 
-                        <td style={styles.td}>
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
                           {formatDate(
                             row.created_at
                           )}
@@ -1413,15 +2153,26 @@ export default function PartnerDashboardPage() {
 
         {activeTab ===
         "tools" ? (
-          <section style={styles.card}>
-            <h2 style={styles.sectionTitle}>
+          <section
+            style={styles.card}
+          >
+            <h2
+              style={
+                styles.sectionTitle
+              }
+            >
               Tool Usage
             </h2>
 
-            <p style={styles.muted}>
-              Detailed tool usage is included
-              in the Reports tab, where you
-              can filter one code, several
+            <p
+              style={
+                styles.muted
+              }
+            >
+              Detailed tool usage can
+              be included when building
+              a report. Select one
+              referral code, several
               codes, all codes, or an
               individual participant.
             </p>
@@ -1435,34 +2186,62 @@ export default function PartnerDashboardPage() {
               className="no-print"
               style={styles.card}
             >
-              <p style={styles.kicker}>
+              <p
+                style={
+                  styles.kicker
+                }
+              >
                 REPORT BUILDER
               </p>
 
-              <h2 style={styles.sectionTitle}>
+              <h2
+                style={
+                  styles.sectionTitle
+                }
+              >
                 Generate HireMinds Report
               </h2>
 
-              <p style={styles.muted}>
-                Select one referral code,
-                several codes, or all codes.
-                You can also generate an
-                individual participant report.
+              <p
+                style={
+                  styles.muted
+                }
+              >
+                The core report stays
+                concise. Select the
+                referral codes,
+                reporting period, and
+                any additional data you
+                want included.
               </p>
 
-              <div style={styles.reportControls}>
+              <div
+                style={
+                  styles.reportControls
+                }
+              >
                 <div>
-                  <p style={styles.controlLabel}>
+                  <p
+                    style={
+                      styles.controlLabel
+                    }
+                  >
                     Referral Codes
                   </p>
 
-                  <div style={styles.smallButtonRow}>
+                  <div
+                    style={
+                      styles.smallButtonRow
+                    }
+                  >
                     <button
                       type="button"
                       onClick={
                         selectAllCodes
                       }
-                      style={styles.secondaryButton}
+                      style={
+                        styles.secondaryButton
+                      }
                     >
                       Select All
                     </button>
@@ -1472,19 +2251,28 @@ export default function PartnerDashboardPage() {
                       onClick={
                         clearAllCodes
                       }
-                      style={styles.secondaryButton}
+                      style={
+                        styles.secondaryButton
+                      }
                     >
                       Clear All
                     </button>
                   </div>
 
-                  <div style={styles.codeSelector}>
+                  <div
+                    style={
+                      styles.codeSelector
+                    }
+                  >
                     {referralCodes.map(
                       (code) => (
                         <label
-                          key={code}
+                          key={
+                            code
+                          }
                           style={{
                             ...styles.codeChoice,
+
                             ...(selectedCodes.includes(
                               code
                             )
@@ -1511,8 +2299,16 @@ export default function PartnerDashboardPage() {
                   </div>
                 </div>
 
-                <label style={styles.fieldWrap}>
-                  <span style={styles.controlLabel}>
+                <label
+                  style={
+                    styles.fieldWrap
+                  }
+                >
+                  <span
+                    style={
+                      styles.controlLabel
+                    }
+                  >
                     Participant
                   </span>
 
@@ -1525,7 +2321,9 @@ export default function PartnerDashboardPage() {
                         e.target.value
                       )
                     }
-                    style={styles.input}
+                    style={
+                      styles.input
+                    }
                   >
                     <option value="all">
                       All Participants
@@ -1551,8 +2349,16 @@ export default function PartnerDashboardPage() {
                   </select>
                 </label>
 
-                <label style={styles.fieldWrap}>
-                  <span style={styles.controlLabel}>
+                <label
+                  style={
+                    styles.fieldWrap
+                  }
+                >
+                  <span
+                    style={
+                      styles.controlLabel
+                    }
+                  >
                     Reporting Period
                   </span>
 
@@ -1566,7 +2372,9 @@ export default function PartnerDashboardPage() {
                           .value as PeriodKey
                       )
                     }
-                    style={styles.input}
+                    style={
+                      styles.input
+                    }
                   >
                     <option value="all">
                       All Time
@@ -1600,9 +2408,21 @@ export default function PartnerDashboardPage() {
 
                 {reportPeriod ===
                 "custom" ? (
-                  <>
-                    <label style={styles.fieldWrap}>
-                      <span style={styles.controlLabel}>
+                  <div
+                    style={
+                      styles.dateGrid
+                    }
+                  >
+                    <label
+                      style={
+                        styles.fieldWrap
+                      }
+                    >
+                      <span
+                        style={
+                          styles.controlLabel
+                        }
+                      >
                         Start Date
                       </span>
 
@@ -1616,12 +2436,22 @@ export default function PartnerDashboardPage() {
                             e.target.value
                           )
                         }
-                        style={styles.input}
+                        style={
+                          styles.input
+                        }
                       />
                     </label>
 
-                    <label style={styles.fieldWrap}>
-                      <span style={styles.controlLabel}>
+                    <label
+                      style={
+                        styles.fieldWrap
+                      }
+                    >
+                      <span
+                        style={
+                          styles.controlLabel
+                        }
+                      >
                         End Date
                       </span>
 
@@ -1635,38 +2465,203 @@ export default function PartnerDashboardPage() {
                             e.target.value
                           )
                         }
-                        style={styles.input}
+                        style={
+                          styles.input
+                        }
                       />
                     </label>
-                  </>
+                  </div>
                 ) : null}
+
+                <div>
+                  <p
+                    style={
+                      styles.controlLabel
+                    }
+                  >
+                    Choose Additional Data
+                  </p>
+
+                  <p
+                    style={
+                      styles.helperText
+                    }
+                  >
+                    Participants Served,
+                    New Enrollments,
+                    Active Participants,
+                    Training Enrollment,
+                    and the Participant
+                    Summary are always
+                    included.
+                  </p>
+
+                  <div
+                    style={
+                      styles.optionalGrid
+                    }
+                  >
+                    {[
+                      {
+                        key:
+                          "tool_engagements",
+                        label:
+                          "Career Tool Engagements",
+                      },
+
+                      {
+                        key:
+                          "completed_activities",
+                        label:
+                          "Completed Activities",
+                      },
+
+                      {
+                        key:
+                          "activity_records",
+                        label:
+                          "Total Activity Records",
+                      },
+
+                      {
+                        key:
+                          "most_used_tool",
+                        label:
+                          "Most Used Tool",
+                      },
+
+                      {
+                        key:
+                          "code_comparison",
+                        label:
+                          "Referral Code Comparison",
+                      },
+                    ].map(
+                      (item) => {
+                        const key =
+                          item.key as OptionalMetricKey;
+
+                        const checked =
+                          hasOptionalMetric(
+                            key
+                          );
+
+                        return (
+                          <label
+                            key={
+                              item.key
+                            }
+                            style={{
+                              ...styles.optionalChoice,
+
+                              ...(checked
+                                ? styles.optionalChoiceActive
+                                : {}),
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                checked
+                              }
+                              onChange={() =>
+                                toggleOptionalMetric(
+                                  key
+                                )
+                              }
+                            />
+
+                            {
+                              item.label
+                            }
+                          </label>
+                        );
+                      }
+                    )}
+                  </div>
+
+                  <div
+                    style={
+                      styles.futureTrackingBox
+                    }
+                  >
+                    <strong>
+                      Workforce Service
+                      Tracking
+                    </strong>
+
+                    <p>
+                      Resume Support,
+                      1:1 Career
+                      Coaching, Mock
+                      Interviews,
+                      Workshops, Open
+                      Room attendance,
+                      Employer
+                      Connections,
+                      Employment
+                      Referrals,
+                      Placements, and
+                      Not Hired outcomes
+                      will be added to
+                      this selector once
+                      those services are
+                      connected to
+                      HireMinds
+                      tracking.
+                    </p>
+                  </div>
+                </div>
               </div>
             </section>
 
             <section
               id="hireminds-report"
-              style={styles.reportCard}
+              style={
+                styles.reportCard
+              }
             >
-              <div style={styles.reportHeader}>
+              <div
+                style={
+                  styles.reportHeader
+                }
+              >
                 <div>
-                  <p style={styles.reportBrand}>
+                  <p
+                    style={
+                      styles.reportBrand
+                    }
+                  >
                     HireMinds™
                   </p>
 
-                  <h1 style={styles.reportTitle}>
+                  <h1
+                    style={
+                      styles.reportTitle
+                    }
+                  >
                     {individualParticipant
                       ? "Participant Progress Report"
                       : "Workforce Summary Report"}
                   </h1>
                 </div>
 
-                <div style={styles.reportDate}>
+                <div
+                  style={
+                    styles.reportDate
+                  }
+                >
                   Generated{" "}
                   {new Date().toLocaleDateString()}
                 </div>
               </div>
 
-              <div style={styles.reportMeta}>
+              <div
+                className="hm-report-meta"
+                style={
+                  styles.reportMeta
+                }
+              >
                 <div>
                   <strong>
                     Referral Code(s)
@@ -1698,93 +2693,219 @@ export default function PartnerDashboardPage() {
                   </strong>
 
                   <p>
-                    {reportPeriod ===
-                    "custom"
-                      ? `${reportStartDate || "Start"} – ${reportEndDate || "End"}`
-                      : reportPeriod.toUpperCase()}
+                    {
+                      reportingPeriodLabel
+                    }
                   </p>
                 </div>
               </div>
 
-              <div style={styles.reportMetrics}>
-                <div style={styles.reportMetric}>
+              <div
+                className="hm-report-metrics"
+                style={
+                  styles.reportMetrics
+                }
+              >
+                <div
+                  style={
+                    styles.reportMetric
+                  }
+                >
                   <strong>
                     {
-                      reportStats.participants
+                      reportStats.participantsServed
                     }
                   </strong>
 
                   <span>
                     Participants
+                    Served
                   </span>
                 </div>
 
-                <div style={styles.reportMetric}>
+                <div
+                  style={
+                    styles.reportMetric
+                  }
+                >
                   <strong>
                     {
-                      reportStats.activities
+                      reportStats.newEnrollments
                     }
                   </strong>
 
                   <span>
-                    Activities
+                    New Enrollments
                   </span>
                 </div>
 
-                <div style={styles.reportMetric}>
+                <div
+                  style={
+                    styles.reportMetric
+                  }
+                >
                   <strong>
                     {
-                      reportStats.logins
+                      reportStats.activeParticipants
                     }
                   </strong>
 
                   <span>
-                    Logins
+                    Active
+                    Participants
                   </span>
                 </div>
 
-                <div style={styles.reportMetric}>
+                <div
+                  style={
+                    styles.reportMetric
+                  }
+                >
                   <strong>
                     {
-                      reportStats.toolUses
+                      reportStats.trainingEnrollments
                     }
                   </strong>
 
                   <span>
-                    Tool Uses
+                    Training
+                    Enrollment
                   </span>
                 </div>
 
-                <div style={styles.reportMetric}>
-                  <strong>
-                    {
-                      reportStats.completions
+                {hasOptionalMetric(
+                  "tool_engagements"
+                ) ? (
+                  <div
+                    style={
+                      styles.reportMetric
                     }
-                  </strong>
+                  >
+                    <strong>
+                      {
+                        reportStats.toolUses
+                      }
+                    </strong>
 
-                  <span>
-                    Completions
-                  </span>
-                </div>
+                    <span>
+                      Career Tool
+                      Engagements
+                    </span>
+                  </div>
+                ) : null}
+
+                {hasOptionalMetric(
+                  "completed_activities"
+                ) ? (
+                  <div
+                    style={
+                      styles.reportMetric
+                    }
+                  >
+                    <strong>
+                      {
+                        reportStats.completions
+                      }
+                    </strong>
+
+                    <span>
+                      Completed
+                      Activities
+                    </span>
+                  </div>
+                ) : null}
+
+                {hasOptionalMetric(
+                  "activity_records"
+                ) ? (
+                  <div
+                    style={
+                      styles.reportMetric
+                    }
+                  >
+                    <strong>
+                      {
+                        reportStats.activities
+                      }
+                    </strong>
+
+                    <span>
+                      Activity
+                      Records
+                    </span>
+                  </div>
+                ) : null}
               </div>
 
-              <section style={styles.summaryBox}>
-                <h2 style={styles.reportSectionTitle}>
+              {hasOptionalMetric(
+                "most_used_tool"
+              ) &&
+              reportStats.topTool !==
+                "—" ? (
+                <div
+                  style={
+                    styles.highlightStrip
+                  }
+                >
+                  <strong>
+                    Most Used Tool:
+                  </strong>{" "}
+                  {
+                    reportStats.topTool
+                  }{" "}
+                  (
+                  {
+                    reportStats.topToolUses
+                  }{" "}
+                  uses)
+                </div>
+              ) : null}
+
+              <section
+                style={
+                  styles.summaryBox
+                }
+              >
+                <h2
+                  style={
+                    styles.reportSectionTitle
+                  }
+                >
                   Summary
                 </h2>
 
-                <p style={styles.reportText}>
-                  {reportSummaryText}
+                <p
+                  style={
+                    styles.reportText
+                  }
+                >
+                  {
+                    reportSummaryText
+                  }
                 </p>
               </section>
 
-              {!individualParticipant ? (
+              {!individualParticipant &&
+              hasOptionalMetric(
+                "code_comparison"
+              ) &&
+              selectedCodes.length >
+                0 ? (
                 <section>
-                  <h2 style={styles.reportSectionTitle}>
-                    Referral Code Breakdown
+                  <h2
+                    style={
+                      styles.reportSectionTitle
+                    }
+                  >
+                    Referral Code
+                    Breakdown
                   </h2>
 
-                  <div style={styles.breakdownGrid}>
+                  <div
+                    style={
+                      styles.breakdownGrid
+                    }
+                  >
                     {codeBreakdown.map(
                       (item) => (
                         <div
@@ -1795,14 +2916,19 @@ export default function PartnerDashboardPage() {
                             styles.breakdownCard
                           }
                         >
-                          <h3>
+                          <h3
+                            style={
+                              styles.breakdownTitle
+                            }
+                          >
                             {
                               item.code
                             }
                           </h3>
 
                           <p>
-                            Participants:{" "}
+                            Participants
+                            Served:{" "}
                             <strong>
                               {
                                 item.participants
@@ -1811,22 +2937,38 @@ export default function PartnerDashboardPage() {
                           </p>
 
                           <p>
-                            Activities:{" "}
+                            New
+                            Enrollments:{" "}
                             <strong>
                               {
-                                item.activities
+                                item.newEnrollments
                               }
                             </strong>
                           </p>
 
                           <p>
-                            Logins:{" "}
+                            Active
+                            Participants:{" "}
                             <strong>
                               {
-                                item.logins
+                                item.active
                               }
                             </strong>
                           </p>
+
+                          {hasOptionalMetric(
+                            "tool_engagements"
+                          ) ? (
+                            <p>
+                              Tool
+                              Engagements:{" "}
+                              <strong>
+                                {
+                                  item.toolUses
+                                }
+                              </strong>
+                            </p>
+                          ) : null}
                         </div>
                       )
                     )}
@@ -1834,145 +2976,251 @@ export default function PartnerDashboardPage() {
                 </section>
               ) : null}
 
-              {individualParticipant ? (
-                <section style={styles.summaryBox}>
-                  <h2 style={styles.reportSectionTitle}>
-                    Participant Information
-                  </h2>
-
-                  <p style={styles.reportText}>
-                    <strong>
-                      Name:
-                    </strong>{" "}
-                    {individualParticipant.full_name ||
-                      "—"}
-                    <br />
-
-                    <strong>
-                      Email:
-                    </strong>{" "}
-                    {individualParticipant.email ||
-                      "—"}
-                    <br />
-
-                    <strong>
-                      Referral Code:
-                    </strong>{" "}
-                    {individualParticipant.referral_code ||
-                      "—"}
-                    <br />
-
-                    <strong>
-                      Joined:
-                    </strong>{" "}
-                    {formatShortDate(
-                      individualParticipant.created_at
-                    )}
-                    <br />
-
-                    <strong>
-                      Most Used Tool:
-                    </strong>{" "}
-                    {reportStats.topTool}
-                  </p>
-                </section>
-              ) : null}
-
               <section>
-                <h2 style={styles.reportSectionTitle}>
-                  Activity Detail
+                <h2
+                  style={
+                    styles.reportSectionTitle
+                  }
+                >
+                  Participant
+                  Summary
                 </h2>
 
-                <div style={styles.tableWrap}>
-                  <table style={styles.reportTable}>
+                <p
+                  style={
+                    styles.reportIntroText
+                  }
+                >
+                  Each participant is
+                  listed once.
+                </p>
+
+                <div
+                  style={
+                    styles.tableWrap
+                  }
+                >
+                  <table
+                    style={
+                      styles.reportTable
+                    }
+                  >
                     <thead>
                       <tr>
-                        <th style={styles.reportTh}>
+                        <th
+                          style={
+                            styles.reportTh
+                          }
+                        >
                           Participant
                         </th>
 
-                        <th style={styles.reportTh}>
+                        <th
+                          style={
+                            styles.reportTh
+                          }
+                        >
                           Code
                         </th>
 
-                        <th style={styles.reportTh}>
-                          Event
+                        <th
+                          style={
+                            styles.reportTh
+                          }
+                        >
+                          Sign-Up
                         </th>
 
-                        <th style={styles.reportTh}>
-                          Tool/Page
+                        <th
+                          style={
+                            styles.reportTh
+                          }
+                        >
+                          Last Activity
                         </th>
 
-                        <th style={styles.reportTh}>
-                          Date
-                        </th>
+                        {hasOptionalMetric(
+                          "activity_records"
+                        ) ? (
+                          <th
+                            style={
+                              styles.reportTh
+                            }
+                          >
+                            Activity
+                          </th>
+                        ) : null}
+
+                        {hasOptionalMetric(
+                          "tool_engagements"
+                        ) ? (
+                          <th
+                            style={
+                              styles.reportTh
+                            }
+                          >
+                            Tool Uses
+                          </th>
+                        ) : null}
+
+                        {hasOptionalMetric(
+                          "completed_activities"
+                        ) ? (
+                          <th
+                            style={
+                              styles.reportTh
+                            }
+                          >
+                            Completed
+                          </th>
+                        ) : null}
                       </tr>
                     </thead>
 
                     <tbody>
-                      {reportActivity
-                        .slice(0, 200)
-                        .map(
-                          (
-                            row,
-                            index
-                          ) => (
-                            <tr
-                              key={
-                                row.id ||
-                                `${row.created_at}-${index}`
+                      {participantSummary.map(
+                        (row) => (
+                          <tr
+                            key={
+                              row.key
+                            }
+                          >
+                            <td
+                              style={
+                                styles.reportTd
                               }
                             >
-                              <td style={styles.reportTd}>
-                                {row.full_name ||
-                                  row.email ||
-                                  "Participant"}
-                              </td>
+                              {row.participant
+                                .full_name ||
+                                row.participant
+                                  .email ||
+                                "Participant"}
+                            </td>
 
-                              <td style={styles.reportTd}>
-                                {row.referral_code ||
-                                  "—"}
-                              </td>
+                            <td
+                              style={
+                                styles.reportTd
+                              }
+                            >
+                              {
+                                row.referralCode
+                              }
+                            </td>
 
-                              <td style={styles.reportTd}>
-                                {row.event_type ||
-                                  "—"}
-                              </td>
+                            <td
+                              style={
+                                styles.reportTd
+                              }
+                            >
+                              {formatShortDate(
+                                row.signupDate
+                              )}
+                            </td>
 
-                              <td style={styles.reportTd}>
-                                {row.tool_name ||
-                                  row.page_name ||
-                                  "—"}
-                              </td>
+                            <td
+                              style={
+                                styles.reportTd
+                              }
+                            >
+                              {formatShortDate(
+                                row.lastActivity
+                              )}
+                            </td>
 
-                              <td style={styles.reportTd}>
-                                {formatShortDate(
-                                  row.created_at
-                                )}
+                            {hasOptionalMetric(
+                              "activity_records"
+                            ) ? (
+                              <td
+                                style={
+                                  styles.reportTd
+                                }
+                              >
+                                {
+                                  row.activityCount
+                                }
                               </td>
-                            </tr>
-                          )
-                        )}
+                            ) : null}
+
+                            {hasOptionalMetric(
+                              "tool_engagements"
+                            ) ? (
+                              <td
+                                style={
+                                  styles.reportTd
+                                }
+                              >
+                                {
+                                  row.toolUses
+                                }
+                              </td>
+                            ) : null}
+
+                            {hasOptionalMetric(
+                              "completed_activities"
+                            ) ? (
+                              <td
+                                style={
+                                  styles.reportTd
+                                }
+                              >
+                                {
+                                  row.completions
+                                }
+                              </td>
+                            ) : null}
+                          </tr>
+                        )
+                      )}
+
+                      {participantSummary.length ===
+                      0 ? (
+                        <tr>
+                          <td
+                            colSpan={
+                              7
+                            }
+                            style={
+                              styles.reportEmptyTd
+                            }
+                          >
+                            No
+                            participants
+                            match the
+                            selected
+                            report
+                            criteria.
+                          </td>
+                        </tr>
+                      ) : null}
                     </tbody>
                   </table>
                 </div>
               </section>
 
-              <p style={styles.reportFooter}>
-                HireMinds™ Workforce Infrastructure Platform
+              <p
+                style={
+                  styles.reportFooter
+                }
+              >
+                HireMinds™ Workforce
+                Infrastructure Platform
               </p>
             </section>
 
             <div
               className="no-print"
-              style={styles.reportActions}
+              style={
+                styles.reportActions
+              }
             >
               <button
                 type="button"
                 onClick={
                   printReport
                 }
-                style={styles.primaryButton}
+                style={
+                  styles.primaryButton
+                }
               >
                 Print Report
               </button>
@@ -1982,7 +3230,9 @@ export default function PartnerDashboardPage() {
                 onClick={
                   exportCSV
                 }
-                style={styles.secondaryButton}
+                style={
+                  styles.secondaryButton
+                }
               >
                 Export CSV
               </button>
@@ -1994,13 +3244,17 @@ export default function PartnerDashboardPage() {
   );
 }
 
-const styles: Record<string, CSSProperties> = {
+const styles: Record<
+  string,
+  CSSProperties
+> = {
   page: {
     minHeight: "100vh",
     background:
       "radial-gradient(circle at top left, rgba(59,130,246,.08), transparent 28%), linear-gradient(180deg,#050505,#0d0d0f)",
     color: "#f5f5f5",
-    padding: "32px 24px 60px",
+    padding:
+      "32px 24px 60px",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
@@ -2009,7 +3263,8 @@ const styles: Record<string, CSSProperties> = {
     minHeight: "70vh",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent:
+      "center",
   },
 
   shell: {
@@ -2021,14 +3276,17 @@ const styles: Record<string, CSSProperties> = {
 
   headerCard: {
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    justifyContent:
+      "space-between",
+    alignItems:
+      "flex-start",
     gap: 20,
     flexWrap: "wrap",
     padding: 26,
     borderRadius: 24,
     background: "#151517",
-    border: "1px solid #28282c",
+    border:
+      "1px solid #28282c",
   },
 
   kicker: {
@@ -2036,7 +3294,8 @@ const styles: Record<string, CSSProperties> = {
     color: "#93c5fd",
     fontSize: 11,
     fontWeight: 800,
-    letterSpacing: ".18em",
+    letterSpacing:
+      ".18em",
   },
 
   title: {
@@ -2064,7 +3323,8 @@ const styles: Record<string, CSSProperties> = {
   notice: {
     padding: 14,
     borderRadius: 14,
-    background: "rgba(250,204,21,.08)",
+    background:
+      "rgba(250,204,21,.08)",
     color: "#fde68a",
   },
 
@@ -2072,7 +3332,8 @@ const styles: Record<string, CSSProperties> = {
     padding: 24,
     borderRadius: 24,
     background: "#151517",
-    border: "1px solid #28282c",
+    border:
+      "1px solid #28282c",
   },
 
   tabRow: {
@@ -2082,9 +3343,11 @@ const styles: Record<string, CSSProperties> = {
   },
 
   tabButton: {
-    padding: "10px 15px",
+    padding:
+      "10px 15px",
     borderRadius: 999,
-    border: "1px solid #34343a",
+    border:
+      "1px solid #34343a",
     background: "#101012",
     color: "#f5f5f5",
     cursor: "pointer",
@@ -2098,7 +3361,8 @@ const styles: Record<string, CSSProperties> = {
 
   summaryGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(220px,1fr))",
     gap: 16,
   },
 
@@ -2106,7 +3370,8 @@ const styles: Record<string, CSSProperties> = {
     padding: 22,
     borderRadius: 20,
     background: "#151517",
-    border: "1px solid #28282c",
+    border:
+      "1px solid #28282c",
   },
 
   metricLabel: {
@@ -2131,12 +3396,15 @@ const styles: Record<string, CSSProperties> = {
 
   input: {
     width: "100%",
-    padding: "13px 14px",
+    padding:
+      "13px 14px",
     borderRadius: 14,
-    border: "1px solid #34343a",
+    border:
+      "1px solid #34343a",
     background: "#0d0d0f",
     color: "#fff",
-    boxSizing: "border-box",
+    boxSizing:
+      "border-box",
   },
 
   tableWrap: {
@@ -2146,28 +3414,33 @@ const styles: Record<string, CSSProperties> = {
 
   table: {
     width: "100%",
-    borderCollapse: "collapse",
+    borderCollapse:
+      "collapse",
   },
 
   th: {
     padding: 12,
     textAlign: "left",
     color: "#a1a1aa",
-    borderBottom: "1px solid #303035",
+    borderBottom:
+      "1px solid #303035",
     fontSize: 13,
   },
 
   td: {
     padding: 12,
-    borderBottom: "1px solid #242428",
+    borderBottom:
+      "1px solid #242428",
     fontSize: 14,
   },
 
   codeBadge: {
-    display: "inline-block",
+    display:
+      "inline-block",
     padding: "6px 10px",
     borderRadius: 999,
-    background: "rgba(59,130,246,.13)",
+    background:
+      "rgba(59,130,246,.13)",
     color: "#bfdbfe",
     fontSize: 12,
     fontWeight: 800,
@@ -2175,7 +3448,7 @@ const styles: Record<string, CSSProperties> = {
 
   reportControls: {
     display: "grid",
-    gap: 22,
+    gap: 24,
     marginTop: 24,
   },
 
@@ -2187,15 +3460,31 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 13,
   },
 
+  helperText: {
+    margin:
+      "-2px 0 14px",
+    color: "#9ca3af",
+    fontSize: 13,
+    lineHeight: 1.6,
+  },
+
   fieldWrap: {
     display: "grid",
     gap: 8,
+  },
+
+  dateGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(220px,1fr))",
+    gap: 14,
   },
 
   smallButtonRow: {
     display: "flex",
     gap: 10,
     marginBottom: 14,
+    flexWrap: "wrap",
   },
 
   codeSelector: {
@@ -2206,20 +3495,69 @@ const styles: Record<string, CSSProperties> = {
 
   codeChoice: {
     display: "flex",
-    alignItems: "center",
+    alignItems:
+      "center",
     gap: 8,
-    padding: "10px 13px",
+    padding:
+      "10px 13px",
     borderRadius: 999,
     background: "#0d0d0f",
-    border: "1px solid #34343a",
+    border:
+      "1px solid #34343a",
     cursor: "pointer",
     fontSize: 13,
   },
 
   codeChoiceActive: {
-    background: "rgba(59,130,246,.16)",
-    border: "1px solid rgba(96,165,250,.45)",
+    background:
+      "rgba(59,130,246,.16)",
+    border:
+      "1px solid rgba(96,165,250,.45)",
     color: "#dbeafe",
+  },
+
+  optionalGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(220px,1fr))",
+    gap: 10,
+  },
+
+  optionalChoice: {
+    display: "flex",
+    alignItems:
+      "center",
+    gap: 10,
+    padding:
+      "13px 14px",
+    borderRadius: 14,
+    background: "#0d0d0f",
+    border:
+      "1px solid #34343a",
+    cursor: "pointer",
+    color: "#d4d4d8",
+    fontSize: 13,
+  },
+
+  optionalChoiceActive: {
+    background:
+      "rgba(59,130,246,.13)",
+    border:
+      "1px solid rgba(96,165,250,.40)",
+    color: "#dbeafe",
+  },
+
+  futureTrackingBox: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 16,
+    background:
+      "rgba(255,255,255,.035)",
+    border:
+      "1px solid #303035",
+    color: "#c7c7ce",
+    fontSize: 13,
+    lineHeight: 1.7,
   },
 
   reportCard: {
@@ -2231,10 +3569,13 @@ const styles: Record<string, CSSProperties> = {
 
   reportHeader: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     gap: 20,
-    alignItems: "flex-start",
-    borderBottom: "2px solid #111827",
+    alignItems:
+      "flex-start",
+    borderBottom:
+      "2px solid #111827",
     paddingBottom: 20,
   },
 
@@ -2256,7 +3597,8 @@ const styles: Record<string, CSSProperties> = {
 
   reportMeta: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+    gridTemplateColumns:
+      "repeat(3,minmax(0,1fr))",
     gap: 18,
     marginTop: 24,
     padding: 20,
@@ -2266,7 +3608,8 @@ const styles: Record<string, CSSProperties> = {
 
   reportMetrics: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(140px,1fr))",
     gap: 14,
     marginTop: 24,
   },
@@ -2274,9 +3617,22 @@ const styles: Record<string, CSSProperties> = {
   reportMetric: {
     padding: 18,
     borderRadius: 14,
-    border: "1px solid #d1d5db",
+    border:
+      "1px solid #d1d5db",
     display: "grid",
     gap: 6,
+  },
+
+  highlightStrip: {
+    marginTop: 20,
+    padding:
+      "14px 16px",
+    borderRadius: 12,
+    background: "#eff6ff",
+    border:
+      "1px solid #bfdbfe",
+    color: "#1e3a8a",
+    fontSize: 14,
   },
 
   summaryBox: {
@@ -2284,7 +3640,8 @@ const styles: Record<string, CSSProperties> = {
     padding: 22,
     borderRadius: 16,
     background: "#f8fafc",
-    border: "1px solid #e5e7eb",
+    border:
+      "1px solid #e5e7eb",
   },
 
   reportSectionTitle: {
@@ -2297,41 +3654,66 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.75,
   },
 
+  reportIntroText: {
+    marginTop: -4,
+    color: "#6b7280",
+    fontSize: 13,
+  },
+
   breakdownGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(220px,1fr))",
     gap: 14,
   },
 
   breakdownCard: {
     padding: 18,
-    border: "1px solid #d1d5db",
+    border:
+      "1px solid #d1d5db",
     borderRadius: 14,
+  },
+
+  breakdownTitle: {
+    marginTop: 0,
   },
 
   reportTable: {
     width: "100%",
-    borderCollapse: "collapse",
+    borderCollapse:
+      "collapse",
     color: "#111827",
   },
 
   reportTh: {
     textAlign: "left",
     padding: 10,
-    borderBottom: "2px solid #111827",
+    borderBottom:
+      "2px solid #111827",
     fontSize: 12,
+    whiteSpace: "nowrap",
   },
 
   reportTd: {
     padding: 10,
-    borderBottom: "1px solid #e5e7eb",
+    borderBottom:
+      "1px solid #e5e7eb",
     fontSize: 12,
+    verticalAlign: "top",
+  },
+
+  reportEmptyTd: {
+    padding: 24,
+    textAlign: "center",
+    color: "#6b7280",
+    fontSize: 13,
   },
 
   reportFooter: {
     marginTop: 30,
     paddingTop: 18,
-    borderTop: "1px solid #d1d5db",
+    borderTop:
+      "1px solid #d1d5db",
     color: "#6b7280",
     textAlign: "center",
     fontSize: 12,
@@ -2344,7 +3726,8 @@ const styles: Record<string, CSSProperties> = {
   },
 
   primaryButton: {
-    padding: "12px 18px",
+    padding:
+      "12px 18px",
     borderRadius: 14,
     border: "none",
     background: "#f5f5f5",
@@ -2354,9 +3737,11 @@ const styles: Record<string, CSSProperties> = {
   },
 
   secondaryButton: {
-    padding: "12px 16px",
+    padding:
+      "12px 16px",
     borderRadius: 14,
-    border: "1px solid #34343a",
+    border:
+      "1px solid #34343a",
     background: "#101012",
     color: "#f5f5f5",
     fontWeight: 700,
@@ -2364,9 +3749,11 @@ const styles: Record<string, CSSProperties> = {
   },
 
   logoutButton: {
-    padding: "12px 16px",
+    padding:
+      "12px 16px",
     borderRadius: 14,
-    border: "1px solid #334155",
+    border:
+      "1px solid #334155",
     background: "#112b5f",
     color: "#fff",
     fontWeight: 700,
