@@ -4,19 +4,28 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
 const VALID_REFERRAL_CODES = [
-"YWCA",
-"RDS",
-"DEMO",
-"TWP2026",
-"NHP2026",
-"EPS2026",
-"HWCTR",
-"WWCTR",
-"REFERRAL_06",
-"REFERRAL_07",
-"REFERRAL_08",
-"REFERRAL_09",
-"REFERRAL_10",
+  // ACTIVE REFERRAL CODES
+  "YWORK4C3",
+  "COHORT1Y",
+  "COHORT2Y",
+  "COHORT3Y",
+  "COHORT4Y",
+  "COHORT5Y",
+
+  // EXISTING REFERRAL CODES
+  "RDS",
+
+  // FUTURE REFERRAL CODE PLACEHOLDERS
+  "REFERRAL_06",
+  "REFERRAL_07",
+  "REFERRAL_08",
+  "REFERRAL_09",
+  "REFERRAL_10",
+  "REFERRAL_11",
+  "REFERRAL_12",
+  "REFERRAL_13",
+  "REFERRAL_14",
+  "REFERRAL_15",
 ];
 
 // When checking referral codes, use:
