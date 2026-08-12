@@ -11,334 +11,255 @@ import Link from "next/link";
 
 import { supabase } from "../lib/supabase";
 
-import ConnectExplore from "../components/ConnectExplore";
-
-
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function slugify(
-  value: string
-) {
+function slugify(value: string) {
   return value
     .toLowerCase()
     .trim()
-    .replace(
-      /[^a-z0-9\s-]/g,
-      ""
-    )
-    .replace(
-      /\s+/g,
-      "-"
-    )
-    .replace(
-      /-+/g,
-      "-"
-    );
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
-
 
 /* =========================================================
    PAGE
 ========================================================= */
 
 export default function ProfilePage() {
-  const [
-    loading,
-    setLoading,
-  ] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [
-    saving,
-    setSaving,
-  ] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [
-    message,
-    setMessage,
-  ] =
-    useState("");
+  const [message, setMessage] = useState("");
 
+  const [userId, setUserId] = useState("");
 
-  const [
-    userId,
-    setUserId,
-  ] =
-    useState("");
+  const [profileId, setProfileId] = useState("");
 
-  const [
-    profileId,
-    setProfileId,
-  ] =
-    useState("");
+  const [fullName, setFullName] = useState("");
 
+  const [phone, setPhone] = useState("");
 
-  const [
-    fullName,
-    setFullName,
-  ] =
-    useState("");
+  const [email, setEmail] = useState("");
 
-  const [
-    phone,
-    setPhone,
-  ] =
-    useState("");
+  const [city, setCity] = useState("");
 
-  const [
-    email,
-    setEmail,
-  ] =
-    useState("");
+  const [stateName, setStateName] = useState("");
 
-  const [
-    city,
-    setCity,
-  ] =
-    useState("");
+  const [bio, setBio] = useState("");
 
-  const [
-    stateName,
-    setStateName,
-  ] =
-    useState("");
+  const [headline, setHeadline] = useState("");
 
-  const [
-    bio,
-    setBio,
-  ] =
-    useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
 
-  const [
-    headline,
-    setHeadline,
-  ] =
-    useState("");
+  const [referralCode, setReferralCode] = useState("");
 
-  const [
-    linkedinUrl,
-    setLinkedinUrl,
-  ] =
-    useState("");
+  const [photoFile, setPhotoFile] =
+    useState<File | null>(null);
 
-
-  const [
-    photoFile,
-    setPhotoFile,
-  ] =
-    useState<File | null>(
-      null
-    );
-
-  const [
-    photoUrl,
-    setPhotoUrl,
-  ] =
-    useState("");
-
+  const [photoUrl, setPhotoUrl] = useState("");
 
   const [
     publicProfileUrl,
     setPublicProfileUrl,
-  ] =
-    useState("");
+  ] = useState("");
 
-
-  const trackedRef =
-    useRef(false);
-
+  const trackedRef = useRef(false);
 
   /* =======================================================
      LOAD PROFILE
   ======================================================= */
 
-  useEffect(
-    () => {
-      async function loadProfile() {
-        const {
-          data:
-            authData,
+  useEffect(() => {
+    loadProfile();
+  }, []);
 
-          error:
-            authError,
-        } =
-          await supabase.auth.getUser();
+  async function loadProfile() {
+    setLoading(true);
 
+    setMessage("");
 
-        if (
-          authError ||
-          !authData.user
-        ) {
-          window.location.href =
-            "/sign-in";
+    const {
+      data: authData,
+      error: authError,
+    } = await supabase.auth.getUser();
 
-          return;
-        }
+    if (
+      authError ||
+      !authData.user
+    ) {
+      window.location.href =
+        "/sign-in";
 
+      return;
+    }
 
-        const {
-          data:
-            profile,
+    const user =
+      authData.user;
 
-          error:
-            profileError,
-        } =
-          await supabase
-            .from(
-              "candidate_profiles"
-            )
-            .select("*")
-            .eq(
-              "user_id",
-              authData.user.id
-            )
-            .single();
+    setUserId(user.id);
 
+    setEmail(
+      user.email ||
+        ""
+    );
 
-        if (
-          profileError ||
-          !profile
-        ) {
-          setMessage(
-            profileError?.message ||
-              "Profile not found."
-          );
+    const {
+      data: profile,
+      error: profileError,
+    } = await supabase
+      .from(
+        "candidate_profiles"
+      )
+      .select("*")
+      .eq(
+        "user_id",
+        user.id
+      )
+      .maybeSingle();
 
-          setLoading(false);
+    if (
+      profileError
+    ) {
+      console.error(
+        "Profile load error:",
+        profileError
+      );
 
-          return;
-        }
+      setMessage(
+        profileError.message
+      );
+    }
 
+    if (
+      profile
+    ) {
+      setProfileId(
+        profile.id ||
+          ""
+      );
 
-        setUserId(
-          authData.user.id ||
-            ""
-        );
+      setFullName(
+        profile.full_name ||
+          ""
+      );
 
-        setProfileId(
-          profile.id ||
-            ""
-        );
+      setPhone(
+        profile.phone ||
+          ""
+      );
 
+      setEmail(
+        profile.email ||
+          user.email ||
+          ""
+      );
 
-        setFullName(
-          profile.full_name ||
-            ""
-        );
+      setCity(
+        profile.city ||
+          ""
+      );
 
-        setPhone(
-          profile.phone ||
-            ""
-        );
+      setStateName(
+        profile.state ||
+          ""
+      );
 
-        setEmail(
-          profile.email ||
-            authData.user.email ||
-            ""
-        );
+      setBio(
+        profile.bio ||
+          ""
+      );
 
-        setCity(
-          profile.city ||
-            ""
-        );
+      setHeadline(
+        profile.headline ||
+          ""
+      );
 
-        setStateName(
-          profile.state ||
-            ""
-        );
+      setLinkedinUrl(
+        profile.linkedin_url ||
+          ""
+      );
 
-        setBio(
-          profile.bio ||
-            ""
-        );
+      setPhotoUrl(
+        profile.photo_url ||
+          ""
+      );
 
-        setHeadline(
-          profile.headline ||
-            ""
-        );
+      setPublicProfileUrl(
+        profile.public_profile_url ||
+          ""
+      );
 
-        setLinkedinUrl(
-          profile.linkedin_url ||
-            ""
-        );
+      setReferralCode(
+        profile.referral_code ||
+          ""
+      );
 
-        setPhotoUrl(
-          profile.photo_url ||
-            ""
-        );
+      if (
+        !trackedRef.current
+      ) {
+        trackedRef.current =
+          true;
 
-        setPublicProfileUrl(
-          profile.public_profile_url ||
-            ""
-        );
+        await supabase
+          .from(
+            "user_activity"
+          )
+          .insert({
+            user_id:
+              user.id,
 
+            full_name:
+              profile.full_name ||
+              null,
 
-        if (
-          !trackedRef.current
-        ) {
-          trackedRef.current =
-            true;
+            email:
+              profile.email ||
+              user.email ||
+              null,
 
+            referral_code:
+              profile.referral_code ||
+              null,
 
-          await supabase
-            .from(
-              "user_activity"
-            )
-            .insert({
-              user_id:
-                authData.user.id,
+            event_type:
+              "profile_viewed",
 
-              full_name:
-                profile.full_name ||
-                null,
+            tool_name:
+              "profile",
 
-              email:
-                profile.email ||
-                authData.user.email ||
-                null,
-
-              referral_code:
-                profile.referral_code ||
-                null,
-
-              event_type:
-                "profile_viewed",
-
-              tool_name:
-                "profile",
-
-              page_name:
-                "/profile",
-            });
-        }
-
-
-        setLoading(false);
+            page_name:
+              "/profile",
+          });
       }
+    } else {
+      setFullName(
+        user.user_metadata
+          ?.full_name ||
+          ""
+      );
 
+      setReferralCode(
+        user.user_metadata
+          ?.referral_code ||
+          ""
+      );
+    }
 
-      loadProfile();
-    },
-    []
-  );
-
+    setLoading(false);
+  }
 
   /* =======================================================
-     FILE UPLOAD
+     UPLOAD PHOTO
   ======================================================= */
 
   async function uploadFile(
-    bucket:
-      string,
-
-    file:
-      File,
-
-    folder:
-      string
+    bucket: string,
+    file: File,
+    folder: string
   ) {
     const fileExt =
       file.name
@@ -346,27 +267,20 @@ export default function ProfilePage() {
         .pop() ||
       "file";
 
-
     const filePath =
       `${folder}/${Date.now()}.${fileExt}`;
 
-
     const {
       error,
-    } =
-      await supabase.storage
-        .from(
-          bucket
-        )
-        .upload(
-          filePath,
-          file,
-          {
-            upsert:
-              true,
-          }
-        );
-
+    } = await supabase.storage
+      .from(bucket)
+      .upload(
+        filePath,
+        file,
+        {
+          upsert: true,
+        }
+      );
 
     if (
       error
@@ -374,22 +288,16 @@ export default function ProfilePage() {
       throw error;
     }
 
-
     const {
       data,
-    } =
-      supabase.storage
-        .from(
-          bucket
-        )
-        .getPublicUrl(
-          filePath
-        );
-
+    } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(
+        filePath
+      );
 
     return data.publicUrl;
   }
-
 
   /* =======================================================
      SAVE PROFILE
@@ -397,7 +305,6 @@ export default function ProfilePage() {
 
   async function handleSaveProfile() {
     setMessage("");
-
 
     if (
       !userId
@@ -409,14 +316,11 @@ export default function ProfilePage() {
       return;
     }
 
-
     try {
       setSaving(true);
 
-
       let nextPhotoUrl =
         photoUrl;
-
 
       if (
         photoFile
@@ -429,20 +333,17 @@ export default function ProfilePage() {
           );
       }
 
-
       const slug =
         slugify(
           fullName ||
             "career-passport"
         );
 
-
       const publicUrl =
         `${window.location.origin}/passport/${slug}-${userId.slice(
           0,
           8
         )}`;
-
 
       const payload = {
         user_id:
@@ -475,25 +376,22 @@ export default function ProfilePage() {
           publicUrl,
       };
 
-
       if (
         profileId
       ) {
         const {
           error,
-        } =
-          await supabase
-            .from(
-              "candidate_profiles"
-            )
-            .update(
-              payload
-            )
-            .eq(
-              "id",
-              profileId
-            );
-
+        } = await supabase
+          .from(
+            "candidate_profiles"
+          )
+          .update(
+            payload
+          )
+          .eq(
+            "id",
+            profileId
+          );
 
         if (
           error
@@ -503,19 +401,18 @@ export default function ProfilePage() {
       } else {
         const {
           data,
-
           error,
-        } =
-          await supabase
-            .from(
-              "candidate_profiles"
-            )
-            .insert(
-              payload
-            )
-            .select()
-            .single();
-
+        } = await supabase
+          .from(
+            "candidate_profiles"
+          )
+          .insert(
+            payload
+          )
+          .select(
+            "id"
+          )
+          .maybeSingle();
 
         if (
           error
@@ -523,12 +420,14 @@ export default function ProfilePage() {
           throw error;
         }
 
-
-        setProfileId(
-          data.id
-        );
+        if (
+          data?.id
+        ) {
+          setProfileId(
+            data.id
+          );
+        }
       }
-
 
       setPhotoUrl(
         nextPhotoUrl
@@ -538,23 +437,28 @@ export default function ProfilePage() {
         publicUrl
       );
 
+      setPhotoFile(
+        null
+      );
 
       setMessage(
         "✓ Profile saved successfully."
       );
     } catch (
-      err:
-        any
+      error: any
     ) {
+      console.error(
+        error
+      );
+
       setMessage(
-        err.message ||
+        error?.message ||
           "Unable to save profile."
       );
     } finally {
       setSaving(false);
     }
   }
-
 
   /* =======================================================
      SIGN OUT
@@ -567,7 +471,6 @@ export default function ProfilePage() {
       "/sign-in";
   }
 
-
   /* =======================================================
      LOADING
   ======================================================= */
@@ -578,32 +481,27 @@ export default function ProfilePage() {
     return (
       <main
         style={
-          st.page
+          st.loadingPage
         }
       >
         <div
           style={
-            st.loadingWrap
+            st.loadingRing
           }
         >
-          <div
-            style={
-              st.loadingOrb
-            }
-          />
-
-          <p
-            style={
-              st.loadingText
-            }
-          >
-            Loading your Career Passport...
-          </p>
+          HM
         </div>
+
+        <p
+          style={
+            st.loadingText
+          }
+        >
+          Loading your profile...
+        </p>
       </main>
     );
   }
-
 
   /* =======================================================
      PAGE
@@ -615,26 +513,23 @@ export default function ProfilePage() {
         st.page
       }
     >
-      {/* BACKGROUND EFFECTS */}
-
       <div
         style={
-          st.orbOne
+          st.backgroundGlowOne
         }
       />
 
       <div
         style={
-          st.orbTwo
+          st.backgroundGlowTwo
         }
       />
 
       <div
         style={
-          st.gridOverlay
+          st.backgroundGrid
         }
       />
-
 
       <div
         style={
@@ -642,12 +537,12 @@ export default function ProfilePage() {
         }
       >
         {/* =================================================
-            TOP NAV
+            HEADER
         ================================================= */}
 
-        <nav
+        <header
           style={
-            st.topNav
+            st.header
           }
         >
           <div
@@ -664,28 +559,27 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <p
+              <strong
                 style={
                   st.brandName
                 }
               >
                 HireMinds™
-              </p>
+              </strong>
 
-              <p
+              <span
                 style={
                   st.brandSub
                 }
               >
                 Career Passport
-              </p>
+              </span>
             </div>
           </div>
 
-
           <div
             style={
-              st.navActions
+              st.headerActions
             }
           >
             {publicProfileUrl ? (
@@ -696,13 +590,12 @@ export default function ProfilePage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={
-                  st.navProfileButton
+                  st.headerPassportButton
                 }
               >
-                View Passport ↗
+                View Career Passport ↗
               </a>
             ) : null}
-
 
             <button
               type="button"
@@ -716,180 +609,33 @@ export default function ProfilePage() {
               Sign Out
             </button>
           </div>
-        </nav>
-
+        </header>
 
         {/* =================================================
-            HERO
+            1. PROFILE IDENTITY FIRST
         ================================================= */}
 
         <section
           style={
-            st.hero
+            st.identityCard
           }
         >
           <div
             style={
-              st.heroGlow
+              st.identityAccent
             }
           />
 
-
           <div
             style={
-              st.heroContent
+              st.photoColumn
             }
           >
             <div
               style={
-                st.heroBadge
-              }
-            >
-              <span
-                style={
-                  st.heroBadgeDot
-                }
-              />
-
-              CAREER PASSPORT
-            </div>
-
-
-            <h1
-              style={
-                st.title
-              }
-            >
-              Your professional
-              <br />
-
-              <span
-                style={
-                  st.titleGradient
-                }
-              >
-                command center.
-              </span>
-            </h1>
-
-
-            <p
-              style={
-                st.subtitle
-              }
-            >
-              Build your professional identity, manage your
-              Career Passport, access career tools, and stay
-              connected to your next move.
-            </p>
-
-
-            <div
-              style={
-                st.heroStats
-              }
-            >
-              <div
-                style={
-                  st.heroStat
-                }
-              >
-                <span
-                  style={
-                    st.heroStatLabel
-                  }
-                >
-                  PROFILE
-                </span>
-
-                <strong
-                  style={
-                    st.heroStatValue
-                  }
-                >
-                  Active
-                </strong>
-              </div>
-
-
-              <div
-                style={
-                  st.heroStat
-                }
-              >
-                <span
-                  style={
-                    st.heroStatLabel
-                  }
-                >
-                  LOCATION
-                </span>
-
-                <strong
-                  style={
-                    st.heroStatValue
-                  }
-                >
-                  {[city, stateName]
-                    .filter(
-                      Boolean
-                    )
-                    .join(
-                      ", "
-                    ) ||
-                    "Add Location"}
-                </strong>
-              </div>
-
-
-              <div
-                style={
-                  st.heroStat
-                }
-              >
-                <span
-                  style={
-                    st.heroStatLabel
-                  }
-                >
-                  PASSPORT
-                </span>
-
-                <strong
-                  style={
-                    st.heroStatValue
-                  }
-                >
-                  {publicProfileUrl
-                    ? "Live"
-                    : "Build"}
-                </strong>
-              </div>
-            </div>
-          </div>
-        </section>
-
-
-        {/* =================================================
-            PROFILE IDENTITY
-        ================================================= */}
-
-        <section
-          style={
-            st.identitySection
-          }
-        >
-          <div
-            style={
-              st.profileVisual
-            }
-          >
-            <div
-              style={
-                st.avatarGlow
+                st.photoGlow
               }
             />
-
 
             {photoUrl ? (
               <img
@@ -898,35 +644,26 @@ export default function ProfilePage() {
                 }
                 alt="Profile"
                 style={
-                  st.avatar
+                  st.profilePhoto
                 }
               />
             ) : (
               <div
                 style={
-                  st.avatarPlaceholder
+                  st.profilePlaceholder
                 }
               >
-                <span
-                  style={
-                    st.avatarInitial
-                  }
-                >
-                  {fullName
-                    ? fullName
-                        .charAt(
-                          0
-                        )
-                        .toUpperCase()
-                    : "HM"}
-                </span>
+                {fullName
+                  ? fullName
+                      .charAt(0)
+                      .toUpperCase()
+                  : "HM"}
               </div>
             )}
 
-
             <label
               style={
-                st.photoUploadButton
+                st.updatePhoto
               }
             >
               + Update Photo
@@ -934,59 +671,65 @@ export default function ProfilePage() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={
-                  (
-                    e
-                  ) =>
-                    setPhotoFile(
-                      e.target.files?.[
-                        0
-                      ] ||
-                        null
-                    )
-                }
                 style={{
                   display:
                     "none",
                 }}
+                onChange={(
+                  e
+                ) =>
+                  setPhotoFile(
+                    e.target.files?.[
+                      0
+                    ] ||
+                      null
+                  )
+                }
               />
             </label>
-          </div>
 
+            {photoFile ? (
+              <span
+                style={
+                  st.photoSelected
+                }
+              >
+                {photoFile.name}
+              </span>
+            ) : null}
+          </div>
 
           <div
             style={
-              st.identityContent
+              st.identityInfo
             }
           >
             <div
               style={
-                st.identityTop
+                st.identityHeader
               }
             >
               <div>
                 <p
                   style={
-                    st.identityLabel
+                    st.eyebrow
                   }
                 >
-                  PROFESSIONAL IDENTITY
+                  CAREER PASSPORT
                 </p>
 
-
-                <h2
+                <h1
                   style={
-                    st.namePreview
+                    st.profileName
                   }
                 >
                   {fullName ||
                     "Your Name"}
-                </h2>
-
+                </h1>
 
                 <p
                   style={
-                    st.headlinePreview
+                    st.profileHeadline
                   }
                 >
                   {headline ||
@@ -994,61 +737,47 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-
               <div
                 style={
-                  st.passportChip
+                  st.profileStatus
                 }
               >
                 <span
                   style={
-                    st.passportChipDot
+                    st.statusDot
                   }
                 />
 
-                Career Passport
+                Profile Active
               </div>
             </div>
 
-
             <div
               style={
-                st.identityMeta
+                st.profileMeta
               }
             >
               <div
                 style={
-                  st.metaItem
+                  st.metaChip
                 }
               >
-                <span>
-                  ◉
-                </span>
-
+                ◉{" "}
                 {[city, stateName]
-                  .filter(
-                    Boolean
-                  )
-                  .join(
-                    ", "
-                  ) ||
-                  "Add location"}
+                  .filter(Boolean)
+                  .join(", ") ||
+                  "Add Location"}
               </div>
-
 
               <div
                 style={
-                  st.metaItem
+                  st.metaChip
                 }
               >
-                <span>
-                  ✉
-                </span>
-
+                ✉{" "}
                 {email ||
-                  "Add email"}
+                  "Add Email"}
               </div>
-
 
               {linkedinUrl ? (
                 <a
@@ -1058,48 +787,71 @@ export default function ProfilePage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={
-                    st.metaLink
+                    st.linkedinChip
                   }
                 >
-                  <span>
-                    in
-                  </span>
-
-                  LinkedIn Profile ↗
+                  in LinkedIn ↗
                 </a>
+              ) : null}
+
+              {referralCode ? (
+                <div
+                  style={
+                    st.programChip
+                  }
+                >
+                  Program:{" "}
+                  {referralCode}
+                </div>
               ) : null}
             </div>
 
-
             <div
               style={
-                st.identityBio
+                st.bioPreview
               }
             >
-              {bio ||
-                "Your professional bio will appear here once added below."}
+              <span
+                style={
+                  st.bioLabel
+                }
+              >
+                PROFESSIONAL BIO
+              </span>
+
+              <p
+                style={
+                  st.bioText
+                }
+              >
+                {bio ||
+                  "Add a short professional bio below to introduce who you are, what you do, and where you are headed."}
+              </p>
             </div>
           </div>
         </section>
 
-
         {/* =================================================
-            QUICK ACCESS
+            2. PROFILE EDITOR
         ================================================= */}
 
-        <section>
+        <section
+          style={
+            st.editor
+          }
+        >
           <div
             style={
-              st.sectionHeader
+              st.sectionTop
             }
           >
             <div>
               <p
                 style={
-                  st.sectionEyebrow
+                  st.eyebrow
                 }
               >
-                YOUR WORKSPACE
+                YOUR PROFESSIONAL PROFILE
               </p>
 
               <h2
@@ -1107,409 +859,27 @@ export default function ProfilePage() {
                   st.sectionTitle
                 }
               >
-                Keep building your edge.
-              </h2>
-            </div>
-
-
-            <p
-              style={
-                st.sectionDescription
-              }
-            >
-              Jump into the tools and spaces designed to keep
-              your career development moving.
-            </p>
-          </div>
-
-
-          <div
-            style={
-              st.quickGrid
-            }
-          >
-            {/* CAREER DEVELOPMENT */}
-
-            <Link
-              href="/career-development-generator"
-              style={
-                st.quickCardLink
-              }
-            >
-              <div
-                style={{
-                  ...st.quickCard,
-
-                  ...st.quickCardCareer,
-                }}
-              >
-                <div
-                  style={
-                    st.quickCardTop
-                  }
-                >
-                  <div
-                    style={{
-                      ...st.quickIcon,
-
-                      ...st.quickIconCareer,
-                    }}
-                  >
-                    ↗
-                  </div>
-
-
-                  <span
-                    style={
-                      st.quickArrow
-                    }
-                  >
-                    →
-                  </span>
-                </div>
-
-
-                <div>
-                  <p
-                    style={
-                      st.quickKicker
-                    }
-                  >
-                    WEEKLY DEVELOPMENT
-                  </p>
-
-                  <h3
-                    style={
-                      st.quickTitle
-                    }
-                  >
-                    Career Development Generator
-                  </h3>
-
-                  <p
-                    style={
-                      st.quickText
-                    }
-                  >
-                    Complete your weekly career development
-                    activity, save drafts, document progress,
-                    and track your next step.
-                  </p>
-                </div>
-
-
-                <div
-                  style={
-                    st.quickFooter
-                  }
-                >
-                  <span>
-                    Open Generator
-                  </span>
-
-                  <span>
-                    →
-                  </span>
-                </div>
-              </div>
-            </Link>
-
-
-            {/* CAREER CONNECT */}
-
-            <Link
-              href="/open-room/live"
-              style={
-                st.quickCardLink
-              }
-            >
-              <div
-                style={{
-                  ...st.quickCard,
-
-                  ...st.quickCardConnect,
-                }}
-              >
-                <div
-                  style={
-                    st.quickCardTop
-                  }
-                >
-                  <div
-                    style={{
-                      ...st.quickIcon,
-
-                      ...st.quickIconConnect,
-                    }}
-                  >
-                    ◉
-                  </div>
-
-
-                  <span
-                    style={
-                      st.liveIndicator
-                    }
-                  >
-                    ● LIVE
-                  </span>
-                </div>
-
-
-                <div>
-                  <p
-                    style={
-                      st.quickKicker
-                    }
-                  >
-                    CAREER SUPPORT
-                  </p>
-
-                  <h3
-                    style={
-                      st.quickTitle
-                    }
-                  >
-                    Career Connect
-                  </h3>
-
-                  <p
-                    style={
-                      st.quickText
-                    }
-                  >
-                    Manage appointments, request career support,
-                    check in for sessions, and connect live.
-                  </p>
-                </div>
-
-
-                <div
-                  style={
-                    st.quickFooter
-                  }
-                >
-                  <span>
-                    Enter Career Connect
-                  </span>
-
-                  <span>
-                    →
-                  </span>
-                </div>
-              </div>
-            </Link>
-
-
-            {/* PUBLIC PASSPORT */}
-
-            {publicProfileUrl ? (
-              <a
-                href={
-                  publicProfileUrl
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                style={
-                  st.quickCardLink
-                }
-              >
-                <div
-                  style={{
-                    ...st.quickCard,
-
-                    ...st.quickCardPassport,
-                  }}
-                >
-                  <div
-                    style={
-                      st.quickCardTop
-                    }
-                  >
-                    <div
-                      style={{
-                        ...st.quickIcon,
-
-                        ...st.quickIconPassport,
-                      }}
-                    >
-                      ◇
-                    </div>
-
-                    <span
-                      style={
-                        st.quickArrow
-                      }
-                    >
-                      ↗
-                    </span>
-                  </div>
-
-
-                  <div>
-                    <p
-                      style={
-                        st.quickKicker
-                      }
-                    >
-                      PUBLIC PROFILE
-                    </p>
-
-                    <h3
-                      style={
-                        st.quickTitle
-                      }
-                    >
-                      Career Passport
-                    </h3>
-
-                    <p
-                      style={
-                        st.quickText
-                      }
-                    >
-                      Preview the professional profile employers
-                      and approved viewers can see.
-                    </p>
-                  </div>
-
-
-                  <div
-                    style={
-                      st.quickFooter
-                    }
-                  >
-                    <span>
-                      View Passport
-                    </span>
-
-                    <span>
-                      ↗
-                    </span>
-                  </div>
-                </div>
-              </a>
-            ) : (
-              <div
-                style={{
-                  ...st.quickCard,
-
-                  ...st.quickCardPassport,
-                }}
-              >
-                <div
-                  style={
-                    st.quickCardTop
-                  }
-                >
-                  <div
-                    style={{
-                      ...st.quickIcon,
-
-                      ...st.quickIconPassport,
-                    }}
-                  >
-                    ◇
-                  </div>
-                </div>
-
-
-                <div>
-                  <p
-                    style={
-                      st.quickKicker
-                    }
-                  >
-                    PUBLIC PROFILE
-                  </p>
-
-                  <h3
-                    style={
-                      st.quickTitle
-                    }
-                  >
-                    Career Passport
-                  </h3>
-
-                  <p
-                    style={
-                      st.quickText
-                    }
-                  >
-                    Save your profile to generate and activate
-                    your public Career Passport.
-                  </p>
-                </div>
-
-
-                <div
-                  style={
-                    st.quickFooter
-                  }
-                >
-                  <span>
-                    Complete Profile
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-
-        {/* =================================================
-            PROFILE EDITOR
-        ================================================= */}
-
-        <section
-          style={
-            st.editorSection
-          }
-        >
-          <div
-            style={
-              st.editorHeader
-            }
-          >
-            <div>
-              <p
-                style={
-                  st.sectionEyebrow
-                }
-              >
-                PROFILE EDITOR
-              </p>
-
-              <h2
-                style={
-                  st.editorTitle
-                }
-              >
-                Shape how you show up.
+                Build Your Professional Profile
               </h2>
 
               <p
                 style={
-                  st.editorSubtitle
+                  st.sectionIntro
                 }
               >
-                Keep your professional identity current. The
-                information below powers your Career Passport.
+                Keep your contact information and professional identity current.
+                This information helps build your Career Passport.
               </p>
             </div>
-
 
             <div
               style={
-                st.editorAccent
+                st.smallHM
               }
             >
-              <span>
-                HM
-              </span>
+              HM
             </div>
           </div>
-
 
           <div
             style={
@@ -1527,7 +897,6 @@ export default function ProfilePage() {
               placeholder="Your full name"
             />
 
-
             <Field
               label="Phone"
               value={
@@ -1539,9 +908,8 @@ export default function ProfilePage() {
               placeholder="Phone number"
             />
 
-
             <Field
-              label="Email"
+              label="Professional Email"
               value={
                 email
               }
@@ -1551,7 +919,6 @@ export default function ProfilePage() {
               type="email"
               placeholder="Professional email"
             />
-
 
             <Field
               label="LinkedIn"
@@ -1564,7 +931,6 @@ export default function ProfilePage() {
               placeholder="LinkedIn profile URL"
             />
 
-
             <Field
               label="City"
               value={
@@ -1575,7 +941,6 @@ export default function ProfilePage() {
               }
               placeholder="City"
             />
-
 
             <Field
               label="State"
@@ -1589,10 +954,9 @@ export default function ProfilePage() {
             />
           </div>
 
-
           <div
             style={
-              st.largeField
+              st.wideField
             }
           >
             <Field
@@ -1603,14 +967,13 @@ export default function ProfilePage() {
               onChange={
                 setHeadline
               }
-              placeholder="Example: Recruiter | Workforce Development | Employer Relations"
+              placeholder="Example: Administrative Professional | Customer Service | Operations"
             />
           </div>
 
-
           <div
             style={
-              st.largeField
+              st.wideField
             }
           >
             <TextAreaField
@@ -1621,24 +984,23 @@ export default function ProfilePage() {
               onChange={
                 setBio
               }
-              placeholder="Write a short professional bio that tells people who you are, what you do, and where you're headed."
+              placeholder="Tell people who you are, what you do, your strengths, and where you're headed professionally."
             />
           </div>
 
-
           <div
             style={
-              st.editorFooter
+              st.editorBottom
             }
           >
             <div
               style={
-                st.publicNote
+                st.visibilityNotice
               }
             >
               <div
                 style={
-                  st.publicNoteIcon
+                  st.visibilityIcon
                 }
               >
                 ◇
@@ -1647,7 +1009,7 @@ export default function ProfilePage() {
               <div>
                 <strong
                   style={
-                    st.publicNoteTitle
+                    st.visibilityTitle
                   }
                 >
                   Career Passport Visibility
@@ -1655,16 +1017,14 @@ export default function ProfilePage() {
 
                 <p
                   style={
-                    st.publicNoteText
+                    st.visibilityText
                   }
                 >
-                  Your photo, headline, location, LinkedIn,
-                  and other completed profile information may
-                  appear on your Career Passport.
+                  Your completed professional information may appear on your
+                  Career Passport.
                 </p>
               </div>
             </div>
-
 
             <button
               type="button"
@@ -1675,19 +1035,18 @@ export default function ProfilePage() {
                 saving
               }
               style={{
-                ...st.primaryButton,
+                ...st.saveButton,
 
                 ...(saving
-                  ? st.primaryButtonDisabled
+                  ? st.disabledButton
                   : {}),
               }}
             >
               {saving
-                ? "Saving Profile..."
+                ? "Saving..."
                 : "Save Profile →"}
             </button>
           </div>
-
 
           {message ? (
             <div
@@ -1704,9 +1063,8 @@ export default function ProfilePage() {
           ) : null}
         </section>
 
-
         {/* =================================================
-            CONNECT / EXPLORE
+            3. CONNECT & EXPLORE
         ================================================= */}
 
         <section
@@ -1719,27 +1077,173 @@ export default function ProfilePage() {
               st.connectHeader
             }
           >
-            <p
-              style={
-                st.sectionEyebrow
-              }
-            >
-              DISCOVER MORE
-            </p>
+            <div>
+              <p
+                style={
+                  st.eyebrow
+                }
+              >
+                HIREMINDS™
+              </p>
 
-            <h2
-              style={
-                st.sectionTitle
-              }
-            >
-              Explore HireMinds.
-            </h2>
+              <h2
+                style={
+                  st.sectionTitle
+                }
+              >
+                Connect & Explore
+              </h2>
+
+              <p
+                style={
+                  st.sectionIntro
+                }
+              >
+                Access your career-development tools, live support,
+                community spaces, and professional resources.
+              </p>
+            </div>
           </div>
 
+          <div
+            style={
+              st.toolGrid
+            }
+          >
+            {/* CAREER DEVELOPMENT */}
 
-          <ConnectExplore />
+            <ToolCard
+              href="/career-development-generator"
+              icon="↗"
+              kicker="WEEKLY DEVELOPMENT"
+              title="Career Development Generator"
+              description="Complete your weekly career-development activity, save your progress, and document your next step."
+              action="Open Generator"
+              accent="cyan"
+            />
+
+            {/* JOB LOG */}
+
+            <ToolCard
+              href="/job-log-generator"
+              icon="✓"
+              kicker="JOB SEARCH"
+              title="Weekly Job Log"
+              description="Track up to five job opportunities, applications, outcomes, and the positions you are most interested in."
+              action="Open Job Log"
+              accent="blue"
+            />
+
+            {/* CAREER CONNECT */}
+
+            <ToolCard
+              href="/open-room/live"
+              icon="◉"
+              kicker="CAREER SUPPORT"
+              title="Career Connect"
+              description="Request career support, manage appointments, confirm meetings, reschedule, cancel, and check in for scheduled services."
+              action="Enter Career Connect"
+              accent="cyan"
+              badge="CAREER SERVICES"
+            />
+
+            {/* OPEN ROOM */}
+
+            <ToolCard
+              href="/open-room"
+              icon="◇"
+              kicker="COMMUNITY"
+              title="Open Room"
+              description="Step into the HireMinds community space for live conversations, connections, opportunities, updates, and resources."
+              action="View Open Room"
+              accent="gold"
+              badge="MONTHLY"
+            />
+
+            {/* CAREER PASSPORT */}
+
+            {publicProfileUrl ? (
+              <ExternalToolCard
+                href={
+                  publicProfileUrl
+                }
+                icon="◈"
+                kicker="PUBLIC PROFILE"
+                title="Career Passport"
+                description="Preview the professional profile connected to your HireMinds account."
+                action="View Passport"
+              />
+            ) : (
+              <div
+                style={
+                  st.toolCard
+                }
+              >
+                <div
+                  style={
+                    st.toolTop
+                  }
+                >
+                  <div
+                    style={{
+                      ...st.toolIcon,
+                      ...st.goldIcon,
+                    }}
+                  >
+                    ◈
+                  </div>
+                </div>
+
+                <div>
+                  <span
+                    style={
+                      st.toolKicker
+                    }
+                  >
+                    PUBLIC PROFILE
+                  </span>
+
+                  <h3
+                    style={
+                      st.toolTitle
+                    }
+                  >
+                    Career Passport
+                  </h3>
+
+                  <p
+                    style={
+                      st.toolDescription
+                    }
+                  >
+                    Complete and save your professional profile to create your
+                    public Career Passport.
+                  </p>
+                </div>
+
+                <div
+                  style={
+                    st.toolFooter
+                  }
+                >
+                  Complete Your Profile
+                </div>
+              </div>
+            )}
+
+            {/* LIVE BOARD */}
+
+            <ToolCard
+              href="/live-board"
+              icon="⌁"
+              kicker="WHAT'S HAPPENING"
+              title="Live Bulletin Board"
+              description="View current opportunities, announcements, events, resources, and other updates shared through HireMinds."
+              action="View Live Board"
+              accent="blue"
+            />
+          </div>
         </section>
-
 
         {/* =================================================
             FOOTER
@@ -1751,15 +1255,22 @@ export default function ProfilePage() {
           }
         >
           <div>
-            <strong>
+            <strong
+              style={
+                st.footerBrand
+              }
+            >
               HireMinds™
             </strong>
 
-            <span>
+            <span
+              style={
+                st.footerTagline
+              }
+            >
               Prepare with Confidence. Build with Purpose.
             </span>
           </div>
-
 
           <span>
             Career Passport
@@ -1769,7 +1280,6 @@ export default function ProfilePage() {
     </main>
   );
 }
-
 
 /* =========================================================
    FIELD
@@ -1782,28 +1292,18 @@ function Field({
   placeholder,
   type = "text",
 }: {
-  label:
-    string;
-
-  value:
-    string;
-
-  onChange:
-    (
-      value:
-        string
-    ) => void;
-
-  placeholder?:
-    string;
-
-  type?:
-    string;
+  label: string;
+  value: string;
+  onChange: (
+    value: string
+  ) => void;
+  placeholder?: string;
+  type?: string;
 }) {
   return (
     <div
       style={
-        st.fieldWrap
+        st.field
       }
     >
       <label
@@ -1814,7 +1314,6 @@ function Field({
         {label}
       </label>
 
-
       <input
         type={
           type
@@ -1822,13 +1321,12 @@ function Field({
         value={
           value
         }
-        onChange={
-          (
-            e
-          ) =>
-            onChange(
-              e.target.value
-            )
+        onChange={(
+          e
+        ) =>
+          onChange(
+            e.target.value
+          )
         }
         placeholder={
           placeholder
@@ -1841,7 +1339,6 @@ function Field({
   );
 }
 
-
 /* =========================================================
    TEXT AREA
 ========================================================= */
@@ -1852,25 +1349,17 @@ function TextAreaField({
   onChange,
   placeholder,
 }: {
-  label:
-    string;
-
-  value:
-    string;
-
-  onChange:
-    (
-      value:
-        string
-    ) => void;
-
-  placeholder?:
-    string;
+  label: string;
+  value: string;
+  onChange: (
+    value: string
+  ) => void;
+  placeholder?: string;
 }) {
   return (
     <div
       style={
-        st.fieldWrap
+        st.field
       }
     >
       <label
@@ -1881,18 +1370,16 @@ function TextAreaField({
         {label}
       </label>
 
-
       <textarea
         value={
           value
         }
-        onChange={
-          (
-            e
-          ) =>
-            onChange(
-              e.target.value
-            )
+        onChange={(
+          e
+        ) =>
+          onChange(
+            e.target.value
+          )
         }
         placeholder={
           placeholder
@@ -1905,27 +1392,236 @@ function TextAreaField({
   );
 }
 
-
 /* =========================================================
-   GLASS
+   TOOL CARD
 ========================================================= */
 
-const glass:
-  CSSProperties =
-{
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))",
+function ToolCard({
+  href,
+  icon,
+  kicker,
+  title,
+  description,
+  action,
+  accent,
+  badge,
+}: {
+  href: string;
+  icon: string;
+  kicker: string;
+  title: string;
+  description: string;
+  action: string;
+  accent:
+    | "cyan"
+    | "blue"
+    | "gold";
+  badge?: string;
+}) {
+  const iconStyle =
+    accent ===
+    "gold"
+      ? st.goldIcon
+      : accent ===
+          "blue"
+        ? st.blueIcon
+        : st.cyanIcon;
 
-  border:
-    "1px solid rgba(255,255,255,0.09)",
+  return (
+    <Link
+      href={
+        href
+      }
+      style={
+        st.toolLink
+      }
+    >
+      <div
+        style={
+          st.toolCard
+        }
+      >
+        <div
+          style={
+            st.toolTop
+          }
+        >
+          <div
+            style={{
+              ...st.toolIcon,
+              ...iconStyle,
+            }}
+          >
+            {icon}
+          </div>
 
-  boxShadow:
-    "0 25px 80px rgba(0,0,0,0.28)",
+          {badge ? (
+            <span
+              style={
+                accent ===
+                "gold"
+                  ? st.goldBadge
+                  : st.smallBadge
+              }
+            >
+              {badge}
+            </span>
+          ) : (
+            <span
+              style={
+                st.cardArrow
+              }
+            >
+              →
+            </span>
+          )}
+        </div>
 
-  backdropFilter:
-    "blur(22px)",
-};
+        <div>
+          <span
+            style={
+              st.toolKicker
+            }
+          >
+            {kicker}
+          </span>
 
+          <h3
+            style={
+              st.toolTitle
+            }
+          >
+            {title}
+          </h3>
+
+          <p
+            style={
+              st.toolDescription
+            }
+          >
+            {description}
+          </p>
+        </div>
+
+        <div
+          style={
+            st.toolFooter
+          }
+        >
+          <span>
+            {action}
+          </span>
+
+          <span>
+            →
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* =========================================================
+   EXTERNAL TOOL
+========================================================= */
+
+function ExternalToolCard({
+  href,
+  icon,
+  kicker,
+  title,
+  description,
+  action,
+}: {
+  href: string;
+  icon: string;
+  kicker: string;
+  title: string;
+  description: string;
+  action: string;
+}) {
+  return (
+    <a
+      href={
+        href
+      }
+      target="_blank"
+      rel="noopener noreferrer"
+      style={
+        st.toolLink
+      }
+    >
+      <div
+        style={
+          st.toolCard
+        }
+      >
+        <div
+          style={
+            st.toolTop
+          }
+        >
+          <div
+            style={{
+              ...st.toolIcon,
+              ...st.goldIcon,
+            }}
+          >
+            {icon}
+          </div>
+
+          <span
+            style={
+              st.cardArrow
+            }
+          >
+            ↗
+          </span>
+        </div>
+
+        <div>
+          <span
+            style={
+              st.toolKicker
+            }
+          >
+            {kicker}
+          </span>
+
+          <h3
+            style={
+              st.toolTitle
+            }
+          >
+            {title}
+          </h3>
+
+          <p
+            style={
+              st.toolDescription
+            }
+          >
+            {description}
+          </p>
+        </div>
+
+        <div
+          style={
+            st.toolFooter
+          }
+        >
+          <span>
+            {action}
+          </span>
+
+          <span>
+            ↗
+          </span>
+        </div>
+      </div>
+    </a>
+  );
+}
 
 /* =========================================================
    STYLES
@@ -1935,8 +1631,9 @@ const st:
   Record<
     string,
     CSSProperties
-  > =
-{
+  > = {
+  /* PAGE */
+
   page: {
     position:
       "relative",
@@ -1947,94 +1644,63 @@ const st:
     overflow:
       "hidden",
 
+    padding:
+      "24px 24px 50px",
+
     background:
       `
       radial-gradient(
-        circle at 15% 10%,
-        rgba(0,229,255,.12),
+        circle at 10% 4%,
+        rgba(11, 115, 135, .13),
         transparent 25%
       ),
       radial-gradient(
-        circle at 88% 18%,
-        rgba(100,80,255,.13),
-        transparent 24%
+        circle at 92% 12%,
+        rgba(27, 82, 122, .12),
+        transparent 27%
       ),
       radial-gradient(
-        circle at 70% 85%,
-        rgba(255,210,73,.06),
-        transparent 28%
+        circle at 70% 90%,
+        rgba(202, 170, 70, .035),
+        transparent 30%
       ),
       linear-gradient(
         145deg,
-        #03050a 0%,
-        #07101b 42%,
-        #070912 70%,
-        #030408 100%
+        #050a10 0%,
+        #08121c 44%,
+        #09111a 70%,
+        #05080d 100%
       )
       `,
 
     color:
-      "#f8fafc",
-
-    padding:
-      "24px 24px 60px",
+      "#f6f9fc",
 
     fontFamily:
       "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
-
-  orbOne: {
+  backgroundGlowOne: {
     position:
       "fixed",
 
     width:
-      "420px",
+      "460px",
 
     height:
-      "420px",
+      "460px",
 
     top:
-      "-180px",
-
-    right:
-      "-100px",
-
-    borderRadius:
-      "50%",
-
-    background:
-      "rgba(0,229,255,.08)",
-
-    filter:
-      "blur(110px)",
-
-    pointerEvents:
-      "none",
-  },
-
-
-  orbTwo: {
-    position:
-      "fixed",
-
-    width:
-      "500px",
-
-    height:
-      "500px",
-
-    bottom:
-      "-250px",
+      "-220px",
 
     left:
-      "-200px",
+      "-130px",
 
     borderRadius:
       "50%",
 
     background:
-      "rgba(120,80,255,.07)",
+      "rgba(21, 180, 203, .055)",
 
     filter:
       "blur(120px)",
@@ -2043,44 +1709,93 @@ const st:
       "none",
   },
 
+  backgroundGlowTwo: {
+    position:
+      "fixed",
 
-  gridOverlay: {
+    width:
+      "500px",
+
+    height:
+      "500px",
+
+    right:
+      "-220px",
+
+    top:
+      "20%",
+
+    borderRadius:
+      "50%",
+
+    background:
+      "rgba(50, 112, 162, .05)",
+
+    filter:
+      "blur(130px)",
+
+    pointerEvents:
+      "none",
+  },
+
+  backgroundGrid: {
     position:
       "fixed",
 
     inset:
       0,
 
-    opacity:
-      .09,
-
     pointerEvents:
       "none",
+
+    opacity:
+      .035,
 
     backgroundImage:
       `
       linear-gradient(
-        rgba(255,255,255,.045) 1px,
+        rgba(255,255,255,.05) 1px,
         transparent 1px
       ),
       linear-gradient(
         90deg,
-        rgba(255,255,255,.045) 1px,
+        rgba(255,255,255,.05) 1px,
         transparent 1px
       )
       `,
 
     backgroundSize:
-      "70px 70px",
-
-    maskImage:
-      "linear-gradient(to bottom, black, transparent 80%)",
+      "72px 72px",
   },
 
+  shell: {
+    position:
+      "relative",
 
-  loadingWrap: {
+    zIndex:
+      2,
+
+    width:
+      "100%",
+
+    maxWidth:
+      "1320px",
+
+    margin:
+      "0 auto",
+
+    display:
+      "grid",
+
+    gap:
+      "20px",
+  },
+
+  /* LOADING */
+
+  loadingPage: {
     minHeight:
-      "80vh",
+      "100vh",
 
     display:
       "flex",
@@ -2095,69 +1810,25 @@ const st:
       "center",
 
     gap:
-      "18px",
+      "15px",
+
+    background:
+      "#07101a",
+
+    color:
+      "white",
   },
 
-
-  loadingOrb: {
+  loadingRing: {
     width:
-      "58px",
+      "62px",
 
     height:
-      "58px",
+      "62px",
 
     borderRadius:
       "50%",
 
-    border:
-      "2px solid rgba(16,243,255,.16)",
-
-    boxShadow:
-      "0 0 35px rgba(16,243,255,.25)",
-
-    background:
-      "radial-gradient(circle, #10f3ff 0%, rgba(16,243,255,.1) 40%, transparent 72%)",
-  },
-
-
-  loadingText: {
-    color:
-      "#a9b8c7",
-
-    fontSize:
-      "13px",
-
-    letterSpacing:
-      ".05em",
-  },
-
-
-  shell: {
-    position:
-      "relative",
-
-    zIndex:
-      2,
-
-    maxWidth:
-      "1380px",
-
-    margin:
-      "0 auto",
-
-    display:
-      "grid",
-
-    gap:
-      "24px",
-  },
-
-
-  /* =======================================================
-     NAV
-  ======================================================= */
-
-  topNav: {
     display:
       "flex",
 
@@ -2165,15 +1836,56 @@ const st:
       "center",
 
     justifyContent:
-      "space-between",
+      "center",
 
-    gap:
-      "18px",
+    border:
+      "1px solid rgba(34,211,238,.32)",
 
-    padding:
-      "10px 4px",
+    background:
+      "rgba(34,211,238,.06)",
+
+    color:
+      "#77e8f2",
+
+    fontSize:
+      "13px",
+
+    fontWeight:
+      950,
+
+    boxShadow:
+      "0 0 30px rgba(34,211,238,.08)",
   },
 
+  loadingText: {
+    color:
+      "#8da0b0",
+
+    fontSize:
+      "11px",
+  },
+
+  /* HEADER */
+
+  header: {
+    minHeight:
+      "62px",
+
+    display:
+      "flex",
+
+    justifyContent:
+      "space-between",
+
+    alignItems:
+      "center",
+
+    gap:
+      "20px",
+
+    padding:
+      "2px 4px",
+  },
 
   brandArea: {
     display:
@@ -2186,13 +1898,12 @@ const st:
       "11px",
   },
 
-
   brandMark: {
     width:
-      "42px",
+      "39px",
 
     height:
-      "42px",
+      "39px",
 
     display:
       "flex",
@@ -2204,131 +1915,115 @@ const st:
       "center",
 
     borderRadius:
-      "13px",
+      "12px",
 
     background:
-      "linear-gradient(135deg, rgba(16,243,255,.18), rgba(85,80,255,.15))",
+      "rgba(23, 167, 189, .09)",
 
     border:
-      "1px solid rgba(16,243,255,.25)",
+      "1px solid rgba(55, 201, 219, .23)",
 
     color:
-      "#10f3ff",
+      "#71dbe7",
 
     fontSize:
-      "12px",
+      "10px",
 
     fontWeight:
       950,
-
-    letterSpacing:
-      ".04em",
-
-    boxShadow:
-      "0 0 25px rgba(16,243,255,.08)",
   },
-
 
   brandName: {
-    margin:
-      0,
+    display:
+      "block",
 
     color:
-      "white",
+      "#f5f8fb",
 
     fontSize:
-      "13px",
-
-    fontWeight:
-      900,
+      "12px",
   },
-
 
   brandSub: {
-    margin:
-      "2px 0 0",
+    display:
+      "block",
+
+    marginTop:
+      "2px",
 
     color:
-      "#748293",
+      "#637485",
 
     fontSize:
-      "9px",
+      "8px",
   },
 
-
-  navActions: {
+  headerActions: {
     display:
       "flex",
 
     gap:
-      "9px",
+      "8px",
 
     flexWrap:
       "wrap",
   },
 
-
-  navProfileButton: {
+  headerPassportButton: {
     padding:
-      "10px 14px",
+      "9px 13px",
 
     borderRadius:
       "999px",
 
     border:
-      "1px solid rgba(16,243,255,.18)",
+      "1px solid rgba(75, 190, 205, .17)",
 
     background:
-      "rgba(16,243,255,.055)",
+      "rgba(43, 158, 177, .045)",
 
     color:
-      "#c5fbff",
+      "#bfeaf0",
 
     textDecoration:
       "none",
 
     fontSize:
-      "10px",
+      "9px",
 
     fontWeight:
-      850,
+      800,
   },
-
 
   signOutButton: {
     padding:
-      "10px 14px",
+      "9px 13px",
 
     borderRadius:
       "999px",
 
     border:
-      "1px solid rgba(255,255,255,.1)",
+      "1px solid rgba(255,255,255,.09)",
 
     background:
-      "rgba(255,255,255,.035)",
+      "rgba(255,255,255,.025)",
 
     color:
-      "#d9e1ea",
-
-    fontSize:
-      "10px",
-
-    fontWeight:
-      800,
+      "#c5ced6",
 
     cursor:
       "pointer",
+
+    fontSize:
+      "9px",
+
+    fontWeight:
+      800,
   },
 
+  /* IDENTITY */
 
-  /* =======================================================
-     HERO
-  ======================================================= */
-
-  hero: {
-    ...glass,
-
+  identityCard: {
     position:
       "relative",
 
@@ -2336,268 +2031,68 @@ const st:
       "hidden",
 
     minHeight:
-      "410px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    padding:
-      "50px",
-
-    borderRadius:
-      "36px",
-  },
-
-
-  heroGlow: {
-    position:
-      "absolute",
-
-    width:
-      "520px",
-
-    height:
-      "520px",
-
-    top:
-      "-190px",
-
-    right:
-      "-100px",
-
-    borderRadius:
-      "50%",
-
-    background:
-      "radial-gradient(circle, rgba(16,243,255,.15), rgba(73,80,255,.06), transparent 68%)",
-
-    pointerEvents:
-      "none",
-  },
-
-
-  heroContent: {
-    position:
-      "relative",
-
-    zIndex:
-      1,
-
-    maxWidth:
-      "950px",
-  },
-
-
-  heroBadge: {
-    width:
-      "fit-content",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    gap:
-      "8px",
-
-    marginBottom:
-      "18px",
-
-    padding:
-      "8px 12px",
-
-    borderRadius:
-      "999px",
-
-    background:
-      "rgba(16,243,255,.055)",
-
-    border:
-      "1px solid rgba(16,243,255,.15)",
-
-    color:
-      "#9efaff",
-
-    fontSize:
-      "9px",
-
-    fontWeight:
-      900,
-
-    letterSpacing:
-      ".14em",
-  },
-
-
-  heroBadgeDot: {
-    width:
-      "7px",
-
-    height:
-      "7px",
-
-    borderRadius:
-      "50%",
-
-    background:
-      "#10f3ff",
-
-    boxShadow:
-      "0 0 10px #10f3ff",
-  },
-
-
-  title: {
-    margin:
-      0,
-
-    color:
-      "white",
-
-    fontSize:
-      "clamp(3rem, 6vw, 6rem)",
-
-    lineHeight:
-      ".94",
-
-    letterSpacing:
-      "-.055em",
-
-    fontWeight:
-      900,
-  },
-
-
-  titleGradient: {
-    background:
-      "linear-gradient(90deg, #10f3ff 0%, #8feaff 43%, #ffd249 100%)",
-
-    WebkitBackgroundClip:
-      "text",
-
-    WebkitTextFillColor:
-      "transparent",
-  },
-
-
-  subtitle: {
-    maxWidth:
-      "760px",
-
-    margin:
-      "24px 0 0",
-
-    color:
-      "#aebbc9",
-
-    fontSize:
-      "15px",
-
-    lineHeight:
-      1.75,
-  },
-
-
-  heroStats: {
-    display:
-      "flex",
-
-    gap:
-      "11px",
-
-    flexWrap:
-      "wrap",
-
-    marginTop:
-      "32px",
-  },
-
-
-  heroStat: {
-    minWidth:
-      "150px",
-
-    padding:
-      "13px 15px",
-
-    borderRadius:
-      "14px",
-
-    background:
-      "rgba(0,0,0,.18)",
-
-    border:
-      "1px solid rgba(255,255,255,.065)",
-
-    display:
-      "grid",
-
-    gap:
-      "4px",
-  },
-
-
-  heroStatLabel: {
-    color:
-      "#6f7f90",
-
-    fontSize:
-      "7px",
-
-    fontWeight:
-      900,
-
-    letterSpacing:
-      ".14em",
-  },
-
-
-  heroStatValue: {
-    color:
-      "#eaf7ff",
-
-    fontSize:
-      "11px",
-  },
-
-
-  /* =======================================================
-     IDENTITY
-  ======================================================= */
-
-  identitySection: {
-    ...glass,
+      "300px",
 
     display:
       "grid",
 
     gridTemplateColumns:
-      "245px 1fr",
-
-    gap:
-      "34px",
-
-    padding:
-      "30px",
-
-    borderRadius:
-      "30px",
+      "225px minmax(0,1fr)",
 
     alignItems:
       "center",
+
+    gap:
+      "32px",
+
+    padding:
+      "32px",
+
+    borderRadius:
+      "27px",
+
+    background:
+      "linear-gradient(135deg, rgba(15,29,40,.93), rgba(11,20,30,.93))",
+
+    border:
+      "1px solid rgba(139, 187, 200, .13)",
+
+    boxShadow:
+      "0 25px 70px rgba(0,0,0,.20)",
   },
 
+  identityAccent: {
+    position:
+      "absolute",
 
-  profileVisual: {
+    width:
+      "340px",
+
+    height:
+      "340px",
+
+    left:
+      "-160px",
+
+    top:
+      "-140px",
+
+    borderRadius:
+      "50%",
+
+    background:
+      "rgba(39, 184, 203, .07)",
+
+    filter:
+      "blur(60px)",
+
+    pointerEvents:
+      "none",
+  },
+
+  photoColumn: {
     position:
       "relative",
-
-    minHeight:
-      "230px",
 
     display:
       "flex",
@@ -2608,50 +2103,45 @@ const st:
     alignItems:
       "center",
 
-    justifyContent:
-      "center",
-
     gap:
-      "13px",
+      "11px",
   },
 
-
-  avatarGlow: {
+  photoGlow: {
     position:
       "absolute",
 
     width:
-      "190px",
+      "180px",
 
     height:
-      "190px",
+      "180px",
+
+    top:
+      "10px",
 
     borderRadius:
       "50%",
 
     background:
-      "rgba(16,243,255,.11)",
+      "rgba(29, 191, 208, .07)",
 
     filter:
-      "blur(38px)",
+      "blur(35px)",
 
     pointerEvents:
       "none",
   },
 
-
-  avatar: {
+  profilePhoto: {
     position:
       "relative",
 
-    zIndex:
-      1,
-
     width:
-      "185px",
+      "170px",
 
     height:
-      "185px",
+      "170px",
 
     objectFit:
       "cover",
@@ -2660,31 +2150,24 @@ const st:
       "50%",
 
     border:
-      "2px solid rgba(16,243,255,.35)",
+      "1px solid rgba(75, 204, 219, .34)",
 
     padding:
       "4px",
 
     background:
-      "#08101a",
-
-    boxShadow:
-      "0 0 35px rgba(16,243,255,.1)",
+      "#0b151f",
   },
 
-
-  avatarPlaceholder: {
+  profilePlaceholder: {
     position:
       "relative",
 
-    zIndex:
-      1,
-
     width:
-      "185px",
+      "170px",
 
     height:
-      "185px",
+      "170px",
 
     display:
       "flex",
@@ -2699,52 +2182,39 @@ const st:
       "50%",
 
     background:
-      "linear-gradient(135deg, rgba(16,243,255,.11), rgba(87,70,255,.08))",
+      "linear-gradient(145deg, #102735, #0d1823)",
 
     border:
-      "2px solid rgba(16,243,255,.25)",
+      "1px solid rgba(65, 200, 217, .34)",
 
-    boxShadow:
-      "0 0 35px rgba(16,243,255,.08)",
-  },
+    color:
+      "#56dbe9",
 
-
-  avatarInitial: {
     fontSize:
-      "52px",
+      "45px",
 
     fontWeight:
       950,
-
-    color:
-      "#10f3ff",
   },
 
-
-  photoUploadButton: {
-    position:
-      "relative",
-
-    zIndex:
-      2,
-
+  updatePhoto: {
     padding:
-      "9px 13px",
+      "8px 12px",
 
     borderRadius:
       "999px",
 
-    background:
-      "rgba(16,243,255,.06)",
-
     border:
-      "1px solid rgba(16,243,255,.16)",
+      "1px solid rgba(69,196,211,.17)",
+
+    background:
+      "rgba(49,165,180,.045)",
 
     color:
-      "#c7fbff",
+      "#afe3e9",
 
     fontSize:
-      "9px",
+      "8px",
 
     fontWeight:
       850,
@@ -2753,14 +2223,32 @@ const st:
       "pointer",
   },
 
+  photoSelected: {
+    maxWidth:
+      "190px",
 
-  identityContent: {
+    overflow:
+      "hidden",
+
+    textOverflow:
+      "ellipsis",
+
+    whiteSpace:
+      "nowrap",
+
+    color:
+      "#718291",
+
+    fontSize:
+      "8px",
+  },
+
+  identityInfo: {
     minWidth:
       0,
   },
 
-
-  identityTop: {
+  identityHeader: {
     display:
       "flex",
 
@@ -2777,62 +2265,61 @@ const st:
       "wrap",
   },
 
-
-  identityLabel: {
+  eyebrow: {
     margin:
-      "0 0 7px",
+      "0 0 6px",
 
     color:
-      "#10f3ff",
+      "#59c9d6",
 
     fontSize:
       "8px",
 
     fontWeight:
-      900,
+      950,
 
     letterSpacing:
-      ".14em",
+      ".15em",
+
+    textTransform:
+      "uppercase",
   },
 
-
-  namePreview: {
+  profileName: {
     margin:
       0,
 
     color:
-      "white",
+      "#f7fafc",
 
     fontSize:
-      "clamp(2rem, 4vw, 3.5rem)",
+      "clamp(2.4rem,5vw,4.6rem)",
+
+    lineHeight:
+      .95,
+
+    letterSpacing:
+      "-.05em",
 
     fontWeight:
       900,
-
-    lineHeight:
-      1,
-
-    letterSpacing:
-      "-.04em",
   },
 
-
-  headlinePreview: {
+  profileHeadline: {
     margin:
-      "12px 0 0",
+      "13px 0 0",
 
     color:
-      "#bfccd9",
+      "#a9b9c6",
 
     fontSize:
-      "15px",
+      "14px",
 
     lineHeight:
       1.5,
   },
 
-
-  passportChip: {
+  profileStatus: {
     display:
       "flex",
 
@@ -2843,29 +2330,28 @@ const st:
       "7px",
 
     padding:
-      "8px 11px",
+      "7px 10px",
 
     borderRadius:
       "999px",
 
     background:
-      "rgba(34,197,94,.05)",
+      "rgba(65, 183, 133, .045)",
 
     border:
-      "1px solid rgba(34,197,94,.13)",
+      "1px solid rgba(81, 191, 146, .13)",
 
     color:
-      "#91efaf",
+      "#8dd6b3",
 
     fontSize:
-      "9px",
+      "8px",
 
     fontWeight:
-      850,
+      800,
   },
 
-
-  passportChipDot: {
+  statusDot: {
     width:
       "6px",
 
@@ -2876,128 +2362,156 @@ const st:
       "50%",
 
     background:
-      "#39e87b",
-
-    boxShadow:
-      "0 0 9px #39e87b",
+      "#6acb9d",
   },
 
-
-  identityMeta: {
+  profileMeta: {
     display:
       "flex",
-
-    gap:
-      "9px",
 
     flexWrap:
       "wrap",
 
-    marginTop:
-      "22px",
-  },
-
-
-  metaItem: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
     gap:
-      "7px",
+      "8px",
 
-    padding:
-      "9px 11px",
-
-    borderRadius:
-      "11px",
-
-    background:
-      "rgba(255,255,255,.03)",
-
-    border:
-      "1px solid rgba(255,255,255,.06)",
-
-    color:
-      "#aeb9c7",
-
-    fontSize:
-      "10px",
-  },
-
-
-  metaLink: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    gap:
-      "7px",
-
-    padding:
-      "9px 11px",
-
-    borderRadius:
-      "11px",
-
-    background:
-      "rgba(80,120,255,.055)",
-
-    border:
-      "1px solid rgba(80,120,255,.13)",
-
-    color:
-      "#aebfff",
-
-    textDecoration:
-      "none",
-
-    fontSize:
-      "10px",
-  },
-
-
-  identityBio: {
     marginTop:
-      "18px",
+      "20px",
+  },
 
+  metaChip: {
     padding:
-      "16px 17px",
+      "8px 10px",
 
     borderRadius:
-      "15px",
+      "10px",
 
     background:
-      "rgba(0,0,0,.16)",
+      "rgba(255,255,255,.025)",
 
     border:
       "1px solid rgba(255,255,255,.055)",
 
     color:
-      "#99a7b5",
+      "#a3b0bc",
 
     fontSize:
-      "11px",
+      "9px",
+  },
+
+  linkedinChip: {
+    padding:
+      "8px 10px",
+
+    borderRadius:
+      "10px",
+
+    background:
+      "rgba(63, 130, 171, .045)",
+
+    border:
+      "1px solid rgba(79, 143, 181, .11)",
+
+    color:
+      "#a7cadf",
+
+    textDecoration:
+      "none",
+
+    fontSize:
+      "9px",
+  },
+
+  programChip: {
+    padding:
+      "8px 10px",
+
+    borderRadius:
+      "10px",
+
+    background:
+      "rgba(187, 157, 72, .04)",
+
+    border:
+      "1px solid rgba(187, 157, 72, .10)",
+
+    color:
+      "#c7b77e",
+
+    fontSize:
+      "9px",
+  },
+
+  bioPreview: {
+    marginTop:
+      "17px",
+
+    padding:
+      "15px",
+
+    borderRadius:
+      "13px",
+
+    background:
+      "rgba(1,7,12,.22)",
+
+    border:
+      "1px solid rgba(255,255,255,.045)",
+  },
+
+  bioLabel: {
+    color:
+      "#657887",
+
+    fontSize:
+      "7px",
+
+    fontWeight:
+      900,
+
+    letterSpacing:
+      ".13em",
+  },
+
+  bioText: {
+    margin:
+      "6px 0 0",
+
+    color:
+      "#91a0ad",
+
+    fontSize:
+      "10px",
 
     lineHeight:
       1.65,
   },
 
+  /* EDITOR */
 
-  /* =======================================================
-     SECTION HEADER
-  ======================================================= */
+  editor: {
+    padding:
+      "29px",
 
-  sectionHeader: {
+    borderRadius:
+      "25px",
+
+    background:
+      "linear-gradient(135deg, rgba(18,28,38,.82), rgba(11,18,26,.84))",
+
+    border:
+      "1px solid rgba(143,171,190,.11)",
+
+    boxShadow:
+      "0 22px 65px rgba(0,0,0,.17)",
+  },
+
+  sectionTop: {
     display:
       "flex",
 
     alignItems:
-      "flex-end",
+      "flex-start",
 
     justifyContent:
       "space-between",
@@ -3005,59 +2519,39 @@ const st:
     gap:
       "20px",
 
-    flexWrap:
-      "wrap",
-
-    padding:
-      "12px 5px 3px",
+    marginBottom:
+      "23px",
   },
-
-
-  sectionEyebrow: {
-    margin:
-      "0 0 6px",
-
-    color:
-      "#10f3ff",
-
-    fontSize:
-      "8px",
-
-    fontWeight:
-      900,
-
-    letterSpacing:
-      ".16em",
-  },
-
 
   sectionTitle: {
     margin:
       0,
 
     color:
-      "white",
+      "#f5f8fa",
 
     fontSize:
-      "30px",
+      "28px",
+
+    lineHeight:
+      1.1,
 
     fontWeight:
       900,
 
     letterSpacing:
-      "-.025em",
+      "-.03em",
   },
 
-
-  sectionDescription: {
+  sectionIntro: {
     maxWidth:
-      "470px",
+      "690px",
 
     margin:
-      0,
+      "8px 0 0",
 
     color:
-      "#7f8d9c",
+      "#7f909f",
 
     fontSize:
       "10px",
@@ -3066,27 +2560,350 @@ const st:
       1.6,
   },
 
+  smallHM: {
+    width:
+      "50px",
 
-  /* =======================================================
-     QUICK CARDS
-  ======================================================= */
+    height:
+      "50px",
 
-  quickGrid: {
+    display:
+      "flex",
+
+    alignItems:
+      "center",
+
+    justifyContent:
+      "center",
+
+    borderRadius:
+      "15px",
+
+    border:
+      "1px solid rgba(66, 194, 208, .16)",
+
+    background:
+      "rgba(40, 160, 177, .045)",
+
+    color:
+      "#69cfda",
+
+    fontSize:
+      "10px",
+
+    fontWeight:
+      950,
+  },
+
+  formGrid: {
     display:
       "grid",
 
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(280px, 1fr))",
+      "repeat(auto-fit, minmax(250px,1fr))",
 
     gap:
+      "13px",
+  },
+
+  wideField: {
+    marginTop:
       "14px",
+  },
+
+  field: {
+    display:
+      "grid",
+
+    gap:
+      "7px",
+  },
+
+  label: {
+    color:
+      "#b7c3cc",
+
+    fontSize:
+      "9px",
+
+    fontWeight:
+      800,
+  },
+
+  input: {
+    width:
+      "100%",
+
+    padding:
+      "13px 14px",
+
+    borderRadius:
+      "12px",
+
+    border:
+      "1px solid rgba(174,195,209,.11)",
+
+    background:
+      "rgba(255,255,255,.035)",
+
+    color:
+      "#f5f8fb",
+
+    outline:
+      "none",
+
+    fontSize:
+      "11px",
+
+    boxSizing:
+      "border-box",
+  },
+
+  textarea: {
+    width:
+      "100%",
+
+    minHeight:
+      "125px",
+
+    padding:
+      "13px 14px",
+
+    borderRadius:
+      "12px",
+
+    border:
+      "1px solid rgba(174,195,209,.11)",
+
+    background:
+      "rgba(255,255,255,.035)",
+
+    color:
+      "#f5f8fb",
+
+    outline:
+      "none",
+
+    resize:
+      "vertical",
+
+    lineHeight:
+      1.6,
+
+    fontSize:
+      "11px",
+
+    boxSizing:
+      "border-box",
+  },
+
+  editorBottom: {
+    display:
+      "flex",
+
+    justifyContent:
+      "space-between",
+
+    alignItems:
+      "center",
+
+    gap:
+      "20px",
+
+    flexWrap:
+      "wrap",
+
+    marginTop:
+      "22px",
+
+    paddingTop:
+      "20px",
+
+    borderTop:
+      "1px solid rgba(255,255,255,.055)",
+  },
+
+  visibilityNotice: {
+    display:
+      "flex",
+
+    alignItems:
+      "flex-start",
+
+    gap:
+      "11px",
+
+    maxWidth:
+      "700px",
+  },
+
+  visibilityIcon: {
+    width:
+      "35px",
+
+    height:
+      "35px",
+
+    minWidth:
+      "35px",
+
+    display:
+      "flex",
+
+    alignItems:
+      "center",
+
+    justifyContent:
+      "center",
+
+    borderRadius:
+      "11px",
+
+    background:
+      "rgba(46, 160, 177, .04)",
+
+    border:
+      "1px solid rgba(65,181,198,.12)",
+
+    color:
+      "#65c6d1",
+  },
+
+  visibilityTitle: {
+    color:
+      "#cbd5dc",
+
+    fontSize:
+      "10px",
+  },
+
+  visibilityText: {
+    margin:
+      "4px 0 0",
+
+    color:
+      "#748391",
+
+    fontSize:
+      "8px",
+
+    lineHeight:
+      1.5,
+  },
+
+  saveButton: {
+    minWidth:
+      "160px",
+
+    padding:
+      "12px 18px",
+
+    border:
+      "none",
+
+    borderRadius:
+      "999px",
+
+    background:
+      "linear-gradient(135deg, #5ed2dc, #83cbd2 62%, #c9b56a)",
+
+    color:
+      "#061016",
+
+    cursor:
+      "pointer",
+
+    fontSize:
+      "10px",
+
+    fontWeight:
+      950,
+
+    boxShadow:
+      "0 9px 26px rgba(55, 174, 189, .08)",
+  },
+
+  disabledButton: {
+    opacity:
+      .45,
+
+    cursor:
+      "not-allowed",
+  },
+
+  successMessage: {
+    marginTop:
+      "14px",
+
+    padding:
+      "11px 13px",
+
+    borderRadius:
+      "11px",
+
+    color:
+      "#91d6b1",
+
+    background:
+      "rgba(70,171,121,.045)",
+
+    border:
+      "1px solid rgba(70,171,121,.12)",
+
+    fontSize:
+      "9px",
+  },
+
+  errorMessage: {
+    marginTop:
+      "14px",
+
+    padding:
+      "11px 13px",
+
+    borderRadius:
+      "11px",
+
+    color:
+      "#dcb98b",
+
+    background:
+      "rgba(185,136,69,.04)",
+
+    border:
+      "1px solid rgba(185,136,69,.12)",
+
+    fontSize:
+      "9px",
+  },
+
+  /* CONNECT */
+
+  connectSection: {
+    padding:
+      "10px 2px 0",
+  },
+
+  connectHeader: {
+    padding:
+      "7px 3px 4px",
+  },
+
+  toolGrid: {
+    display:
+      "grid",
+
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(290px,1fr))",
+
+    gap:
+      "12px",
 
     marginTop:
       "15px",
   },
 
-
-  quickCardLink: {
+  toolLink: {
     color:
       "inherit",
 
@@ -3094,16 +2911,12 @@ const st:
       "none",
   },
 
-
-  quickCard: {
-    position:
-      "relative",
-
+  toolCard: {
     minHeight:
-      "270px",
+      "215px",
 
     padding:
-      "23px",
+      "20px",
 
     display:
       "flex",
@@ -3115,44 +2928,19 @@ const st:
       "space-between",
 
     borderRadius:
-      "24px",
+      "19px",
 
-    overflow:
-      "hidden",
+    background:
+      "linear-gradient(145deg, rgba(15,27,37,.84), rgba(9,16,23,.88))",
+
+    border:
+      "1px solid rgba(145,176,194,.10)",
 
     boxShadow:
-      "0 20px 60px rgba(0,0,0,.22)",
+      "0 16px 45px rgba(0,0,0,.16)",
   },
 
-
-  quickCardCareer: {
-    background:
-      "linear-gradient(145deg, rgba(16,243,255,.12), rgba(7,14,24,.88) 55%, rgba(255,210,73,.045))",
-
-    border:
-      "1px solid rgba(16,243,255,.20)",
-  },
-
-
-  quickCardConnect: {
-    background:
-      "linear-gradient(145deg, rgba(94,70,255,.14), rgba(7,12,23,.88) 55%, rgba(16,243,255,.055))",
-
-    border:
-      "1px solid rgba(114,100,255,.22)",
-  },
-
-
-  quickCardPassport: {
-    background:
-      "linear-gradient(145deg, rgba(255,210,73,.09), rgba(9,12,19,.90) 55%, rgba(16,243,255,.04))",
-
-    border:
-      "1px solid rgba(255,210,73,.16)",
-  },
-
-
-  quickCardTop: {
+  toolTop: {
     display:
       "flex",
 
@@ -3161,15 +2949,17 @@ const st:
 
     justifyContent:
       "space-between",
+
+    gap:
+      "15px",
   },
 
-
-  quickIcon: {
+  toolIcon: {
     width:
-      "48px",
+      "42px",
 
     height:
-      "48px",
+      "42px",
 
     display:
       "flex",
@@ -3181,605 +2971,220 @@ const st:
       "center",
 
     borderRadius:
-      "15px",
+      "13px",
 
     fontSize:
-      "21px",
+      "17px",
 
     fontWeight:
       900,
   },
 
-
-  quickIconCareer: {
+  cyanIcon: {
     background:
-      "rgba(16,243,255,.09)",
+      "rgba(49,178,194,.065)",
 
     border:
-      "1px solid rgba(16,243,255,.2)",
+      "1px solid rgba(61,191,206,.16)",
 
     color:
-      "#10f3ff",
+      "#68cfdb",
   },
 
-
-  quickIconConnect: {
+  blueIcon: {
     background:
-      "rgba(115,100,255,.1)",
+      "rgba(55,111,153,.065)",
 
     border:
-      "1px solid rgba(115,100,255,.2)",
+      "1px solid rgba(69,128,169,.15)",
 
     color:
-      "#b4adff",
+      "#8bb8d5",
   },
 
-
-  quickIconPassport: {
+  goldIcon: {
     background:
-      "rgba(255,210,73,.08)",
+      "rgba(185,155,69,.06)",
 
     border:
-      "1px solid rgba(255,210,73,.18)",
+      "1px solid rgba(189,159,78,.14)",
 
     color:
-      "#ffd249",
+      "#c8b676",
   },
 
-
-  quickArrow: {
+  cardArrow: {
     color:
-      "#8190a0",
+      "#647686",
+
+    fontSize:
+      "14px",
+  },
+
+  smallBadge: {
+    padding:
+      "5px 7px",
+
+    borderRadius:
+      "999px",
+
+    color:
+      "#76cbd4",
+
+    background:
+      "rgba(63,167,180,.04)",
+
+    border:
+      "1px solid rgba(63,167,180,.11)",
+
+    fontSize:
+      "7px",
+
+    fontWeight:
+      900,
+  },
+
+  goldBadge: {
+    padding:
+      "5px 7px",
+
+    borderRadius:
+      "999px",
+
+    color:
+      "#c5b476",
+
+    background:
+      "rgba(184,154,72,.04)",
+
+    border:
+      "1px solid rgba(184,154,72,.11)",
+
+    fontSize:
+      "7px",
+
+    fontWeight:
+      900,
+  },
+
+  toolKicker: {
+    display:
+      "block",
+
+    marginTop:
+      "18px",
+
+    color:
+      "#617584",
+
+    fontSize:
+      "7px",
+
+    fontWeight:
+      950,
+
+    letterSpacing:
+      ".13em",
+  },
+
+  toolTitle: {
+    margin:
+      "6px 0 0",
+
+    color:
+      "#f4f7f9",
 
     fontSize:
       "18px",
+
+    lineHeight:
+      1.2,
+
+    fontWeight:
+      900,
   },
 
+  toolDescription: {
+    margin:
+      "9px 0 0",
 
-  liveIndicator: {
     color:
-      "#69ef96",
+      "#81909e",
+
+    fontSize:
+      "9px",
+
+    lineHeight:
+      1.6,
+  },
+
+  toolFooter: {
+    display:
+      "flex",
+
+    justifyContent:
+      "space-between",
+
+    alignItems:
+      "center",
+
+    gap:
+      "12px",
+
+    marginTop:
+      "18px",
+
+    paddingTop:
+      "12px",
+
+    borderTop:
+      "1px solid rgba(255,255,255,.045)",
+
+    color:
+      "#b6c3cc",
 
     fontSize:
       "8px",
 
     fontWeight:
-      900,
-
-    letterSpacing:
-      ".08em",
-  },
-
-
-  quickKicker: {
-    margin:
-      "0 0 8px",
-
-    color:
-      "#8491a0",
-
-    fontSize:
-      "7px",
-
-    fontWeight:
-      900,
-
-    letterSpacing:
-      ".14em",
-  },
-
-
-  quickTitle: {
-    margin:
-      0,
-
-    color:
-      "white",
-
-    fontSize:
-      "21px",
-
-    fontWeight:
-      900,
-
-    lineHeight:
-      1.15,
-  },
-
-
-  quickText: {
-    margin:
-      "11px 0 0",
-
-    color:
-      "#8f9ca9",
-
-    fontSize:
-      "10px",
-
-    lineHeight:
-      1.65,
-  },
-
-
-  quickFooter: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "space-between",
-
-    gap:
-      "12px",
-
-    marginTop:
-      "20px",
-
-    paddingTop:
-      "14px",
-
-    borderTop:
-      "1px solid rgba(255,255,255,.06)",
-
-    color:
-      "#dce6ef",
-
-    fontSize:
-      "9px",
-
-    fontWeight:
       800,
   },
 
-
-  /* =======================================================
-     EDITOR
-  ======================================================= */
-
-  editorSection: {
-    ...glass,
-
-    padding:
-      "32px",
-
-    borderRadius:
-      "30px",
-  },
-
-
-  editorHeader: {
-    display:
-      "flex",
-
-    alignItems:
-      "flex-start",
-
-    justifyContent:
-      "space-between",
-
-    gap:
-      "24px",
-
-    marginBottom:
-      "25px",
-  },
-
-
-  editorTitle: {
-    margin:
-      0,
-
-    color:
-      "white",
-
-    fontSize:
-      "32px",
-
-    fontWeight:
-      900,
-
-    letterSpacing:
-      "-.03em",
-  },
-
-
-  editorSubtitle: {
-    maxWidth:
-      "650px",
-
-    margin:
-      "9px 0 0",
-
-    color:
-      "#8391a0",
-
-    fontSize:
-      "11px",
-
-    lineHeight:
-      1.6,
-  },
-
-
-  editorAccent: {
-    width:
-      "60px",
-
-    height:
-      "60px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    borderRadius:
-      "18px",
-
-    background:
-      "linear-gradient(135deg, rgba(16,243,255,.12), rgba(255,210,73,.06))",
-
-    border:
-      "1px solid rgba(16,243,255,.14)",
-
-    color:
-      "#10f3ff",
-
-    fontSize:
-      "13px",
-
-    fontWeight:
-      950,
-  },
-
-
-  formGrid: {
-    display:
-      "grid",
-
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(260px, 1fr))",
-
-    gap:
-      "14px",
-  },
-
-
-  largeField: {
-    marginTop:
-      "15px",
-  },
-
-
-  fieldWrap: {
-    display:
-      "grid",
-
-    gap:
-      "7px",
-  },
-
-
-  label: {
-    color:
-      "#c7d1dc",
-
-    fontSize:
-      "10px",
-
-    fontWeight:
-      800,
-
-    paddingLeft:
-      "2px",
-  },
-
-
-  input: {
-    width:
-      "100%",
-
-    padding:
-      "14px 15px",
-
-    borderRadius:
-      "14px",
-
-    border:
-      "1px solid rgba(255,255,255,.08)",
-
-    background:
-      "linear-gradient(135deg, rgba(0,0,0,.22), rgba(255,255,255,.025))",
-
-    color:
-      "#f7fafc",
-
-    fontSize:
-      "13px",
-
-    boxSizing:
-      "border-box",
-
-    outline:
-      "none",
-
-    backdropFilter:
-      "blur(10px)",
-
-    boxShadow:
-      "inset 0 1px 0 rgba(255,255,255,.02)",
-  },
-
-
-  textarea: {
-    width:
-      "100%",
-
-    minHeight:
-      "140px",
-
-    padding:
-      "14px 15px",
-
-    borderRadius:
-      "16px",
-
-    border:
-      "1px solid rgba(255,255,255,.08)",
-
-    background:
-      "linear-gradient(135deg, rgba(0,0,0,.22), rgba(255,255,255,.025))",
-
-    color:
-      "#f7fafc",
-
-    fontSize:
-      "13px",
-
-    lineHeight:
-      1.6,
-
-    resize:
-      "vertical",
-
-    boxSizing:
-      "border-box",
-
-    outline:
-      "none",
-
-    backdropFilter:
-      "blur(10px)",
-  },
-
-
-  editorFooter: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "space-between",
-
-    gap:
-      "22px",
-
-    flexWrap:
-      "wrap",
-
-    marginTop:
-      "24px",
-
-    paddingTop:
-      "22px",
-
-    borderTop:
-      "1px solid rgba(255,255,255,.065)",
-  },
-
-
-  publicNote: {
-    maxWidth:
-      "720px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "flex-start",
-
-    gap:
-      "12px",
-  },
-
-
-  publicNoteIcon: {
-    width:
-      "38px",
-
-    height:
-      "38px",
-
-    minWidth:
-      "38px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    borderRadius:
-      "12px",
-
-    background:
-      "rgba(16,243,255,.055)",
-
-    border:
-      "1px solid rgba(16,243,255,.13)",
-
-    color:
-      "#10f3ff",
-  },
-
-
-  publicNoteTitle: {
-    color:
-      "#dce7ef",
-
-    fontSize:
-      "11px",
-  },
-
-
-  publicNoteText: {
-    margin:
-      "4px 0 0",
-
-    color:
-      "#768595",
-
-    fontSize:
-      "9px",
-
-    lineHeight:
-      1.55,
-  },
-
-
-  primaryButton: {
-    minWidth:
-      "180px",
-
-    padding:
-      "14px 20px",
-
-    borderRadius:
-      "999px",
-
-    border:
-      "none",
-
-    background:
-      "linear-gradient(135deg, #10f3ff 0%, #8ce9d5 52%, #ffd249 100%)",
-
-    color:
-      "#041019",
-
-    fontSize:
-      "11px",
-
-    fontWeight:
-      950,
-
-    cursor:
-      "pointer",
-
-    boxShadow:
-      "0 10px 32px rgba(16,243,255,.12)",
-  },
-
-
-  primaryButtonDisabled: {
-    opacity:
-      .5,
-
-    cursor:
-      "not-allowed",
-  },
-
-
-  successMessage: {
-    marginTop:
-      "16px",
-
-    padding:
-      "12px 14px",
-
-    borderRadius:
-      "12px",
-
-    color:
-      "#98f2b6",
-
-    background:
-      "rgba(34,197,94,.055)",
-
-    border:
-      "1px solid rgba(34,197,94,.14)",
-
-    fontSize:
-      "10px",
-  },
-
-
-  errorMessage: {
-    marginTop:
-      "16px",
-
-    padding:
-      "12px 14px",
-
-    borderRadius:
-      "12px",
-
-    color:
-      "#ffd59a",
-
-    background:
-      "rgba(250,170,40,.055)",
-
-    border:
-      "1px solid rgba(250,170,40,.14)",
-
-    fontSize:
-      "10px",
-  },
-
-
-  /* =======================================================
-     CONNECT
-  ======================================================= */
-
-  connectSection: {
-    paddingTop:
-      "5px",
-  },
-
-
-  connectHeader: {
-    marginBottom:
-      "14px",
-
-    padding:
-      "0 5px",
-  },
-
-
-  /* =======================================================
-     FOOTER
-  ======================================================= */
+  /* FOOTER */
 
   footer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "20px",
-    padding: "26px 6px 4px",
-    color: "#617081",
-    fontSize: "9px",
+    display:
+      "flex",
+
+    justifyContent:
+      "space-between",
+
+    alignItems:
+      "center",
+
+    gap:
+      "20px",
+
+    padding:
+      "24px 5px 3px",
+
+    color:
+      "#586a78",
+
+    fontSize:
+      "8px",
+  },
+
+  footerBrand: {
+    color:
+      "#8798a4",
+  },
+
+  footerTagline: {
+    marginLeft:
+      "10px",
+
+    color:
+      "#536572",
   },
 };
-  
