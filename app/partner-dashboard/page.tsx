@@ -99,6 +99,15 @@ type MeetingRequestRow = {
   status: string;
   confirmed_slot_id?: string | null;
 
+  participant_confirmed_at?: string | null;
+  participant_response_at?: string | null;
+
+  reschedule_requested_at?: string | null;
+  reschedule_slot_id?: string | null;
+  reschedule_note?: string | null;
+
+  cancellation_note?: string | null;
+
   policy_agreed?: boolean | null;
   policy_agreed_at?: string | null;
 
@@ -802,6 +811,22 @@ function requestStatusStyle(
 
   if (
     normalized ===
+    "approved"
+  ) {
+    return {
+      background:
+        "rgba(250,204,21,.10)",
+
+      color:
+        "#fde68a",
+
+      border:
+        "1px solid rgba(250,204,21,.25)",
+    };
+  }
+
+  if (
+    normalized ===
     "confirmed"
   ) {
     return {
@@ -852,7 +877,9 @@ function requestStatusStyle(
 
   if (
     normalized ===
-    "rescheduled"
+      "reschedule_requested" ||
+    normalized ===
+      "rescheduled"
   ) {
     return {
       background:
@@ -1942,10 +1969,27 @@ export default function PartnerDashboardPage() {
       ""
     );
 
+    const request =
+      meetingRequests.find(
+        (item) =>
+          item.id ===
+          requestId
+      );
+
     const slot =
       getSlot(
         slotId
       );
+
+    if (
+      !request
+    ) {
+      setMessage(
+        "Meeting request not found. Refresh the dashboard and try again."
+      );
+
+      return;
+    }
 
     if (
       slot?.booked_request_id &&
@@ -1953,7 +1997,7 @@ export default function PartnerDashboardPage() {
         requestId
     ) {
       setMessage(
-        "That appointment time has already been booked. Please choose the participant's other preferred appointment time."
+        "That appointment time has already been booked. Please choose another available appointment time."
       );
 
       await loadAdminData();
@@ -1961,11 +2005,17 @@ export default function PartnerDashboardPage() {
       return;
     }
 
+    const rpcName =
+      request.status ===
+      "reschedule_requested"
+        ? "approve_meeting_reschedule"
+        : "confirm_meeting_request";
+
     const {
       error,
     } =
       await supabase.rpc(
-        "confirm_meeting_request",
+        rpcName,
         {
           p_request_id:
             requestId,
@@ -1979,7 +2029,7 @@ export default function PartnerDashboardPage() {
       error
     ) {
       setMessage(
-        error.message
+        `Could not approve appointment: ${error.message}`
       );
 
       await loadAdminData();
@@ -1988,7 +2038,10 @@ export default function PartnerDashboardPage() {
     }
 
     setMessage(
-      "Meeting confirmed. The appointment time is now booked and unavailable to other participants."
+      request.status ===
+      "reschedule_requested"
+        ? "Reschedule approved. The new appointment is waiting for participant confirmation in Career Connect."
+        : "Appointment approved. The selected time is booked. The participant must now confirm it in Career Connect."
     );
 
     await loadAdminData();
@@ -2967,6 +3020,15 @@ export default function PartnerDashboardPage() {
         "pending"
     ).length;
 
+  const approvedRequestCount =
+    meetingRequests.filter(
+      (
+        request
+      ) =>
+        request.status ===
+        "approved"
+    ).length;
+
   const confirmedRequestCount =
     meetingRequests.filter(
       (
@@ -2974,6 +3036,15 @@ export default function PartnerDashboardPage() {
       ) =>
         request.status ===
         "confirmed"
+    ).length;
+
+  const rescheduleRequestCount =
+    meetingRequests.filter(
+      (
+        request
+      ) =>
+        request.status ===
+        "reschedule_requested"
     ).length;
 
   const completedRequestCount =
@@ -4386,9 +4457,10 @@ export default function PartnerDashboardPage() {
           "meeting_requests",
 
         label:
-          pendingRequestCount >
+          pendingRequestCount +
+            rescheduleRequestCount >
           0
-            ? `Meeting Requests (${pendingRequestCount})`
+            ? `Meeting Requests (${pendingRequestCount + rescheduleRequestCount})`
             : "Meeting Requests",
 
         adminOnly:
@@ -4713,9 +4785,23 @@ export default function PartnerDashboardPage() {
                   />
 
                   <MetricCard
+                    label="Approved - Awaiting Confirmation"
+                    value={
+                      approvedRequestCount
+                    }
+                  />
+
+                  <MetricCard
                     label="Confirmed Meetings"
                     value={
                       confirmedRequestCount
+                    }
+                  />
+
+                  <MetricCard
+                    label="Reschedule Requests"
+                    value={
+                      rescheduleRequestCount
                     }
                   />
 
@@ -5122,10 +5208,9 @@ export default function PartnerDashboardPage() {
                     styles.muted
                   }
                 >
-                  Participants choose two preferred appointment times.
-                  Both are preferences until you confirm one. Once
-                  confirmed, that time becomes booked and cannot be
-                  confirmed for another participant.
+                  Participants may choose up to 3 preferred appointment times.
+                  You approve one time. That time becomes booked and the
+                  participant then confirms the appointment inside Career Connect.
                 </p>
               </div>
 
@@ -5167,11 +5252,39 @@ export default function PartnerDashboardPage() {
                 }
               >
                 <strong>
+                  {approvedRequestCount}
+                </strong>
+
+                <span>
+                  Awaiting Participant Confirmation
+                </span>
+              </div>
+
+              <div
+                style={
+                  styles.requestMiniStat
+                }
+              >
+                <strong>
                   {confirmedRequestCount}
                 </strong>
 
                 <span>
                   Confirmed
+                </span>
+              </div>
+
+              <div
+                style={
+                  styles.requestMiniStat
+                }
+              >
+                <strong>
+                  {rescheduleRequestCount}
+                </strong>
+
+                <span>
+                  Reschedule Requests
                 </span>
               </div>
 
@@ -5242,9 +5355,21 @@ export default function PartnerDashboardPage() {
                 </option>
 
                 <option
+                  value="approved"
+                >
+                  Approved - Awaiting Participant
+                </option>
+
+                <option
                   value="confirmed"
                 >
                   Confirmed
+                </option>
+
+                <option
+                  value="reschedule_requested"
+                >
+                  Reschedule Requested
                 </option>
 
                 <option
@@ -5462,6 +5587,22 @@ export default function PartnerDashboardPage() {
 
                       {/* NOTES */}
 
+                      {request.cancellation_note ? (
+                        <div
+                          style={
+                            styles.cancellationNoteBox
+                          }
+                        >
+                          <strong>
+                            Cancellation Note
+                          </strong>
+
+                          <p>
+                            {request.cancellation_note}
+                          </p>
+                        </div>
+                      ) : null}
+
                       {request.notes ? (
                         <div
                           style={
@@ -5475,6 +5616,127 @@ export default function PartnerDashboardPage() {
                           <p>
                             {request.notes}
                           </p>
+                        </div>
+                      ) : null}
+
+                      {/* RESCHEDULE REQUEST */}
+
+                      {request.status ===
+                        "reschedule_requested" ||
+                      request.reschedule_requested_at ||
+                      request.reschedule_slot_id ||
+                      request.reschedule_note ? (
+                        <div
+                          style={
+                            styles.rescheduleAlertBox
+                          }
+                        >
+                          <div
+                            style={
+                              styles.rescheduleAlertHeader
+                            }
+                          >
+                            <div>
+                              <span
+                                style={
+                                  styles.requestSectionLabel
+                                }
+                              >
+                                RESCHEDULE REQUESTED
+                              </span>
+
+                              <strong
+                                style={
+                                  styles.rescheduleAlertTitle
+                                }
+                              >
+                                Participant requested a different appointment
+                              </strong>
+                            </div>
+
+                            {request.reschedule_requested_at ? (
+                              <span
+                                style={
+                                  styles.requestDateText
+                                }
+                              >
+                                {formatDate(
+                                  request.reschedule_requested_at
+                                )}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {request.confirmed_slot_id ? (
+                            <div
+                              style={
+                                styles.rescheduleInfoCard
+                              }
+                            >
+                              <span>
+                                CURRENT APPOINTMENT
+                              </span>
+
+                              <strong>
+                                {formatAppointment(
+                                  getSlot(
+                                    request.confirmed_slot_id
+                                  )?.start_time
+                                )}
+                              </strong>
+                            </div>
+                          ) : null}
+
+                          {request.reschedule_slot_id ? (
+                            <div
+                              style={
+                                styles.rescheduleInfoCardHighlight
+                              }
+                            >
+                              <span>
+                                PARTICIPANT SELECTED NEW TIME
+                              </span>
+
+                              <strong>
+                                {formatAppointment(
+                                  getSlot(
+                                    request.reschedule_slot_id
+                                  )?.start_time
+                                )}
+                              </strong>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  confirmRequestSlot(
+                                    request.id,
+                                    request.reschedule_slot_id as string
+                                  )
+                                }
+                                style={
+                                  styles.confirmButton
+                                }
+                              >
+                                Approve Requested New Time
+                              </button>
+                            </div>
+                          ) : null}
+
+                          {request.reschedule_note ? (
+                            <div
+                              style={
+                                styles.notesBox
+                              }
+                            >
+                              <strong>
+                                Participant Requested
+                              </strong>
+
+                              <p>
+                                {request.reschedule_note}
+                              </p>
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
 
@@ -5498,8 +5760,9 @@ export default function PartnerDashboardPage() {
                             styles.preferenceInstruction
                           }
                         >
-                          Participant selects exactly two preferred
-                          appointment times. Confirm only one.
+                          Participant may select up to 3 preferred appointment
+                          times. Approve only one. The participant confirms it
+                          afterward inside Career Connect.
                         </p>
 
                         {choices.length ? (
@@ -5594,7 +5857,10 @@ export default function PartnerDashboardPage() {
                                             styles.confirmedTimeText
                                           }
                                         >
-                                          ✓ CONFIRMED APPOINTMENT
+                                          {request.status ===
+                                          "confirmed"
+                                            ? "✓ PARTICIPANT CONFIRMED"
+                                            : "✓ APPROVED APPOINTMENT TIME"}
                                         </span>
                                       ) : unavailable ? (
                                         <span
@@ -5610,7 +5876,7 @@ export default function PartnerDashboardPage() {
                                             styles.availableTimeText
                                           }
                                         >
-                                          AVAILABLE TO CONFIRM
+                                          AVAILABLE TO APPROVE
                                         </span>
                                       )}
                                     </div>
@@ -5642,10 +5908,16 @@ export default function PartnerDashboardPage() {
                                         }
                                       >
                                         {confirmed
-                                          ? "✓ Confirmed"
+                                          ? request.status ===
+                                            "confirmed"
+                                            ? "✓ Participant Confirmed"
+                                            : "✓ Approved Time"
                                           : unavailable
                                             ? "No Longer Available"
-                                            : "Confirm This Time"}
+                                            : request.status ===
+                                              "reschedule_requested"
+                                              ? "Approve New Time"
+                                              : "Approve This Time"}
                                       </button>
                                     ) : null}
                                   </div>
@@ -5731,7 +6003,7 @@ export default function PartnerDashboardPage() {
                           onClick={() => {
                             const confirmed =
                               window.confirm(
-                                "Release the current appointment time and mark this request for rescheduling?"
+                                "Mark this appointment as needing reschedule review? The currently booked time will remain reserved until a replacement is approved."
                               );
 
                             if (
@@ -5739,7 +6011,7 @@ export default function PartnerDashboardPage() {
                             ) {
                               updateRequestStatus(
                                 request.id,
-                                "rescheduled"
+                                "reschedule_requested"
                               );
                             }
                           }}
@@ -9511,6 +9783,58 @@ const styles: Record<
 
     marginTop:
       18,
+  },
+
+  rescheduleAlertBox: {
+    padding: 16,
+    borderRadius: 15,
+    background: "rgba(168,85,247,.08)",
+    border: "1px solid rgba(168,85,247,.26)",
+    display: "grid",
+    gap: 12,
+  },
+
+  rescheduleAlertHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+
+  rescheduleAlertTitle: {
+    display: "block",
+    marginTop: 6,
+    color: "#e9d5ff",
+    fontSize: 16,
+  },
+
+  rescheduleInfoCard: {
+    padding: 12,
+    borderRadius: 12,
+    background: "rgba(255,255,255,.035)",
+    border: "1px solid #303035",
+    display: "grid",
+    gap: 5,
+  },
+
+  rescheduleInfoCardHighlight: {
+    padding: 12,
+    borderRadius: 12,
+    background: "rgba(59,130,246,.08)",
+    border: "1px solid rgba(96,165,250,.25)",
+    display: "grid",
+    gap: 8,
+  },
+
+  cancellationNoteBox: {
+    padding: 14,
+    borderRadius: 14,
+    background: "rgba(248,113,113,.07)",
+    border: "1px solid rgba(248,113,113,.2)",
+    color: "#fecaca",
+    fontSize: 13,
+    lineHeight: 1.6,
   },
 
   /* =======================================================
