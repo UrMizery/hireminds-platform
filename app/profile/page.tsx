@@ -3773,49 +3773,13 @@ const st:
   ======================================================= */
 
   footer: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "space-between",
-
-    gap:
-      "20px",
-
-    padding:
-      "26px 6px 4px",
-
-    color:
-      "#617081",
-
-    fontSize:
-      "9px",
-  },
-
-
-  footer: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "space-between",
-
-    gap:
-      "20px",
-
-    padding:
-      "26px 6px 4px",
-
-    color:
-      "#617081",
-
-    fontSize:
-      "9px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "20px",
+    padding: "26px 6px 4px",
+    color: "#617081",
+    fontSize: "9px",
   },
 };
+  
