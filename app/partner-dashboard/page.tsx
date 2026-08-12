@@ -41,7 +41,8 @@ type OptionalMetricKey =
   | "code_comparison"
   | "most_used_tool"
   | "career_services"
-  | "document_submissions";
+  | "document_submissions"
+  | "cancellations";
 
 type PartnerRow = {
   organization_name?: string | null;
@@ -83,6 +84,7 @@ type ParticipantSummaryRow = {
   toolUses: number;
   completions: number;
   documentSubmissions: number;
+  cancellations: number;
 };
 
 type MeetingRequestRow = {
@@ -96,6 +98,17 @@ type MeetingRequestRow = {
   notes?: string | null;
   status: string;
   confirmed_slot_id?: string | null;
+
+  policy_agreed?: boolean | null;
+  policy_agreed_at?: string | null;
+
+  cancelled_at?: string | null;
+
+  cancellation_source?:
+    | "participant"
+    | "admin"
+    | null;
+
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -127,6 +140,9 @@ type AvailabilitySlotRow = {
   label?: string | null;
   is_active?: boolean | null;
   max_requests?: number | null;
+
+  booked_request_id?: string | null;
+
   created_by?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -152,41 +168,61 @@ type WorkforceSessionServiceRow = {
   created_at?: string | null;
 };
 
+type MeetingCancellationRow = {
+  id: string;
+  request_id: string;
+  user_id: string;
+  participant_name?: string | null;
+  participant_email?: string | null;
+  referral_code?: string | null;
+
+  cancellation_source:
+    | "participant"
+    | "admin";
+
+  cancelled_at: string;
+  created_at?: string | null;
+};
+
 /* =========================================================
    CONSTANTS
 ========================================================= */
 
-const SYSTEM_ADMIN_EMAIL = "info@hireminds.app";
+const SYSTEM_ADMIN_EMAIL =
+  "info@hireminds.app";
 
-const DEFAULT_CAREER_CONNECT_SETTINGS: CareerConnectSettings = {
-  id: "default",
+const DEFAULT_CAREER_CONNECT_SETTINGS: CareerConnectSettings =
+  {
+    id: "default",
 
-  meeting_link:
-    "https://hire-minds.whereby.com/hireminds-open-room",
+    meeting_link:
+      "https://hire-minds.whereby.com/hireminds-open-room",
 
-  open_room_title: "Open Room",
+    open_room_title:
+      "Open Room",
 
-  open_room_schedule:
-    "Last Tuesday monthly",
+    open_room_schedule:
+      "Last Tuesday monthly",
 
-  open_room_time:
-    "6:00 PM – 7:00 PM",
+    open_room_time:
+      "6:00 PM – 7:00 PM",
 
-  doors_open:
-    "5:50 PM",
+    doors_open:
+      "5:50 PM",
 
-  doors_close:
-    "6:15 PM",
+    doors_close:
+      "6:15 PM",
 
-  open_room_note:
-    "Live Q&A, networking, resource drops, opportunities, and career conversations.",
-};
+    open_room_note:
+      "Live Q&A, networking, resource drops, opportunities, and career conversations.",
+  };
 
 const SERVICE_LABELS: Record<
   string,
   string
 > = {
-  open_room: "Open Room",
+  open_room:
+    "Open Room",
 
   resume_support:
     "Resume Support",
@@ -206,7 +242,8 @@ const SERVICE_LABELS: Record<
   job_search_assistance:
     "Job Search Assistance",
 
-  other: "Other",
+  other:
+    "Other",
 };
 
 /* =========================================================
@@ -266,8 +303,11 @@ function createTimeOptions() {
         date.toLocaleTimeString(
           [],
           {
-            hour: "numeric",
-            minute: "2-digit",
+            hour:
+              "numeric",
+
+            minute:
+              "2-digit",
           }
         );
 
@@ -291,10 +331,14 @@ const TIME_OPTIONS =
 function formatDate(
   value?: string | null
 ) {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -310,10 +354,14 @@ function formatDate(
 function formatShortDate(
   value?: string | null
 ) {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -329,10 +377,14 @@ function formatShortDate(
 function formatAppointment(
   value?: string | null
 ) {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -345,12 +397,23 @@ function formatAppointment(
   return date.toLocaleString(
     [],
     {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
+      weekday:
+        "short",
+
+      month:
+        "short",
+
+      day:
+        "numeric",
+
+      year:
+        "numeric",
+
+      hour:
+        "numeric",
+
+      minute:
+        "2-digit",
     }
   );
 }
@@ -358,10 +421,14 @@ function formatAppointment(
 function formatTimeOnly(
   value?: string | null
 ) {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -374,8 +441,11 @@ function formatTimeOnly(
   return date.toLocaleTimeString(
     [],
     {
-      hour: "numeric",
-      minute: "2-digit",
+      hour:
+        "numeric",
+
+      minute:
+        "2-digit",
     }
   );
 }
@@ -383,10 +453,14 @@ function formatTimeOnly(
 function toDate(
   value?: string | null
 ) {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
 
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -423,7 +497,9 @@ function startOfWeek() {
       : day - 1;
 
   const start =
-    new Date(now);
+    new Date(
+      now
+    );
 
   start.setDate(
     now.getDate() -
@@ -492,7 +568,9 @@ function startOfFiscalYear() {
 function getPeriodStart(
   period: PeriodKey
 ) {
-  switch (period) {
+  switch (
+    period
+  ) {
     case "day":
       return startOfToday();
 
@@ -519,43 +597,50 @@ function getPeriodLabel(
   endDate: string
 ) {
   if (
-    period === "all"
+    period ===
+    "all"
   ) {
     return "All Time";
   }
 
   if (
-    period === "day"
+    period ===
+    "day"
   ) {
     return "Today";
   }
 
   if (
-    period === "week"
+    period ===
+    "week"
   ) {
     return "This Week";
   }
 
   if (
-    period === "month"
+    period ===
+    "month"
   ) {
     return "This Month";
   }
 
   if (
-    period === "quarter"
+    period ===
+    "quarter"
   ) {
     return "This Quarter";
   }
 
   if (
-    period === "fiscal"
+    period ===
+    "fiscal"
   ) {
     return "Fiscal Year";
   }
 
   if (
-    period === "custom"
+    period ===
+    "custom"
   ) {
     if (
       startDate &&
@@ -596,7 +681,9 @@ function serviceLabel(
     | string
     | null
 ) {
-  if (!serviceType) {
+  if (
+    !serviceType
+  ) {
     return "—";
   }
 
@@ -642,11 +729,13 @@ function calculateDurationMinutes(
     .map(Number);
 
   const startMinutes =
-    startHour * 60 +
+    startHour *
+      60 +
     startMinute;
 
   const endMinutes =
-    endHour * 60 +
+    endHour *
+      60 +
     endMinute;
 
   return (
@@ -661,7 +750,8 @@ function formatDuration(
     | null
 ) {
   if (
-    minutes === null
+    minutes ===
+    null
   ) {
     return "";
   }
@@ -686,14 +776,17 @@ function formatDuration(
 
   const hours =
     Math.floor(
-      minutes / 60
+      minutes /
+        60
     );
 
   const remainder =
-    minutes % 60;
+    minutes %
+    60;
 
   if (
-    remainder === 0
+    remainder ===
+    0
   ) {
     return `${hours} hours`;
   }
@@ -793,17 +886,26 @@ export default function PartnerDashboardPage() {
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] =
+    useState(
+      true
+    );
 
   const [
     loadingLogout,
     setLoadingLogout,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     message,
     setMessage,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     activeTab,
@@ -824,13 +926,18 @@ export default function PartnerDashboardPage() {
   const [
     currentUserEmail,
     setCurrentUserEmail,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     participants,
     setParticipants,
   ] =
-    useState<ParticipantRow[]>(
+    useState<
+      ParticipantRow[]
+    >(
       []
     );
 
@@ -838,26 +945,37 @@ export default function PartnerDashboardPage() {
     activity,
     setActivity,
   ] =
-    useState<ActivityRow[]>(
+    useState<
+      ActivityRow[]
+    >(
       []
     );
 
   const [
     workforceSessionServices,
     setWorkforceSessionServices,
-  ] = useState<
-    WorkforceSessionServiceRow[]
-  >([]);
+  ] =
+    useState<
+      WorkforceSessionServiceRow[]
+    >(
+      []
+    );
 
   const [
     lastUpdated,
     setLastUpdated,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     participantSearch,
     setParticipantSearch,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   /* =======================================================
      MEETING REQUESTS
@@ -866,33 +984,58 @@ export default function PartnerDashboardPage() {
   const [
     meetingRequests,
     setMeetingRequests,
-  ] = useState<
-    MeetingRequestRow[]
-  >([]);
+  ] =
+    useState<
+      MeetingRequestRow[]
+    >(
+      []
+    );
 
   const [
     meetingChoices,
     setMeetingChoices,
-  ] = useState<
-    MeetingChoiceRow[]
-  >([]);
+  ] =
+    useState<
+      MeetingChoiceRow[]
+    >(
+      []
+    );
 
   const [
     requestAttachments,
     setRequestAttachments,
-  ] = useState<
-    AttachmentRow[]
-  >([]);
+  ] =
+    useState<
+      AttachmentRow[]
+    >(
+      []
+    );
+
+  const [
+    meetingCancellations,
+    setMeetingCancellations,
+  ] =
+    useState<
+      MeetingCancellationRow[]
+    >(
+      []
+    );
 
   const [
     requestFilter,
     setRequestFilter,
-  ] = useState("all");
+  ] =
+    useState(
+      "all"
+    );
 
   const [
     requestSearch,
     setRequestSearch,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   /* =======================================================
      AVAILABILITY
@@ -901,34 +1044,52 @@ export default function PartnerDashboardPage() {
   const [
     availabilitySlots,
     setAvailabilitySlots,
-  ] = useState<
-    AvailabilitySlotRow[]
-  >([]);
+  ] =
+    useState<
+      AvailabilitySlotRow[]
+    >(
+      []
+    );
 
   const [
     availabilityDate,
     setAvailabilityDate,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     availabilityStartTime,
     setAvailabilityStartTime,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     availabilityEndTime,
     setAvailabilityEndTime,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     newSlotLabel,
     setNewSlotLabel,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     addingAvailability,
     setAddingAvailability,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     editingAvailabilityId,
@@ -936,7 +1097,9 @@ export default function PartnerDashboardPage() {
   ] =
     useState<
       string | null
-    >(null);
+    >(
+      null
+    );
 
   /* =======================================================
      CAREER CONNECT
@@ -953,7 +1116,10 @@ export default function PartnerDashboardPage() {
   const [
     savingCareerSettings,
     setSavingCareerSettings,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   /* =======================================================
      REPORTS
@@ -962,14 +1128,20 @@ export default function PartnerDashboardPage() {
   const [
     selectedCodes,
     setSelectedCodes,
-  ] = useState<string[]>(
-    []
-  );
+  ] =
+    useState<
+      string[]
+    >(
+      []
+    );
 
   const [
     reportParticipantKey,
     setReportParticipantKey,
-  ] = useState("all");
+  ] =
+    useState(
+      "all"
+    );
 
   const [
     reportPeriod,
@@ -982,12 +1154,18 @@ export default function PartnerDashboardPage() {
   const [
     reportStartDate,
     setReportStartDate,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     reportEndDate,
     setReportEndDate,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     selectedOptionalMetrics,
@@ -1004,17 +1182,22 @@ export default function PartnerDashboardPage() {
     ]);
 
   const mountedRef =
-    useRef(true);
+    useRef(
+      true
+    );
 
-  useEffect(() => {
-    mountedRef.current =
-      true;
-
-    return () => {
+  useEffect(
+    () => {
       mountedRef.current =
-        false;
-    };
-  }, []);
+        true;
+
+      return () => {
+        mountedRef.current =
+          false;
+      };
+    },
+    []
+  );
 
   /* =======================================================
      ADMIN STATUS
@@ -1033,13 +1216,20 @@ export default function PartnerDashboardPage() {
   const loadDashboard =
     useCallback(
       async () => {
-        setLoading(true);
+        setLoading(
+          true
+        );
 
-        setMessage("");
+        setMessage(
+          ""
+        );
 
         const {
-          data: authData,
-          error: authError,
+          data:
+            authData,
+
+          error:
+            authError,
         } =
           await supabase.auth.getUser();
 
@@ -1061,18 +1251,24 @@ export default function PartnerDashboardPage() {
         );
 
         const {
-          data: partnerRow,
-          error: partnerError,
-        } = await supabase
-          .from(
-            "partners"
-          )
-          .select("*")
-          .eq(
-            "contact_email",
-            email
-          )
-          .maybeSingle();
+          data:
+            partnerRow,
+
+          error:
+            partnerError,
+        } =
+          await supabase
+            .from(
+              "partners"
+            )
+            .select(
+              "*"
+            )
+            .eq(
+              "contact_email",
+              email
+            )
+            .maybeSingle();
 
         if (
           partnerError
@@ -1081,7 +1277,9 @@ export default function PartnerDashboardPage() {
             partnerError.message
           );
 
-          setLoading(false);
+          setLoading(
+            false
+          );
 
           return;
         }
@@ -1093,7 +1291,9 @@ export default function PartnerDashboardPage() {
             "This account does not have Partner Dashboard access."
           );
 
-          setLoading(false);
+          setLoading(
+            false
+          );
 
           return;
         }
@@ -1143,7 +1343,9 @@ export default function PartnerDashboardPage() {
             participantError.message
           );
 
-          setLoading(false);
+          setLoading(
+            false
+          );
 
           return;
         }
@@ -1196,7 +1398,9 @@ export default function PartnerDashboardPage() {
             activityError.message
           );
 
-          setLoading(false);
+          setLoading(
+            false
+          );
 
           return;
         }
@@ -1207,23 +1411,24 @@ export default function PartnerDashboardPage() {
 
           error:
             serviceError,
-        } = await supabase
-          .from(
-            "workforce_session_services"
-          )
-          .select(
-            "id, session_id, user_id, service_type, service_label, created_at"
-          )
-          .order(
-            "created_at",
-            {
-              ascending:
-                false,
-            }
-          )
-          .limit(
-            10000
-          );
+        } =
+          await supabase
+            .from(
+              "workforce_session_services"
+            )
+            .select(
+              "id, session_id, user_id, service_type, service_label, created_at"
+            )
+            .order(
+              "created_at",
+              {
+                ascending:
+                  false,
+              }
+            )
+            .limit(
+              10000
+            );
 
         if (
           serviceError
@@ -1245,17 +1450,23 @@ export default function PartnerDashboardPage() {
         );
 
         setParticipants(
-          (participantRows as ParticipantRow[]) ||
+          (
+            participantRows as ParticipantRow[]
+          ) ||
             []
         );
 
         setActivity(
-          (activityRows as ActivityRow[]) ||
+          (
+            activityRows as ActivityRow[]
+          ) ||
             []
         );
 
         setWorkforceSessionServices(
-          (serviceRows as WorkforceSessionServiceRow[]) ||
+          (
+            serviceRows as WorkforceSessionServiceRow[]
+          ) ||
             []
         );
 
@@ -1263,7 +1474,9 @@ export default function PartnerDashboardPage() {
           new Date().toLocaleTimeString()
         );
 
-        setLoading(false);
+        setLoading(
+          false
+        );
       },
       []
     );
@@ -1276,7 +1489,8 @@ export default function PartnerDashboardPage() {
     useCallback(
       async () => {
         const {
-          data: authData,
+          data:
+            authData,
         } =
           await supabase.auth.getUser();
 
@@ -1297,13 +1511,16 @@ export default function PartnerDashboardPage() {
           attachmentsResult,
           availabilityResult,
           settingsResult,
+          cancellationsResult,
         ] =
           await Promise.all([
             supabase
               .from(
                 "meeting_requests"
               )
-              .select("*")
+              .select(
+                "*"
+              )
               .order(
                 "created_at",
                 {
@@ -1316,7 +1533,9 @@ export default function PartnerDashboardPage() {
               .from(
                 "meeting_request_choices"
               )
-              .select("*")
+              .select(
+                "*"
+              )
               .order(
                 "preference_order",
                 {
@@ -1329,7 +1548,9 @@ export default function PartnerDashboardPage() {
               .from(
                 "meeting_request_attachments"
               )
-              .select("*")
+              .select(
+                "*"
+              )
               .order(
                 "created_at",
                 {
@@ -1342,7 +1563,9 @@ export default function PartnerDashboardPage() {
               .from(
                 "availability_slots"
               )
-              .select("*")
+              .select(
+                "*"
+              )
               .order(
                 "start_time",
                 {
@@ -1355,19 +1578,38 @@ export default function PartnerDashboardPage() {
               .from(
                 "career_connect_settings"
               )
-              .select("*")
+              .select(
+                "*"
+              )
               .eq(
                 "id",
                 "default"
               )
               .maybeSingle(),
+
+            supabase
+              .from(
+                "meeting_cancellations"
+              )
+              .select(
+                "*"
+              )
+              .order(
+                "cancelled_at",
+                {
+                  ascending:
+                    false,
+                }
+              ),
           ]);
 
         if (
           !requestsResult.error
         ) {
           setMeetingRequests(
-            (requestsResult.data as MeetingRequestRow[]) ||
+            (
+              requestsResult.data as MeetingRequestRow[]
+            ) ||
               []
           );
         } else {
@@ -1380,7 +1622,9 @@ export default function PartnerDashboardPage() {
           !choicesResult.error
         ) {
           setMeetingChoices(
-            (choicesResult.data as MeetingChoiceRow[]) ||
+            (
+              choicesResult.data as MeetingChoiceRow[]
+            ) ||
               []
           );
         } else {
@@ -1393,7 +1637,9 @@ export default function PartnerDashboardPage() {
           !attachmentsResult.error
         ) {
           setRequestAttachments(
-            (attachmentsResult.data as AttachmentRow[]) ||
+            (
+              attachmentsResult.data as AttachmentRow[]
+            ) ||
               []
           );
         } else {
@@ -1406,12 +1652,30 @@ export default function PartnerDashboardPage() {
           !availabilityResult.error
         ) {
           setAvailabilitySlots(
-            (availabilityResult.data as AvailabilitySlotRow[]) ||
+            (
+              availabilityResult.data as AvailabilitySlotRow[]
+            ) ||
               []
           );
         } else {
           console.error(
             availabilityResult.error
+          );
+        }
+
+        if (
+          !cancellationsResult.error
+        ) {
+          setMeetingCancellations(
+            (
+              cancellationsResult.data as MeetingCancellationRow[]
+            ) ||
+              []
+          );
+        } else {
+          console.error(
+            "Cancellation load error:",
+            cancellationsResult.error
           );
         }
 
@@ -1457,23 +1721,29 @@ export default function PartnerDashboardPage() {
       []
     );
 
-  useEffect(() => {
-    loadDashboard();
-  }, [
-    loadDashboard,
-  ]);
+  useEffect(
+    () => {
+      loadDashboard();
+    },
+    [
+      loadDashboard,
+    ]
+  );
 
-  useEffect(() => {
-    if (
-      currentUserEmail.toLowerCase() ===
-      SYSTEM_ADMIN_EMAIL.toLowerCase()
-    ) {
-      loadAdminData();
-    }
-  }, [
-    currentUserEmail,
-    loadAdminData,
-  ]);
+  useEffect(
+    () => {
+      if (
+        currentUserEmail.toLowerCase() ===
+        SYSTEM_ADMIN_EMAIL.toLowerCase()
+      ) {
+        loadAdminData();
+      }
+    },
+    [
+      currentUserEmail,
+      loadAdminData,
+    ]
+  );
 
   /* =======================================================
      LOGOUT
@@ -1499,12 +1769,17 @@ export default function PartnerDashboardPage() {
   ) {
     return meetingChoices
       .filter(
-        (choice) =>
+        (
+          choice
+        ) =>
           choice.request_id ===
           requestId
       )
       .sort(
-        (a, b) =>
+        (
+          a,
+          b
+        ) =>
           a.preference_order -
           b.preference_order
       );
@@ -1514,7 +1789,9 @@ export default function PartnerDashboardPage() {
     slotId: string
   ) {
     return availabilitySlots.find(
-      (slot) =>
+      (
+        slot
+      ) =>
         slot.id ===
         slotId
     );
@@ -1524,15 +1801,61 @@ export default function PartnerDashboardPage() {
     requestId: string
   ) {
     return requestAttachments.filter(
-      (file) =>
+      (
+        file
+      ) =>
         file.request_id ===
         requestId
     );
   }
 
+  function getParticipantCancellationCount(
+    userId: string
+  ) {
+    return meetingCancellations.filter(
+      (
+        cancellation
+      ) =>
+        cancellation.user_id ===
+          userId &&
+        cancellation.cancellation_source ===
+          "participant"
+    ).length;
+  }
+
+  function isSlotUnavailableForRequest(
+    slot:
+      | AvailabilitySlotRow
+      | undefined,
+
+    requestId:
+      string
+  ) {
+    if (
+      !slot
+    ) {
+      return true;
+    }
+
+    if (
+      !slot.booked_request_id
+    ) {
+      return false;
+    }
+
+    return (
+      slot.booked_request_id !==
+      requestId
+    );
+  }
+
   async function updateRequestStatus(
     requestId: string,
-    status: string
+    status: string,
+    cancellationSource:
+      | "participant"
+      | "admin"
+      | null = null
   ) {
     if (
       !isSystemAdmin
@@ -1540,21 +1863,25 @@ export default function PartnerDashboardPage() {
       return;
     }
 
+    setMessage(
+      ""
+    );
+
     const {
       error,
-    } = await supabase
-      .from(
-        "meeting_requests"
-      )
-      .update({
-        status,
+    } =
+      await supabase.rpc(
+        "set_meeting_request_status",
+        {
+          p_request_id:
+            requestId,
 
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq(
-        "id",
-        requestId
+          p_status:
+            status,
+
+          p_cancellation_source:
+            cancellationSource,
+        }
       );
 
     if (
@@ -1567,27 +1894,38 @@ export default function PartnerDashboardPage() {
       return;
     }
 
-    setMeetingRequests(
-      (previous) =>
-        previous.map(
-          (request) =>
-            request.id ===
-            requestId
-              ? {
-                  ...request,
+    if (
+      status ===
+        "cancelled" &&
+      cancellationSource ===
+        "participant"
+    ) {
+      setMessage(
+        "Participant cancellation recorded. This cancellation counts toward the two-cancellation policy."
+      );
+    } else if (
+      status ===
+        "cancelled" &&
+      cancellationSource ===
+        "admin"
+    ) {
+      setMessage(
+        "Administrative cancellation recorded. This does not count against the participant."
+      );
+    } else if (
+      status ===
+      "rescheduled"
+    ) {
+      setMessage(
+        "Meeting marked for rescheduling. The previously confirmed appointment time is now available again."
+      );
+    } else {
+      setMessage(
+        `Meeting request updated to ${status}.`
+      );
+    }
 
-                  status,
-
-                  updated_at:
-                    new Date().toISOString(),
-                }
-              : request
-        )
-    );
-
-    setMessage(
-      `Meeting request updated to ${status}.`
-    );
+    await loadAdminData();
   }
 
   async function confirmRequestSlot(
@@ -1600,25 +1938,41 @@ export default function PartnerDashboardPage() {
       return;
     }
 
+    setMessage(
+      ""
+    );
+
+    const slot =
+      getSlot(
+        slotId
+      );
+
+    if (
+      slot?.booked_request_id &&
+      slot.booked_request_id !==
+        requestId
+    ) {
+      setMessage(
+        "That appointment time has already been booked. Please choose the participant's other preferred appointment time."
+      );
+
+      await loadAdminData();
+
+      return;
+    }
+
     const {
       error,
-    } = await supabase
-      .from(
-        "meeting_requests"
-      )
-      .update({
-        status:
-          "confirmed",
+    } =
+      await supabase.rpc(
+        "confirm_meeting_request",
+        {
+          p_request_id:
+            requestId,
 
-        confirmed_slot_id:
-          slotId,
-
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq(
-        "id",
-        requestId
+          p_slot_id:
+            slotId,
+        }
       );
 
     if (
@@ -1628,31 +1982,16 @@ export default function PartnerDashboardPage() {
         error.message
       );
 
+      await loadAdminData();
+
       return;
     }
 
-    setMeetingRequests(
-      (previous) =>
-        previous.map(
-          (request) =>
-            request.id ===
-            requestId
-              ? {
-                  ...request,
-
-                  status:
-                    "confirmed",
-
-                  confirmed_slot_id:
-                    slotId,
-                }
-              : request
-        )
-    );
-
     setMessage(
-      "Meeting time confirmed."
+      "Meeting confirmed. The appointment time is now booked and unavailable to other participants."
     );
+
+    await loadAdminData();
   }
 
   async function openAttachment(
@@ -1677,7 +2016,7 @@ export default function PartnerDashboardPage() {
     ) {
       setMessage(
         error?.message ||
-        "Could not open attachment."
+          "Could not open attachment."
       );
 
       return;
@@ -1757,6 +2096,29 @@ export default function PartnerDashboardPage() {
       return;
     }
 
+    if (
+      editingAvailabilityId
+    ) {
+      const existingSlot =
+        availabilitySlots.find(
+          (
+            slot
+          ) =>
+            slot.id ===
+            editingAvailabilityId
+        );
+
+      if (
+        existingSlot?.booked_request_id
+      ) {
+        setMessage(
+          "This appointment time is booked. Cancel or reschedule the confirmed appointment before editing it."
+        );
+
+        return;
+      }
+    }
+
     const start =
       new Date(
         `${availabilityDate}T${availabilityStartTime}:00`
@@ -1771,10 +2133,13 @@ export default function PartnerDashboardPage() {
       true
     );
 
-    setMessage("");
+    setMessage(
+      ""
+    );
 
     const {
-      data: authData,
+      data:
+        authData,
     } =
       await supabase.auth.getUser();
 
@@ -1784,30 +2149,33 @@ export default function PartnerDashboardPage() {
       const {
         data,
         error,
-      } = await supabase
-        .from(
-          "availability_slots"
-        )
-        .update({
-          start_time:
-            start.toISOString(),
+      } =
+        await supabase
+          .from(
+            "availability_slots"
+          )
+          .update({
+            start_time:
+              start.toISOString(),
 
-          end_time:
-            end.toISOString(),
+            end_time:
+              end.toISOString(),
 
-          label:
-            newSlotLabel.trim() ||
-            null,
+            label:
+              newSlotLabel.trim() ||
+              null,
 
-          updated_at:
-            new Date().toISOString(),
-        })
-        .eq(
-          "id",
-          editingAvailabilityId
-        )
-        .select("*")
-        .single();
+            updated_at:
+              new Date().toISOString(),
+          })
+          .eq(
+            "id",
+            editingAvailabilityId
+          )
+          .select(
+            "*"
+          )
+          .single();
 
       if (
         error
@@ -1824,13 +2192,19 @@ export default function PartnerDashboardPage() {
       }
 
       setAvailabilitySlots(
-        (previous) =>
+        (
+          previous
+        ) =>
           previous
             .map(
-              (slot) =>
+              (
+                slot
+              ) =>
                 slot.id ===
                 editingAvailabilityId
-                  ? (data as AvailabilitySlotRow)
+                  ? (
+                      data as AvailabilitySlotRow
+                    )
                   : slot
             )
             .sort(
@@ -1854,33 +2228,39 @@ export default function PartnerDashboardPage() {
       const {
         data,
         error,
-      } = await supabase
-        .from(
-          "availability_slots"
-        )
-        .insert({
-          start_time:
-            start.toISOString(),
+      } =
+        await supabase
+          .from(
+            "availability_slots"
+          )
+          .insert({
+            start_time:
+              start.toISOString(),
 
-          end_time:
-            end.toISOString(),
+            end_time:
+              end.toISOString(),
 
-          label:
-            newSlotLabel.trim() ||
-            null,
+            label:
+              newSlotLabel.trim() ||
+              null,
 
-          is_active:
-            true,
+            is_active:
+              true,
 
-          max_requests:
-            10,
+            max_requests:
+              10,
 
-          created_by:
-            authData.user?.id ||
-            null,
-        })
-        .select("*")
-        .single();
+            booked_request_id:
+              null,
+
+            created_by:
+              authData.user?.id ||
+              null,
+          })
+          .select(
+            "*"
+          )
+          .single();
 
       if (
         error
@@ -1897,7 +2277,9 @@ export default function PartnerDashboardPage() {
       }
 
       setAvailabilitySlots(
-        (previous) =>
+        (
+          previous
+        ) =>
           [
             ...previous,
             data as AvailabilitySlotRow,
@@ -1928,8 +2310,19 @@ export default function PartnerDashboardPage() {
   }
 
   function editAvailability(
-    slot: AvailabilitySlotRow
+    slot:
+      AvailabilitySlotRow
   ) {
+    if (
+      slot.booked_request_id
+    ) {
+      setMessage(
+        "This appointment time is booked. Cancel or reschedule the confirmed appointment before editing it."
+      );
+
+      return;
+    }
+
     const start =
       new Date(
         slot.start_time
@@ -1998,7 +2391,7 @@ export default function PartnerDashboardPage() {
 
     setNewSlotLabel(
       slot.label ||
-      ""
+        ""
     );
 
     setEditingAvailabilityId(
@@ -2010,8 +2403,11 @@ export default function PartnerDashboardPage() {
     );
 
     window.scrollTo({
-      top: 0,
-      behavior: "smooth",
+      top:
+        0,
+
+      behavior:
+        "smooth",
     });
   }
 
@@ -2040,15 +2436,28 @@ export default function PartnerDashboardPage() {
   function cancelAvailabilityEdit() {
     clearAvailabilityForm();
 
-    setMessage("");
+    setMessage(
+      ""
+    );
   }
 
   async function toggleAvailability(
-    slot: AvailabilitySlotRow
+    slot:
+      AvailabilitySlotRow
   ) {
     if (
       !isSystemAdmin
     ) {
+      return;
+    }
+
+    if (
+      slot.booked_request_id
+    ) {
+      setMessage(
+        "This appointment time is booked. Cancel or reschedule the confirmed appointment before hiding it."
+      );
+
       return;
     }
 
@@ -2057,21 +2466,22 @@ export default function PartnerDashboardPage() {
 
     const {
       error,
-    } = await supabase
-      .from(
-        "availability_slots"
-      )
-      .update({
-        is_active:
-          nextActive,
+    } =
+      await supabase
+        .from(
+          "availability_slots"
+        )
+        .update({
+          is_active:
+            nextActive,
 
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq(
-        "id",
-        slot.id
-      );
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq(
+          "id",
+          slot.id
+        );
 
     if (
       error
@@ -2084,9 +2494,13 @@ export default function PartnerDashboardPage() {
     }
 
     setAvailabilitySlots(
-      (previous) =>
+      (
+        previous
+      ) =>
         previous.map(
-          (item) =>
+          (
+            item
+          ) =>
             item.id ===
             slot.id
               ? {
@@ -2098,14 +2512,40 @@ export default function PartnerDashboardPage() {
               : item
         )
     );
+
+    setMessage(
+      nextActive
+        ? "Availability activated."
+        : "Availability hidden."
+    );
   }
 
   async function deleteAvailability(
-    slotId: string
+    slotId:
+      string
   ) {
     if (
       !isSystemAdmin
     ) {
+      return;
+    }
+
+    const slot =
+      availabilitySlots.find(
+        (
+          item
+        ) =>
+          item.id ===
+          slotId
+      );
+
+    if (
+      slot?.booked_request_id
+    ) {
+      setMessage(
+        "This appointment is booked and cannot be deleted. Cancel or reschedule the confirmed appointment first."
+      );
+
       return;
     }
 
@@ -2122,15 +2562,16 @@ export default function PartnerDashboardPage() {
 
     const {
       error,
-    } = await supabase
-      .from(
-        "availability_slots"
-      )
-      .delete()
-      .eq(
-        "id",
-        slotId
-      );
+    } =
+      await supabase
+        .from(
+          "availability_slots"
+        )
+        .delete()
+        .eq(
+          "id",
+          slotId
+        );
 
     if (
       error
@@ -2143,9 +2584,13 @@ export default function PartnerDashboardPage() {
     }
 
     setAvailabilitySlots(
-      (previous) =>
+      (
+        previous
+      ) =>
         previous.filter(
-          (slot) =>
+          (
+            slot
+          ) =>
             slot.id !==
             slotId
         )
@@ -2171,10 +2616,13 @@ export default function PartnerDashboardPage() {
     key:
       keyof CareerConnectSettings,
 
-    value: string
+    value:
+      string
   ) {
     setCareerSettings(
-      (previous) => ({
+      (
+        previous
+      ) => ({
         ...previous,
 
         [key]:
@@ -2194,41 +2642,45 @@ export default function PartnerDashboardPage() {
       true
     );
 
-    setMessage("");
+    setMessage(
+      ""
+    );
 
     const {
       error,
-    } = await supabase
-      .from(
-        "career_connect_settings"
-      )
-      .upsert({
-        id: "default",
+    } =
+      await supabase
+        .from(
+          "career_connect_settings"
+        )
+        .upsert({
+          id:
+            "default",
 
-        meeting_link:
-          careerSettings.meeting_link,
+          meeting_link:
+            careerSettings.meeting_link,
 
-        open_room_title:
-          careerSettings.open_room_title,
+          open_room_title:
+            careerSettings.open_room_title,
 
-        open_room_schedule:
-          careerSettings.open_room_schedule,
+          open_room_schedule:
+            careerSettings.open_room_schedule,
 
-        open_room_time:
-          careerSettings.open_room_time,
+          open_room_time:
+            careerSettings.open_room_time,
 
-        doors_open:
-          careerSettings.doors_open,
+          doors_open:
+            careerSettings.doors_open,
 
-        doors_close:
-          careerSettings.doors_close,
+          doors_close:
+            careerSettings.doors_close,
 
-        open_room_note:
-          careerSettings.open_room_note,
+          open_room_note:
+            careerSettings.open_room_note,
 
-        updated_at:
-          new Date().toISOString(),
-      });
+          updated_at:
+            new Date().toISOString(),
+        });
 
     if (
       error
@@ -2258,232 +2710,312 @@ export default function PartnerDashboardPage() {
   ======================================================= */
 
   const referralCodes =
-    useMemo(() => {
-      const codes =
-        new Set<string>();
+    useMemo(
+      () => {
+        const codes =
+          new Set<
+            string
+          >();
 
-      participants.forEach(
-        (row) => {
-          const code =
-            row.referral_code?.trim();
+        participants.forEach(
+          (
+            row
+          ) => {
+            const code =
+              row.referral_code?.trim();
 
-          if (
-            code
-          ) {
-            codes.add(
-              code.toUpperCase()
-            );
+            if (
+              code
+            ) {
+              codes.add(
+                code.toUpperCase()
+              );
+            }
           }
-        }
-      );
+        );
 
-      activity.forEach(
-        (row) => {
-          const code =
-            row.referral_code?.trim();
+        activity.forEach(
+          (
+            row
+          ) => {
+            const code =
+              row.referral_code?.trim();
 
-          if (
-            code
-          ) {
-            codes.add(
-              code.toUpperCase()
-            );
+            if (
+              code
+            ) {
+              codes.add(
+                code.toUpperCase()
+              );
+            }
           }
-        }
-      );
+        );
 
-      return [
-        ...codes,
-      ].sort();
-    }, [
-      participants,
-      activity,
-    ]);
+        return [
+          ...codes,
+        ].sort();
+      },
+      [
+        participants,
+        activity,
+      ]
+    );
 
-  useEffect(() => {
-    if (
-      selectedCodes.length ===
-        0 &&
-      referralCodes.length >
-        0
-    ) {
-      setSelectedCodes(
-        referralCodes
-      );
-    }
-  }, [
-    referralCodes,
-    selectedCodes.length,
-  ]);
+  useEffect(
+    () => {
+      if (
+        selectedCodes.length ===
+          0 &&
+        referralCodes.length >
+          0
+      ) {
+        setSelectedCodes(
+          referralCodes
+        );
+      }
+    },
+    [
+      referralCodes,
+      selectedCodes.length,
+    ]
+  );
 
   /* =======================================================
      PARTICIPANTS
   ======================================================= */
 
   const uniqueParticipants =
-    useMemo(() => {
-      const map =
-        new Map<
-          string,
-          ParticipantRow
-        >();
+    useMemo(
+      () => {
+        const map =
+          new Map<
+            string,
+            ParticipantRow
+          >();
 
-      participants.forEach(
-        (row) => {
-          const key =
-            participantKey(
-              row
-            );
+        participants.forEach(
+          (
+            row
+          ) => {
+            const key =
+              participantKey(
+                row
+              );
 
-          if (
-            key &&
-            !map.has(
-              key
-            )
-          ) {
-            map.set(
-              key,
-              row
-            );
+            if (
+              key &&
+              !map.has(
+                key
+              )
+            ) {
+              map.set(
+                key,
+                row
+              );
+            }
           }
-        }
-      );
+        );
 
-      return [
-        ...map.values(),
-      ];
-    }, [
-      participants,
-    ]);
+        return [
+          ...map.values(),
+        ];
+      },
+      [
+        participants,
+      ]
+    );
 
   const filteredParticipants =
-    useMemo(() => {
-      const query =
-        participantSearch
-          .trim()
-          .toLowerCase();
+    useMemo(
+      () => {
+        const query =
+          participantSearch
+            .trim()
+            .toLowerCase();
 
-      if (
-        !query
-      ) {
-        return uniqueParticipants;
-      }
+        if (
+          !query
+        ) {
+          return uniqueParticipants;
+        }
 
-      return uniqueParticipants.filter(
-        (row) =>
+        return uniqueParticipants.filter(
           (
-            row.full_name ||
-            ""
-          )
-            .toLowerCase()
-            .includes(
-              query
-            ) ||
-          (
-            row.email ||
-            ""
-          )
-            .toLowerCase()
-            .includes(
-              query
-            ) ||
-          (
-            row.phone ||
-            ""
-          )
-            .toLowerCase()
-            .includes(
-              query
-            ) ||
-          (
-            row.referral_code ||
-            ""
-          )
-            .toLowerCase()
-            .includes(
-              query
+            row
+          ) =>
+            (
+              row.full_name ||
+              ""
             )
-      );
-    }, [
-      participantSearch,
-      uniqueParticipants,
-    ]);
+              .toLowerCase()
+              .includes(
+                query
+              ) ||
+            (
+              row.email ||
+              ""
+            )
+              .toLowerCase()
+              .includes(
+                query
+              ) ||
+            (
+              row.phone ||
+              ""
+            )
+              .toLowerCase()
+              .includes(
+                query
+              ) ||
+            (
+              row.referral_code ||
+              ""
+            )
+              .toLowerCase()
+              .includes(
+                query
+              )
+        );
+      },
+      [
+        participantSearch,
+        uniqueParticipants,
+      ]
+    );
 
   /* =======================================================
      MEETING REQUEST FILTERING
   ======================================================= */
 
   const filteredMeetingRequests =
-    useMemo(() => {
-      const query =
-        requestSearch
-          .trim()
-          .toLowerCase();
+    useMemo(
+      () => {
+        const query =
+          requestSearch
+            .trim()
+            .toLowerCase();
 
-      return meetingRequests.filter(
-        (request) => {
-          if (
-            requestFilter !==
-              "all" &&
-            request.status !==
-              requestFilter
-          ) {
-            return false;
-          }
+        return meetingRequests.filter(
+          (
+            request
+          ) => {
+            if (
+              requestFilter !==
+                "all" &&
+              request.status !==
+                requestFilter
+            ) {
+              return false;
+            }
 
-          if (
-            !query
-          ) {
-            return true;
-          }
+            if (
+              !query
+            ) {
+              return true;
+            }
 
-          return (
-            (
-              request.participant_name ||
-              ""
-            )
-              .toLowerCase()
-              .includes(
-                query
-              ) ||
-            (
-              request.participant_email ||
-              ""
-            )
-              .toLowerCase()
-              .includes(
-                query
-              ) ||
-            (
-              request.referral_code ||
-              ""
-            )
-              .toLowerCase()
-              .includes(
-                query
-              ) ||
-            serviceLabel(
-              request.service_type,
-              request.other_service
-            )
-              .toLowerCase()
-              .includes(
-                query
+            return (
+              (
+                request.participant_name ||
+                ""
               )
-          );
-        }
-      );
-    }, [
-      meetingRequests,
-      requestFilter,
-      requestSearch,
-    ]);
+                .toLowerCase()
+                .includes(
+                  query
+                ) ||
+              (
+                request.participant_email ||
+                ""
+              )
+                .toLowerCase()
+                .includes(
+                  query
+                ) ||
+              (
+                request.referral_code ||
+                ""
+              )
+                .toLowerCase()
+                .includes(
+                  query
+                ) ||
+              serviceLabel(
+                request.service_type,
+                request.other_service
+              )
+                .toLowerCase()
+                .includes(
+                  query
+                )
+            );
+          }
+        );
+      },
+      [
+        meetingRequests,
+        requestFilter,
+        requestSearch,
+      ]
+    );
 
   const pendingRequestCount =
     meetingRequests.filter(
-      (request) =>
+      (
+        request
+      ) =>
         request.status ===
         "pending"
+    ).length;
+
+  const confirmedRequestCount =
+    meetingRequests.filter(
+      (
+        request
+      ) =>
+        request.status ===
+        "confirmed"
+    ).length;
+
+  const completedRequestCount =
+    meetingRequests.filter(
+      (
+        request
+      ) =>
+        request.status ===
+        "completed"
+    ).length;
+
+  const availableSlotCount =
+    availabilitySlots.filter(
+      (
+        slot
+      ) =>
+        slot.is_active ===
+          true &&
+        !slot.booked_request_id &&
+        new Date(
+          slot.start_time
+        ).getTime() >
+          Date.now()
+    ).length;
+
+  const bookedSlotCount =
+    availabilitySlots.filter(
+      (
+        slot
+      ) =>
+        Boolean(
+          slot.booked_request_id
+        )
+    ).length;
+
+  const participantCancellationTotal =
+    meetingCancellations.filter(
+      (
+        row
+      ) =>
+        row.cancellation_source ===
+        "participant"
     ).length;
 
   /* =======================================================
@@ -2535,8 +3067,10 @@ export default function PartnerDashboardPage() {
         );
 
       return (
-        date >= start &&
-        date <= end
+        date >=
+          start &&
+        date <=
+          end
       );
     }
 
@@ -2546,7 +3080,8 @@ export default function PartnerDashboardPage() {
       );
 
     return start
-      ? date >= start
+      ? date >=
+          start
       : true;
   }
 
@@ -2555,452 +3090,449 @@ export default function PartnerDashboardPage() {
   ======================================================= */
 
   const selectedParticipantUniverse =
-    useMemo(() => {
-      return uniqueParticipants.filter(
-        (row) => {
-          const code =
+    useMemo(
+      () => {
+        return uniqueParticipants.filter(
+          (
+            row
+          ) => {
+            const code =
+              (
+                row.referral_code ||
+                ""
+              ).toUpperCase();
+
+            if (
+              !selectedCodes.includes(
+                code
+              )
+            ) {
+              return false;
+            }
+
+            if (
+              reportParticipantKey !==
+              "all"
+            ) {
+              return (
+                participantKey(
+                  row
+                ) ===
+                reportParticipantKey
+              );
+            }
+
+            return true;
+          }
+        );
+      },
+      [
+        uniqueParticipants,
+        selectedCodes,
+        reportParticipantKey,
+      ]
+    );
+
+  const reportActivity =
+    useMemo(
+      () => {
+        return activity.filter(
+          (
+            row
+          ) => {
+            const code =
+              (
+                row.referral_code ||
+                ""
+              ).toUpperCase();
+
+            if (
+              !selectedCodes.includes(
+                code
+              )
+            ) {
+              return false;
+            }
+
+            if (
+              reportParticipantKey !==
+                "all" &&
+              participantKey(
+                row
+              ) !==
+                reportParticipantKey
+            ) {
+              return false;
+            }
+
+            return reportDateMatches(
+              row.created_at
+            );
+          }
+        );
+      },
+      [
+        activity,
+        selectedCodes,
+        reportParticipantKey,
+        reportPeriod,
+        reportStartDate,
+        reportEndDate,
+      ]
+    );
+
+  const activityParticipantKeys =
+    useMemo(
+      () => {
+        const keys =
+          new Set<
+            string
+          >();
+
+        reportActivity.forEach(
+          (
+            row
+          ) => {
+            const key =
+              participantKey(
+                row
+              );
+
+            if (
+              key
+            ) {
+              keys.add(
+                key
+              );
+            }
+          }
+        );
+
+        return keys;
+      },
+      [
+        reportActivity,
+      ]
+    );
+
+  const newEnrollments =
+    useMemo(
+      () => {
+        return selectedParticipantUniverse.filter(
+          (
+            row
+          ) =>
+            reportDateMatches(
+              row.created_at
+            )
+        );
+      },
+      [
+        selectedParticipantUniverse,
+        reportPeriod,
+        reportStartDate,
+        reportEndDate,
+      ]
+    );
+
+  const participantsServed =
+    useMemo(
+      () => {
+        if (
+          reportPeriod ===
+          "all"
+        ) {
+          return selectedParticipantUniverse;
+        }
+
+        return selectedParticipantUniverse.filter(
+          (
+            row
+          ) => {
+            const key =
+              participantKey(
+                row
+              );
+
+            return (
+              reportDateMatches(
+                row.created_at
+              ) ||
+              (
+                key
+                  ? activityParticipantKeys.has(
+                      key
+                    )
+                  : false
+              )
+            );
+          }
+        );
+      },
+      [
+        selectedParticipantUniverse,
+        activityParticipantKeys,
+        reportPeriod,
+        reportStartDate,
+        reportEndDate,
+      ]
+    );
+
+  const activeParticipants =
+    useMemo(
+      () => {
+        return selectedParticipantUniverse.filter(
+          (
+            row
+          ) => {
+            const key =
+              participantKey(
+                row
+              );
+
+            return key
+              ? activityParticipantKeys.has(
+                  key
+                )
+              : false;
+          }
+        );
+      },
+      [
+        selectedParticipantUniverse,
+        activityParticipantKeys,
+      ]
+    );
+
+  const trainingEnrollments =
+    useMemo(
+      () => {
+        return newEnrollments.filter(
+          (
+            row
+          ) =>
             (
               row.referral_code ||
               ""
-            ).toUpperCase();
-
-          if (
-            !selectedCodes.includes(
-              code
             )
-          ) {
-            return false;
-          }
+              .toUpperCase()
+              .startsWith(
+                "COHORT"
+              )
+        );
+      },
+      [
+        newEnrollments,
+      ]
+    );
 
-          if (
-            reportParticipantKey !==
-            "all"
-          ) {
-            return (
+  const reportParticipantOptions =
+    useMemo(
+      () => {
+        return uniqueParticipants
+          .filter(
+            (
+              row
+            ) =>
+              selectedCodes.includes(
+                (
+                  row.referral_code ||
+                  ""
+                ).toUpperCase()
+              )
+          )
+          .map(
+            (
+              row
+            ) => ({
+              key:
+                participantKey(
+                  row
+                ),
+
+              name:
+                row.full_name ||
+                row.email ||
+                "Participant",
+
+              referralCode:
+                row.referral_code ||
+                "",
+            })
+          )
+          .filter(
+            (
+              item
+            ) =>
+              Boolean(
+                item.key
+              )
+          );
+      },
+      [
+        uniqueParticipants,
+        selectedCodes,
+      ]
+    );
+
+  const individualParticipant =
+    useMemo(
+      () => {
+        if (
+          reportParticipantKey ===
+          "all"
+        ) {
+          return null;
+        }
+
+        return (
+          uniqueParticipants.find(
+            (
+              row
+            ) =>
               participantKey(
                 row
               ) ===
               reportParticipantKey
-            );
-          }
-
-          return true;
-        }
-      );
-    }, [
-      uniqueParticipants,
-      selectedCodes,
-      reportParticipantKey,
-    ]);
-
-  const reportActivity =
-    useMemo(() => {
-      return activity.filter(
-        (row) => {
-          const code =
-            (
-              row.referral_code ||
-              ""
-            ).toUpperCase();
-
-          if (
-            !selectedCodes.includes(
-              code
-            )
-          ) {
-            return false;
-          }
-
-          if (
-            reportParticipantKey !==
-              "all" &&
-            participantKey(
-              row
-            ) !==
-              reportParticipantKey
-          ) {
-            return false;
-          }
-
-          return reportDateMatches(
-            row.created_at
-          );
-        }
-      );
-    }, [
-      activity,
-      selectedCodes,
-      reportParticipantKey,
-      reportPeriod,
-      reportStartDate,
-      reportEndDate,
-    ]);
-
-  const activityParticipantKeys =
-    useMemo(() => {
-      const keys =
-        new Set<string>();
-
-      reportActivity.forEach(
-        (row) => {
-          const key =
-            participantKey(
-              row
-            );
-
-          if (
-            key
-          ) {
-            keys.add(
-              key
-            );
-          }
-        }
-      );
-
-      return keys;
-    }, [
-      reportActivity,
-    ]);
-
-  const newEnrollments =
-    useMemo(() => {
-      return selectedParticipantUniverse.filter(
-        (row) =>
-          reportDateMatches(
-            row.created_at
-          )
-      );
-    }, [
-      selectedParticipantUniverse,
-      reportPeriod,
-      reportStartDate,
-      reportEndDate,
-    ]);
-
-  const participantsServed =
-    useMemo(() => {
-      if (
-        reportPeriod ===
-        "all"
-      ) {
-        return selectedParticipantUniverse;
-      }
-
-      return selectedParticipantUniverse.filter(
-        (row) => {
-          const key =
-            participantKey(
-              row
-            );
-
-          return (
-            reportDateMatches(
-              row.created_at
-            ) ||
-            (
-              key
-                ? activityParticipantKeys.has(
-                    key
-                  )
-                : false
-            )
-          );
-        }
-      );
-    }, [
-      selectedParticipantUniverse,
-      activityParticipantKeys,
-      reportPeriod,
-      reportStartDate,
-      reportEndDate,
-    ]);
-
-  const activeParticipants =
-    useMemo(() => {
-      return selectedParticipantUniverse.filter(
-        (row) => {
-          const key =
-            participantKey(
-              row
-            );
-
-          return key
-            ? activityParticipantKeys.has(
-                key
-              )
-            : false;
-        }
-      );
-    }, [
-      selectedParticipantUniverse,
-      activityParticipantKeys,
-    ]);
-
-  const trainingEnrollments =
-    useMemo(() => {
-      return newEnrollments.filter(
-        (row) =>
-          (
-            row.referral_code ||
-            ""
-          )
-            .toUpperCase()
-            .startsWith(
-              "COHORT"
-            )
-      );
-    }, [
-      newEnrollments,
-    ]);
-
-  const reportParticipantOptions =
-    useMemo(() => {
-      return uniqueParticipants
-        .filter(
-          (row) =>
-            selectedCodes.includes(
-              (
-                row.referral_code ||
-                ""
-              ).toUpperCase()
-            )
-        )
-        .map(
-          (row) => ({
-            key:
-              participantKey(
-                row
-              ),
-
-            name:
-              row.full_name ||
-              row.email ||
-              "Participant",
-
-            referralCode:
-              row.referral_code ||
-              "",
-          })
-        )
-        .filter(
-          (item) =>
-            Boolean(
-              item.key
-            )
+          ) ||
+          null
         );
-    }, [
-      uniqueParticipants,
-      selectedCodes,
-    ]);
-
-  const individualParticipant =
-    useMemo(() => {
-      if (
-        reportParticipantKey ===
-        "all"
-      ) {
-        return null;
-      }
-
-      return (
-        uniqueParticipants.find(
-          (row) =>
-            participantKey(
-              row
-            ) ===
-            reportParticipantKey
-        ) ||
-        null
-      );
-    }, [
-      uniqueParticipants,
-      reportParticipantKey,
-    ]);
+      },
+      [
+        uniqueParticipants,
+        reportParticipantKey,
+      ]
+    );
 
   const reportServiceRows =
-    useMemo(() => {
-      const userIds =
-        new Set(
-          selectedParticipantUniverse
-            .map(
-              (row) =>
-                row.user_id
-            )
-            .filter(
-              Boolean
-            )
-        );
-
-      return workforceSessionServices.filter(
-        (row) => {
-          if (
-            !row.user_id ||
-            !userIds.has(
-              row.user_id
-            )
-          ) {
-            return false;
-          }
-
-          return reportDateMatches(
-            row.created_at
+    useMemo(
+      () => {
+        const userIds =
+          new Set(
+            selectedParticipantUniverse
+              .map(
+                (
+                  row
+                ) =>
+                  row.user_id
+              )
+              .filter(
+                Boolean
+              )
           );
-        }
-      );
-    }, [
-      workforceSessionServices,
-      selectedParticipantUniverse,
-      reportPeriod,
-      reportStartDate,
-      reportEndDate,
-    ]);
+
+        return workforceSessionServices.filter(
+          (
+            row
+          ) => {
+            if (
+              !row.user_id ||
+              !userIds.has(
+                row.user_id
+              )
+            ) {
+              return false;
+            }
+
+            return reportDateMatches(
+              row.created_at
+            );
+          }
+        );
+      },
+      [
+        workforceSessionServices,
+        selectedParticipantUniverse,
+        reportPeriod,
+        reportStartDate,
+        reportEndDate,
+      ]
+    );
+
+  const reportCancellationRows =
+    useMemo(
+      () => {
+        const userIds =
+          new Set(
+            selectedParticipantUniverse
+              .map(
+                (
+                  row
+                ) =>
+                  row.user_id
+              )
+              .filter(
+                Boolean
+              )
+          );
+
+        return meetingCancellations.filter(
+          (
+            row
+          ) => {
+            if (
+              row.cancellation_source !==
+              "participant"
+            ) {
+              return false;
+            }
+
+            if (
+              !userIds.has(
+                row.user_id
+              )
+            ) {
+              return false;
+            }
+
+            return reportDateMatches(
+              row.cancelled_at
+            );
+          }
+        );
+      },
+      [
+        meetingCancellations,
+        selectedParticipantUniverse,
+        reportPeriod,
+        reportStartDate,
+        reportEndDate,
+      ]
+    );
 
   const serviceBreakdown =
-    useMemo(() => {
-      const counts: Record<
-        string,
-        number
-      > = {};
+    useMemo(
+      () => {
+        const counts: Record<
+          string,
+          number
+        > = {};
 
-      reportServiceRows.forEach(
-        (row) => {
-          const label =
-            row.service_label ||
-            serviceLabel(
-              row.service_type
-            );
-
-          counts[label] =
-            (
-              counts[label] ||
-              0
-            ) + 1;
-        }
-      );
-
-      return Object.entries(
-        counts
-      ).sort(
-        (
-          a,
-          b
-        ) =>
-          b[1] -
-          a[1]
-      );
-    }, [
-      reportServiceRows,
-    ]);
-
-  const documentSubmissionBreakdown =
-    useMemo(() => {
-      const counts: Record<
-        string,
-        number
-      > = {};
-
-      reportActivity
-        .filter(
-          (row) =>
-            row.event_type ===
-            "document_submitted"
-        )
-        .forEach(
-          (row) => {
+        reportServiceRows.forEach(
+          (
+            row
+          ) => {
             const label =
-              row.tool_name ||
-              "Career Document Submitted";
+              row.service_label ||
+              serviceLabel(
+                row.service_type
+              );
 
-            counts[label] =
+            counts[
+              label
+            ] =
               (
-                counts[label] ||
+                counts[
+                  label
+                ] ||
                 0
-              ) + 1;
+              ) +
+              1;
           }
         );
 
-      return Object.entries(
-        counts
-      ).sort(
-        (
-          a,
-          b
-        ) =>
-          b[1] -
-          a[1]
-      );
-    }, [
-      reportActivity,
-    ]);
-
-  const reportStats =
-    useMemo(() => {
-      let completions =
-        0;
-
-      let toolUses =
-        0;
-
-      let documentSubmissions =
-        0;
-
-      const tools: Record<
-        string,
-        number
-      > = {};
-
-      reportActivity.forEach(
-        (row) => {
-          const event =
-            (
-              row.event_type ||
-              ""
-            ).toLowerCase();
-
-          const tool =
-            (
-              row.tool_name ||
-              ""
-            ).toLowerCase();
-
-          if (
-            event.includes(
-              "complete"
-            )
-          ) {
-            completions +=
-              1;
-          }
-
-          if (
-            event ===
-            "document_submitted"
-          ) {
-            documentSubmissions +=
-              1;
-          }
-
-          if (
-            tool
-          ) {
-            toolUses +=
-              1;
-
-            tools[tool] =
-              (
-                tools[
-                  tool
-                ] ||
-                0
-              ) + 1;
-          }
-        }
-      );
-
-      const topToolEntry =
-        Object.entries(
-          tools
+        return Object.entries(
+          counts
         ).sort(
           (
             a,
@@ -3008,240 +3540,454 @@ export default function PartnerDashboardPage() {
           ) =>
             b[1] -
             a[1]
-        )[0] ||
-        null;
+        );
+      },
+      [
+        reportServiceRows,
+      ]
+    );
 
-      return {
-        participantsServed:
-          participantsServed.length,
+  const documentSubmissionBreakdown =
+    useMemo(
+      () => {
+        const counts: Record<
+          string,
+          number
+        > = {};
 
-        newEnrollments:
-          newEnrollments.length,
+        reportActivity
+          .filter(
+            (
+              row
+            ) =>
+              row.event_type ===
+              "document_submitted"
+          )
+          .forEach(
+            (
+              row
+            ) => {
+              const label =
+                row.tool_name ||
+                "Career Document Submitted";
 
-        activeParticipants:
-          activeParticipants.length,
+              counts[
+                label
+              ] =
+                (
+                  counts[
+                    label
+                  ] ||
+                  0
+                ) +
+                1;
+            }
+          );
 
-        trainingEnrollments:
-          trainingEnrollments.length,
+        return Object.entries(
+          counts
+        ).sort(
+          (
+            a,
+            b
+          ) =>
+            b[1] -
+            a[1]
+        );
+      },
+      [
+        reportActivity,
+      ]
+    );
 
-        activities:
-          reportActivity.length,
+  const reportStats =
+    useMemo(
+      () => {
+        let completions =
+          0;
 
-        toolUses,
+        let toolUses =
+          0;
 
-        completions,
+        let documentSubmissions =
+          0;
 
-        documentSubmissions,
+        const tools: Record<
+          string,
+          number
+        > = {};
 
-        careerServices:
-          reportServiceRows.length,
+        reportActivity.forEach(
+          (
+            row
+          ) => {
+            const event =
+              (
+                row.event_type ||
+                ""
+              ).toLowerCase();
 
-        topTool:
-          topToolEntry
-            ? topToolEntry[0]
-            : "—",
+            const tool =
+              (
+                row.tool_name ||
+                ""
+              ).toLowerCase();
 
-        topToolUses:
-          topToolEntry
-            ? topToolEntry[1]
-            : 0,
-      };
-    }, [
-      participantsServed,
-      newEnrollments,
-      activeParticipants,
-      trainingEnrollments,
-      reportActivity,
-      reportServiceRows,
-    ]);
+            if (
+              event.includes(
+                "complete"
+              )
+            ) {
+              completions +=
+                1;
+            }
+
+            if (
+              event ===
+              "document_submitted"
+            ) {
+              documentSubmissions +=
+                1;
+            }
+
+            if (
+              tool
+            ) {
+              toolUses +=
+                1;
+
+              tools[
+                tool
+              ] =
+                (
+                  tools[
+                    tool
+                  ] ||
+                  0
+                ) +
+                1;
+            }
+          }
+        );
+
+        const topToolEntry =
+          Object.entries(
+            tools
+          ).sort(
+            (
+              a,
+              b
+            ) =>
+              b[1] -
+              a[1]
+          )[0] ||
+          null;
+
+        return {
+          participantsServed:
+            participantsServed.length,
+
+          newEnrollments:
+            newEnrollments.length,
+
+          activeParticipants:
+            activeParticipants.length,
+
+          trainingEnrollments:
+            trainingEnrollments.length,
+
+          activities:
+            reportActivity.length,
+
+          toolUses,
+
+          completions,
+
+          documentSubmissions,
+
+          careerServices:
+            reportServiceRows.length,
+
+          cancellations:
+            reportCancellationRows.length,
+
+          topTool:
+            topToolEntry
+              ? topToolEntry[
+                  0
+                ]
+              : "—",
+
+          topToolUses:
+            topToolEntry
+              ? topToolEntry[
+                  1
+                ]
+              : 0,
+        };
+      },
+      [
+        participantsServed,
+        newEnrollments,
+        activeParticipants,
+        trainingEnrollments,
+        reportActivity,
+        reportServiceRows,
+        reportCancellationRows,
+      ]
+    );
 
   const participantSummary =
     useMemo<
       ParticipantSummaryRow[]
-    >(() => {
-      return participantsServed.map(
-        (participant) => {
-          const key =
-            participantKey(
-              participant
-            );
+    >(
+      () => {
+        return participantsServed.map(
+          (
+            participant
+          ) => {
+            const key =
+              participantKey(
+                participant
+              );
 
-          const personActivity =
-            reportActivity.filter(
-              (row) =>
-                participantKey(
+            const personActivity =
+              reportActivity.filter(
+                (
                   row
-                ) ===
-                key
-            );
+                ) =>
+                  participantKey(
+                    row
+                  ) ===
+                  key
+              );
 
-          const sortedActivity =
-            [
-              ...personActivity,
-            ].sort(
-              (
-                a,
-                b
-              ) =>
+            const sortedActivity =
+              [
+                ...personActivity,
+              ].sort(
                 (
-                  toDate(
-                    b.created_at
-                  )?.getTime() ||
-                  0
-                ) -
-                (
-                  toDate(
-                    a.created_at
-                  )?.getTime() ||
-                  0
-                )
-            );
-
-          const documentSubmissions =
-            personActivity.filter(
-              (row) =>
-                row.event_type ===
-                "document_submitted"
-            ).length;
-
-          return {
-            key,
-
-            participant,
-
-            referralCode:
-              participant.referral_code ||
-              "—",
-
-            signupDate:
-              participant.created_at,
-
-            lastActivity:
-              sortedActivity[0]
-                ?.created_at ||
-              null,
-
-            activityCount:
-              personActivity.length,
-
-            toolUses:
-              personActivity.filter(
-                (row) =>
-                  Boolean(
-                    row.tool_name
-                  )
-              ).length,
-
-            completions:
-              personActivity.filter(
-                (row) =>
+                  a,
+                  b
+                ) =>
                   (
-                    row.event_type ||
-                    ""
+                    toDate(
+                      b.created_at
+                    )?.getTime() ||
+                    0
+                  ) -
+                  (
+                    toDate(
+                      a.created_at
+                    )?.getTime() ||
+                    0
                   )
-                    .toLowerCase()
-                    .includes(
-                      "complete"
-                    )
-              ).length,
+              );
 
-            documentSubmissions,
-          };
-        }
-      );
-    }, [
-      participantsServed,
-      reportActivity,
-    ]);
+            const documentSubmissions =
+              personActivity.filter(
+                (
+                  row
+                ) =>
+                  row.event_type ===
+                  "document_submitted"
+              ).length;
+
+            const cancellations =
+              participant.user_id
+                ? reportCancellationRows.filter(
+                    (
+                      row
+                    ) =>
+                      row.user_id ===
+                      participant.user_id
+                  ).length
+                : 0;
+
+            return {
+              key,
+
+              participant,
+
+              referralCode:
+                participant.referral_code ||
+                "—",
+
+              signupDate:
+                participant.created_at,
+
+              lastActivity:
+                sortedActivity[
+                  0
+                ]?.created_at ||
+                null,
+
+              activityCount:
+                personActivity.length,
+
+              toolUses:
+                personActivity.filter(
+                  (
+                    row
+                  ) =>
+                    Boolean(
+                      row.tool_name
+                    )
+                ).length,
+
+              completions:
+                personActivity.filter(
+                  (
+                    row
+                  ) =>
+                    (
+                      row.event_type ||
+                      ""
+                    )
+                      .toLowerCase()
+                      .includes(
+                        "complete"
+                      )
+                ).length,
+
+              documentSubmissions,
+
+              cancellations,
+            };
+          }
+        );
+      },
+      [
+        participantsServed,
+        reportActivity,
+        reportCancellationRows,
+      ]
+    );
 
   const codeBreakdown =
-    useMemo(() => {
-      return selectedCodes.map(
-        (code) => {
-          const codeParticipants =
-            participantsServed.filter(
-              (row) =>
+    useMemo(
+      () => {
+        return selectedCodes.map(
+          (
+            code
+          ) => {
+            const codeParticipants =
+              participantsServed.filter(
                 (
-                  row.referral_code ||
-                  ""
-                ).toUpperCase() ===
-                code
-            );
+                  row
+                ) =>
+                  (
+                    row.referral_code ||
+                    ""
+                  ).toUpperCase() ===
+                  code
+              );
 
-          const codeNew =
-            newEnrollments.filter(
-              (row) =>
+            const codeNew =
+              newEnrollments.filter(
                 (
-                  row.referral_code ||
-                  ""
-                ).toUpperCase() ===
-                code
-            );
+                  row
+                ) =>
+                  (
+                    row.referral_code ||
+                    ""
+                  ).toUpperCase() ===
+                  code
+              );
 
-          const codeActive =
-            activeParticipants.filter(
-              (row) =>
+            const codeActive =
+              activeParticipants.filter(
                 (
-                  row.referral_code ||
-                  ""
-                ).toUpperCase() ===
-                code
-            );
+                  row
+                ) =>
+                  (
+                    row.referral_code ||
+                    ""
+                  ).toUpperCase() ===
+                  code
+              );
 
-          const codeActivity =
-            reportActivity.filter(
-              (row) =>
+            const codeActivity =
+              reportActivity.filter(
                 (
-                  row.referral_code ||
-                  ""
-                ).toUpperCase() ===
-                code
-            );
+                  row
+                ) =>
+                  (
+                    row.referral_code ||
+                    ""
+                  ).toUpperCase() ===
+                  code
+              );
 
-          return {
-            code,
+            const codeCancellations =
+              reportCancellationRows.filter(
+                (
+                  row
+                ) =>
+                  (
+                    row.referral_code ||
+                    ""
+                  ).toUpperCase() ===
+                  code
+              );
 
-            participants:
-              codeParticipants.length,
+            return {
+              code,
 
-            newEnrollments:
-              codeNew.length,
+              participants:
+                codeParticipants.length,
 
-            active:
-              codeActive.length,
+              newEnrollments:
+                codeNew.length,
 
-            toolUses:
-              codeActivity.filter(
-                (row) =>
-                  Boolean(
-                    row.tool_name
-                  )
-              ).length,
-          };
-        }
-      );
-    }, [
-      selectedCodes,
-      participantsServed,
-      newEnrollments,
-      activeParticipants,
-      reportActivity,
-    ]);
+              active:
+                codeActive.length,
+
+              toolUses:
+                codeActivity.filter(
+                  (
+                    row
+                  ) =>
+                    Boolean(
+                      row.tool_name
+                    )
+                ).length,
+
+              cancellations:
+                codeCancellations.length,
+            };
+          }
+        );
+      },
+      [
+        selectedCodes,
+        participantsServed,
+        newEnrollments,
+        activeParticipants,
+        reportActivity,
+        reportCancellationRows,
+      ]
+    );
 
   /* =======================================================
      REPORT CONTROLS
   ======================================================= */
 
   function toggleCode(
-    code: string
+    code:
+      string
   ) {
     setSelectedCodes(
-      (previous) =>
+      (
+        previous
+      ) =>
         previous.includes(
           code
         )
           ? previous.filter(
-              (item) =>
+              (
+                item
+              ) =>
                 item !==
                 code
             )
@@ -3281,12 +4027,16 @@ export default function PartnerDashboardPage() {
       OptionalMetricKey
   ) {
     setSelectedOptionalMetrics(
-      (previous) =>
+      (
+        previous
+      ) =>
         previous.includes(
           metric
         )
           ? previous.filter(
-              (item) =>
+              (
+                item
+              ) =>
                 item !==
                 metric
             )
@@ -3314,41 +4064,87 @@ export default function PartnerDashboardPage() {
     );
 
   const reportSummaryText =
-    useMemo(() => {
-      if (
-        individualParticipant
-      ) {
-        const name =
-          individualParticipant.full_name ||
-          "The participant";
-
-        let text =
-          `${name} is associated with referral code ` +
-          `${individualParticipant.referral_code || "—"}. ` +
-          `During the selected reporting period, ` +
-          `${
-            reportStats.activeParticipants >
-            0
-              ? "the participant demonstrated recorded platform engagement"
-              : "no platform engagement was recorded"
-          }.`;
-
+    useMemo(
+      () => {
         if (
-          hasOptionalMetric(
-            "tool_engagements"
-          )
+          individualParticipant
         ) {
-          text +=
-            ` ${reportStats.toolUses} career tool engagement(s) were recorded.`;
+          const name =
+            individualParticipant.full_name ||
+            "The participant";
+
+          let text =
+            `${name} is associated with referral code ` +
+            `${individualParticipant.referral_code || "—"}. ` +
+            `During the selected reporting period, ` +
+            `${
+              reportStats.activeParticipants >
+              0
+                ? "the participant demonstrated recorded platform engagement"
+                : "no platform engagement was recorded"
+            }.`;
+
+          if (
+            hasOptionalMetric(
+              "tool_engagements"
+            )
+          ) {
+            text +=
+              ` ${reportStats.toolUses} career tool engagement(s) were recorded.`;
+          }
+
+          if (
+            hasOptionalMetric(
+              "completed_activities"
+            )
+          ) {
+            text +=
+              ` ${reportStats.completions} completed activity event(s) were recorded.`;
+          }
+
+          if (
+            hasOptionalMetric(
+              "career_services"
+            )
+          ) {
+            text +=
+              ` ${reportStats.careerServices} tracked career service(s) were recorded.`;
+          }
+
+          if (
+            hasOptionalMetric(
+              "document_submissions"
+            )
+          ) {
+            text +=
+              ` ${reportStats.documentSubmissions} career document submission(s) were recorded.`;
+          }
+
+          if (
+            hasOptionalMetric(
+              "cancellations"
+            )
+          ) {
+            text +=
+              ` ${reportStats.cancellations} participant-initiated cancellation(s) were recorded.`;
+          }
+
+          return text;
         }
 
+        let text =
+          `During ${reportingPeriodLabel.toLowerCase()}, HireMinds served ` +
+          `${reportStats.participantsServed} participant(s) across ` +
+          `${selectedCodes.length} selected referral code(s). ` +
+          `${reportStats.newEnrollments} new enrollment(s) were recorded, ` +
+          `and ${reportStats.activeParticipants} participant(s) demonstrated platform engagement.`;
+
         if (
-          hasOptionalMetric(
-            "completed_activities"
-          )
+          reportStats.trainingEnrollments >
+          0
         ) {
           text +=
-            ` ${reportStats.completions} completed activity event(s) were recorded.`;
+            ` ${reportStats.trainingEnrollments} training enrollment(s) were associated with COHORT referral codes.`;
         }
 
         if (
@@ -3357,7 +4153,7 @@ export default function PartnerDashboardPage() {
           )
         ) {
           text +=
-            ` ${reportStats.careerServices} tracked career service(s) were recorded.`;
+            ` ${reportStats.careerServices} tracked career service(s) were recorded through Career Connect.`;
         }
 
         if (
@@ -3369,50 +4165,25 @@ export default function PartnerDashboardPage() {
             ` ${reportStats.documentSubmissions} career document submission(s) were recorded.`;
         }
 
+        if (
+          hasOptionalMetric(
+            "cancellations"
+          )
+        ) {
+          text +=
+            ` ${reportStats.cancellations} participant-initiated cancellation(s) were recorded.`;
+        }
+
         return text;
-      }
-
-      let text =
-        `During ${reportingPeriodLabel.toLowerCase()}, HireMinds served ` +
-        `${reportStats.participantsServed} participant(s) across ` +
-        `${selectedCodes.length} selected referral code(s). ` +
-        `${reportStats.newEnrollments} new enrollment(s) were recorded, ` +
-        `and ${reportStats.activeParticipants} participant(s) demonstrated platform engagement.`;
-
-      if (
-        reportStats.trainingEnrollments >
-        0
-      ) {
-        text +=
-          ` ${reportStats.trainingEnrollments} training enrollment(s) were associated with COHORT referral codes.`;
-      }
-
-      if (
-        hasOptionalMetric(
-          "career_services"
-        )
-      ) {
-        text +=
-          ` ${reportStats.careerServices} tracked career service(s) were recorded through Career Connect.`;
-      }
-
-      if (
-        hasOptionalMetric(
-          "document_submissions"
-        )
-      ) {
-        text +=
-          ` ${reportStats.documentSubmissions} career document submission(s) were recorded.`;
-      }
-
-      return text;
-    }, [
-      individualParticipant,
-      reportStats,
-      selectedCodes.length,
-      reportingPeriodLabel,
-      selectedOptionalMetrics,
-    ]);
+      },
+      [
+        individualParticipant,
+        reportStats,
+        selectedCodes.length,
+        reportingPeriodLabel,
+        selectedOptionalMetrics,
+      ]
+    );
 
   /* =======================================================
      EXPORT
@@ -3423,61 +4194,73 @@ export default function PartnerDashboardPage() {
   }
 
   function exportCSV() {
-    const rows = [
+    const rows =
       [
-        "Participant",
-        "Email",
-        "Referral Code",
-        "Sign-Up Date",
-        "Last Activity",
-        "Activity Count",
-        "Tool Engagements",
-        "Completed Activities",
-        "Document Submissions",
-      ],
+        [
+          "Participant",
+          "Email",
+          "Referral Code",
+          "Sign-Up Date",
+          "Last Activity",
+          "Activity Count",
+          "Tool Engagements",
+          "Completed Activities",
+          "Document Submissions",
+          "Participant Cancellations",
+        ],
 
-      ...participantSummary.map(
-        (row) => [
-          row.participant.full_name ||
-            "",
+        ...participantSummary.map(
+          (
+            row
+          ) => [
+            row.participant.full_name ||
+              "",
 
-          row.participant.email ||
-            "",
+            row.participant.email ||
+              "",
 
-          row.referralCode,
+            row.referralCode,
 
-          row.signupDate ||
-            "",
+            row.signupDate ||
+              "",
 
-          row.lastActivity ||
-            "",
+            row.lastActivity ||
+              "",
 
-          String(
-            row.activityCount
-          ),
+            String(
+              row.activityCount
+            ),
 
-          String(
-            row.toolUses
-          ),
+            String(
+              row.toolUses
+            ),
 
-          String(
-            row.completions
-          ),
+            String(
+              row.completions
+            ),
 
-          String(
-            row.documentSubmissions
-          ),
-        ]
-      ),
-    ];
+            String(
+              row.documentSubmissions
+            ),
+
+            String(
+              row.cancellations
+            ),
+          ]
+        ),
+      ];
 
     const csv =
       rows
         .map(
-          (row) =>
+          (
+            row
+          ) =>
             row
               .map(
-                (value) =>
+                (
+                  value
+                ) =>
                   `"${String(
                     value
                   ).replace(
@@ -3564,83 +4347,84 @@ export default function PartnerDashboardPage() {
 
     adminOnly?:
       boolean;
-  }[] = [
-    {
-      key:
-        "overview",
+  }[] =
+    [
+      {
+        key:
+          "overview",
 
-      label:
-        "Overview",
-    },
+        label:
+          "Overview",
+      },
 
-    {
-      key:
-        "live",
+      {
+        key:
+          "live",
 
-      label:
-        "Live Activity",
-    },
+        label:
+          "Live Activity",
+      },
 
-    {
-      key:
-        "history",
+      {
+        key:
+          "history",
 
-      label:
-        "History",
-    },
+        label:
+          "History",
+      },
 
-    {
-      key:
-        "tools",
+      {
+        key:
+          "tools",
 
-      label:
-        "Tool Usage",
-    },
+        label:
+          "Tool Usage",
+      },
 
-    {
-      key:
-        "meeting_requests",
+      {
+        key:
+          "meeting_requests",
 
-      label:
-        pendingRequestCount >
-        0
-          ? `Meeting Requests (${pendingRequestCount})`
-          : "Meeting Requests",
+        label:
+          pendingRequestCount >
+          0
+            ? `Meeting Requests (${pendingRequestCount})`
+            : "Meeting Requests",
 
-      adminOnly:
-        true,
-    },
+        adminOnly:
+          true,
+      },
 
-    {
-      key:
-        "availability",
+      {
+        key:
+          "availability",
 
-      label:
-        "Availability Calendar",
+        label:
+          "Availability Calendar",
 
-      adminOnly:
-        true,
-    },
+        adminOnly:
+          true,
+      },
 
-    {
-      key:
-        "career_connect",
+      {
+        key:
+          "career_connect",
 
-      label:
-        "Career Connect",
+        label:
+          "Career Connect",
 
-      adminOnly:
-        true,
-    },
+        adminOnly:
+          true,
+      },
 
-    {
-      key:
-        "reports",
+      {
+        key:
+          "reports",
 
-      label:
-        "Reports",
-    },
-  ];
+        label:
+          "Reports",
+      },
+    ];
 
   /* =======================================================
      RENDER
@@ -3694,7 +4478,9 @@ export default function PartnerDashboardPage() {
           styles.shell
         }
       >
-        {/* HEADER */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <section
           style={
@@ -3725,8 +4511,8 @@ export default function PartnerDashboardPage() {
               }
             >
               Participant engagement, referral-code reporting,
-              Career Connect management, activity tracking, and
-              workforce outcomes.
+              Career Connect management, activity tracking,
+              and workforce outcomes.
             </p>
 
             <p
@@ -3778,15 +4564,17 @@ export default function PartnerDashboardPage() {
           >
             <button
               type="button"
-              onClick={async () => {
-                await loadDashboard();
+              onClick={
+                async () => {
+                  await loadDashboard();
 
-                if (
-                  isSystemAdmin
-                ) {
-                  await loadAdminData();
+                  if (
+                    isSystemAdmin
+                  ) {
+                    await loadAdminData();
+                  }
                 }
-              }}
+              }
               style={
                 styles.secondaryButton
               }
@@ -3823,7 +4611,9 @@ export default function PartnerDashboardPage() {
           </div>
         ) : null}
 
-        {/* TABS */}
+        {/* =================================================
+            TABS
+        ================================================= */}
 
         <section
           style={
@@ -3837,12 +4627,16 @@ export default function PartnerDashboardPage() {
           >
             {dashboardTabs
               .filter(
-                (tab) =>
+                (
+                  tab
+                ) =>
                   !tab.adminOnly ||
                   isSystemAdmin
               )
               .map(
-                (tab) => (
+                (
+                  tab
+                ) => (
                   <button
                     key={
                       tab.key
@@ -3869,7 +4663,9 @@ export default function PartnerDashboardPage() {
           </div>
         </section>
 
-        {/* OVERVIEW */}
+        {/* =================================================
+            OVERVIEW
+        ================================================= */}
 
         {activeTab ===
         "overview" ? (
@@ -3908,12 +4704,49 @@ export default function PartnerDashboardPage() {
               />
 
               {isSystemAdmin ? (
-                <MetricCard
-                  label="Pending Meeting Requests"
-                  value={
-                    pendingRequestCount
-                  }
-                />
+                <>
+                  <MetricCard
+                    label="Pending Meeting Requests"
+                    value={
+                      pendingRequestCount
+                    }
+                  />
+
+                  <MetricCard
+                    label="Confirmed Meetings"
+                    value={
+                      confirmedRequestCount
+                    }
+                  />
+
+                  <MetricCard
+                    label="Completed Meetings"
+                    value={
+                      completedRequestCount
+                    }
+                  />
+
+                  <MetricCard
+                    label="Available Times"
+                    value={
+                      availableSlotCount
+                    }
+                  />
+
+                  <MetricCard
+                    label="Booked Times"
+                    value={
+                      bookedSlotCount
+                    }
+                  />
+
+                  <MetricCard
+                    label="Participant Cancellations"
+                    value={
+                      participantCancellationTotal
+                    }
+                  />
+                </>
               ) : null}
             </section>
 
@@ -3930,14 +4763,26 @@ export default function PartnerDashboardPage() {
                 Participant List
               </h2>
 
+              <p
+                style={
+                  styles.muted
+                }
+              >
+                Participants are shown once. Referral codes and activity
+                are tracked separately for reporting.
+              </p>
+
               <input
                 value={
                   participantSearch
                 }
-                onChange={(e) =>
-                  setParticipantSearch(
-                    e.target.value
-                  )
+                onChange={
+                  (
+                    e
+                  ) =>
+                    setParticipantSearch(
+                      e.target.value
+                    )
                 }
                 placeholder="Search name, email, phone, or referral code"
                 style={
@@ -3988,6 +4833,16 @@ export default function PartnerDashboardPage() {
                       >
                         Joined
                       </th>
+
+                      {isSystemAdmin ? (
+                        <th
+                          style={
+                            styles.th
+                          }
+                        >
+                          Cancellations
+                        </th>
+                      ) : null}
                     </tr>
                   </thead>
 
@@ -3996,57 +4851,98 @@ export default function PartnerDashboardPage() {
                       (
                         row,
                         index
-                      ) => (
-                        <tr
-                          key={
-                            row.id ||
-                            `${row.email}-${index}`
-                          }
-                        >
-                          <td
-                            style={
-                              styles.td
-                            }
-                          >
-                            {row.full_name ||
-                              "Participant"}
-                          </td>
+                      ) => {
+                        const cancellations =
+                          row.user_id
+                            ? getParticipantCancellationCount(
+                                row.user_id
+                              )
+                            : 0;
 
-                          <td
-                            style={
-                              styles.td
+                        return (
+                          <tr
+                            key={
+                              row.id ||
+                              `${row.email}-${index}`
                             }
                           >
-                            {row.email ||
-                              "—"}
-                          </td>
-
-                          <td
-                            style={
-                              styles.td
-                            }
-                          >
-                            <span
+                            <td
                               style={
-                                styles.codeBadge
+                                styles.td
                               }
                             >
-                              {row.referral_code ||
-                                "—"}
-                            </span>
-                          </td>
+                              {row.full_name ||
+                                "Participant"}
 
-                          <td
-                            style={
-                              styles.td
-                            }
-                          >
-                            {formatShortDate(
-                              row.created_at
-                            )}
-                          </td>
-                        </tr>
-                      )
+                              {cancellations >=
+                              2 ? (
+                                <div
+                                  style={
+                                    styles.referralWarningInline
+                                  }
+                                >
+                                  ⚠ Refer back to provider
+                                </div>
+                              ) : null}
+                            </td>
+
+                            <td
+                              style={
+                                styles.td
+                              }
+                            >
+                              {row.email ||
+                                "—"}
+                            </td>
+
+                            <td
+                              style={
+                                styles.td
+                              }
+                            >
+                              <span
+                                style={
+                                  styles.codeBadge
+                                }
+                              >
+                                {row.referral_code ||
+                                  "—"}
+                              </span>
+                            </td>
+
+                            <td
+                              style={
+                                styles.td
+                              }
+                            >
+                              {formatShortDate(
+                                row.created_at
+                              )}
+                            </td>
+
+                            {isSystemAdmin ? (
+                              <td
+                                style={
+                                  styles.td
+                                }
+                              >
+                                <span
+                                  style={{
+                                    ...styles.cancellationBadge,
+
+                                    ...(cancellations >=
+                                    2
+                                      ? styles.cancellationBadgeWarning
+                                      : {}),
+                                  }}
+                                >
+                                  {cancellations}
+                                </span>
+                              </td>
+                            ) : null}
+                          </tr>
+                        );
+                      }
                     )}
                   </tbody>
                 </table>
@@ -4055,7 +4951,9 @@ export default function PartnerDashboardPage() {
           </>
         ) : null}
 
-        {/* LIVE */}
+        {/* =================================================
+            LIVE ACTIVITY
+        ================================================= */}
 
         {activeTab ===
         "live" ? (
@@ -4070,7 +4968,9 @@ export default function PartnerDashboardPage() {
           />
         ) : null}
 
-        {/* HISTORY */}
+        {/* =================================================
+            HISTORY
+        ================================================= */}
 
         {activeTab ===
         "history" ? (
@@ -4082,7 +4982,9 @@ export default function PartnerDashboardPage() {
           />
         ) : null}
 
-        {/* TOOL USAGE */}
+        {/* =================================================
+            TOOL USAGE
+        ================================================= */}
 
         {activeTab ===
         "tools" ? (
@@ -4135,11 +5037,16 @@ export default function PartnerDashboardPage() {
                         row.service_type
                       );
 
-                    counts[label] =
+                    counts[
+                      label
+                    ] =
                       (
-                        counts[label] ||
+                        counts[
+                          label
+                        ] ||
                         0
-                      ) + 1;
+                      ) +
+                      1;
 
                     return counts;
                   },
@@ -4176,7 +5083,9 @@ export default function PartnerDashboardPage() {
           </section>
         ) : null}
 
-        {/* MEETING REQUESTS */}
+        {/* =================================================
+            MEETING REQUESTS
+        ================================================= */}
 
         {activeTab ===
           "meeting_requests" &&
@@ -4213,8 +5122,10 @@ export default function PartnerDashboardPage() {
                     styles.muted
                   }
                 >
-                  Review the requested service, participant&apos;s
-                  preferred appointment times, notes, and uploaded files.
+                  Participants choose two preferred appointment times.
+                  Both are preferences until you confirm one. Once
+                  confirmed, that time becomes booked and cannot be
+                  confirmed for another participant.
                 </p>
               </div>
 
@@ -4233,6 +5144,54 @@ export default function PartnerDashboardPage() {
 
             <div
               style={
+                styles.requestStatsGrid
+              }
+            >
+              <div
+                style={
+                  styles.requestMiniStat
+                }
+              >
+                <strong>
+                  {pendingRequestCount}
+                </strong>
+
+                <span>
+                  Pending
+                </span>
+              </div>
+
+              <div
+                style={
+                  styles.requestMiniStat
+                }
+              >
+                <strong>
+                  {confirmedRequestCount}
+                </strong>
+
+                <span>
+                  Confirmed
+                </span>
+              </div>
+
+              <div
+                style={
+                  styles.requestMiniStat
+                }
+              >
+                <strong>
+                  {completedRequestCount}
+                </strong>
+
+                <span>
+                  Completed
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={
                 styles.requestControls
               }
             >
@@ -4240,10 +5199,13 @@ export default function PartnerDashboardPage() {
                 value={
                   requestSearch
                 }
-                onChange={(e) =>
-                  setRequestSearch(
-                    e.target.value
-                  )
+                onChange={
+                  (
+                    e
+                  ) =>
+                    setRequestSearch(
+                      e.target.value
+                    )
                 }
                 placeholder="Search participant, email, referral code, or service"
                 style={
@@ -4255,40 +5217,57 @@ export default function PartnerDashboardPage() {
                 value={
                   requestFilter
                 }
-                onChange={(e) =>
-                  setRequestFilter(
-                    e.target.value
-                  )
+                onChange={
+                  (
+                    e
+                  ) =>
+                    setRequestFilter(
+                      e.target.value
+                    )
                 }
                 style={
                   styles.input
                 }
               >
-                <option value="all">
+                <option
+                  value="all"
+                >
                   All Requests
                 </option>
 
-                <option value="pending">
+                <option
+                  value="pending"
+                >
                   Pending
                 </option>
 
-                <option value="confirmed">
+                <option
+                  value="confirmed"
+                >
                   Confirmed
                 </option>
 
-                <option value="rescheduled">
+                <option
+                  value="rescheduled"
+                >
                   Rescheduled
                 </option>
 
-                <option value="completed">
+                <option
+                  value="completed"
+                >
                   Completed
                 </option>
 
-                <option value="cancelled">
+                <option
+                  value="cancelled"
+                >
                   Cancelled
                 </option>
 
-                <option value="declined">
+                <option
+                  value="declined"
+                >
                   Declined
                 </option>
               </select>
@@ -4300,7 +5279,9 @@ export default function PartnerDashboardPage() {
               }
             >
               {filteredMeetingRequests.map(
-                (request) => {
+                (
+                  request
+                ) => {
                   const choices =
                     getRequestChoices(
                       request.id
@@ -4309,6 +5290,11 @@ export default function PartnerDashboardPage() {
                   const files =
                     getRequestFiles(
                       request.id
+                    );
+
+                  const cancellationCount =
+                    getParticipantCancellationCount(
+                      request.user_id
                     );
 
                   return (
@@ -4344,6 +5330,7 @@ export default function PartnerDashboardPage() {
                             <span
                               style={{
                                 ...styles.statusBadge,
+
                                 ...requestStatusStyle(
                                   request.status
                                 ),
@@ -4389,6 +5376,92 @@ export default function PartnerDashboardPage() {
                         </div>
                       </div>
 
+                      {/* AGREEMENT */}
+
+                      <div
+                        style={
+                          request.policy_agreed
+                            ? styles.agreementAcceptedBox
+                            : styles.agreementMissingBox
+                        }
+                      >
+                        <strong>
+                          {request.policy_agreed
+                            ? "✓ Scheduling & Cancellation Agreement Accepted"
+                            : "⚠ Scheduling & Cancellation Agreement Not Recorded"}
+                        </strong>
+
+                        {request.policy_agreed_at ? (
+                          <p
+                            style={
+                              styles.agreementDate
+                            }
+                          >
+                            Accepted{" "}
+                            {formatDate(
+                              request.policy_agreed_at
+                            )}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      {/* CANCELLATION COUNT */}
+
+                      <div
+                        style={{
+                          ...styles.cancellationSummaryBox,
+
+                          ...(cancellationCount >=
+                          2
+                            ? styles.cancellationSummaryWarning
+                            : {}),
+                        }}
+                      >
+                        <div>
+                          <span
+                            style={
+                              styles.requestSectionLabel
+                            }
+                          >
+                            PARTICIPANT CANCELLATIONS
+                          </span>
+
+                          <strong
+                            style={
+                              styles.cancellationBigNumber
+                            }
+                          >
+                            {cancellationCount}
+                          </strong>
+                        </div>
+
+                        {cancellationCount >=
+                        2 ? (
+                          <div
+                            style={
+                              styles.providerReferralAlert
+                            }
+                          >
+                            ⚠ Two participant-initiated cancellations
+                            have been recorded. Refer this participant
+                            back to the organization or provider that
+                            referred them to HireMinds.
+                          </div>
+                        ) : (
+                          <p
+                            style={
+                              styles.cancellationPolicySmall
+                            }
+                          >
+                            Two participant-initiated cancellations
+                            trigger referral back to the referring
+                            provider or organization.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* NOTES */}
+
                       {request.notes ? (
                         <div
                           style={
@@ -4405,6 +5478,8 @@ export default function PartnerDashboardPage() {
                         </div>
                       ) : null}
 
+                      {/* PREFERRED TIMES */}
+
                       <div
                         style={
                           styles.requestSection
@@ -4416,6 +5491,15 @@ export default function PartnerDashboardPage() {
                           }
                         >
                           Preferred Appointment Times
+                        </p>
+
+                        <p
+                          style={
+                            styles.preferenceInstruction
+                          }
+                        >
+                          Participant selects exactly two preferred
+                          appointment times. Confirm only one.
                         </p>
 
                         {choices.length ? (
@@ -4437,6 +5521,12 @@ export default function PartnerDashboardPage() {
                                   request.confirmed_slot_id ===
                                   choice.slot_id;
 
+                                const unavailable =
+                                  isSlotUnavailableForRequest(
+                                    slot,
+                                    request.id
+                                  );
+
                                 return (
                                   <div
                                     key={
@@ -4447,6 +5537,10 @@ export default function PartnerDashboardPage() {
 
                                       ...(confirmed
                                         ? styles.choiceCardConfirmed
+                                        : {}),
+
+                                      ...(unavailable
+                                        ? styles.choiceCardUnavailable
                                         : {}),
                                     }}
                                   >
@@ -4493,6 +5587,32 @@ export default function PartnerDashboardPage() {
                                           {slot.label}
                                         </span>
                                       ) : null}
+
+                                      {confirmed ? (
+                                        <span
+                                          style={
+                                            styles.confirmedTimeText
+                                          }
+                                        >
+                                          ✓ CONFIRMED APPOINTMENT
+                                        </span>
+                                      ) : unavailable ? (
+                                        <span
+                                          style={
+                                            styles.unavailableTimeText
+                                          }
+                                        >
+                                          NO LONGER AVAILABLE
+                                        </span>
+                                      ) : (
+                                        <span
+                                          style={
+                                            styles.availableTimeText
+                                          }
+                                        >
+                                          AVAILABLE TO CONFIRM
+                                        </span>
+                                      )}
                                     </div>
 
                                     {request.status !==
@@ -4503,6 +5623,10 @@ export default function PartnerDashboardPage() {
                                       "declined" ? (
                                       <button
                                         type="button"
+                                        disabled={
+                                          unavailable ||
+                                          confirmed
+                                        }
                                         onClick={() =>
                                           confirmRequestSlot(
                                             request.id,
@@ -4512,12 +5636,16 @@ export default function PartnerDashboardPage() {
                                         style={
                                           confirmed
                                             ? styles.confirmedButton
-                                            : styles.confirmButton
+                                            : unavailable
+                                              ? styles.unavailableButton
+                                              : styles.confirmButton
                                         }
                                       >
                                         {confirmed
                                           ? "✓ Confirmed"
-                                          : "Confirm This Time"}
+                                          : unavailable
+                                            ? "No Longer Available"
+                                            : "Confirm This Time"}
                                       </button>
                                     ) : null}
                                   </div>
@@ -4535,6 +5663,8 @@ export default function PartnerDashboardPage() {
                           </p>
                         )}
                       </div>
+
+                      {/* FILES */}
 
                       <div
                         style={
@@ -4589,6 +5719,8 @@ export default function PartnerDashboardPage() {
                         )}
                       </div>
 
+                      {/* ACTIONS */}
+
                       <div
                         style={
                           styles.requestActions
@@ -4596,32 +5728,26 @@ export default function PartnerDashboardPage() {
                       >
                         <button
                           type="button"
-                          onClick={() =>
-                            updateRequestStatus(
-                              request.id,
-                              "confirmed"
-                            )
-                          }
-                          style={
-                            styles.actionButtonGreen
-                          }
-                        >
-                          Confirm
-                        </button>
+                          onClick={() => {
+                            const confirmed =
+                              window.confirm(
+                                "Release the current appointment time and mark this request for rescheduling?"
+                              );
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateRequestStatus(
-                              request.id,
-                              "rescheduled"
-                            )
-                          }
+                            if (
+                              confirmed
+                            ) {
+                              updateRequestStatus(
+                                request.id,
+                                "rescheduled"
+                              );
+                            }
+                          }}
                           style={
                             styles.actionButtonPurple
                           }
                         >
-                          Rescheduled
+                          Reschedule
                         </button>
 
                         <button
@@ -4641,32 +5767,76 @@ export default function PartnerDashboardPage() {
 
                         <button
                           type="button"
-                          onClick={() =>
-                            updateRequestStatus(
-                              request.id,
-                              "declined"
-                            )
-                          }
+                          onClick={() => {
+                            const confirmed =
+                              window.confirm(
+                                "Record this as a PARTICIPANT cancellation? This WILL count toward the two-cancellation policy."
+                              );
+
+                            if (
+                              confirmed
+                            ) {
+                              updateRequestStatus(
+                                request.id,
+                                "cancelled",
+                                "participant"
+                              );
+                            }
+                          }}
                           style={
                             styles.actionButtonRed
                           }
                         >
-                          Decline
+                          Participant Cancelled
                         </button>
 
                         <button
                           type="button"
-                          onClick={() =>
-                            updateRequestStatus(
-                              request.id,
-                              "cancelled"
-                            )
-                          }
+                          onClick={() => {
+                            const confirmed =
+                              window.confirm(
+                                "Record this as an ADMIN cancellation? This will NOT count against the participant."
+                              );
+
+                            if (
+                              confirmed
+                            ) {
+                              updateRequestStatus(
+                                request.id,
+                                "cancelled",
+                                "admin"
+                              );
+                            }
+                          }}
                           style={
                             styles.actionButtonNeutral
                           }
                         >
-                          Cancel
+                          Admin Cancelled
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const confirmed =
+                              window.confirm(
+                                "Decline this meeting request?"
+                              );
+
+                            if (
+                              confirmed
+                            ) {
+                              updateRequestStatus(
+                                request.id,
+                                "declined"
+                              );
+                            }
+                          }}
+                          style={
+                            styles.actionButtonNeutral
+                          }
+                        >
+                          Decline
                         </button>
                       </div>
                     </article>
@@ -4688,7 +5858,9 @@ export default function PartnerDashboardPage() {
           </section>
         ) : null}
 
-        {/* AVAILABILITY CALENDAR */}
+        {/* =================================================
+            AVAILABILITY CALENDAR
+        ================================================= */}
 
         {activeTab ===
           "availability" &&
@@ -4720,10 +5892,45 @@ export default function PartnerDashboardPage() {
                   styles.muted
                 }
               >
-                Choose a date, then select the exact start and end
-                time you want to make available. Appointment length
-                is calculated automatically.
+                Choose a date, then choose the exact start and end time
+                you want to make available. Appointment length is
+                calculated automatically. Participants will choose two
+                preferred appointment times.
               </p>
+
+              <div
+                style={
+                  styles.availabilityStatusGrid
+                }
+              >
+                <div
+                  style={
+                    styles.availabilityMiniMetric
+                  }
+                >
+                  <strong>
+                    {availableSlotCount}
+                  </strong>
+
+                  <span>
+                    Available Times
+                  </span>
+                </div>
+
+                <div
+                  style={
+                    styles.availabilityMiniMetric
+                  }
+                >
+                  <strong>
+                    {bookedSlotCount}
+                  </strong>
+
+                  <span>
+                    Booked Times
+                  </span>
+                </div>
+              </div>
 
               {editingAvailabilityId ? (
                 <div
@@ -4758,10 +5965,13 @@ export default function PartnerDashboardPage() {
                     value={
                       availabilityDate
                     }
-                    onChange={(e) =>
-                      setAvailabilityDate(
-                        e.target.value
-                      )
+                    onChange={
+                      (
+                        e
+                      ) =>
+                        setAvailabilityDate(
+                          e.target.value
+                        )
                     }
                     style={
                       styles.input
@@ -4786,16 +5996,21 @@ export default function PartnerDashboardPage() {
                     value={
                       availabilityStartTime
                     }
-                    onChange={(e) =>
-                      setAvailabilityStartTime(
-                        e.target.value
-                      )
+                    onChange={
+                      (
+                        e
+                      ) =>
+                        setAvailabilityStartTime(
+                          e.target.value
+                        )
                     }
                     style={
                       styles.input
                     }
                   >
-                    <option value="">
+                    <option
+                      value=""
+                    >
                       Select start time
                     </option>
 
@@ -4833,16 +6048,21 @@ export default function PartnerDashboardPage() {
                     value={
                       availabilityEndTime
                     }
-                    onChange={(e) =>
-                      setAvailabilityEndTime(
-                        e.target.value
-                      )
+                    onChange={
+                      (
+                        e
+                      ) =>
+                        setAvailabilityEndTime(
+                          e.target.value
+                        )
                     }
                     style={
                       styles.input
                     }
                   >
-                    <option value="">
+                    <option
+                      value=""
+                    >
                       Select end time
                     </option>
 
@@ -4880,10 +6100,13 @@ export default function PartnerDashboardPage() {
                     value={
                       newSlotLabel
                     }
-                    onChange={(e) =>
-                      setNewSlotLabel(
-                        e.target.value
-                      )
+                    onChange={
+                      (
+                        e
+                      ) =>
+                        setNewSlotLabel(
+                          e.target.value
+                        )
                     }
                     placeholder="Example: Resume Reviews"
                     style={
@@ -5012,7 +6235,7 @@ export default function PartnerDashboardPage() {
                       styles.sectionTitle
                     }
                   >
-                    Available Appointment Times
+                    Appointment Times
                   </h2>
 
                   <p
@@ -5020,9 +6243,10 @@ export default function PartnerDashboardPage() {
                       styles.muted
                     }
                   >
-                    Edit the date or time, temporarily hide an
-                    appointment from participants, reactivate it, or
-                    permanently delete it.
+                    Available appointment times can be edited, hidden,
+                    activated, or deleted. Booked times remain locked
+                    until the confirmed meeting is cancelled or
+                    rescheduled.
                   </p>
                 </div>
               </div>
@@ -5059,6 +6283,11 @@ export default function PartnerDashboardPage() {
                           )
                         : null;
 
+                    const booked =
+                      Boolean(
+                        slot.booked_request_id
+                      );
+
                     return (
                       <div
                         key={
@@ -5067,8 +6296,13 @@ export default function PartnerDashboardPage() {
                         style={{
                           ...styles.availabilityAdminCard,
 
-                          ...(!slot.is_active
+                          ...(!slot.is_active &&
+                          !booked
                             ? styles.inactiveAvailability
+                            : {}),
+
+                          ...(booked
+                            ? styles.bookedAvailabilityCard
                             : {}),
                         }}
                       >
@@ -5077,14 +6311,18 @@ export default function PartnerDashboardPage() {
                             ...styles.availabilityStatus,
 
                             color:
-                              slot.is_active
-                                ? "#86efac"
-                                : "#a1a1aa",
+                              booked
+                                ? "#fca5a5"
+                                : slot.is_active
+                                  ? "#86efac"
+                                  : "#a1a1aa",
                           }}
                         >
-                          {slot.is_active
-                            ? "● AVAILABLE"
-                            : "○ HIDDEN"}
+                          {booked
+                            ? "● BOOKED"
+                            : slot.is_active
+                              ? "● AVAILABLE"
+                              : "○ HIDDEN"}
                         </span>
 
                         <strong
@@ -5153,55 +6391,67 @@ export default function PartnerDashboardPage() {
                           </span>
                         ) : null}
 
-                        <div
-                          style={
-                            styles.availabilityActions
-                          }
-                        >
-                          <button
-                            type="button"
-                            onClick={() =>
-                              editAvailability(
-                                slot
-                              )
-                            }
+                        {!booked ? (
+                          <div
                             style={
-                              styles.editButtonSmall
+                              styles.availabilityActions
                             }
                           >
-                            Edit
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                editAvailability(
+                                  slot
+                                )
+                              }
+                              style={
+                                styles.editButtonSmall
+                              }
+                            >
+                              Edit
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              toggleAvailability(
-                                slot
-                              )
-                            }
-                            style={
-                              styles.secondaryButtonSmall
-                            }
-                          >
-                            {slot.is_active
-                              ? "Hide"
-                              : "Activate"}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleAvailability(
+                                  slot
+                                )
+                              }
+                              style={
+                                styles.secondaryButtonSmall
+                              }
+                            >
+                              {slot.is_active
+                                ? "Hide"
+                                : "Activate"}
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              deleteAvailability(
-                                slot.id
-                              )
-                            }
+                            <button
+                              type="button"
+                              onClick={() =>
+                                deleteAvailability(
+                                  slot.id
+                                )
+                              }
+                              style={
+                                styles.deleteButtonSmall
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ) : (
+                          <div
                             style={
-                              styles.deleteButtonSmall
+                              styles.bookedMessage
                             }
                           >
-                            Delete
-                          </button>
-                        </div>
+                            🔒 This appointment time is booked. Cancel or
+                            reschedule the confirmed request before
+                            changing this time.
+                          </div>
+                        )}
                       </div>
                     );
                   }
@@ -5222,7 +6472,9 @@ export default function PartnerDashboardPage() {
           </>
         ) : null}
 
-        {/* CAREER CONNECT SETTINGS */}
+        {/* =================================================
+            CAREER CONNECT SETTINGS
+        ================================================= */}
 
         {activeTab ===
           "career_connect" &&
@@ -5267,13 +6519,14 @@ export default function PartnerDashboardPage() {
                 value={
                   careerSettings.meeting_link
                 }
-                onChange={(
-                  value
-                ) =>
-                  updateCareerSetting(
-                    "meeting_link",
+                onChange={
+                  (
                     value
-                  )
+                  ) =>
+                    updateCareerSetting(
+                      "meeting_link",
+                      value
+                    )
                 }
               />
 
@@ -5282,13 +6535,14 @@ export default function PartnerDashboardPage() {
                 value={
                   careerSettings.open_room_title
                 }
-                onChange={(
-                  value
-                ) =>
-                  updateCareerSetting(
-                    "open_room_title",
+                onChange={
+                  (
                     value
-                  )
+                  ) =>
+                    updateCareerSetting(
+                      "open_room_title",
+                      value
+                    )
                 }
               />
 
@@ -5297,13 +6551,14 @@ export default function PartnerDashboardPage() {
                 value={
                   careerSettings.open_room_schedule
                 }
-                onChange={(
-                  value
-                ) =>
-                  updateCareerSetting(
-                    "open_room_schedule",
+                onChange={
+                  (
                     value
-                  )
+                  ) =>
+                    updateCareerSetting(
+                      "open_room_schedule",
+                      value
+                    )
                 }
               />
 
@@ -5312,13 +6567,14 @@ export default function PartnerDashboardPage() {
                 value={
                   careerSettings.open_room_time
                 }
-                onChange={(
-                  value
-                ) =>
-                  updateCareerSetting(
-                    "open_room_time",
+                onChange={
+                  (
                     value
-                  )
+                  ) =>
+                    updateCareerSetting(
+                      "open_room_time",
+                      value
+                    )
                 }
               />
 
@@ -5327,13 +6583,14 @@ export default function PartnerDashboardPage() {
                 value={
                   careerSettings.doors_open
                 }
-                onChange={(
-                  value
-                ) =>
-                  updateCareerSetting(
-                    "doors_open",
+                onChange={
+                  (
                     value
-                  )
+                  ) =>
+                    updateCareerSetting(
+                      "doors_open",
+                      value
+                    )
                 }
               />
 
@@ -5342,13 +6599,14 @@ export default function PartnerDashboardPage() {
                 value={
                   careerSettings.doors_close
                 }
-                onChange={(
-                  value
-                ) =>
-                  updateCareerSetting(
-                    "doors_close",
+                onChange={
+                  (
                     value
-                  )
+                  ) =>
+                    updateCareerSetting(
+                      "doors_close",
+                      value
+                    )
                 }
               />
             </div>
@@ -5370,11 +6628,14 @@ export default function PartnerDashboardPage() {
                 value={
                   careerSettings.open_room_note
                 }
-                onChange={(e) =>
-                  updateCareerSetting(
-                    "open_room_note",
-                    e.target.value
-                  )
+                onChange={
+                  (
+                    e
+                  ) =>
+                    updateCareerSetting(
+                      "open_room_note",
+                      e.target.value
+                    )
                 }
                 style={
                   styles.textarea
@@ -5459,7 +6720,9 @@ export default function PartnerDashboardPage() {
           </section>
         ) : null}
 
-        {/* REPORTS */}
+        {/* =================================================
+            REPORTS
+        ================================================= */}
 
         {activeTab ===
         "reports" ? (
@@ -5491,8 +6754,10 @@ export default function PartnerDashboardPage() {
                   styles.muted
                 }
               >
-                Select one referral code, multiple codes, all codes,
-                or an individual participant.
+                Select one referral code, multiple codes, all codes, or
+                an individual participant. Participants are listed once
+                while their services and activities are quantified
+                separately.
               </p>
 
               <div
@@ -5600,16 +6865,21 @@ export default function PartnerDashboardPage() {
                     value={
                       reportParticipantKey
                     }
-                    onChange={(e) =>
-                      setReportParticipantKey(
-                        e.target.value
-                      )
+                    onChange={
+                      (
+                        e
+                      ) =>
+                        setReportParticipantKey(
+                          e.target.value
+                        )
                     }
                     style={
                       styles.input
                     }
                   >
-                    <option value="all">
+                    <option
+                      value="all"
+                    >
                       All Participants
                     </option>
 
@@ -5649,40 +6919,57 @@ export default function PartnerDashboardPage() {
                     value={
                       reportPeriod
                     }
-                    onChange={(e) =>
-                      setReportPeriod(
-                        e.target.value as PeriodKey
-                      )
+                    onChange={
+                      (
+                        e
+                      ) =>
+                        setReportPeriod(
+                          e.target.value as PeriodKey
+                        )
                     }
                     style={
                       styles.input
                     }
                   >
-                    <option value="all">
+                    <option
+                      value="all"
+                    >
                       All Time
                     </option>
 
-                    <option value="day">
+                    <option
+                      value="day"
+                    >
                       Today
                     </option>
 
-                    <option value="week">
+                    <option
+                      value="week"
+                    >
                       This Week
                     </option>
 
-                    <option value="month">
+                    <option
+                      value="month"
+                    >
                       This Month
                     </option>
 
-                    <option value="quarter">
+                    <option
+                      value="quarter"
+                    >
                       This Quarter
                     </option>
 
-                    <option value="fiscal">
+                    <option
+                      value="fiscal"
+                    >
                       Fiscal Year
                     </option>
 
-                    <option value="custom">
+                    <option
+                      value="custom"
+                    >
                       Custom Date Range
                     </option>
                   </select>
@@ -5713,10 +7000,13 @@ export default function PartnerDashboardPage() {
                         value={
                           reportStartDate
                         }
-                        onChange={(e) =>
-                          setReportStartDate(
-                            e.target.value
-                          )
+                        onChange={
+                          (
+                            e
+                          ) =>
+                            setReportStartDate(
+                              e.target.value
+                            )
                         }
                         style={
                           styles.input
@@ -5742,10 +7032,13 @@ export default function PartnerDashboardPage() {
                         value={
                           reportEndDate
                         }
-                        onChange={(e) =>
-                          setReportEndDate(
-                            e.target.value
-                          )
+                        onChange={
+                          (
+                            e
+                          ) =>
+                            setReportEndDate(
+                              e.target.value
+                            )
                         }
                         style={
                           styles.input
@@ -5820,6 +7113,14 @@ export default function PartnerDashboardPage() {
 
                       {
                         key:
+                          "cancellations",
+
+                        label:
+                          "Participant Cancellations",
+                      },
+
+                      {
+                        key:
                           "code_comparison",
 
                         label:
@@ -5872,7 +7173,9 @@ export default function PartnerDashboardPage() {
               </div>
             </section>
 
-            {/* WHITE LIVE PREVIEW */}
+            {/* =============================================
+                WHITE LIVE PREVIEW
+            ============================================= */}
 
             <section
               id="hireminds-report"
@@ -6014,6 +7317,17 @@ export default function PartnerDashboardPage() {
                 ) : null}
 
                 {hasOptionalMetric(
+                  "cancellations"
+                ) ? (
+                  <ReportMetric
+                    value={
+                      reportStats.cancellations
+                    }
+                    label="Participant Cancellations"
+                  />
+                ) : null}
+
+                {hasOptionalMetric(
                   "tool_engagements"
                 ) ? (
                   <ReportMetric
@@ -6046,6 +7360,24 @@ export default function PartnerDashboardPage() {
                   />
                 ) : null}
               </div>
+
+              {hasOptionalMetric(
+                "most_used_tool"
+              ) &&
+              reportStats.topTool !==
+                "—" ? (
+                <div
+                  style={
+                    styles.highlightStrip
+                  }
+                >
+                  <strong>
+                    Most Used Tool:
+                  </strong>{" "}
+                  {reportStats.topTool}{" "}
+                  ({reportStats.topToolUses} uses)
+                </div>
+              ) : null}
 
               <section
                 style={
@@ -6101,7 +7433,11 @@ export default function PartnerDashboardPage() {
                             styles.breakdownCard
                           }
                         >
-                          <h3>
+                          <h3
+                            style={
+                              styles.breakdownTitle
+                            }
+                          >
                             {label}
                           </h3>
 
@@ -6150,7 +7486,11 @@ export default function PartnerDashboardPage() {
                             styles.breakdownCard
                           }
                         >
-                          <h3>
+                          <h3
+                            style={
+                              styles.breakdownTitle
+                            }
+                          >
                             {label}
                           </h3>
 
@@ -6197,7 +7537,11 @@ export default function PartnerDashboardPage() {
                             styles.breakdownCard
                           }
                         >
-                          <h3>
+                          <h3
+                            style={
+                              styles.breakdownTitle
+                            }
+                          >
                             {item.code}
                           </h3>
 
@@ -6228,6 +7572,17 @@ export default function PartnerDashboardPage() {
                               {item.toolUses}
                             </strong>
                           </p>
+
+                          {hasOptionalMetric(
+                            "cancellations"
+                          ) ? (
+                            <p>
+                              Participant Cancellations:{" "}
+                              <strong>
+                                {item.cancellations}
+                              </strong>
+                            </p>
+                          ) : null}
                         </div>
                       )
                     )}
@@ -6343,6 +7698,18 @@ export default function PartnerDashboardPage() {
                             Documents
                           </th>
                         ) : null}
+
+                        {hasOptionalMetric(
+                          "cancellations"
+                        ) ? (
+                          <th
+                            style={
+                              styles.reportTh
+                            }
+                          >
+                            Cancellations
+                          </th>
+                        ) : null}
                       </tr>
                     </thead>
 
@@ -6364,6 +7731,17 @@ export default function PartnerDashboardPage() {
                               {row.participant.full_name ||
                                 row.participant.email ||
                                 "Participant"}
+
+                              {row.cancellations >=
+                              2 ? (
+                                <div
+                                  style={
+                                    styles.reportReferralWarning
+                                  }
+                                >
+                                  ⚠ Refer back to provider
+                                </div>
+                              ) : null}
                             </td>
 
                             <td
@@ -6441,6 +7819,18 @@ export default function PartnerDashboardPage() {
                                 {row.documentSubmissions}
                               </td>
                             ) : null}
+
+                            {hasOptionalMetric(
+                              "cancellations"
+                            ) ? (
+                              <td
+                                style={
+                                  styles.reportTd
+                                }
+                              >
+                                {row.cancellations}
+                              </td>
+                            ) : null}
                           </tr>
                         )
                       )}
@@ -6496,14 +7886,16 @@ export default function PartnerDashboardPage() {
 }
 
 /* =========================================================
-   SMALL COMPONENTS
+   COMPONENTS
 ========================================================= */
 
 function MetricCard({
   label,
   value,
 }: {
-  label: string;
+  label:
+    string;
+
   value:
     | string
     | number;
@@ -6574,7 +7966,8 @@ function SettingInput({
 
   onChange:
     (
-      value: string
+      value:
+        string
     ) => void;
 }) {
   return (
@@ -6595,10 +7988,13 @@ function SettingInput({
         value={
           value
         }
-        onChange={(e) =>
-          onChange(
-            e.target.value
-          )
+        onChange={
+          (
+            e
+          ) =>
+            onChange(
+              e.target.value
+            )
         }
         style={
           styles.input
@@ -7284,7 +8680,97 @@ const styles: Record<
       13,
   },
 
-  /* REQUESTS */
+  referralWarningInline: {
+    marginTop:
+      5,
+
+    color:
+      "#fca5a5",
+
+    fontSize:
+      10,
+
+    fontWeight:
+      800,
+  },
+
+  cancellationBadge: {
+    display:
+      "inline-flex",
+
+    alignItems:
+      "center",
+
+    justifyContent:
+      "center",
+
+    minWidth:
+      30,
+
+    height:
+      30,
+
+    borderRadius:
+      999,
+
+    background:
+      "rgba(255,255,255,.05)",
+
+    border:
+      "1px solid #34343a",
+
+    fontWeight:
+      800,
+  },
+
+  cancellationBadgeWarning: {
+    color:
+      "#fca5a5",
+
+    background:
+      "rgba(248,113,113,.09)",
+
+    border:
+      "1px solid rgba(248,113,113,.25)",
+  },
+
+  /* =======================================================
+     REQUESTS
+  ======================================================= */
+
+  requestStatsGrid: {
+    display:
+      "grid",
+
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(140px,200px))",
+
+    gap:
+      12,
+
+    marginTop:
+      20,
+  },
+
+  requestMiniStat: {
+    padding:
+      15,
+
+    borderRadius:
+      14,
+
+    background:
+      "#0f0f11",
+
+    border:
+      "1px solid #29292e",
+
+    display:
+      "grid",
+
+    gap:
+      4,
+  },
 
   requestControls: {
     display:
@@ -7423,6 +8909,133 @@ const styles: Record<
       ".06em",
   },
 
+  agreementAcceptedBox: {
+    padding:
+      "12px 14px",
+
+    borderRadius:
+      14,
+
+    background:
+      "rgba(34,197,94,.06)",
+
+    border:
+      "1px solid rgba(34,197,94,.18)",
+
+    color:
+      "#86efac",
+  },
+
+  agreementMissingBox: {
+    padding:
+      "12px 14px",
+
+    borderRadius:
+      14,
+
+    background:
+      "rgba(248,113,113,.06)",
+
+    border:
+      "1px solid rgba(248,113,113,.18)",
+
+    color:
+      "#fca5a5",
+  },
+
+  agreementDate: {
+    margin:
+      "5px 0 0",
+
+    color:
+      "#a1a1aa",
+
+    fontSize:
+      11,
+  },
+
+  cancellationSummaryBox: {
+    padding:
+      15,
+
+    borderRadius:
+      15,
+
+    background:
+      "rgba(255,255,255,.035)",
+
+    border:
+      "1px solid #29292e",
+
+    display:
+      "grid",
+
+    gap:
+      9,
+  },
+
+  cancellationSummaryWarning: {
+    background:
+      "rgba(248,113,113,.08)",
+
+    border:
+      "1px solid rgba(248,113,113,.26)",
+  },
+
+  cancellationBigNumber: {
+    display:
+      "block",
+
+    marginTop:
+      5,
+
+    color:
+      "#f5f5f5",
+
+    fontSize:
+      30,
+  },
+
+  cancellationPolicySmall: {
+    margin:
+      0,
+
+    color:
+      "#9ca3af",
+
+    fontSize:
+      11,
+
+    lineHeight:
+      1.5,
+  },
+
+  providerReferralAlert: {
+    padding:
+      12,
+
+    borderRadius:
+      12,
+
+    color:
+      "#fecaca",
+
+    background:
+      "rgba(248,113,113,.08)",
+
+    border:
+      "1px solid rgba(248,113,113,.16)",
+
+    fontSize:
+      12,
+
+    lineHeight:
+      1.55,
+
+    fontWeight:
+      700,
+  },
+
   notesBox: {
     padding:
       14,
@@ -7474,6 +9087,17 @@ const styles: Record<
       "uppercase",
   },
 
+  preferenceInstruction: {
+    margin:
+      "-4px 0 4px",
+
+    color:
+      "#9ca3af",
+
+    fontSize:
+      11,
+  },
+
   choiceList: {
     display:
       "grid",
@@ -7512,11 +9136,19 @@ const styles: Record<
   },
 
   choiceCardConfirmed: {
-    border:
-      "1px solid rgba(34,197,94,.38)",
-
     background:
       "rgba(34,197,94,.05)",
+
+    border:
+      "1px solid rgba(34,197,94,.38)",
+  },
+
+  choiceCardUnavailable: {
+    opacity:
+      0.62,
+
+    border:
+      "1px solid rgba(248,113,113,.18)",
   },
 
   preferenceLabel: {
@@ -7578,6 +9210,66 @@ const styles: Record<
       11,
   },
 
+  confirmedTimeText: {
+    display:
+      "block",
+
+    marginTop:
+      7,
+
+    color:
+      "#86efac",
+
+    fontSize:
+      9,
+
+    fontWeight:
+      900,
+
+    letterSpacing:
+      ".07em",
+  },
+
+  unavailableTimeText: {
+    display:
+      "block",
+
+    marginTop:
+      7,
+
+    color:
+      "#fca5a5",
+
+    fontSize:
+      9,
+
+    fontWeight:
+      900,
+
+    letterSpacing:
+      ".07em",
+  },
+
+  availableTimeText: {
+    display:
+      "block",
+
+    marginTop:
+      7,
+
+    color:
+      "#93c5fd",
+
+    fontSize:
+      9,
+
+    fontWeight:
+      900,
+
+    letterSpacing:
+      ".07em",
+  },
+
   confirmButton: {
     padding:
       "9px 13px",
@@ -7621,7 +9313,30 @@ const styles: Record<
       800,
 
     cursor:
-      "pointer",
+      "default",
+  },
+
+  unavailableButton: {
+    padding:
+      "9px 13px",
+
+    borderRadius:
+      999,
+
+    border:
+      "1px solid rgba(248,113,113,.18)",
+
+    background:
+      "rgba(248,113,113,.06)",
+
+    color:
+      "#fca5a5",
+
+    fontWeight:
+      800,
+
+    cursor:
+      "not-allowed",
   },
 
   fileRow: {
@@ -7676,29 +9391,6 @@ const styles: Record<
 
     borderTop:
       "1px solid #28282c",
-  },
-
-  actionButtonGreen: {
-    padding:
-      "9px 12px",
-
-    borderRadius:
-      10,
-
-    border:
-      "1px solid rgba(34,197,94,.3)",
-
-    background:
-      "rgba(34,197,94,.09)",
-
-    color:
-      "#86efac",
-
-    cursor:
-      "pointer",
-
-    fontWeight:
-      700,
   },
 
   actionButtonPurple: {
@@ -7821,7 +9513,43 @@ const styles: Record<
       18,
   },
 
-  /* AVAILABILITY */
+  /* =======================================================
+     AVAILABILITY
+  ======================================================= */
+
+  availabilityStatusGrid: {
+    display:
+      "grid",
+
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(160px,220px))",
+
+    gap:
+      12,
+
+    marginTop:
+      18,
+  },
+
+  availabilityMiniMetric: {
+    padding:
+      15,
+
+    borderRadius:
+      14,
+
+    background:
+      "#0f0f11",
+
+    border:
+      "1px solid #29292e",
+
+    display:
+      "grid",
+
+    gap:
+      4,
+  },
 
   availabilityBuilder: {
     display:
@@ -7978,6 +9706,14 @@ const styles: Record<
       9,
   },
 
+  bookedAvailabilityCard: {
+    background:
+      "rgba(248,113,113,.035)",
+
+    border:
+      "1px solid rgba(248,113,113,.26)",
+  },
+
   inactiveAvailability: {
     opacity:
       0.55,
@@ -8070,6 +9806,35 @@ const styles: Record<
       8,
   },
 
+  bookedMessage: {
+    marginTop:
+      8,
+
+    padding:
+      10,
+
+    borderRadius:
+      11,
+
+    color:
+      "#fca5a5",
+
+    background:
+      "rgba(248,113,113,.06)",
+
+    border:
+      "1px solid rgba(248,113,113,.14)",
+
+    fontSize:
+      11,
+
+    lineHeight:
+      1.5,
+
+    fontWeight:
+      700,
+  },
+
   editButtonSmall: {
     padding:
       "8px 11px",
@@ -8139,7 +9904,9 @@ const styles: Record<
       700,
   },
 
-  /* SETTINGS */
+  /* =======================================================
+     SETTINGS
+  ======================================================= */
 
   settingsGrid: {
     display:
@@ -8180,7 +9947,9 @@ const styles: Record<
       25,
   },
 
-  /* REPORTS */
+  /* =======================================================
+     REPORTS
+  ======================================================= */
 
   reportControls: {
     display:
@@ -8438,6 +10207,26 @@ const styles: Record<
       6,
   },
 
+  highlightStrip: {
+    marginTop:
+      18,
+
+    padding:
+      14,
+
+    borderRadius:
+      12,
+
+    background:
+      "#eff6ff",
+
+    border:
+      "1px solid #bfdbfe",
+
+    color:
+      "#1e3a8a",
+  },
+
   summaryBox: {
     marginTop:
       28,
@@ -8504,6 +10293,14 @@ const styles: Record<
       14,
   },
 
+  breakdownTitle: {
+    marginTop:
+      0,
+
+    marginBottom:
+      10,
+  },
+
   reportTable: {
     width:
       "100%",
@@ -8544,6 +10341,20 @@ const styles: Record<
 
     verticalAlign:
       "top",
+  },
+
+  reportReferralWarning: {
+    marginTop:
+      4,
+
+    color:
+      "#b91c1c",
+
+    fontSize:
+      9,
+
+    fontWeight:
+      800,
   },
 
   reportFooter: {
