@@ -593,7 +593,7 @@ export default function ProfilePage() {
                   st.headerPassportButton
                 }
               >
-                View Career Passport ↗
+                View Public Profile ↗
               </a>
             ) : null}
 
@@ -1160,77 +1160,6 @@ export default function ProfilePage() {
               badge="MONTHLY"
             />
 
-            {/* CAREER PASSPORT */}
-
-            {publicProfileUrl ? (
-              <ExternalToolCard
-                href={
-                  publicProfileUrl
-                }
-                icon="◈"
-                kicker="PUBLIC PROFILE"
-                title="Career Passport"
-                description="Preview the professional profile connected to your HireMinds account."
-                action="View Passport"
-              />
-            ) : (
-              <div
-                style={
-                  st.toolCard
-                }
-              >
-                <div
-                  style={
-                    st.toolTop
-                  }
-                >
-                  <div
-                    style={{
-                      ...st.toolIcon,
-                      ...st.goldIcon,
-                    }}
-                  >
-                    ◈
-                  </div>
-                </div>
-
-                <div>
-                  <span
-                    style={
-                      st.toolKicker
-                    }
-                  >
-                    PUBLIC PROFILE
-                  </span>
-
-                  <h3
-                    style={
-                      st.toolTitle
-                    }
-                  >
-                    Career Passport
-                  </h3>
-
-                  <p
-                    style={
-                      st.toolDescription
-                    }
-                  >
-                    Complete and save your professional profile to create your
-                    public Career Passport.
-                  </p>
-                </div>
-
-                <div
-                  style={
-                    st.toolFooter
-                  }
-                >
-                  Complete Your Profile
-                </div>
-              </div>
-            )}
-
             {/* LIVE BOARD */}
 
             <ToolCard
@@ -1518,108 +1447,6 @@ function ToolCard({
         </div>
       </div>
     </Link>
-  );
-}
-
-/* =========================================================
-   EXTERNAL TOOL
-========================================================= */
-
-function ExternalToolCard({
-  href,
-  icon,
-  kicker,
-  title,
-  description,
-  action,
-}: {
-  href: string;
-  icon: string;
-  kicker: string;
-  title: string;
-  description: string;
-  action: string;
-}) {
-  return (
-    <a
-      href={
-        href
-      }
-      target="_blank"
-      rel="noopener noreferrer"
-      style={
-        st.toolLink
-      }
-    >
-      <div
-        style={
-          st.toolCard
-        }
-      >
-        <div
-          style={
-            st.toolTop
-          }
-        >
-          <div
-            style={{
-              ...st.toolIcon,
-              ...st.goldIcon,
-            }}
-          >
-            {icon}
-          </div>
-
-          <span
-            style={
-              st.cardArrow
-            }
-          >
-            ↗
-          </span>
-        </div>
-
-        <div>
-          <span
-            style={
-              st.toolKicker
-            }
-          >
-            {kicker}
-          </span>
-
-          <h3
-            style={
-              st.toolTitle
-            }
-          >
-            {title}
-          </h3>
-
-          <p
-            style={
-              st.toolDescription
-            }
-          >
-            {description}
-          </p>
-        </div>
-
-        <div
-          style={
-            st.toolFooter
-          }
-        >
-          <span>
-            {action}
-          </span>
-
-          <span>
-            ↗
-          </span>
-        </div>
-      </div>
-    </a>
   );
 }
 
