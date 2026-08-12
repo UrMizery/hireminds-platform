@@ -4,15 +4,6 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ConnectExplore from "../components/ConnectExplore";
 
-type ResumeSlot = {
-  id: string;
-  label: string;
-  resumeUrl: string | null;
-  isVisible: boolean;
-  createdAt: string | null;
-  fileName?: string | null;
-};
-
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -21,25 +12,6 @@ function slugify(value: string) {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
-
-const EMPTY_SLOTS: ResumeSlot[] = [
-  {
-    id: "slot1",
-    label: "Resume 1",
-    resumeUrl: null,
-    isVisible: false,
-    createdAt: null,
-    fileName: null,
-  },
-  {
-    id: "slot2",
-    label: "Resume 2",
-    resumeUrl: null,
-    isVisible: false,
-    createdAt: null,
-    fileName: null,
-  },
-];
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -60,12 +32,6 @@ export default function ProfilePage() {
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
-
-  const [resumeSlots, setResumeSlots] =
-    useState<ResumeSlot[]>(EMPTY_SLOTS);
-
-  const [uploadingSlot, setUploadingSlot] =
-    useState<string | null>(null);
 
   const [publicProfileUrl, setPublicProfileUrl] = useState("");
 
@@ -106,29 +72,6 @@ export default function ProfilePage() {
       setLinkedinUrl(profile.linkedin_url || "");
       setPhotoUrl(profile.photo_url || "");
       setPublicProfileUrl(profile.public_profile_url || "");
-
-      if (
-        profile.resume_slots &&
-        Array.isArray(profile.resume_slots) &&
-        profile.resume_slots.length > 0
-      ) {
-        const cleanedSlots: ResumeSlot[] = [0, 1].map((index) => {
-          const existingSlot = profile.resume_slots[index] || {};
-
-          return {
-            id: existingSlot.id || `slot${index + 1}`,
-            label: `Resume ${index + 1}`,
-            resumeUrl: existingSlot.resumeUrl || null,
-            isVisible: Boolean(existingSlot.isVisible),
-            createdAt: existingSlot.createdAt || null,
-            fileName: existingSlot.fileName || null,
-          };
-        });
-
-        setResumeSlots(cleanedSlots);
-      } else {
-        setResumeSlots(EMPTY_SLOTS);
-      }
 
       if (!trackedRef.current) {
         trackedRef.current = true;
@@ -175,7 +118,7 @@ export default function ProfilePage() {
     return data.publicUrl;
   }
 
-  async function handleSaveProfile(updatedSlots?: ResumeSlot[]) {
+  async function handleSaveProfile() {
     setMessage("");
 
     if (!userId) {
@@ -201,8 +144,6 @@ export default function ProfilePage() {
       const publicUrl =
         `${window.location.origin}/passport/${slug}-${userId.slice(0, 8)}`;
 
-      const slots = updatedSlots || resumeSlots;
-
       const payload = {
         user_id: userId,
         full_name: fullName,
@@ -214,7 +155,6 @@ export default function ProfilePage() {
         headline,
         linkedin_url: linkedinUrl,
         photo_url: nextPhotoUrl || null,
-        resume_slots: slots,
         public_profile_url: publicUrl,
       };
 
@@ -243,98 +183,13 @@ export default function ProfilePage() {
 
       setPhotoUrl(nextPhotoUrl);
       setPublicProfileUrl(publicUrl);
+
       setMessage("Profile saved successfully.");
     } catch (err: any) {
       setMessage(err.message || "Unable to save profile.");
     } finally {
       setSaving(false);
     }
-  }
-
-  function setVisibleSlot(slotId: string) {
-    const updated = resumeSlots.map((slot) => ({
-      ...slot,
-      isVisible: slot.id === slotId,
-    }));
-
-    setResumeSlots(updated);
-    handleSaveProfile(updated);
-  }
-
-  async function handleResumeUpload(slotId: string, file: File) {
-    if (!userId) {
-      setMessage("You must be signed in.");
-      return;
-    }
-
-    try {
-      setUploadingSlot(slotId);
-      setMessage("");
-
-      const url = await uploadFile(
-        "resumes",
-        file,
-        `${userId}/${slotId}`
-      );
-
-      const updated = resumeSlots.map((slot) =>
-        slot.id === slotId
-          ? {
-              ...slot,
-              resumeUrl: url,
-              fileName: file.name,
-              createdAt: new Date().toISOString(),
-            }
-          : slot
-      );
-
-      setResumeSlots(updated);
-
-      await handleSaveProfile(updated);
-
-      await supabase.from("user_activity").insert({
-        user_id: userId,
-        full_name: fullName || null,
-        email: email || null,
-        event_type: "resume_uploaded",
-        tool_name: "resume_upload",
-        page_name: "/profile",
-      });
-
-      setMessage("Resume uploaded successfully.");
-    } catch (err: any) {
-      setMessage(err.message || "Resume upload failed.");
-    } finally {
-      setUploadingSlot(null);
-    }
-  }
-
-  async function handleRemoveResume(slotId: string) {
-    const confirmed = window.confirm(
-      "Are you sure you want to remove this resume?"
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const updated = resumeSlots.map((slot) =>
-      slot.id === slotId
-        ? {
-            ...slot,
-            resumeUrl: null,
-            fileName: null,
-            isVisible: false,
-            createdAt: null,
-          }
-        : slot
-    );
-
-    setResumeSlots(updated);
-
-    await handleSaveProfile(updated);
-
-    setMessage("Resume removed.");
   }
 
   async function handleSignOut() {
@@ -353,6 +208,8 @@ export default function ProfilePage() {
   return (
     <main style={st.page}>
       <div style={st.shell}>
+        {/* HERO */}
+
         <section style={st.hero}>
           <div style={st.heroLeft}>
             <p style={st.kicker}>Career Passport</p>
@@ -360,26 +217,39 @@ export default function ProfilePage() {
             <h1 style={st.title}>Career Passport Editor</h1>
 
             <p style={st.subtitle}>
-              Update your profile, manage your resumes, and share your
-              Career Passport with employers.
+              Update your profile and manage the information connected
+              to your HireMinds Career Passport.
             </p>
           </div>
 
-          <button onClick={handleSignOut} style={st.secondaryButton}>
+          <button
+            onClick={handleSignOut}
+            style={st.secondaryButton}
+          >
             Sign Out
           </button>
         </section>
 
+        {/* PROFILE STRIP */}
+
         <section style={st.profileStrip}>
           <div style={st.profileStripLeft}>
             {photoUrl ? (
-              <img src={photoUrl} alt="Profile" style={st.avatar} />
+              <img
+                src={photoUrl}
+                alt="Profile"
+                style={st.avatar}
+              />
             ) : (
-              <div style={st.avatarPlaceholder}>No Photo</div>
+              <div style={st.avatarPlaceholder}>
+                No Photo
+              </div>
             )}
 
             <div>
-              <label style={st.label}>Profile Photo</label>
+              <label style={st.label}>
+                Profile Photo
+              </label>
 
               <input
                 type="file"
@@ -393,14 +263,18 @@ export default function ProfilePage() {
           </div>
 
           <div style={st.profileStripRight}>
-            <h2 style={st.namePreview}>{fullName || "Your Name"}</h2>
+            <h2 style={st.namePreview}>
+              {fullName || "Your Name"}
+            </h2>
 
             <p style={st.headlinePreview}>
               {headline || "Professional Headline"}
             </p>
 
             <p style={st.metaPreview}>
-              {[city, stateName].filter(Boolean).join(", ") || "City, State"}
+              {[city, stateName]
+                .filter(Boolean)
+                .join(", ") || "City, State"}
             </p>
 
             <p style={st.metaPreview}>
@@ -420,10 +294,17 @@ export default function ProfilePage() {
           </div>
         </section>
 
+        {/* BASIC INFORMATION */}
+
         <section style={st.formFlow}>
           <div style={st.flowIntro}>
-            <p style={st.sectionKicker}>Profile Details</p>
-            <h2 style={st.sectionTitle}>Basic Information</h2>
+            <p style={st.sectionKicker}>
+              Profile Details
+            </p>
+
+            <h2 style={st.sectionTitle}>
+              Basic Information
+            </h2>
           </div>
 
           <div style={st.formGrid}>
@@ -484,184 +365,43 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <section style={st.assetFlow}>
-          <div style={st.flowIntro}>
-            <p style={st.sectionKicker}>Resumes</p>
-
-            <h2 style={st.sectionTitle}>My Resumes</h2>
-
-            <p style={st.flowText}>
-              Store up to two resumes and choose which resume is visible
-              to employers on your public Career Passport.
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gap: "16px",
-            }}
-          >
-            {resumeSlots.map((slot, index) => (
-              <div
-                key={slot.id}
-                style={{
-                  ...glass,
-                  borderRadius: "20px",
-                  padding: "24px",
-                  display: "grid",
-                  gap: "16px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "12px",
-                  }}
-                >
-                  <h3
-                    style={{
-                      margin: 0,
-                      color: "#f5f5f5",
-                      fontSize: "20px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Resume {index + 1}
-                  </h3>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {slot.isVisible ? (
-                      <span style={st.visibleBadge}>
-                        Visible to Employers
-                      </span>
-                    ) : null}
-
-                    {!slot.isVisible && slot.resumeUrl ? (
-                      <button
-                        onClick={() => setVisibleSlot(slot.id)}
-                        style={{
-                          ...st.secondaryButton,
-                          fontSize: "13px",
-                          padding: "8px 14px",
-                        }}
-                      >
-                        Set as Visible
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div>
-                  <p style={st.resumeHelper}>
-                    Upload a PDF, DOC, DOCX, TXT, or image file.
-                  </p>
-
-                  <div style={st.resumeActions}>
-                    <label style={st.uploadButton}>
-                      📄{" "}
-                      {uploadingSlot === slot.id
-                        ? "Uploading..."
-                        : slot.resumeUrl
-                          ? "Replace Resume"
-                          : "Upload Resume"}
-
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
-                        style={{
-                          display: "none",
-                        }}
-                        disabled={uploadingSlot === slot.id}
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-
-                          if (file) {
-                            await handleResumeUpload(slot.id, file);
-                          }
-                        }}
-                      />
-                    </label>
-
-                    {slot.resumeUrl ? (
-                      <>
-                        <a
-                          href={slot.resumeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={st.resumeLink}
-                        >
-                          View Resume
-                        </a>
-
-                        <button
-                          onClick={() => handleRemoveResume(slot.id)}
-                          style={st.removeButton}
-                        >
-                          ✕ Remove
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
-
-                  {slot.resumeUrl ? (
-                    <div style={st.savedResumeInfo}>
-                      <strong>Resume Uploaded</strong>
-
-                      {slot.fileName ? (
-                        <span>{slot.fileName}</span>
-                      ) : null}
-
-                      {slot.createdAt ? (
-                        <span>
-                          Uploaded{" "}
-                          {new Date(slot.createdAt).toLocaleDateString()}
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <div style={st.emptyResume}>
-                      No resume uploaded yet.
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* PUBLIC PROFILE NOTE */}
 
         <section style={st.noticeFloat}>
-          <p style={st.noticeTitle}>Public Profile Note</p>
+          <p style={st.noticeTitle}>
+            Public Profile Note
+          </p>
 
           <p style={st.noticeText}>
-            Your photo, headline, location, LinkedIn, and selected resume
-            appear on your Career Passport once completed.
+            Your photo, headline, location, LinkedIn, and other
+            completed profile information may appear on your
+            Career Passport.
           </p>
         </section>
 
+        {/* CAREER CONNECT / EXPLORE */}
+
         <ConnectExplore />
+
+        {/* SAVE */}
 
         <section style={st.bottomDock}>
           <button
-            onClick={() => handleSaveProfile()}
+            onClick={handleSaveProfile}
             disabled={saving}
             style={st.primaryButton}
           >
-            {saving ? "Saving..." : "Save Profile"}
+            {saving
+              ? "Saving..."
+              : "Save Profile"}
           </button>
         </section>
 
-        {message ? <p style={st.message}>{message}</p> : null}
+        {message ? (
+          <p style={st.message}>
+            {message}
+          </p>
+        ) : null}
       </div>
     </main>
   );
@@ -682,12 +422,16 @@ function Field({
 }) {
   return (
     <div style={st.fieldWrap}>
-      <label style={st.label}>{label}</label>
+      <label style={st.label}>
+        {label}
+      </label>
 
       <input
         type={type}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) =>
+          onChange(e.target.value)
+        }
         placeholder={placeholder}
         style={st.input}
       />
@@ -708,11 +452,15 @@ function TextAreaField({
 }) {
   return (
     <div style={st.fieldWrap}>
-      <label style={st.label}>{label}</label>
+      <label style={st.label}>
+        {label}
+      </label>
 
       <textarea
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) =>
+          onChange(e.target.value)
+        }
         placeholder={placeholder}
         style={st.textarea}
       />
@@ -730,11 +478,17 @@ const glass: CSSProperties = {
 const st: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
+
     background:
       "radial-gradient(circle at top left, rgba(59,130,246,0.12) 0%, transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)",
+
     color: "#e7e7e7",
-    padding: "34px 24px 64px",
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+
+    padding:
+      "34px 24px 64px",
+
+    fontFamily:
+      "Inter, ui-sans-serif, system-ui, sans-serif",
   },
 
   centerWrap: {
@@ -861,22 +615,9 @@ const st: Record<string, CSSProperties> = {
     gap: "16px",
   },
 
-  assetFlow: {
-    display: "grid",
-    gap: "16px",
-  },
-
   flowIntro: {
     display: "grid",
     gap: "6px",
-  },
-
-  flowText: {
-    margin: 0,
-    color: "#a1a1aa",
-    fontSize: "15px",
-    lineHeight: 1.75,
-    maxWidth: "920px",
   },
 
   sectionKicker: {
@@ -897,7 +638,8 @@ const st: Record<string, CSSProperties> = {
 
   formGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(240px, 1fr))",
     gap: "14px",
   },
 
@@ -938,8 +680,10 @@ const st: Record<string, CSSProperties> = {
     padding: "15px 18px",
     borderRadius: "18px",
     border: "1px solid #d1d5db",
+
     background:
       "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
+
     color: "#09090b",
     fontSize: "15px",
     fontWeight: 700,
@@ -994,82 +738,6 @@ const st: Record<string, CSSProperties> = {
     boxSizing: "border-box",
     outline: "none",
     backdropFilter: "blur(10px)",
-  },
-
-  visibleBadge: {
-    fontSize: "11px",
-    background: "#1e3a2f",
-    color: "#4ade80",
-    border: "1px solid #2d5a3d",
-    padding: "4px 10px",
-    borderRadius: "999px",
-    fontFamily: "monospace",
-  },
-
-  resumeHelper: {
-    margin: "0 0 12px",
-    color: "#9ca3af",
-    fontSize: "13px",
-  },
-
-  resumeActions: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    flexWrap: "wrap",
-  },
-
-  uploadButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: "10px",
-    padding: "10px 16px",
-    cursor: "pointer",
-    fontSize: "13px",
-    color: "#f5f5f5",
-    fontWeight: 700,
-  },
-
-  resumeLink: {
-    color: "#a5b4fc",
-    fontSize: "13px",
-    textDecoration: "underline",
-  },
-
-  removeButton: {
-    fontSize: "12px",
-    color: "#f87171",
-    background: "transparent",
-    border: "1px solid #5a1f1f",
-    borderRadius: "8px",
-    padding: "7px 12px",
-    cursor: "pointer",
-  },
-
-  savedResumeInfo: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "10px",
-    marginTop: "14px",
-    padding: "12px 14px",
-    borderRadius: "12px",
-    background: "rgba(74,222,128,0.05)",
-    border: "1px solid rgba(74,222,128,0.12)",
-    color: "#b7c5bd",
-    fontSize: "12px",
-  },
-
-  emptyResume: {
-    marginTop: "14px",
-    padding: "12px 14px",
-    borderRadius: "12px",
-    background: "rgba(255,255,255,0.025)",
-    border: "1px solid rgba(255,255,255,0.05)",
-    color: "#6b7280",
-    fontSize: "12px",
   },
 
   message: {
