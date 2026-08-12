@@ -10712,3 +10712,30 @@ const styles: Record<
       "wrap",
   },
 };
+
+<Link
+  href="/partner-dashboard/logs"
+  className="dashboardCard"
+>
+  <div className="dashboardCardIcon">
+    📋
+  </div>
+
+  <div>
+    <p className="dashboardCardEyebrow">
+      PARTICIPANT ACTIVITY
+    </p>
+
+    <h3>
+      Weekly Logs
+    </h3>
+
+    <p>
+      Review submitted Weekly Job Logs and Career Development Logs.
+    </p>
+  </div>
+
+  <span className="dashboardCardArrow">
+    →
+  </span>
+</Link>
