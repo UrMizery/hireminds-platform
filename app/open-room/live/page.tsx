@@ -7,6 +7,8 @@ import { supabase } from "../../lib/supabase";
 const WHEREBY_ROOM =
   "https://hire-minds.whereby.com/hireminds-open-room";
 
+type VisitMode = "attend" | "request" | "";
+
 const SERVICE_OPTIONS = [
   {
     value: "open_room",
@@ -52,27 +54,53 @@ const SERVICE_OPTIONS = [
   },
 ];
 
+const REQUEST_OPTIONS = [
+  {
+    value: "resume_support",
+    label: "Resume Support",
+  },
+  {
+    value: "career_coaching",
+    label: "1:1 Career Coaching",
+  },
+  {
+    value: "mock_interview",
+    label: "Mock Interview",
+  },
+  {
+    value: "job_search_assistance",
+    label: "Job Search Assistance",
+  },
+  {
+    value: "other",
+    label: "Other",
+  },
+];
+
 export default function OpenRoomLivePage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [checkingIn, setCheckingIn] = useState(false);
 
   const [userId, setUserId] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [referralCode, setReferralCode] = useState("");
 
+  const [visitMode, setVisitMode] = useState<VisitMode>("");
+
   const [selectedService, setSelectedService] = useState("");
   const [otherService, setOtherService] = useState("");
 
-  const [message, setMessage] = useState("");
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [checkInMessage, setCheckInMessage] = useState("");
   const [checkedIn, setCheckedIn] = useState(false);
 
   const [requestService, setRequestService] = useState("");
   const [requestDate, setRequestDate] = useState("");
   const [requestTime, setRequestTime] = useState("");
   const [requestNotes, setRequestNotes] = useState("");
+
   const [requestSubmitting, setRequestSubmitting] = useState(false);
   const [requestMessage, setRequestMessage] = useState("");
 
@@ -82,13 +110,12 @@ export default function OpenRoomLivePage() {
 
   async function loadParticipant() {
     setLoading(true);
-    setMessage("");
 
     const { data: authData, error: authError } =
       await supabase.auth.getUser();
 
     if (authError || !authData.user) {
-      router.push("/login");
+      router.push("/sign-in");
       return;
     }
 
@@ -125,41 +152,59 @@ export default function OpenRoomLivePage() {
     setLoading(false);
   }
 
-  function getSelectedServiceLabel() {
-    if (selectedService === "other") {
+  function getServiceLabel(value: string) {
+    if (value === "other") {
       return otherService.trim() || "Other";
     }
 
     return (
-      SERVICE_OPTIONS.find(
-        (service) => service.value === selectedService
-      )?.label || ""
+      SERVICE_OPTIONS.find((service) => service.value === value)?.label || ""
     );
+  }
+
+  function chooseMode(mode: VisitMode) {
+    setVisitMode(mode);
+
+    setCheckInMessage("");
+    setRequestMessage("");
+    setCheckedIn(false);
+
+    if (mode === "attend") {
+      setRequestService("");
+      setRequestDate("");
+      setRequestTime("");
+      setRequestNotes("");
+    }
+
+    if (mode === "request") {
+      setSelectedService("");
+      setOtherService("");
+    }
   }
 
   async function handleCheckInAndEnter() {
     if (!selectedService) {
-      setMessage("Please select what you are checking in for.");
+      setCheckInMessage("Please select the session you are attending.");
       return;
     }
 
     if (selectedService === "other" && !otherService.trim()) {
-      setMessage(
+      setCheckInMessage(
         "Please enter the type of meeting or support session."
       );
       return;
     }
 
     if (!userId) {
-      setMessage("We could not verify your HireMinds account.");
+      setCheckInMessage("We could not verify your HireMinds account.");
       return;
     }
 
     setCheckingIn(true);
-    setMessage("");
+    setCheckInMessage("");
     setCheckedIn(false);
 
-    const serviceLabel = getSelectedServiceLabel();
+    const serviceLabel = getServiceLabel(selectedService);
     const now = new Date();
 
     const { data: session, error: sessionError } = await supabase
@@ -180,7 +225,7 @@ export default function OpenRoomLivePage() {
     if (sessionError || !session) {
       console.error("Session error:", sessionError);
 
-      setMessage(
+      setCheckInMessage(
         sessionError?.message ||
           "We could not record your check-in. Please try again."
       );
@@ -204,9 +249,8 @@ export default function OpenRoomLivePage() {
     if (attendanceError) {
       console.error("Attendance error:", attendanceError);
 
-      setMessage(
-        attendanceError.message ||
-          "We could not record your attendance."
+      setCheckInMessage(
+        attendanceError.message || "We could not record your attendance."
       );
 
       setCheckingIn(false);
@@ -218,7 +262,7 @@ export default function OpenRoomLivePage() {
       .insert({
         user_id: userId,
         full_name: fullName,
-        email: email,
+        email,
         referral_code: referralCode || null,
         event_type: "workforce_service_check_in",
         tool_name: serviceLabel,
@@ -258,9 +302,7 @@ export default function OpenRoomLivePage() {
     }
 
     if (!userId) {
-      setRequestMessage(
-        "We could not verify your HireMinds account."
-      );
+      setRequestMessage("We could not verify your HireMinds account.");
       return;
     }
 
@@ -268,7 +310,7 @@ export default function OpenRoomLivePage() {
     setRequestMessage("");
 
     const serviceLabel =
-      SERVICE_OPTIONS.find(
+      REQUEST_OPTIONS.find(
         (service) => service.value === requestService
       )?.label || requestService;
 
@@ -292,9 +334,7 @@ export default function OpenRoomLivePage() {
           `Participant: ${fullName}`,
           `Email: ${email}`,
           `Referral Code: ${referralCode || "Not Assigned"}`,
-          requestNotes
-            ? `Request Notes: ${requestNotes}`
-            : "",
+          requestNotes ? `Request Notes: ${requestNotes}` : "",
         ]
           .filter(Boolean)
           .join("\n"),
@@ -304,8 +344,7 @@ export default function OpenRoomLivePage() {
       console.error("Meeting request error:", error);
 
       setRequestMessage(
-        error.message ||
-          "We could not submit your meeting request."
+        error.message || "We could not submit your meeting request."
       );
 
       setRequestSubmitting(false);
@@ -317,7 +356,7 @@ export default function OpenRoomLivePage() {
       .insert({
         user_id: userId,
         full_name: fullName,
-        email: email,
+        email,
         referral_code: referralCode || null,
         event_type: "meeting_requested",
         tool_name: serviceLabel,
@@ -332,13 +371,14 @@ export default function OpenRoomLivePage() {
     }
 
     setRequestMessage(
-      "✓ Meeting request submitted. Your requested date and time are not confirmed until you receive confirmation."
+      "✓ Meeting request submitted. Your requested date and time are pending confirmation."
     );
 
     setRequestService("");
     setRequestDate("");
     setRequestTime("");
     setRequestNotes("");
+
     setRequestSubmitting(false);
   }
 
@@ -346,7 +386,7 @@ export default function OpenRoomLivePage() {
     return (
       <main className="loadingPage">
         <div className="loadingCard">
-          <p>Loading Career Connect...</p>
+          Loading Career Connect...
         </div>
 
         <style jsx>{`
@@ -357,12 +397,12 @@ export default function OpenRoomLivePage() {
             justify-content: center;
             background: #050814;
             color: white;
-            font-family: system-ui, Arial, sans-serif;
+            font-family: system-ui, sans-serif;
           }
 
           .loadingCard {
-            padding: 30px;
-            border-radius: 24px;
+            padding: 28px;
+            border-radius: 22px;
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.12);
           }
@@ -373,24 +413,30 @@ export default function OpenRoomLivePage() {
 
   return (
     <main className="page">
-      {/* LEFT SIDEBAR */}
-
       <aside className="side">
-        <div>
-          <p className="brand">HIREMINDS™</p>
-          <h2>CAREER CONNECT</h2>
-          <p className="live">● LIVE SERVICES</p>
-        </div>
+        <p className="brand">HIREMINDS™</p>
+
+        <h2>CAREER CONNECT</h2>
+
+        <p className="live">
+          ● LIVE CAREER SERVICES
+        </p>
 
         <button className="active">
           🏠 Career Connect
         </button>
 
-        <button>💬 Live Support</button>
-        <button>👥 Networking</button>
-        <button>📁 Resources</button>
-        <button>💼 Opportunities</button>
-        <button>⭐ Highlights</button>
+        <button>
+          💬 Live Support
+        </button>
+
+        <button>
+          📁 Resources
+        </button>
+
+        <button>
+          💼 Opportunities
+        </button>
 
         <button
           className="exit"
@@ -400,429 +446,403 @@ export default function OpenRoomLivePage() {
         </button>
       </aside>
 
-      {/* MAIN CONTENT */}
-
       <section className="main">
-        {/* VERY VISIBLE MEETING BANNER */}
-
         <div className="meetingAlert">
-          <div className="meetingArrow">➜</div>
+          <div className="meetingArrow">
+            ➜
+          </div>
 
           <div className="meetingAlertText">
-            <span>SCHEDULED MEETING?</span>
+            <span>CAREER CONNECT</span>
 
             <strong>
-              YOUR LIVE MEETING IS HERE
+              Live career support starts here.
             </strong>
 
             <p>
-              Resume Support • 1:1 Career Coaching • Mock Interviews •
-              Open Room • Other Scheduled Meetings
+              Attend a scheduled session or request a meeting with
+              HireMinds.
             </p>
           </div>
-
-          <a
-            href="#career-connect-checkin"
-            className="topMeetingButton"
-          >
-            CHECK IN & JOIN →
-          </a>
         </div>
 
         <p className="eyebrow">
           HireMinds™ Live Career Services
         </p>
 
-        <h1>CAREER CONNECT</h1>
+        <h1>
+          CAREER CONNECT
+        </h1>
 
         <p className="tagline">
-          Check in. Connect. Keep moving.
+          Connect. Prepare. Keep moving.
         </p>
 
         <p className="intro">
-          Career Connect is your entry point for live HireMinds career
-          support. If you already have a scheduled meeting, select the
-          service you are attending, check in, and enter the live room.
-          If you need an appointment, you can request a meeting below.
+          Career Connect gives you one place to attend scheduled
+          sessions, check in for live support, or request a meeting
+          when you need one.
         </p>
-
-        {/* PARTICIPANT INFO */}
 
         <div className="participantBar">
           <div>
-            <span>CHECKING IN AS</span>
-            <strong>{fullName}</strong>
+            <span>PARTICIPANT</span>
+
+            <strong>
+              {fullName}
+            </strong>
           </div>
 
-          {referralCode ? (
-            <div>
-              <span>PROGRAM / CODE</span>
-              <strong>{referralCode}</strong>
-            </div>
-          ) : null}
+          <div>
+            <span>PROGRAM / CODE</span>
+
+            <strong>
+              {referralCode || "Not Assigned"}
+            </strong>
+          </div>
         </div>
 
-        {/* CHECK-IN */}
+        <section className="choiceBox">
+          <div className="choiceHeader">
+            <p className="eyebrow">
+              Start Here
+            </p>
 
-        <div
-          className="checkInBox"
-          id="career-connect-checkin"
-        >
-          <div className="checkHeader">
-            <div>
-              <p className="eyebrow">
-                Scheduled Meeting Check-In
-              </p>
+            <h2>
+              What would you like to do today?
+            </h2>
 
-              <h2>What are you here for today?</h2>
-
-              <p>
-                Select the service or meeting you are attending. Your
-                attendance will be recorded before the live meeting
-                room opens.
-              </p>
-            </div>
-
-            <div className="stepBadge">
-              STEP 1
-            </div>
+            <p>
+              Choose one option below.
+            </p>
           </div>
 
-          <div className="serviceGrid">
-            {SERVICE_OPTIONS.map((service) => {
-              const selected =
-                selectedService === service.value;
+          <div className="choiceGrid">
+            <button
+              type="button"
+              className={`mainChoice ${
+                visitMode === "attend"
+                  ? "mainChoiceActive"
+                  : ""
+              }`}
+              onClick={() =>
+                chooseMode("attend")
+              }
+            >
+              <div className="choiceIcon">
+                ✓
+              </div>
 
-              return (
-                <button
-                  key={service.value}
-                  type="button"
-                  className={`serviceCard ${
-                    selected
-                      ? "selectedService"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedService(service.value);
-                    setMessage("");
-                    setCheckedIn(false);
-                  }}
-                >
-                  <div className="radio">
-                    {selected ? "✓" : ""}
-                  </div>
+              <div>
+                <strong>
+                  I have a scheduled session / I&apos;m attending today
+                </strong>
 
-                  <div>
-                    <strong>
-                      {service.label}
-                    </strong>
-
-                    <p>
-                      {service.description}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {selectedService === "other" ? (
-            <div className="otherWrap">
-              <label>
-                What type of meeting or support are you attending?
-              </label>
-
-              <input
-                value={otherService}
-                onChange={(e) =>
-                  setOtherService(
-                    e.target.value
-                  )
-                }
-                placeholder="Example: Career planning meeting"
-              />
-            </div>
-          ) : null}
-
-          {selectedService ? (
-            <div className="selectionConfirmation">
-              <span>
-                YOU SELECTED
-              </span>
-
-              <strong>
-                {getSelectedServiceLabel()}
-              </strong>
-            </div>
-          ) : null}
-
-          {message ? (
-            <div className="message">
-              {message}
-            </div>
-          ) : null}
-
-          {checkedIn ? (
-            <div className="success">
-              ✓ You're checked in. Your live meeting room has been
-              opened in a new tab.
-            </div>
-          ) : null}
-
-          <div className="enterArea">
-            <div>
-              <p className="eyebrow">
-                Step 2
-              </p>
-
-              <h3>
-                Enter Your Live Meeting
-              </h3>
-
-              <p>
-                Check in first, then Career Connect will open your
-                HireMinds live meeting room.
-              </p>
-            </div>
+                <p>
+                  Check in for Resume Support, Career Coaching, a Mock
+                  Interview, Workforce Training, Job Search Assistance,
+                  Open Room, or another scheduled session.
+                </p>
+              </div>
+            </button>
 
             <button
               type="button"
-              className="joinBtn"
-              onClick={handleCheckInAndEnter}
-              disabled={
-                checkingIn ||
-                !selectedService
+              className={`mainChoice ${
+                visitMode === "request"
+                  ? "mainChoiceActive"
+                  : ""
+              }`}
+              onClick={() =>
+                chooseMode("request")
               }
             >
-              {checkingIn
-                ? "Checking In..."
-                : "Check In & Enter →"}
+              <div className="choiceIcon">
+                +
+              </div>
+
+              <div>
+                <strong>
+                  I need to request a meeting
+                </strong>
+
+                <p>
+                  Request Resume Support, Career Coaching, a Mock
+                  Interview, Job Search Assistance, or another
+                  career-support meeting.
+                </p>
+              </div>
             </button>
           </div>
-        </div>
+        </section>
 
-        {/* REQUEST MEETING */}
+        {visitMode === "attend" ? (
+          <section className="contentBox">
+            <div className="contentHeader">
+              <div>
+                <p className="eyebrow">
+                  Scheduled Session
+                </p>
 
-        <div className="requestBox">
-          <div className="requestHeader">
-            <div>
-              <p className="eyebrow">
-                Need an Appointment?
-              </p>
+                <h2>
+                  What are you attending today?
+                </h2>
 
-              <h2>
-                Request a Meeting
-              </h2>
+                <p>
+                  Select your session, then check in and enter the live
+                  meeting room.
+                </p>
+              </div>
 
-              <p>
-                Request Resume Support, a 1:1 Career Coaching session,
-                Mock Interview, Job Search Assistance, or another
-                career-support meeting.
-              </p>
+              <span className="stepBadge">
+                CHECK IN
+              </span>
             </div>
 
-            <span className="requestBadge">
-              REQUEST
-            </span>
-          </div>
+            <div className="serviceGrid">
+              {SERVICE_OPTIONS.map((service) => {
+                const selected =
+                  selectedService === service.value;
 
-          <div className="requestGrid">
-            <label>
-              <span>
-                Meeting Type
-              </span>
+                return (
+                  <button
+                    key={service.value}
+                    type="button"
+                    className={`serviceCard ${
+                      selected ? "selectedService" : ""
+                    }`}
+                    onClick={() => {
+                      setSelectedService(service.value);
+                      setCheckInMessage("");
+                      setCheckedIn(false);
+                    }}
+                  >
+                    <div className="radio">
+                      {selected ? "✓" : ""}
+                    </div>
 
-              <select
-                value={requestService}
-                onChange={(e) =>
-                  setRequestService(
-                    e.target.value
-                  )
+                    <div>
+                      <strong>
+                        {service.label}
+                      </strong>
+
+                      <p>
+                        {service.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedService === "other" ? (
+              <div className="otherWrap">
+                <label>
+                  What type of meeting or support are you attending?
+                </label>
+
+                <input
+                  value={otherService}
+                  onChange={(e) =>
+                    setOtherService(e.target.value)
+                  }
+                  placeholder="Example: Career planning meeting"
+                />
+              </div>
+            ) : null}
+
+            {selectedService ? (
+              <div className="selectionConfirmation">
+                <span>
+                  YOU SELECTED
+                </span>
+
+                <strong>
+                  {getServiceLabel(selectedService)}
+                </strong>
+              </div>
+            ) : null}
+
+            {checkInMessage ? (
+              <div className="errorMessage">
+                {checkInMessage}
+              </div>
+            ) : null}
+
+            {checkedIn ? (
+              <div className="successMessage">
+                ✓ You&apos;re checked in. Your live meeting room opened
+                in a new tab.
+              </div>
+            ) : null}
+
+            <div className="actionBottom">
+              <div>
+                <strong>
+                  Ready to join?
+                </strong>
+
+                <p>
+                  Your attendance is recorded when you check in.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="primaryButton"
+                onClick={handleCheckInAndEnter}
+                disabled={
+                  checkingIn ||
+                  !selectedService
                 }
               >
-                <option value="">
-                  Select meeting type
-                </option>
-
-                <option value="resume_support">
-                  Resume Support
-                </option>
-
-                <option value="career_coaching">
-                  1:1 Career Coaching
-                </option>
-
-                <option value="mock_interview">
-                  Mock Interview
-                </option>
-
-                <option value="job_search_assistance">
-                  Job Search Assistance
-                </option>
-
-                <option value="other">
-                  Other
-                </option>
-              </select>
-            </label>
-
-            <label>
-              <span>
-                Preferred Date
-              </span>
-
-              <input
-                type="date"
-                value={requestDate}
-                onChange={(e) =>
-                  setRequestDate(
-                    e.target.value
-                  )
-                }
-              />
-            </label>
-
-            <label>
-              <span>
-                Preferred Time
-              </span>
-
-              <input
-                type="time"
-                value={requestTime}
-                onChange={(e) =>
-                  setRequestTime(
-                    e.target.value
-                  )
-                }
-              />
-            </label>
-          </div>
-
-          <label className="requestNotes">
-            <span>
-              Anything we should know?
-            </span>
-
-            <textarea
-              value={requestNotes}
-              onChange={(e) =>
-                setRequestNotes(
-                  e.target.value
-                )
-              }
-              placeholder="Optional notes about what you would like help with."
-            />
-          </label>
-
-          <div className="requestBottom">
-            <p>
-              Requested dates and times are subject to confirmation.
-            </p>
-
-            <button
-              type="button"
-              className="requestButton"
-              onClick={handleMeetingRequest}
-              disabled={requestSubmitting}
-            >
-              {requestSubmitting
-                ? "Submitting..."
-                : "Request Meeting →"}
-            </button>
-          </div>
-
-          {requestMessage ? (
-            <div className="requestMessage">
-              {requestMessage}
+                {checkingIn
+                  ? "Checking In..."
+                  : "Check In & Enter Meeting →"}
+              </button>
             </div>
-          ) : null}
-        </div>
+          </section>
+        ) : null}
 
-        {/* SERVICE INFORMATION */}
+        {visitMode === "request" ? (
+          <section className="contentBox requestBox">
+            <div className="contentHeader">
+              <div>
+                <p className="eyebrow">
+                  Meeting Request
+                </p>
 
-        <div className="infoTitle">
-          <p className="eyebrow">
-            Career Connect
-          </p>
+                <h2>
+                  Request a Meeting
+                </h2>
 
-          <h2>
-            Live support when you need it.
-          </h2>
-        </div>
+                <p>
+                  Tell us what type of support you need and your
+                  preferred date and time.
+                </p>
+              </div>
 
-        <div className="cards">
-          <div>
-            <span className="cardIcon">
-              📄
-            </span>
+              <span className="requestBadge">
+                REQUEST
+              </span>
+            </div>
 
-            <h3>
-              Resume Support
-            </h3>
+            <div className="requestGrid">
+              <label>
+                <span>
+                  Meeting Type
+                </span>
 
-            <p>
-              Resume reviews, revisions, development, and individual
-              guidance.
-            </p>
-          </div>
+                <select
+                  value={requestService}
+                  onChange={(e) =>
+                    setRequestService(e.target.value)
+                  }
+                >
+                  <option value="">
+                    Select meeting type
+                  </option>
 
-          <div>
-            <span className="cardIcon">
-              🎤
-            </span>
+                  {REQUEST_OPTIONS.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <h3>
-              Mock Interviews
-            </h3>
+              <label>
+                <span>
+                  Preferred Date
+                </span>
 
-            <p>
-              Practice answering questions and prepare for upcoming
-              interviews.
-            </p>
-          </div>
+                <input
+                  type="date"
+                  value={requestDate}
+                  onChange={(e) =>
+                    setRequestDate(e.target.value)
+                  }
+                />
+              </label>
 
-          <div>
-            <span className="cardIcon">
-              💬
-            </span>
+              <label>
+                <span>
+                  Preferred Time
+                </span>
 
-            <h3>
-              Career Coaching
-            </h3>
+                <input
+                  type="time"
+                  value={requestTime}
+                  onChange={(e) =>
+                    setRequestTime(e.target.value)
+                  }
+                />
+              </label>
+            </div>
 
-            <p>
-              Individual conversations about your goals, job search,
-              and next steps.
-            </p>
-          </div>
+            <label className="requestNotes">
+              <span>
+                Anything we should know?
+              </span>
 
-          <div>
-            <span className="cardIcon">
-              🚪
-            </span>
+              <textarea
+                value={requestNotes}
+                onChange={(e) =>
+                  setRequestNotes(e.target.value)
+                }
+                placeholder="Optional notes about what you would like help with."
+              />
+            </label>
 
-            <h3>
-              Open Room
-            </h3>
+            {requestMessage ? (
+              <div
+                className={
+                  requestMessage.startsWith("✓")
+                    ? "successMessage"
+                    : "errorMessage"
+                }
+              >
+                {requestMessage}
+              </div>
+            ) : null}
 
-            <p>
-              Monthly live Q&A, networking, resource drops,
-              opportunities, and career conversations.
-            </p>
-          </div>
-        </div>
+            <div className="actionBottom">
+              <div>
+                <strong>
+                  Request status
+                </strong>
+
+                <p>
+                  Your preferred date and time are not confirmed until
+                  HireMinds approves the request.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="primaryButton"
+                onClick={handleMeetingRequest}
+                disabled={requestSubmitting}
+              >
+                {requestSubmitting
+                  ? "Submitting..."
+                  : "Submit Meeting Request →"}
+              </button>
+            </div>
+          </section>
+        ) : null}
       </section>
 
-      {/* RIGHT PANEL */}
-
-      <section className="right">
+      <aside className="right">
         <p className="rightEyebrow">
           CAREER CONNECT
         </p>
 
         <h2>
-          Today's Check-In
+          Today
         </h2>
 
         <div className="detail">
@@ -841,134 +861,77 @@ export default function OpenRoomLivePage() {
           </strong>
 
           <span>
-            {referralCode ||
-              "Not Assigned"}
+            {referralCode || "Not Assigned"}
           </span>
         </div>
 
         <div className="detail">
           <strong>
-            Service
+            Your Selection
           </strong>
 
           <span>
-            {selectedService
-              ? getSelectedServiceLabel()
-              : "Select a service"}
+            {visitMode === "attend"
+              ? "Attend Scheduled Session"
+              : visitMode === "request"
+                ? "Request a Meeting"
+                : "Choose an option"}
           </span>
         </div>
 
-        <div className="meetingRoomCard">
-          <span>
-            LIVE MEETING ROOM
-          </span>
+        {visitMode === "attend" &&
+        selectedService ? (
+          <div className="detail highlightDetail">
+            <strong>
+              Session
+            </strong>
 
+            <span>
+              {getServiceLabel(selectedService)}
+            </span>
+          </div>
+        ) : null}
+
+        <div className="infoCard">
           <strong>
-            HireMinds Career Connect
+            Scheduled session?
           </strong>
 
           <p>
-            Resume Support, 1:1 meetings, Mock Interviews, Open Room,
-            and other scheduled live services use the Career Connect
-            meeting room.
+            Choose the attendance option, select your session, then
+            check in and enter.
           </p>
-
-          <a
-            href="#career-connect-checkin"
-          >
-            Check In to Enter →
-          </a>
         </div>
 
-        <div className="divider" />
-
-        <h2 className="openRoomTitle">
-          Open Room
-        </h2>
-
-        <p className="openRoomText">
-          Open Room remains the monthly HireMinds live community
-          session available through Career Connect.
-        </p>
-
-        <div className="detail">
+        <div className="infoCard">
           <strong>
-            Schedule
-          </strong>
-
-          <span>
-            Last Tuesday monthly
-          </span>
-        </div>
-
-        <div className="detail">
-          <strong>
-            Time
-          </strong>
-
-          <span>
-            6:00 PM – 7:00 PM
-          </span>
-        </div>
-
-        <div className="detail">
-          <strong>
-            Doors Open
-          </strong>
-
-          <span>
-            5:50 PM
-          </span>
-        </div>
-
-        <div className="detail closeDetail">
-          <strong>
-            Doors Close
-          </strong>
-
-          <span>
-            6:15 PM
-          </span>
-        </div>
-
-        <div className="openNote">
-          <strong>
-            Open Room
+            Need support?
           </strong>
 
           <p>
-            Live Q&A, networking, resource drops, opportunities,
-            career conversations, and HireMinds community support.
+            Choose Request a Meeting and submit your preferred date and
+            time.
           </p>
         </div>
-      </section>
+      </aside>
 
       <style jsx>{`
         * {
           box-sizing: border-box;
         }
 
-        html {
-          scroll-behavior: smooth;
-        }
-
         .page {
           min-height: 100vh;
           display: grid;
-          grid-template-columns: 235px minmax(0, 1fr) 330px;
-          gap: 22px;
-          padding: 26px;
+          grid-template-columns: 220px minmax(0, 1fr) 310px;
+          gap: 20px;
+          padding: 22px;
 
           background:
             radial-gradient(
               circle at top right,
-              rgba(0, 229, 255, 0.11),
+              rgba(0, 229, 255, 0.1),
               transparent 28%
-            ),
-            radial-gradient(
-              circle at bottom left,
-              rgba(59, 130, 246, 0.08),
-              transparent 30%
             ),
             linear-gradient(
               135deg,
@@ -991,465 +954,650 @@ export default function OpenRoomLivePage() {
         .side,
         .main,
         .right {
-          border-radius: 26px;
-          background: rgba(255, 255, 255, 0.045);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px;
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              0.04
+            );
+
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.09
+            );
         }
 
-        /* SIDEBAR */
-
         .side {
+          padding: 20px;
           display: flex;
           flex-direction: column;
-          gap: 11px;
-          padding: 22px;
+          gap: 10px;
         }
 
         .brand {
-          margin: 0 0 7px;
+          margin: 0;
           color: #10f3ff;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 900;
           letter-spacing: 0.14em;
         }
 
         .side h2 {
-          margin: 0;
-          font-size: 21px;
+          margin: 2px 0 0;
+          font-size: 20px;
         }
 
         .live {
-          margin: 8px 0 20px;
+          margin: 5px 0 16px;
           color: #3cff82;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 900;
         }
 
         .side button {
           width: 100%;
-          padding: 13px 14px;
-          border-radius: 14px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(255, 255, 255, 0.045);
+          padding: 12px 13px;
+          border-radius: 13px;
+
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.09
+            );
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              0.04
+            );
+
           color: white;
-          font-size: 13px;
-          font-weight: 750;
           text-align: left;
+          font-weight: 750;
           cursor: pointer;
         }
 
         .side .active {
-          background: rgba(0, 229, 255, 0.13);
-          border-color: rgba(16, 243, 255, 0.25);
           color: #10f3ff;
+
+          background:
+            rgba(
+              16,
+              243,
+              255,
+              0.08
+            );
+
+          border-color:
+            rgba(
+              16,
+              243,
+              255,
+              0.2
+            );
         }
 
         .side .exit {
           margin-top: auto;
-          color: #ff8b8b;
-          border-color: rgba(255, 116, 116, 0.25);
+          color: #ff8c8c;
         }
-
-        /* MAIN */
 
         .main {
+          padding: 26px;
           min-width: 0;
-          padding: 32px;
         }
-
-        /* TOP MEETING ALERT */
 
         .meetingAlert {
           display: flex;
           align-items: center;
-          gap: 17px;
-          margin-bottom: 30px;
-          padding: 19px 20px;
-          border-radius: 20px;
+          gap: 15px;
+          margin-bottom: 26px;
+          padding: 17px 18px;
+          border-radius: 18px;
 
           background:
             linear-gradient(
               135deg,
-              rgba(16, 243, 255, 0.16),
-              rgba(255, 210, 73, 0.08)
-            ),
-            rgba(255, 255, 255, 0.04);
+              rgba(
+                16,
+                243,
+                255,
+                0.12
+              ),
+              rgba(
+                255,
+                210,
+                73,
+                0.04
+              )
+            );
 
-          border: 2px solid rgba(16, 243, 255, 0.4);
-
-          box-shadow:
-            0 0 40px rgba(16, 243, 255, 0.09);
+          border:
+            1px solid rgba(
+              16,
+              243,
+              255,
+              0.25
+            );
         }
 
         .meetingArrow {
-          flex-shrink: 0;
           color: #ffd249;
-          font-size: 43px;
-          line-height: 1;
-          font-weight: 950;
+          font-size: 34px;
         }
 
         .meetingAlertText {
-          flex: 1;
           display: grid;
-          gap: 5px;
+          gap: 4px;
         }
 
         .meetingAlertText span {
           color: #10f3ff;
-          font-size: 10px;
-          font-weight: 950;
-          letter-spacing: 0.15em;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 0.14em;
         }
 
         .meetingAlertText strong {
-          color: white;
-          font-size: 18px;
-          font-weight: 950;
+          font-size: 15px;
         }
 
         .meetingAlertText p {
           margin: 0;
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 12px;
-          line-height: 1.5;
-        }
 
-        .topMeetingButton {
-          flex-shrink: 0;
-          padding: 14px 20px;
-          border-radius: 999px;
-          background: linear-gradient(
-            135deg,
-            #10f3ff,
-            #ffd249
-          );
-          color: #06111f;
-          text-decoration: none;
-          font-size: 12px;
-          font-weight: 950;
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.64
+            );
+
+          font-size: 11px;
         }
 
         .eyebrow {
-          margin: 0 0 8px;
+          margin: 0 0 7px;
           color: #10f3ff;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 900;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.13em;
           text-transform: uppercase;
         }
 
         h1 {
           margin: 0;
-          font-size: clamp(3rem, 6vw, 5.5rem);
+          color: #10f3ff;
+          font-size: clamp(2.8rem, 5vw, 5rem);
           line-height: 0.95;
           letter-spacing: -0.04em;
-          color: #10f3ff;
         }
 
         .tagline {
-          margin: 14px 0 0;
+          margin: 13px 0 0;
           color: #ffd249;
-          font-size: 18px;
           font-weight: 850;
         }
 
         .intro {
           max-width: 800px;
-          margin: 14px 0 0;
-          color: rgba(255, 255, 255, 0.76);
-          line-height: 1.7;
-          font-size: 15px;
-        }
 
-        /* PARTICIPANT */
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.72
+            );
+
+          line-height: 1.65;
+          font-size: 14px;
+        }
 
         .participantBar {
           display: flex;
           flex-wrap: wrap;
-          gap: 14px;
-          margin-top: 25px;
+          gap: 10px;
+          margin: 22px 0;
         }
 
         .participantBar div {
-          min-width: 180px;
-          padding: 12px 15px;
-          border-radius: 13px;
-          background: rgba(255, 255, 255, 0.045);
-          border: 1px solid rgba(255, 255, 255, 0.09);
+          min-width: 175px;
+          padding: 11px 13px;
+          border-radius: 12px;
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              0.04
+            );
+
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
+
           display: grid;
-          gap: 4px;
+          gap: 3px;
         }
 
         .participantBar span {
-          color: rgba(255, 255, 255, 0.5);
-          font-size: 9px;
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.48
+            );
+
+          font-size: 8px;
           font-weight: 900;
           letter-spacing: 0.12em;
         }
 
         .participantBar strong {
-          font-size: 13px;
+          font-size: 12px;
         }
 
-        /* CHECK IN */
-
-        .checkInBox {
-          scroll-margin-top: 25px;
-          margin: 26px 0 36px;
-          padding: 26px;
-          border-radius: 24px;
+        .choiceBox,
+        .contentBox {
+          margin-top: 20px;
+          padding: 24px;
+          border-radius: 22px;
 
           background:
-            linear-gradient(
-              135deg,
-              rgba(0, 229, 255, 0.07),
-              rgba(255, 210, 73, 0.035)
-            ),
-            rgba(255, 255, 255, 0.035);
+            rgba(
+              255,
+              255,
+              255,
+              0.035
+            );
 
-          border: 1px solid rgba(0, 229, 255, 0.17);
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.09
+            );
         }
 
-        .checkHeader {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 20px;
-          margin-bottom: 20px;
+        .choiceHeader h2,
+        .contentHeader h2 {
+          margin: 0 0 6px;
+          font-size: 25px;
         }
 
-        .checkHeader h2 {
-          margin: 0 0 7px;
-          font-size: 27px;
-        }
-
-        .checkHeader p:not(.eyebrow) {
+        .choiceHeader p:not(.eyebrow),
+        .contentHeader p:not(.eyebrow) {
           margin: 0;
-          color: rgba(255, 255, 255, 0.68);
-          line-height: 1.55;
-          font-size: 14px;
+
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.62
+            );
+
+          font-size: 12px;
+          line-height: 1.5;
         }
 
-        .stepBadge {
-          flex-shrink: 0;
-          padding: 8px 11px;
-          border-radius: 999px;
-          background: rgba(16, 243, 255, 0.1);
-          border: 1px solid rgba(16, 243, 255, 0.2);
-          color: #10f3ff;
-          font-size: 10px;
-          font-weight: 900;
-        }
-
-        .serviceGrid {
+        .choiceGrid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 11px;
+          gap: 14px;
+          margin-top: 20px;
         }
 
-        .serviceCard {
-          width: 100%;
+        .mainChoice {
           display: flex;
-          gap: 12px;
           align-items: flex-start;
-          padding: 15px;
-          border-radius: 15px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(0, 0, 0, 0.18);
+          gap: 14px;
+          padding: 20px;
+          border-radius: 17px;
+
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.1
+            );
+
+          background:
+            rgba(
+              0,
+              0,
+              0,
+              0.18
+            );
+
           color: white;
           text-align: left;
           cursor: pointer;
-          transition: 0.18s ease;
         }
 
-        .serviceCard:hover {
-          border-color: rgba(16, 243, 255, 0.3);
+        .mainChoiceActive {
+          border-color:
+            rgba(
+              16,
+              243,
+              255,
+              0.48
+            );
+
+          background:
+            rgba(
+              16,
+              243,
+              255,
+              0.08
+            );
         }
 
-        .selectedService {
-          background: rgba(16, 243, 255, 0.09);
-          border-color: rgba(16, 243, 255, 0.48);
-        }
-
-        .radio {
-          width: 22px;
-          height: 22px;
+        .choiceIcon {
+          width: 32px;
+          height: 32px;
           flex-shrink: 0;
           display: flex;
           align-items: center;
           justify-content: center;
           border-radius: 50%;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          color: #06111f;
-          font-size: 12px;
+
+          border:
+            1px solid rgba(
+              16,
+              243,
+              255,
+              0.32
+            );
+
+          color: #10f3ff;
+          font-size: 18px;
           font-weight: 900;
+        }
+
+        .mainChoice strong {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 14px;
+        }
+
+        .mainChoice p {
+          margin: 0;
+
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.58
+            );
+
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .contentHeader {
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+          align-items: flex-start;
+          margin-bottom: 20px;
+        }
+
+        .stepBadge,
+        .requestBadge {
+          padding: 7px 10px;
+          border-radius: 999px;
+          font-size: 9px;
+          font-weight: 900;
+          flex-shrink: 0;
+        }
+
+        .stepBadge {
+          color: #10f3ff;
+
+          border:
+            1px solid rgba(
+              16,
+              243,
+              255,
+              0.25
+            );
+
+          background:
+            rgba(
+              16,
+              243,
+              255,
+              0.08
+            );
+        }
+
+        .requestBadge {
+          color: #ffd249;
+
+          border:
+            1px solid rgba(
+              255,
+              210,
+              73,
+              0.25
+            );
+
+          background:
+            rgba(
+              255,
+              210,
+              73,
+              0.07
+            );
+        }
+
+        .serviceGrid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .serviceCard {
+          display: flex;
+          align-items: flex-start;
+          gap: 11px;
+          padding: 14px;
+          border-radius: 14px;
+
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.09
+            );
+
+          background:
+            rgba(
+              0,
+              0,
+              0,
+              0.16
+            );
+
+          color: white;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .selectedService {
+          border-color:
+            rgba(
+              16,
+              243,
+              255,
+              0.5
+            );
+
+          background:
+            rgba(
+              16,
+              243,
+              255,
+              0.08
+            );
+        }
+
+        .radio {
+          width: 21px;
+          height: 21px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.3
+            );
+
+          flex-shrink: 0;
+          font-size: 11px;
         }
 
         .selectedService .radio {
           background: #10f3ff;
-          border-color: #10f3ff;
+          color: #07111c;
         }
 
         .serviceCard strong {
           display: block;
-          margin-bottom: 5px;
-          font-size: 14px;
+          margin-bottom: 4px;
+          font-size: 13px;
         }
 
         .serviceCard p {
           margin: 0;
-          color: rgba(255, 255, 255, 0.58);
+
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.55
+            );
+
+          font-size: 10px;
           line-height: 1.45;
-          font-size: 11px;
         }
 
         .otherWrap {
           display: grid;
-          gap: 8px;
-          margin-top: 16px;
+          gap: 7px;
+          margin-top: 14px;
         }
 
-        .otherWrap label {
-          color: rgba(255, 255, 255, 0.72);
-          font-size: 12px;
-          font-weight: 700;
+        .otherWrap label,
+        .requestGrid span,
+        .requestNotes span {
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.67
+            );
+
+          font-size: 11px;
+          font-weight: 800;
         }
 
-        .otherWrap input {
+        .otherWrap input,
+        .requestGrid select,
+        .requestGrid input,
+        .requestNotes textarea {
           width: 100%;
-          padding: 13px 15px;
-          border-radius: 13px;
-          border: 1px solid rgba(255, 255, 255, 0.13);
-          background: rgba(0, 0, 0, 0.28);
+          padding: 12px 13px;
+          border-radius: 12px;
+
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.12
+            );
+
+          background: #090d17;
           color: white;
           outline: none;
         }
 
+        .requestGrid select option {
+          background: #090d17;
+          color: white;
+        }
+
         .selectionConfirmation {
-          margin-top: 16px;
-          padding: 13px 15px;
-          border-radius: 13px;
-          background: rgba(255, 210, 73, 0.07);
-          border: 1px solid rgba(255, 210, 73, 0.15);
+          margin-top: 14px;
+          padding: 12px 13px;
+          border-radius: 12px;
+
+          background:
+            rgba(
+              255,
+              210,
+              73,
+              0.06
+            );
+
+          border:
+            1px solid rgba(
+              255,
+              210,
+              73,
+              0.15
+            );
+
           display: grid;
           gap: 3px;
         }
 
         .selectionConfirmation span {
-          color: rgba(255, 255, 255, 0.48);
-          font-size: 9px;
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.45
+            );
+
+          font-size: 8px;
           font-weight: 900;
-          letter-spacing: 0.12em;
         }
 
         .selectionConfirmation strong {
           color: #ffd249;
-          font-size: 14px;
-        }
-
-        .message {
-          margin-top: 14px;
-          padding: 12px 14px;
-          border-radius: 12px;
-          background: rgba(255, 90, 90, 0.08);
-          border: 1px solid rgba(255, 90, 90, 0.2);
-          color: #ffaaaa;
           font-size: 12px;
-        }
-
-        .success {
-          margin-top: 14px;
-          padding: 12px 14px;
-          border-radius: 12px;
-          background: rgba(60, 255, 130, 0.08);
-          border: 1px solid rgba(60, 255, 130, 0.2);
-          color: #8dffb5;
-          font-size: 12px;
-          font-weight: 700;
-        }
-
-        .enterArea {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 20px;
-          margin-top: 22px;
-          padding-top: 20px;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .enterArea h3 {
-          margin: 0 0 5px;
-          font-size: 18px;
-        }
-
-        .enterArea p:not(.eyebrow) {
-          margin: 0;
-          color: rgba(255, 255, 255, 0.58);
-          font-size: 12px;
-        }
-
-        .joinBtn {
-          flex-shrink: 0;
-          padding: 14px 21px;
-          border: none;
-          border-radius: 999px;
-          background: linear-gradient(
-            135deg,
-            #10f3ff,
-            #ffd249
-          );
-          color: #06111f;
-          font-size: 13px;
-          font-weight: 950;
-          cursor: pointer;
-        }
-
-        .joinBtn:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-
-        /* REQUEST MEETING */
-
-        .requestBox {
-          margin: 0 0 36px;
-          padding: 26px;
-          border-radius: 24px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .requestHeader {
-          display: flex;
-          justify-content: space-between;
-          gap: 18px;
-          margin-bottom: 20px;
-        }
-
-        .requestHeader h2 {
-          margin: 0 0 7px;
-          font-size: 26px;
-        }
-
-        .requestHeader p:not(.eyebrow) {
-          margin: 0;
-          max-width: 720px;
-          color: rgba(255, 255, 255, 0.65);
-          line-height: 1.6;
-          font-size: 13px;
-        }
-
-        .requestBadge {
-          height: fit-content;
-          padding: 8px 11px;
-          border-radius: 999px;
-          background: rgba(255, 210, 73, 0.08);
-          border: 1px solid rgba(255, 210, 73, 0.2);
-          color: #ffd249;
-          font-size: 10px;
-          font-weight: 900;
         }
 
         .requestGrid {
@@ -1464,241 +1612,216 @@ export default function OpenRoomLivePage() {
           gap: 7px;
         }
 
-        .requestGrid label span,
-        .requestNotes span {
-          color: rgba(255, 255, 255, 0.68);
-          font-size: 11px;
-          font-weight: 800;
-        }
-
-        .requestGrid select,
-        .requestGrid input,
-        .requestNotes textarea {
-          width: 100%;
-          padding: 13px 14px;
-          border-radius: 13px;
-          border: 1px solid rgba(255, 255, 255, 0.13);
-          background: #0a0e18;
-          color: #ffffff;
-          outline: none;
-        }
-
-        .requestGrid select option {
-          background: #0a0e18;
-          color: white;
-        }
-
         .requestNotes {
           margin-top: 14px;
         }
 
         .requestNotes textarea {
-          min-height: 90px;
+          min-height: 100px;
           resize: vertical;
         }
 
-        .requestBottom {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 18px;
-          margin-top: 16px;
-        }
-
-        .requestBottom p {
-          margin: 0;
-          color: rgba(255, 255, 255, 0.54);
-          font-size: 11px;
-        }
-
-        .requestButton {
-          padding: 13px 20px;
-          border: 1px solid rgba(16, 243, 255, 0.26);
-          border-radius: 999px;
-          background: rgba(16, 243, 255, 0.1);
-          color: #10f3ff;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .requestButton:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .requestMessage {
+        .errorMessage,
+        .successMessage {
           margin-top: 14px;
-          padding: 12px 14px;
+          padding: 12px 13px;
           border-radius: 12px;
-          background: rgba(60, 255, 130, 0.07);
-          border: 1px solid rgba(60, 255, 130, 0.16);
-          color: #a7f3c2;
-          font-size: 12px;
+          font-size: 11px;
           line-height: 1.5;
         }
 
-        /* SERVICE CARDS */
+        .errorMessage {
+          color: #ffb0b0;
 
-        .infoTitle {
-          margin-bottom: 16px;
+          background:
+            rgba(
+              255,
+              90,
+              90,
+              0.07
+            );
+
+          border:
+            1px solid rgba(
+              255,
+              90,
+              90,
+              0.18
+            );
         }
 
-        .infoTitle h2 {
-          margin: 0;
-          font-size: 25px;
+        .successMessage {
+          color: #a8f5c3;
+
+          background:
+            rgba(
+              60,
+              255,
+              130,
+              0.07
+            );
+
+          border:
+            1px solid rgba(
+              60,
+              255,
+              130,
+              0.18
+            );
         }
 
-        .cards {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 13px;
+        .actionBottom {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          margin-top: 20px;
+          padding-top: 18px;
+
+          border-top:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.07
+            );
         }
 
-        .cards > div {
-          padding: 18px;
-          border-radius: 18px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+        .actionBottom strong {
+          font-size: 13px;
         }
 
-        .cardIcon {
-          font-size: 20px;
+        .actionBottom p {
+          margin: 4px 0 0;
+
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.52
+            );
+
+          font-size: 10px;
         }
 
-        .cards h3 {
-          margin: 10px 0 6px;
-          font-size: 15px;
+        .primaryButton {
+          padding: 13px 19px;
+          border: none;
+          border-radius: 999px;
+
+          background:
+            linear-gradient(
+              135deg,
+              #10f3ff,
+              #ffd249
+            );
+
+          color: #06111f;
+          font-weight: 950;
+          cursor: pointer;
+          flex-shrink: 0;
         }
 
-        .cards p {
-          margin: 0;
-          color: rgba(255, 255, 255, 0.6);
-          line-height: 1.55;
-          font-size: 12px;
+        .primaryButton:disabled {
+          opacity: 0.42;
+          cursor: not-allowed;
         }
-
-        /* RIGHT */
 
         .right {
-          padding: 22px;
+          padding: 20px;
         }
 
         .rightEyebrow {
           margin: 0 0 7px;
           color: #10f3ff;
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 900;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.13em;
         }
 
         .right h2 {
-          margin: 0 0 17px;
+          margin: 0 0 15px;
           font-size: 20px;
+        }
+
+        .detail,
+        .infoCard {
+          padding: 12px;
+          margin-bottom: 10px;
+          border-radius: 13px;
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              0.04
+            );
+
+          border:
+            1px solid rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
         }
 
         .detail {
           display: grid;
-          gap: 5px;
-          margin-bottom: 10px;
-          padding: 13px;
-          border-radius: 14px;
-          background: rgba(255, 255, 255, 0.045);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          gap: 4px;
         }
 
-        .detail strong {
-          font-size: 11px;
-          color: rgba(255, 255, 255, 0.54);
+        .detail strong,
+        .infoCard strong {
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.55
+            );
+
+          font-size: 10px;
         }
 
         .detail span {
-          color: white;
-          font-size: 12px;
-          line-height: 1.4;
-        }
-
-        .meetingRoomCard {
-          margin-top: 18px;
-          padding: 17px;
-          border-radius: 16px;
-          background: rgba(16, 243, 255, 0.07);
-          border: 1px solid rgba(16, 243, 255, 0.18);
-          display: grid;
-          gap: 7px;
-        }
-
-        .meetingRoomCard span {
-          color: #10f3ff;
-          font-size: 9px;
-          font-weight: 900;
-          letter-spacing: 0.12em;
-        }
-
-        .meetingRoomCard strong {
-          font-size: 14px;
-        }
-
-        .meetingRoomCard p {
-          margin: 0;
-          color: rgba(255, 255, 255, 0.6);
           font-size: 11px;
-          line-height: 1.5;
         }
 
-        .meetingRoomCard a {
-          margin-top: 5px;
-          color: #ffd249;
-          text-decoration: none;
-          font-size: 11px;
-          font-weight: 900;
+        .highlightDetail {
+          border-color:
+            rgba(
+              255,
+              210,
+              73,
+              0.22
+            );
         }
 
-        .divider {
-          height: 1px;
-          margin: 22px 0;
-          background: rgba(255, 255, 255, 0.09);
+        .infoCard {
+          margin-top: 14px;
         }
 
-        .openRoomTitle {
-          color: #ffd249;
-        }
-
-        .openRoomText {
-          margin: -8px 0 15px;
-          color: rgba(255, 255, 255, 0.62);
-          line-height: 1.55;
-          font-size: 12px;
-        }
-
-        .closeDetail {
-          border-color: rgba(255, 210, 73, 0.18);
-        }
-
-        .openNote {
-          margin-top: 15px;
-          padding: 15px;
-          border-radius: 15px;
-          background: rgba(255, 210, 73, 0.055);
-          border: 1px solid rgba(255, 210, 73, 0.14);
-        }
-
-        .openNote strong {
-          color: #ffd249;
-          font-size: 12px;
-        }
-
-        .openNote p {
+        .infoCard p {
           margin: 6px 0 0;
-          color: rgba(255, 255, 255, 0.62);
+
+          color:
+            rgba(
+              255,
+              255,
+              255,
+              0.58
+            );
+
+          font-size: 10px;
           line-height: 1.5;
-          font-size: 11px;
         }
 
-        /* RESPONSIVE */
-
-        @media (max-width: 1200px) {
+        @media (max-width: 1150px) {
           .page {
-            grid-template-columns: 210px minmax(0, 1fr);
+            grid-template-columns: 200px minmax(0, 1fr);
           }
 
           .right {
@@ -1706,50 +1829,28 @@ export default function OpenRoomLivePage() {
           }
         }
 
-        @media (max-width: 850px) {
+        @media (max-width: 800px) {
           .page {
             grid-template-columns: 1fr;
-            padding: 14px;
-          }
-
-          .side,
-          .main,
-          .right {
-            border-radius: 20px;
+            padding: 12px;
           }
 
           .main {
-            padding: 22px;
+            padding: 20px;
           }
 
-          .meetingAlert {
-            align-items: stretch;
-            flex-direction: column;
-          }
-
-          .meetingArrow {
-            transform: rotate(90deg);
-            width: fit-content;
-          }
-
-          .topMeetingButton {
-            text-align: center;
-          }
-
+          .choiceGrid,
           .serviceGrid,
-          .cards,
           .requestGrid {
             grid-template-columns: 1fr;
           }
 
-          .enterArea,
-          .requestBottom {
+          .actionBottom {
             align-items: stretch;
             flex-direction: column;
           }
 
-          .joinBtn,
-          .requestButton {
+          .primaryButton {
             width: 100%;
           }
 
