@@ -11,6 +11,7 @@ type AvailabilitySlot = {
   start_time: string;
   end_time: string | null;
   label: string | null;
+  booked_request_id: string | null;
 };
 
 type CareerConnectSettings = {
@@ -29,13 +30,17 @@ const DEFAULT_SETTINGS: CareerConnectSettings = {
 
   open_room_title: "Open Room",
 
-  open_room_schedule: "Last Tuesday monthly",
+  open_room_schedule:
+    "Last Tuesday monthly",
 
-  open_room_time: "6:00 PM – 7:00 PM",
+  open_room_time:
+    "6:00 PM – 7:00 PM",
 
-  doors_open: "5:50 PM",
+  doors_open:
+    "5:50 PM",
 
-  doors_close: "6:15 PM",
+  doors_close:
+    "6:15 PM",
 
   open_room_note:
     "Live Q&A, networking, resource drops, opportunities, and career conversations.",
@@ -133,77 +138,157 @@ const REQUEST_OPTIONS = [
 
 const MAX_ATTACHMENTS = 3;
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE =
+  10 * 1024 * 1024;
 
 export default function OpenRoomLivePage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const [loading, setLoading] = useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  const [userId, setUserId] = useState("");
+  const [
+    userId,
+    setUserId,
+  ] = useState("");
 
-  const [fullName, setFullName] = useState("");
+  const [
+    fullName,
+    setFullName,
+  ] = useState("");
 
-  const [email, setEmail] = useState("");
+  const [
+    email,
+    setEmail,
+  ] = useState("");
 
-  const [referralCode, setReferralCode] = useState("");
+  const [
+    referralCode,
+    setReferralCode,
+  ] = useState("");
 
-  const [settings, setSettings] =
-    useState<CareerConnectSettings>(DEFAULT_SETTINGS);
+  const [
+    settings,
+    setSettings,
+  ] =
+    useState<CareerConnectSettings>(
+      DEFAULT_SETTINGS
+    );
 
-  const [availabilitySlots, setAvailabilitySlots] =
-    useState<AvailabilitySlot[]>([]);
+  const [
+    availabilitySlots,
+    setAvailabilitySlots,
+  ] =
+    useState<
+      AvailabilitySlot[]
+    >([]);
 
-  const [visitMode, setVisitMode] =
-    useState<VisitMode>("");
+  const [
+    visitMode,
+    setVisitMode,
+  ] =
+    useState<VisitMode>(
+      ""
+    );
 
-  /*
-    SCHEDULED SESSION
-  */
+  /* ======================================================
+     ATTEND SESSION
+  ====================================================== */
 
-  const [selectedServices, setSelectedServices] =
-    useState<string[]>([]);
+  const [
+    selectedServices,
+    setSelectedServices,
+  ] =
+    useState<string[]>(
+      []
+    );
 
-  const [otherService, setOtherService] =
+  const [
+    otherService,
+    setOtherService,
+  ] =
     useState("");
 
-  const [checkingIn, setCheckingIn] =
+  const [
+    checkingIn,
+    setCheckingIn,
+  ] =
     useState(false);
 
-  const [checkInMessage, setCheckInMessage] =
+  const [
+    checkInMessage,
+    setCheckInMessage,
+  ] =
     useState("");
 
-  const [checkedIn, setCheckedIn] =
+  const [
+    checkedIn,
+    setCheckedIn,
+  ] =
     useState(false);
 
-  /*
-    REQUEST MEETING
-  */
+  /* ======================================================
+     REQUEST SERVICE
+  ====================================================== */
 
-  const [requestService, setRequestService] =
+  const [
+    requestService,
+    setRequestService,
+  ] =
     useState("");
 
-  const [requestOtherService, setRequestOtherService] =
+  const [
+    requestOtherService,
+    setRequestOtherService,
+  ] =
     useState("");
 
-  const [selectedSlots, setSelectedSlots] =
-    useState<string[]>([]);
+  const [
+    selectedSlots,
+    setSelectedSlots,
+  ] =
+    useState<string[]>(
+      []
+    );
 
-  const [requestNotes, setRequestNotes] =
+  const [
+    requestNotes,
+    setRequestNotes,
+  ] =
     useState("");
 
-  const [requestFiles, setRequestFiles] =
-    useState<File[]>([]);
+  const [
+    requestFiles,
+    setRequestFiles,
+  ] =
+    useState<File[]>(
+      []
+    );
 
-  const [requestSubmitting, setRequestSubmitting] =
+  const [
+    requestSubmitting,
+    setRequestSubmitting,
+  ] =
     useState(false);
 
-  const [requestMessage, setRequestMessage] =
+  const [
+    requestMessage,
+    setRequestMessage,
+  ] =
     useState("");
 
-  /*
-    INITIAL LOAD
-  */
+  const [
+    policyAgreed,
+    setPolicyAgreed,
+  ] =
+    useState(false);
+
+  /* ======================================================
+     LOAD
+  ====================================================== */
 
   useEffect(() => {
     loadPage();
@@ -215,13 +300,16 @@ export default function OpenRoomLivePage() {
     const {
       data: authData,
       error: authError,
-    } = await supabase.auth.getUser();
+    } =
+      await supabase.auth.getUser();
 
     if (
       authError ||
       !authData.user
     ) {
-      router.push("/sign-in");
+      router.push(
+        "/sign-in"
+      );
 
       return;
     }
@@ -229,10 +317,13 @@ export default function OpenRoomLivePage() {
     const user =
       authData.user;
 
-    setUserId(user.id);
+    setUserId(
+      user.id
+    );
 
     setEmail(
-      user.email || ""
+      user.email ||
+        ""
     );
 
     const {
@@ -251,7 +342,9 @@ export default function OpenRoomLivePage() {
       )
       .maybeSingle();
 
-    if (profileError) {
+    if (
+      profileError
+    ) {
       console.error(
         "Profile error:",
         profileError
@@ -260,7 +353,8 @@ export default function OpenRoomLivePage() {
 
     setFullName(
       profile?.full_name ||
-        user.user_metadata?.full_name ||
+        user.user_metadata
+          ?.full_name ||
         user.email ||
         "Participant"
     );
@@ -273,7 +367,8 @@ export default function OpenRoomLivePage() {
 
     setReferralCode(
       profile?.referral_code ||
-        user.user_metadata?.referral_code ||
+        user.user_metadata
+          ?.referral_code ||
         ""
     );
 
@@ -285,9 +380,9 @@ export default function OpenRoomLivePage() {
     setLoading(false);
   }
 
-  /*
-    LOAD CAREER CONNECT SETTINGS
-  */
+  /* ======================================================
+     SETTINGS
+  ====================================================== */
 
   async function loadSettings() {
     const {
@@ -314,7 +409,9 @@ export default function OpenRoomLivePage() {
       )
       .maybeSingle();
 
-    if (error) {
+    if (
+      error
+    ) {
       console.error(
         "Career Connect settings error:",
         error
@@ -323,7 +420,9 @@ export default function OpenRoomLivePage() {
       return;
     }
 
-    if (data) {
+    if (
+      data
+    ) {
       setSettings({
         meeting_link:
           data.meeting_link ||
@@ -356,9 +455,10 @@ export default function OpenRoomLivePage() {
     }
   }
 
-  /*
-    LOAD ADMIN-CREATED AVAILABILITY
-  */
+  /* ======================================================
+     AVAILABILITY
+     ONLY FUTURE + ACTIVE + NOT BOOKED
+  ====================================================== */
 
   async function loadAvailability() {
     const now =
@@ -376,12 +476,17 @@ export default function OpenRoomLivePage() {
         id,
         start_time,
         end_time,
-        label
+        label,
+        booked_request_id
         `
       )
       .eq(
         "is_active",
         true
+      )
+      .is(
+        "booked_request_id",
+        null
       )
       .gte(
         "start_time",
@@ -390,11 +495,14 @@ export default function OpenRoomLivePage() {
       .order(
         "start_time",
         {
-          ascending: true,
+          ascending:
+            true,
         }
       );
 
-    if (error) {
+    if (
+      error
+    ) {
       console.error(
         "Availability error:",
         error
@@ -404,19 +512,21 @@ export default function OpenRoomLivePage() {
     }
 
     setAvailabilitySlots(
-      data || []
+      (data as AvailabilitySlot[]) ||
+        []
     );
   }
 
-  /*
-    SERVICE LABEL
-  */
+  /* ======================================================
+     HELPERS
+  ====================================================== */
 
   function getServiceLabel(
     value: string
   ) {
     if (
-      value === "other"
+      value ===
+      "other"
     ) {
       return (
         otherService.trim() ||
@@ -426,16 +536,15 @@ export default function OpenRoomLivePage() {
 
     return (
       SERVICE_OPTIONS.find(
-        (service) =>
+        (
+          service
+        ) =>
           service.value ===
           value
-      )?.label || value
+      )?.label ||
+      value
     );
   }
-
-  /*
-    REQUEST SERVICE LABEL
-  */
 
   function getRequestServiceLabel() {
     if (
@@ -450,7 +559,9 @@ export default function OpenRoomLivePage() {
 
     return (
       REQUEST_OPTIONS.find(
-        (service) =>
+        (
+          service
+        ) =>
           service.value ===
           requestService
       )?.label ||
@@ -458,38 +569,42 @@ export default function OpenRoomLivePage() {
     );
   }
 
-  /*
-    MAIN MODE
-  */
-
   function chooseMode(
     mode: VisitMode
   ) {
-    setVisitMode(mode);
+    setVisitMode(
+      mode
+    );
 
-    setCheckInMessage("");
+    setCheckInMessage(
+      ""
+    );
 
-    setRequestMessage("");
+    setRequestMessage(
+      ""
+    );
 
-    setCheckedIn(false);
+    setCheckedIn(
+      false
+    );
   }
-
-  /*
-    MULTI-SERVICE CHECK-IN
-  */
 
   function toggleScheduledService(
     serviceValue: string
   ) {
     setSelectedServices(
-      (previous) => {
+      (
+        previous
+      ) => {
         if (
           previous.includes(
             serviceValue
           )
         ) {
           return previous.filter(
-            (value) =>
+            (
+              value
+            ) =>
               value !==
               serviceValue
           );
@@ -502,14 +617,18 @@ export default function OpenRoomLivePage() {
       }
     );
 
-    setCheckInMessage("");
+    setCheckInMessage(
+      ""
+    );
 
-    setCheckedIn(false);
+    setCheckedIn(
+      false
+    );
   }
 
-  /*
-    CHECK-IN
-  */
+  /* ======================================================
+     CHECK IN
+  ====================================================== */
 
   async function handleCheckInAndEnter() {
     if (
@@ -536,34 +655,26 @@ export default function OpenRoomLivePage() {
       return;
     }
 
-    if (!userId) {
-      setCheckInMessage(
-        "We could not verify your HireMinds account."
-      );
+    setCheckingIn(
+      true
+    );
 
-      return;
-    }
-
-    setCheckingIn(true);
-
-    setCheckInMessage("");
-
-    setCheckedIn(false);
+    setCheckInMessage(
+      ""
+    );
 
     const now =
       new Date();
 
     const selectedLabels =
       selectedServices.map(
-        (service) =>
+        (
+          service
+        ) =>
           getServiceLabel(
             service
           )
       );
-
-    /*
-      ONE SESSION
-    */
 
     const {
       data: session,
@@ -574,7 +685,9 @@ export default function OpenRoomLivePage() {
       )
       .insert({
         service_type:
-          selectedServices[0],
+          selectedServices[
+            0
+          ],
 
         session_title:
           selectedLabels.join(
@@ -588,7 +701,10 @@ export default function OpenRoomLivePage() {
         session_date:
           now
             .toISOString()
-            .slice(0, 10),
+            .slice(
+              0,
+              10
+            ),
 
         start_time:
           now.toISOString(),
@@ -602,31 +718,27 @@ export default function OpenRoomLivePage() {
         created_by:
           userId,
       })
-      .select("id")
+      .select(
+        "id"
+      )
       .single();
 
     if (
       sessionError ||
       !session
     ) {
-      console.error(
-        "Session error:",
-        sessionError
-      );
-
       setCheckInMessage(
-        sessionError?.message ||
+        sessionError
+          ?.message ||
           "We could not record your check-in."
       );
 
-      setCheckingIn(false);
+      setCheckingIn(
+        false
+      );
 
       return;
     }
-
-    /*
-      RECORD EACH SERVICE
-    */
 
     const serviceRows =
       selectedServices.map(
@@ -651,7 +763,7 @@ export default function OpenRoomLivePage() {
 
     const {
       error:
-        servicesError,
+        serviceError,
     } = await supabase
       .from(
         "workforce_session_services"
@@ -661,25 +773,18 @@ export default function OpenRoomLivePage() {
       );
 
     if (
-      servicesError
+      serviceError
     ) {
-      console.error(
-        "Service tracking error:",
-        servicesError
-      );
-
       setCheckInMessage(
-        servicesError.message
+        serviceError.message
       );
 
-      setCheckingIn(false);
+      setCheckingIn(
+        false
+      );
 
       return;
     }
-
-    /*
-      ONE ATTENDANCE RECORD
-    */
 
     const {
       error:
@@ -715,23 +820,16 @@ export default function OpenRoomLivePage() {
     if (
       attendanceError
     ) {
-      console.error(
-        "Attendance error:",
-        attendanceError
-      );
-
       setCheckInMessage(
         attendanceError.message
       );
 
-      setCheckingIn(false);
+      setCheckingIn(
+        false
+      );
 
       return;
     }
-
-    /*
-      ACTIVITY TRACKING
-    */
 
     for (
       const service of
@@ -767,9 +865,13 @@ export default function OpenRoomLivePage() {
         });
     }
 
-    setCheckedIn(true);
+    setCheckedIn(
+      true
+    );
 
-    setCheckingIn(false);
+    setCheckingIn(
+      false
+    );
 
     window.open(
       settings.meeting_link,
@@ -778,28 +880,32 @@ export default function OpenRoomLivePage() {
     );
   }
 
-  /*
-    APPOINTMENT SLOT SELECTION
-
-    Require at least 2.
-    Allow maximum 3.
-  */
+  /* ======================================================
+     SLOT SELECTION
+  ====================================================== */
 
   function toggleAvailabilitySlot(
     slotId: string
   ) {
-    setRequestMessage("");
+    setRequestMessage(
+      ""
+    );
 
     setSelectedSlots(
-      (previous) => {
+      (
+        previous
+      ) => {
         if (
           previous.includes(
             slotId
           )
         ) {
           return previous.filter(
-            (id) =>
-              id !== slotId
+            (
+              id
+            ) =>
+              id !==
+              slotId
           );
         }
 
@@ -822,20 +928,24 @@ export default function OpenRoomLivePage() {
     );
   }
 
-  /*
-    REQUEST FILES
-  */
+  /* ======================================================
+     FILES
+  ====================================================== */
 
   function handleFilesSelected(
     files:
       FileList | null
   ) {
-    if (!files) {
+    if (
+      !files
+    ) {
       return;
     }
 
     const selected =
-      Array.from(files);
+      Array.from(
+        files
+      );
 
     if (
       selected.length >
@@ -850,12 +960,16 @@ export default function OpenRoomLivePage() {
 
     const tooLarge =
       selected.find(
-        (file) =>
+        (
+          file
+        ) =>
           file.size >
           MAX_FILE_SIZE
       );
 
-    if (tooLarge) {
+    if (
+      tooLarge
+    ) {
       setRequestMessage(
         `${tooLarge.name} is larger than 10 MB.`
       );
@@ -867,12 +981,10 @@ export default function OpenRoomLivePage() {
       selected
     );
 
-    setRequestMessage("");
+    setRequestMessage(
+      ""
+    );
   }
-
-  /*
-    SAFE FILE NAME
-  */
 
   function safeFileName(
     name: string
@@ -883,9 +995,50 @@ export default function OpenRoomLivePage() {
     );
   }
 
-  /*
-    SUBMIT REQUEST
-  */
+  function getDocumentSubmissionLabel(
+    service: string
+  ) {
+    if (
+      service ===
+      "resume_support"
+    ) {
+      return "Resume Submitted";
+    }
+
+    if (
+      service ===
+      "cover_letter_review"
+    ) {
+      return "Cover Letter Submitted";
+    }
+
+    if (
+      service ===
+      "mock_interview"
+    ) {
+      return "Mock Interview Document Submitted";
+    }
+
+    if (
+      service ===
+      "job_search_assistance"
+    ) {
+      return "Job Search Document Submitted";
+    }
+
+    if (
+      service ===
+      "career_coaching"
+    ) {
+      return "Career Coaching Document Submitted";
+    }
+
+    return "Career Document Submitted";
+  }
+
+  /* ======================================================
+     SUBMIT REQUEST
+  ====================================================== */
 
   async function handleMeetingRequest() {
     if (
@@ -932,9 +1085,11 @@ export default function OpenRoomLivePage() {
       return;
     }
 
-    if (!userId) {
+    if (
+      !policyAgreed
+    ) {
       setRequestMessage(
-        "We could not verify your HireMinds account."
+        "Please read and agree to the Scheduling & Cancellation Agreement."
       );
 
       return;
@@ -948,12 +1103,13 @@ export default function OpenRoomLivePage() {
       ""
     );
 
-    /*
-      CREATE REQUEST
-    */
+    const agreementTime =
+      new Date().toISOString();
 
     const {
-      data: request,
+      data:
+        request,
+
       error:
         requestError,
     } = await supabase
@@ -989,21 +1145,25 @@ export default function OpenRoomLivePage() {
 
         status:
           "pending",
+
+        policy_agreed:
+          true,
+
+        policy_agreed_at:
+          agreementTime,
       })
-      .select("id")
+      .select(
+        "id"
+      )
       .single();
 
     if (
       requestError ||
       !request
     ) {
-      console.error(
-        "Meeting request error:",
-        requestError
-      );
-
       setRequestMessage(
-        requestError?.message ||
+        requestError
+          ?.message ||
           "We could not submit your meeting request."
       );
 
@@ -1014,9 +1174,65 @@ export default function OpenRoomLivePage() {
       return;
     }
 
-    /*
-      SAVE 2-3 PREFERRED SLOTS
-    */
+    /* Track request */
+
+    await supabase
+      .from(
+        "user_activity"
+      )
+      .insert({
+        user_id:
+          userId,
+
+        full_name:
+          fullName,
+
+        email,
+
+        referral_code:
+          referralCode ||
+          null,
+
+        event_type:
+          "meeting_requested",
+
+        tool_name:
+          getRequestServiceLabel(),
+
+        page_name:
+          "career-connect",
+      });
+
+    /* Track policy agreement */
+
+    await supabase
+      .from(
+        "user_activity"
+      )
+      .insert({
+        user_id:
+          userId,
+
+        full_name:
+          fullName,
+
+        email,
+
+        referral_code:
+          referralCode ||
+          null,
+
+        event_type:
+          "scheduling_policy_agreed",
+
+        tool_name:
+          "Scheduling & Cancellation Agreement",
+
+        page_name:
+          "career-connect",
+      });
+
+    /* Save preferred times */
 
     const choiceRows =
       selectedSlots.map(
@@ -1052,11 +1268,6 @@ export default function OpenRoomLivePage() {
     if (
       choicesError
     ) {
-      console.error(
-        "Appointment choice error:",
-        choicesError
-      );
-
       setRequestMessage(
         choicesError.message
       );
@@ -1068,9 +1279,7 @@ export default function OpenRoomLivePage() {
       return;
     }
 
-    /*
-      UPLOAD ATTACHMENTS
-    */
+    /* Upload documents */
 
     for (
       const file of
@@ -1084,28 +1293,25 @@ export default function OpenRoomLivePage() {
       const {
         error:
           uploadError,
-      } = await supabase.storage
-        .from(
-          "meeting-request-files"
-        )
-        .upload(
-          path,
-          file,
-          {
-            upsert: false,
-          }
-        );
+      } =
+        await supabase.storage
+          .from(
+            "meeting-request-files"
+          )
+          .upload(
+            path,
+            file,
+            {
+              upsert:
+                false,
+            }
+          );
 
       if (
         uploadError
       ) {
-        console.error(
-          "Attachment upload error:",
-          uploadError
-        );
-
         setRequestMessage(
-          `Your meeting request was created, but ${file.name} could not be uploaded: ${uploadError.message}`
+          `Your request was created, but ${file.name} could not be uploaded: ${uploadError.message}`
         );
 
         setRequestSubmitting(
@@ -1144,48 +1350,41 @@ export default function OpenRoomLivePage() {
         });
 
       if (
-        attachmentError
+        !attachmentError
       ) {
-        console.error(
-          "Attachment record error:",
-          attachmentError
-        );
+        await supabase
+          .from(
+            "user_activity"
+          )
+          .insert({
+            user_id:
+              userId,
+
+            full_name:
+              fullName,
+
+            email,
+
+            referral_code:
+              referralCode ||
+              null,
+
+            event_type:
+              "document_submitted",
+
+            tool_name:
+              getDocumentSubmissionLabel(
+                requestService
+              ),
+
+            page_name:
+              "career-connect",
+          });
       }
     }
 
-    /*
-      TRACK REQUEST
-    */
-
-    await supabase
-      .from(
-        "user_activity"
-      )
-      .insert({
-        user_id:
-          userId,
-
-        full_name:
-          fullName,
-
-        email,
-
-        referral_code:
-          referralCode ||
-          null,
-
-        event_type:
-          "meeting_requested",
-
-        tool_name:
-          getRequestServiceLabel(),
-
-        page_name:
-          "career-connect",
-      });
-
     setRequestMessage(
-      "✓ Meeting request submitted. Your selected appointment times are preferences and are pending confirmation."
+      "✓ Your meeting request was submitted. Your selected appointment times are preferences and your appointment is not confirmed until HireMinds confirms one."
     );
 
     setRequestService(
@@ -1208,51 +1407,145 @@ export default function OpenRoomLivePage() {
       []
     );
 
+    setPolicyAgreed(
+      false
+    );
+
     setRequestSubmitting(
       false
     );
+
+    await loadAvailability();
   }
 
-  /*
-    FORMAT APPOINTMENT
-  */
+  /* ======================================================
+     FORMAT
+  ====================================================== */
 
   function formatSlot(
     slot:
       AvailabilitySlot
   ) {
-    const date =
+    const start =
       new Date(
         slot.start_time
       );
 
-    return date.toLocaleString(
-      [],
-      {
-        weekday:
-          "short",
+    const end =
+      slot.end_time
+        ? new Date(
+            slot.end_time
+          )
+        : null;
 
-        month:
-          "short",
+    const dateLabel =
+      start.toLocaleDateString(
+        [],
+        {
+          weekday:
+            "short",
 
-        day:
-          "numeric",
+          month:
+            "short",
 
-        year:
-          "numeric",
+          day:
+            "numeric",
 
-        hour:
-          "numeric",
+          year:
+            "numeric",
+        }
+      );
 
-        minute:
-          "2-digit",
-      }
-    );
+    const startLabel =
+      start.toLocaleTimeString(
+        [],
+        {
+          hour:
+            "numeric",
+
+          minute:
+            "2-digit",
+        }
+      );
+
+    const endLabel =
+      end
+        ? end.toLocaleTimeString(
+            [],
+            {
+              hour:
+                "numeric",
+
+              minute:
+                "2-digit",
+            }
+          )
+        : "";
+
+    return `${dateLabel} • ${startLabel}${
+      endLabel
+        ? `–${endLabel}`
+        : ""
+    }`;
   }
 
-  /*
-    SORT SELECTED SLOT PREFERENCES
-  */
+  function getDuration(
+    slot:
+      AvailabilitySlot
+  ) {
+    if (
+      !slot.end_time
+    ) {
+      return "";
+    }
+
+    const start =
+      new Date(
+        slot.start_time
+      );
+
+    const end =
+      new Date(
+        slot.end_time
+      );
+
+    const minutes =
+      Math.round(
+        (
+          end.getTime() -
+          start.getTime()
+        ) /
+          60000
+      );
+
+    if (
+      minutes ===
+      60
+    ) {
+      return "1 hour";
+    }
+
+    if (
+      minutes >
+      60
+    ) {
+      const hours =
+        Math.floor(
+          minutes /
+            60
+        );
+
+      const remainder =
+        minutes %
+        60;
+
+      return remainder
+        ? `${hours} hr ${remainder} min`
+        : `${hours} hours`;
+    }
+
+    return `${minutes} minutes`;
+  }
 
   const selectedSlotDetails =
     useMemo(
@@ -1279,11 +1572,13 @@ export default function OpenRoomLivePage() {
       ]
     );
 
-  /*
-    LOADING
-  */
+  /* ======================================================
+     LOADING
+  ====================================================== */
 
-  if (loading) {
+  if (
+    loading
+  ) {
     return (
       <main className="loadingPage">
         <div className="loadingCard">
@@ -1314,11 +1609,9 @@ export default function OpenRoomLivePage() {
 
   return (
     <main className="page">
-      {/* =====================================================
-          SIDEBAR
-      ====================================================== */}
 
       <aside className="side">
+
         <p className="brand">
           HIREMINDS™
         </p>
@@ -1357,19 +1650,19 @@ export default function OpenRoomLivePage() {
         >
           🚪 Exit Career Connect
         </button>
+
       </aside>
 
-      {/* =====================================================
-          MAIN
-      ====================================================== */}
-
       <section className="main">
+
         <div className="meetingAlert">
+
           <div className="meetingArrow">
             ➜
           </div>
 
           <div className="meetingAlertText">
+
             <span>
               CAREER CONNECT
             </span>
@@ -1379,9 +1672,11 @@ export default function OpenRoomLivePage() {
             </strong>
 
             <p>
-              Attend a scheduled session or request support from HireMinds.
+              Attend a scheduled session or request career support.
             </p>
+
           </div>
+
         </div>
 
         <p className="eyebrow">
@@ -1403,6 +1698,7 @@ export default function OpenRoomLivePage() {
         </p>
 
         <div className="participantBar">
+
           <div>
             <span>
               PARTICIPANT
@@ -1423,14 +1719,15 @@ export default function OpenRoomLivePage() {
                 "Not Assigned"}
             </strong>
           </div>
+
         </div>
 
-        {/* =================================================
-            START HERE
-        ================================================== */}
+        {/* START */}
 
         <section className="choiceBox">
+
           <div className="choiceHeader">
+
             <p className="eyebrow">
               Start Here
             </p>
@@ -1442,9 +1739,11 @@ export default function OpenRoomLivePage() {
             <p>
               Choose one option below.
             </p>
+
           </div>
 
           <div className="choiceGrid">
+
             <button
               type="button"
               className={`mainChoice ${
@@ -1459,20 +1758,24 @@ export default function OpenRoomLivePage() {
                 )
               }
             >
+
               <div className="choiceIcon">
                 ✓
               </div>
 
               <div>
+
                 <strong>
                   I have a scheduled session / I&apos;m attending today
                 </strong>
 
                 <p>
-                  Check in for the service or services included in
-                  your scheduled meeting.
+                  Check in for all services included in your scheduled
+                  meeting.
                 </p>
+
               </div>
+
             </button>
 
             <button
@@ -1489,33 +1792,41 @@ export default function OpenRoomLivePage() {
                 )
               }
             >
+
               <div className="choiceIcon">
                 +
               </div>
 
               <div>
+
                 <strong>
                   I need to request a meeting
                 </strong>
 
                 <p>
-                  Request career support and choose 2–3 available
-                  appointment times that work for you.
+                  Request support and choose 2–3 available appointment
+                  times that work for you.
                 </p>
+
               </div>
+
             </button>
+
           </div>
+
         </section>
 
-        {/* =================================================
-            ATTEND SCHEDULED SESSION
-        ================================================== */}
+        {/* ATTEND */}
 
         {visitMode ===
         "attend" ? (
+
           <section className="contentBox">
+
             <div className="contentHeader">
+
               <div>
+
                 <p className="eyebrow">
                   Scheduled Session
                 </p>
@@ -1534,24 +1845,29 @@ export default function OpenRoomLivePage() {
                   for example Resume Support and a Mock Interview —
                   select each service before checking in.
                 </p>
+
               </div>
 
               <span className="stepBadge">
                 CHECK IN
               </span>
+
             </div>
 
             <div className="serviceGrid">
+
               {SERVICE_OPTIONS.map(
                 (
                   service
                 ) => {
+
                   const selected =
                     selectedServices.includes(
                       service.value
                     );
 
                   return (
+
                     <button
                       key={
                         service.value
@@ -1568,6 +1884,7 @@ export default function OpenRoomLivePage() {
                         )
                       }
                     >
+
                       <div className="checkbox">
                         {selected
                           ? "✓"
@@ -1575,28 +1892,31 @@ export default function OpenRoomLivePage() {
                       </div>
 
                       <div>
+
                         <strong>
-                          {
-                            service.label
-                          }
+                          {service.label}
                         </strong>
 
                         <p>
-                          {
-                            service.description
-                          }
+                          {service.description}
                         </p>
+
                       </div>
+
                     </button>
+
                   );
                 }
               )}
+
             </div>
 
             {selectedServices.includes(
               "other"
             ) ? (
+
               <div className="otherWrap">
+
                 <label>
                   What additional service or meeting are you attending?
                 </label>
@@ -1605,22 +1925,23 @@ export default function OpenRoomLivePage() {
                   value={
                     otherService
                   }
-                  onChange={(
-                    e
-                  ) =>
+                  onChange={(e) =>
                     setOtherService(
-                      e.target
-                        .value
+                      e.target.value
                     )
                   }
-                  placeholder="Example: Cover letter review"
+                  placeholder="Example: Career planning meeting"
                 />
+
               </div>
+
             ) : null}
 
             {selectedServices.length >
             0 ? (
+
               <div className="selectionConfirmation">
+
                 <span>
                   SERVICES SELECTED
                 </span>
@@ -1639,34 +1960,41 @@ export default function OpenRoomLivePage() {
                       " • "
                     )}
                 </strong>
+
               </div>
+
             ) : null}
 
             {checkInMessage ? (
+
               <div className="errorMessage">
-                {
-                  checkInMessage
-                }
+                {checkInMessage}
               </div>
+
             ) : null}
 
             {checkedIn ? (
+
               <div className="successMessage">
-                ✓ You&apos;re checked in. Your live meeting room
-                opened in a new tab.
+                ✓ You&apos;re checked in. Your live meeting room opened
+                in a new tab.
               </div>
+
             ) : null}
 
             <div className="actionBottom">
+
               <div>
+
                 <strong>
                   Ready to join?
                 </strong>
 
                 <p>
-                  One attendance is recorded for this meeting, and each
+                  One attendance is recorded for this meeting and each
                   selected service is tracked separately.
                 </p>
+
               </div>
 
               <button
@@ -1685,19 +2013,24 @@ export default function OpenRoomLivePage() {
                   ? "Checking In..."
                   : "Check In & Enter Meeting →"}
               </button>
+
             </div>
+
           </section>
+
         ) : null}
 
-        {/* =================================================
-            REQUEST MEETING
-        ================================================== */}
+        {/* REQUEST */}
 
         {visitMode ===
         "request" ? (
+
           <section className="contentBox">
+
             <div className="contentHeader">
+
               <div>
+
                 <p className="eyebrow">
                   Meeting Request
                 </p>
@@ -1707,20 +2040,20 @@ export default function OpenRoomLivePage() {
                 </h2>
 
                 <p>
-                  Select the service you need, choose 2–3 available
-                  appointment options, and attach any files you want
-                  reviewed.
+                  Select the service you need, choose 2–3 appointment
+                  preferences, and attach any files you want reviewed.
                 </p>
+
               </div>
 
               <span className="requestBadge">
                 REQUEST
               </span>
+
             </div>
 
-            {/* SERVICE */}
-
             <div className="requestService">
+
               <label>
                 Service Requested
               </label>
@@ -1729,15 +2062,13 @@ export default function OpenRoomLivePage() {
                 value={
                   requestService
                 }
-                onChange={(
-                  e
-                ) =>
+                onChange={(e) =>
                   setRequestService(
-                    e.target
-                      .value
+                    e.target.value
                   )
                 }
               >
+
                 <option value="">
                   Select service
                 </option>
@@ -1746,6 +2077,7 @@ export default function OpenRoomLivePage() {
                   (
                     option
                   ) => (
+
                     <option
                       key={
                         option.value
@@ -1754,18 +2086,21 @@ export default function OpenRoomLivePage() {
                         option.value
                       }
                     >
-                      {
-                        option.label
-                      }
+                      {option.label}
                     </option>
+
                   )
                 )}
+
               </select>
+
             </div>
 
             {requestService ===
             "other" ? (
+
               <div className="otherWrap">
+
                 <label>
                   What type of support are you requesting?
                 </label>
@@ -1774,24 +2109,26 @@ export default function OpenRoomLivePage() {
                   value={
                     requestOtherService
                   }
-                  onChange={(
-                    e
-                  ) =>
+                  onChange={(e) =>
                     setRequestOtherService(
-                      e.target
-                        .value
+                      e.target.value
                     )
                   }
                   placeholder="Example: Career planning"
                 />
+
               </div>
+
             ) : null}
 
-            {/* AVAILABILITY */}
+            {/* AVAILABLE TIMES */}
 
             <div className="availabilitySection">
+
               <div className="availabilityHeader">
+
                 <div>
+
                   <p className="eyebrow">
                     Appointment Preferences
                   </p>
@@ -1801,31 +2138,36 @@ export default function OpenRoomLivePage() {
                   </h3>
 
                   <p>
-                    These are your preferred times. Your appointment
-                    is not confirmed until HireMinds approves one.
+                    Multiple participants may request the same time.
+                    Your appointment is not reserved until HireMinds
+                    confirms one of your choices.
                   </p>
+
                 </div>
 
                 <div className="choiceCount">
-                  {
-                    selectedSlots.length
-                  }
-                  /3 selected
+                  {selectedSlots.length}/3 selected
                 </div>
+
               </div>
 
               {availabilitySlots.length ===
               0 ? (
+
                 <div className="noAvailability">
                   There are currently no appointment times available.
                   Please check back later.
                 </div>
+
               ) : (
+
                 <div className="availabilityGrid">
+
                   {availabilitySlots.map(
                     (
                       slot
                     ) => {
+
                       const selected =
                         selectedSlots.includes(
                           slot.id
@@ -1837,6 +2179,7 @@ export default function OpenRoomLivePage() {
                         );
 
                       return (
+
                         <button
                           key={
                             slot.id
@@ -1853,6 +2196,7 @@ export default function OpenRoomLivePage() {
                             )
                           }
                         >
+
                           <div className="slotCheck">
                             {selected
                               ? preference +
@@ -1861,33 +2205,46 @@ export default function OpenRoomLivePage() {
                           </div>
 
                           <div>
+
                             <strong>
                               {formatSlot(
                                 slot
                               )}
                             </strong>
 
+                            <p className="slotDuration">
+                              {getDuration(
+                                slot
+                              )}
+                            </p>
+
                             {slot.label ? (
+
                               <p>
-                                {
-                                  slot.label
-                                }
+                                {slot.label}
                               </p>
+
                             ) : null}
+
                           </div>
+
                         </button>
+
                       );
                     }
                   )}
-                </div>
-              )}
-            </div>
 
-            {/* SELECTED PREFERENCES */}
+                </div>
+
+              )}
+
+            </div>
 
             {selectedSlotDetails.length >
             0 ? (
+
               <div className="preferenceSummary">
+
                 <span>
                   YOUR PREFERENCES
                 </span>
@@ -1897,29 +2254,33 @@ export default function OpenRoomLivePage() {
                     slot,
                     index
                   ) => (
+
                     <div
                       key={
                         slot.id
                       }
                     >
                       <strong>
-                        Choice{" "}
-                        {index +
-                          1}:
+                        Choice {index + 1}:
                       </strong>{" "}
                       {formatSlot(
                         slot
                       )}
                     </div>
+
                   )
                 )}
+
               </div>
+
             ) : null}
 
-            {/* FILE UPLOAD */}
+            {/* FILES */}
 
             <div className="attachmentBox">
+
               <div>
+
                 <p className="eyebrow">
                   Supporting Files
                 </p>
@@ -1929,48 +2290,53 @@ export default function OpenRoomLivePage() {
                 </h3>
 
                 <p>
-                  You may attach up to 3 files. For example, upload
-                  your resume for Resume Support, a cover letter for
-                  Cover Letter Review, or a resume/job description for
-                  Mock Interview preparation.
+                  Upload your resume for Resume Support, a cover letter
+                  for Cover Letter Review, or documents that may help
+                  with your requested service.
                 </p>
+
+                <p className="trackingNote">
+                  Document submissions are recorded as part of your
+                  HireMinds career-support activity.
+                </p>
+
               </div>
 
               <label className="uploadButton">
+
                 📎 Choose Files
 
                 <input
                   type="file"
                   multiple
                   accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
-                  onChange={(
-                    e
-                  ) =>
+                  onChange={(e) =>
                     handleFilesSelected(
-                      e.target
-                        .files
+                      e.target.files
                     )
                   }
                 />
+
               </label>
 
               {requestFiles.length >
               0 ? (
+
                 <div className="fileList">
+
                   {requestFiles.map(
                     (
                       file,
                       index
                     ) => (
+
                       <div
                         key={`${file.name}-${index}`}
                         className="fileItem"
                       >
+
                         <span>
-                          📄{" "}
-                          {
-                            file.name
-                          }
+                          📄 {file.name}
                         </span>
 
                         <button
@@ -1993,16 +2359,22 @@ export default function OpenRoomLivePage() {
                         >
                           Remove
                         </button>
+
                       </div>
+
                     )
                   )}
+
                 </div>
+
               ) : null}
+
             </div>
 
             {/* NOTES */}
 
             <label className="requestNotes">
+
               <span>
                 Anything we should know?
               </span>
@@ -2011,19 +2383,88 @@ export default function OpenRoomLivePage() {
                 value={
                   requestNotes
                 }
-                onChange={(
-                  e
-                ) =>
+                onChange={(e) =>
                   setRequestNotes(
-                    e.target
-                      .value
+                    e.target.value
                   )
                 }
                 placeholder="Optional notes about what you would like help with."
               />
+
             </label>
 
+            {/* CANCELLATION AGREEMENT */}
+
+            <div className="policyBox">
+
+              <div className="policyHeading">
+
+                <div className="policyIcon">
+                  ✓
+                </div>
+
+                <div>
+
+                  <p className="policyEyebrow">
+                    REQUIRED
+                  </p>
+
+                  <h3>
+                    Scheduling & Cancellation Agreement
+                  </h3>
+
+                </div>
+
+              </div>
+
+              <p>
+                I understand that the appointment times I selected are
+                preferred times only and that my appointment is not
+                confirmed until I receive confirmation from HireMinds™.
+              </p>
+
+              <p>
+                If I need to cancel or reschedule a confirmed
+                appointment, I agree to provide at least{" "}
+                <strong>
+                  48 hours (2 days) notice
+                </strong>.
+              </p>
+
+              <p>
+                I understand that after{" "}
+                <strong>
+                  two participant-initiated cancellations
+                </strong>, I may be referred back to the organization
+                or provider that referred me to HireMinds™ for
+                additional assistance or next steps.
+              </p>
+
+              <label className="policyCheck">
+
+                <input
+                  type="checkbox"
+                  checked={
+                    policyAgreed
+                  }
+                  onChange={(e) =>
+                    setPolicyAgreed(
+                      e.target.checked
+                    )
+                  }
+                />
+
+                <span>
+                  I have read, understand, and agree to the Scheduling
+                  & Cancellation Agreement.
+                </span>
+
+              </label>
+
+            </div>
+
             {requestMessage ? (
+
               <div
                 className={
                   requestMessage.startsWith(
@@ -2033,22 +2474,24 @@ export default function OpenRoomLivePage() {
                     : "errorMessage"
                 }
               >
-                {
-                  requestMessage
-                }
+                {requestMessage}
               </div>
+
             ) : null}
 
             <div className="actionBottom">
+
               <div>
+
                 <strong>
                   Request status
                 </strong>
 
                 <p>
-                  You are submitting preferred appointment options.
-                  Your meeting is pending until one is confirmed.
+                  Your selected times are preferences. Your appointment
+                  is pending until HireMinds confirms one.
                 </p>
+
               </div>
 
               <button
@@ -2058,23 +2501,27 @@ export default function OpenRoomLivePage() {
                   handleMeetingRequest
                 }
                 disabled={
-                  requestSubmitting
+                  requestSubmitting ||
+                  !policyAgreed
                 }
               >
                 {requestSubmitting
                   ? "Submitting..."
                   : "Submit Meeting Request →"}
               </button>
+
             </div>
+
           </section>
+
         ) : null}
+
       </section>
 
-      {/* =====================================================
-          RIGHT PANEL
-      ====================================================== */}
+      {/* RIGHT */}
 
       <aside className="right">
+
         <p className="rightEyebrow">
           CAREER CONNECT
         </p>
@@ -2084,6 +2531,7 @@ export default function OpenRoomLivePage() {
         </h2>
 
         <div className="detail">
+
           <strong>
             Participant
           </strong>
@@ -2091,9 +2539,11 @@ export default function OpenRoomLivePage() {
           <span>
             {fullName}
           </span>
+
         </div>
 
         <div className="detail">
+
           <strong>
             Referral Code
           </strong>
@@ -2102,13 +2552,16 @@ export default function OpenRoomLivePage() {
             {referralCode ||
               "Not Assigned"}
           </span>
+
         </div>
 
         {visitMode ===
           "attend" &&
         selectedServices.length >
           0 ? (
+
           <div className="detail highlightDetail">
+
             <strong>
               Services
             </strong>
@@ -2127,79 +2580,77 @@ export default function OpenRoomLivePage() {
                   ", "
                 )}
             </span>
+
           </div>
+
         ) : null}
 
         <div className="divider" />
 
         <h2 className="openTitle">
-          {
-            settings.open_room_title
-          }
+          {settings.open_room_title}
         </h2>
 
         <div className="detail">
+
           <strong>
             Schedule
           </strong>
 
           <span>
-            {
-              settings.open_room_schedule
-            }
+            {settings.open_room_schedule}
           </span>
+
         </div>
 
         <div className="detail">
+
           <strong>
             Time
           </strong>
 
           <span>
-            {
-              settings.open_room_time
-            }
+            {settings.open_room_time}
           </span>
+
         </div>
 
         <div className="detail">
+
           <strong>
             Doors Open
           </strong>
 
           <span>
-            {
-              settings.doors_open
-            }
+            {settings.doors_open}
           </span>
+
         </div>
 
         <div className="detail">
+
           <strong>
             Doors Close
           </strong>
 
           <span>
-            {
-              settings.doors_close
-            }
+            {settings.doors_close}
           </span>
+
         </div>
 
         <div className="infoCard">
+
           <p>
-            {
-              settings.open_room_note
-            }
+            {settings.open_room_note}
           </p>
+
         </div>
+
       </aside>
 
-      {/* =====================================================
-          STYLES
-      ====================================================== */}
-
       <style jsx>{`
+
         * {
           box-sizing: border-box;
         }
@@ -2211,10 +2662,25 @@ export default function OpenRoomLivePage() {
           gap: 20px;
           padding: 22px;
           background:
-            radial-gradient(circle at top right, rgba(0,229,255,.1), transparent 28%),
-            linear-gradient(135deg,#050814,#0b1220,#05060d);
+            radial-gradient(
+              circle at top right,
+              rgba(0,229,255,.1),
+              transparent 28%
+            ),
+            linear-gradient(
+              135deg,
+              #050814,
+              #0b1220,
+              #05060d
+            );
           color: white;
-          font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-family:
+            Inter,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
         }
 
         .side,
@@ -2636,8 +3102,10 @@ export default function OpenRoomLivePage() {
 
         .availabilityHeader p:not(.eyebrow) {
           margin: 0;
+          max-width: 700px;
           color: rgba(255,255,255,.57);
           font-size: 11px;
+          line-height: 1.6;
         }
 
         .choiceCount {
@@ -2649,6 +3117,7 @@ export default function OpenRoomLivePage() {
           color: #10f3ff;
           font-size: 10px;
           font-weight: 900;
+          white-space: nowrap;
         }
 
         .availabilityGrid {
@@ -2704,6 +3173,11 @@ export default function OpenRoomLivePage() {
           font-size: 9px;
         }
 
+        .slotDuration {
+          color: #ffd249 !important;
+          font-weight: 800;
+        }
+
         .noAvailability {
           padding: 18px;
           border-radius: 14px;
@@ -2733,6 +3207,12 @@ export default function OpenRoomLivePage() {
           color: rgba(255,255,255,.57);
           line-height: 1.55;
           font-size: 11px;
+        }
+
+        .trackingNote {
+          margin-top: 8px !important;
+          color: #a8f5c3 !important;
+          font-weight: 700;
         }
 
         .uploadButton {
@@ -2775,6 +3255,84 @@ export default function OpenRoomLivePage() {
           cursor: pointer;
           font-size: 9px;
           font-weight: 800;
+        }
+
+        .policyBox {
+          margin-top: 24px;
+          padding: 20px;
+          border-radius: 18px;
+          background:
+            linear-gradient(
+              135deg,
+              rgba(255,210,73,.07),
+              rgba(16,243,255,.035)
+            );
+          border: 1px solid rgba(255,210,73,.22);
+        }
+
+        .policyHeading {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        .policyIcon {
+          width: 34px;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: rgba(255,210,73,.12);
+          border: 1px solid rgba(255,210,73,.28);
+          color: #ffd249;
+          font-weight: 900;
+        }
+
+        .policyEyebrow {
+          margin: 0 0 3px !important;
+          color: #ffd249 !important;
+          font-size: 8px !important;
+          font-weight: 900;
+          letter-spacing: .14em;
+        }
+
+        .policyBox h3 {
+          margin: 0;
+          font-size: 17px;
+        }
+
+        .policyBox > p {
+          color: rgba(255,255,255,.72);
+          font-size: 11px;
+          line-height: 1.65;
+        }
+
+        .policyCheck {
+          display: flex;
+          align-items: flex-start;
+          gap: 11px;
+          margin-top: 16px;
+          padding: 14px;
+          border-radius: 13px;
+          background: rgba(0,0,0,.18);
+          border: 1px solid rgba(255,255,255,.1);
+          cursor: pointer;
+        }
+
+        .policyCheck input {
+          margin-top: 2px;
+          width: 17px;
+          height: 17px;
+          accent-color: #10f3ff;
+        }
+
+        .policyCheck span {
+          color: #f3f4f6;
+          font-size: 11px;
+          line-height: 1.55;
+          font-weight: 700;
         }
 
         .errorMessage,
@@ -2935,7 +3493,9 @@ export default function OpenRoomLivePage() {
             margin-top: 20px;
           }
         }
+
       `}</style>
+
     </main>
   );
 }
