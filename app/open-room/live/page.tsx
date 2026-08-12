@@ -368,6 +368,14 @@ export default function OpenRoomLivePage() {
       ""
     );
 
+  const [
+    showCancelledAppointments,
+    setShowCancelledAppointments,
+  ] =
+    useState(
+      false
+    );
+
   /* =======================================================
      ATTEND
   ======================================================= */
@@ -2400,9 +2408,25 @@ export default function OpenRoomLivePage() {
             ![
               "completed",
               "declined",
+              "cancelled",
             ].includes(
               request.status
             )
+        ),
+      [
+        meetingRequests,
+      ]
+    );
+
+  const cancelledMeetingRequests =
+    useMemo(
+      () =>
+        meetingRequests.filter(
+          (
+            request
+          ) =>
+            request.status ===
+            "cancelled"
         ),
       [
         meetingRequests,
@@ -2469,7 +2493,17 @@ export default function OpenRoomLivePage() {
         </p>
 
         <button
-          className="active"
+          className={
+            !showCancelledAppointments
+              ? "active"
+              : ""
+          }
+          type="button"
+          onClick={() =>
+            setShowCancelledAppointments(
+              false
+            )
+          }
         >
           🏠 Career Connect
         </button>
@@ -2484,6 +2518,37 @@ export default function OpenRoomLivePage() {
 
         <button>
           💼 Opportunities
+        </button>
+
+        <div
+          className="historySpacer"
+        />
+
+        <button
+          type="button"
+          className={`cancelledHistoryBtn ${
+            showCancelledAppointments
+              ? "cancelledHistoryBtnActive"
+              : ""
+          }`}
+          onClick={() =>
+            setShowCancelledAppointments(
+              true
+            )
+          }
+        >
+          <span>
+            ✕ Cancelled Appointments
+          </span>
+
+          {cancelledMeetingRequests.length >
+          0 ? (
+            <span
+              className="sidebarCount"
+            >
+              {cancelledMeetingRequests.length}
+            </span>
+          ) : null}
         </button>
 
         <button
@@ -2581,6 +2646,7 @@ export default function OpenRoomLivePage() {
             MY MEETINGS & REQUESTS
         ================================================= */}
 
+        {!showCancelledAppointments ? (
         <section
           className="meetingsPanel"
         >
@@ -3635,6 +3701,171 @@ export default function OpenRoomLivePage() {
             </div>
           )}
         </section>
+        ) : (
+          <section
+            className="cancelledHistoryPanel"
+          >
+            <div
+              className="cancelledHistoryHeader"
+            >
+              <div>
+                <p
+                  className="eyebrow cancelledEyebrow"
+                >
+                  Appointment History
+                </p>
+
+                <h2>
+                  Cancelled Appointments
+                </h2>
+
+                <p>
+                  Cancelled appointments are kept here for your records.
+                  They no longer appear with your active meetings and requests.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="backToCareerConnectBtn"
+                onClick={() =>
+                  setShowCancelledAppointments(
+                    false
+                  )
+                }
+              >
+                ← Back to Career Connect
+              </button>
+            </div>
+
+            {cancelledMeetingRequests.length ===
+            0 ? (
+              <div
+                className="cancelledEmptyState"
+              >
+                <div
+                  className="cancelledEmptyIcon"
+                >
+                  ✓
+                </div>
+
+                <strong>
+                  No cancelled appointments
+                </strong>
+
+                <p>
+                  You do not have any cancelled appointments in your history.
+                </p>
+              </div>
+            ) : (
+              <div
+                className="cancelledHistoryList"
+              >
+                {cancelledMeetingRequests.map(
+                  (
+                    request
+                  ) => {
+                    const cancelledSlot =
+                      getSlot(
+                        request.confirmed_slot_id
+                      );
+
+                    return (
+                      <article
+                        key={
+                          request.id
+                        }
+                        className="cancelledHistoryItem"
+                      >
+                        <div
+                          className="cancelledHistoryMain"
+                        >
+                          <div
+                            className="cancelledHistoryIcon"
+                          >
+                            ×
+                          </div>
+
+                          <div
+                            className="cancelledHistoryContent"
+                          >
+                            <div
+                              className="cancelledHistoryTop"
+                            >
+                              <div>
+                                <span
+                                  className="cancelledHistoryStatus"
+                                >
+                                  CANCELLED
+                                </span>
+
+                                <h3>
+                                  {requestServiceLabel(
+                                    request
+                                  )}
+                                </h3>
+                              </div>
+
+                              <span
+                                className="cancelledHistoryDate"
+                              >
+                                {request.cancelled_at
+                                  ? `Cancelled ${new Date(
+                                      request.cancelled_at
+                                    ).toLocaleDateString()}`
+                                  : request.created_at
+                                    ? `Requested ${new Date(
+                                        request.created_at
+                                      ).toLocaleDateString()}`
+                                    : ""}
+                              </span>
+                            </div>
+
+                            {cancelledSlot ? (
+                              <div
+                                className="cancelledHistoryAppointment"
+                              >
+                                <span>
+                                  Appointment
+                                </span>
+
+                                <strong>
+                                  {formatSlot(
+                                    cancelledSlot
+                                  )}
+                                </strong>
+                              </div>
+                            ) : null}
+
+                            {request.cancellation_note ? (
+                              <details
+                                className="cancelledNoteDetails"
+                              >
+                                <summary>
+                                  View cancellation note
+                                </summary>
+
+                                <p>
+                                  {request.cancellation_note}
+                                </p>
+                              </details>
+                            ) : (
+                              <span
+                                className="noCancellationNote"
+                              >
+                                No cancellation note provided.
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  }
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
         {requestMessage ? (
           <div
@@ -4720,6 +4951,70 @@ export default function OpenRoomLivePage() {
 
           border-color:
             rgba(255,140,140,.18);
+        }
+
+        .historySpacer {
+          height: 30px;
+          flex-shrink: 0;
+        }
+
+        .side .cancelledHistoryBtn {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+
+          color: #d7dde7;
+
+          border-color:
+            rgba(248,113,113,.12);
+
+          background:
+            rgba(248,113,113,.035);
+        }
+
+        .side .cancelledHistoryBtn:hover {
+          color: #fca5a5;
+
+          border-color:
+            rgba(248,113,113,.26);
+
+          background:
+            rgba(248,113,113,.065);
+        }
+
+        .side .cancelledHistoryBtnActive {
+          color: #fca5a5;
+
+          border-color:
+            rgba(248,113,113,.32);
+
+          background:
+            rgba(248,113,113,.09);
+        }
+
+        .sidebarCount {
+          min-width: 22px;
+          height: 22px;
+
+          padding: 0 7px;
+
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 999px;
+
+          background:
+            rgba(248,113,113,.14);
+
+          border:
+            1px solid rgba(248,113,113,.22);
+
+          color: #fca5a5;
+
+          font-size: 9px;
+          font-weight: 900;
         }
 
         /* =================================================
@@ -5834,6 +6129,285 @@ export default function OpenRoomLivePage() {
           line-height: 1.55;
 
           font-size: 10px;
+        }
+
+        /* =================================================
+           CANCELLED APPOINTMENT HISTORY
+        ================================================= */
+
+        .cancelledHistoryPanel {
+          margin-top: 22px;
+
+          padding: 24px;
+
+          border-radius: 22px;
+
+          background:
+            rgba(255,255,255,.035);
+
+          border:
+            1px solid rgba(255,255,255,.09);
+        }
+
+        .cancelledHistoryHeader {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 18px;
+        }
+
+        .cancelledHistoryHeader h2 {
+          margin: 3px 0 7px;
+
+          font-size: 25px;
+        }
+
+        .cancelledHistoryHeader p:not(.eyebrow) {
+          margin: 0;
+
+          color:
+            rgba(255,255,255,.62);
+
+          line-height: 1.55;
+
+          font-size: 11px;
+        }
+
+        .cancelledEyebrow {
+          color: #fca5a5;
+        }
+
+        .backToCareerConnectBtn {
+          width: auto !important;
+
+          padding: 9px 13px !important;
+
+          border-radius: 999px !important;
+
+          border:
+            1px solid rgba(16,243,255,.18) !important;
+
+          background:
+            rgba(16,243,255,.05) !important;
+
+          color: #bdfaff !important;
+
+          font-size: 10px !important;
+          font-weight: 850 !important;
+
+          white-space: nowrap;
+        }
+
+        .cancelledHistoryList {
+          display: grid;
+
+          gap: 10px;
+
+          margin-top: 20px;
+        }
+
+        .cancelledHistoryItem {
+          padding: 15px;
+
+          border-radius: 15px;
+
+          background:
+            rgba(248,113,113,.025);
+
+          border:
+            1px solid rgba(248,113,113,.11);
+        }
+
+        .cancelledHistoryMain {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .cancelledHistoryIcon {
+          width: 34px;
+          height: 34px;
+
+          min-width: 34px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 50%;
+
+          background:
+            rgba(248,113,113,.08);
+
+          border:
+            1px solid rgba(248,113,113,.17);
+
+          color: #fca5a5;
+
+          font-size: 18px;
+        }
+
+        .cancelledHistoryContent {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .cancelledHistoryTop {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 14px;
+        }
+
+        .cancelledHistoryStatus {
+          display: inline-block;
+
+          padding: 4px 7px;
+
+          border-radius: 999px;
+
+          background:
+            rgba(248,113,113,.07);
+
+          border:
+            1px solid rgba(248,113,113,.13);
+
+          color: #fca5a5;
+
+          font-size: 7px;
+          font-weight: 900;
+          letter-spacing: .08em;
+        }
+
+        .cancelledHistoryTop h3 {
+          margin: 7px 0 0;
+
+          font-size: 14px;
+        }
+
+        .cancelledHistoryDate {
+          color: #8590a0;
+
+          font-size: 8px;
+
+          white-space: nowrap;
+        }
+
+        .cancelledHistoryAppointment {
+          margin-top: 10px;
+
+          display: grid;
+          gap: 3px;
+        }
+
+        .cancelledHistoryAppointment span {
+          color: #8f99a7;
+
+          font-size: 8px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: .08em;
+        }
+
+        .cancelledHistoryAppointment strong {
+          color: #dce3ec;
+
+          font-size: 10px;
+        }
+
+        .cancelledNoteDetails {
+          margin-top: 10px;
+        }
+
+        .cancelledNoteDetails summary {
+          color: #ffd249;
+
+          font-size: 9px;
+          font-weight: 800;
+
+          cursor: pointer;
+        }
+
+        .cancelledNoteDetails p {
+          margin: 8px 0 0;
+
+          padding: 10px;
+
+          border-radius: 10px;
+
+          background:
+            rgba(255,255,255,.03);
+
+          border:
+            1px solid rgba(255,255,255,.06);
+
+          color: #b7c0ce;
+
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        .noCancellationNote {
+          display: block;
+
+          margin-top: 10px;
+
+          color: #727d8c;
+
+          font-size: 8px;
+        }
+
+        .cancelledEmptyState {
+          margin-top: 18px;
+
+          padding: 28px 20px;
+
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+
+          border-radius: 15px;
+
+          border:
+            1px dashed rgba(255,255,255,.11);
+
+          color: #8994a3;
+
+          text-align: center;
+        }
+
+        .cancelledEmptyIcon {
+          width: 40px;
+          height: 40px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 50%;
+
+          background:
+            rgba(34,197,94,.06);
+
+          border:
+            1px solid rgba(34,197,94,.14);
+
+          color: #86efac;
+
+          margin-bottom: 3px;
+        }
+
+        .cancelledEmptyState strong {
+          color: white;
+
+          font-size: 12px;
+        }
+
+        .cancelledEmptyState p {
+          margin: 0;
+
+          font-size: 9px;
         }
 
         /* =================================================
@@ -7302,6 +7876,19 @@ export default function OpenRoomLivePage() {
 
           .appointmentTimeLarge {
             font-size: 20px;
+          }
+
+          .cancelledHistoryHeader,
+          .cancelledHistoryTop {
+            flex-direction: column;
+          }
+
+          .cancelledHistoryDate {
+            white-space: normal;
+          }
+
+          .backToCareerConnectBtn {
+            width: 100% !important;
           }
 
           .side .exit {
