@@ -4836,6 +4836,91 @@ export default function PartnerDashboardPage() {
               ) : null}
             </section>
 
+            <a
+              href="/partner-dashboard/logs"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 18,
+                padding: 22,
+                marginBottom: 18,
+                borderRadius: 18,
+                border: "1px solid rgba(255,255,255,.12)",
+                background: "rgba(255,255,255,.04)",
+                color: "#ffffff",
+                textDecoration: "none",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    display: "grid",
+                    placeItems: "center",
+                    background: "rgba(168,85,247,.14)",
+                    border: "1px solid rgba(168,85,247,.25)",
+                    fontSize: 23,
+                    flexShrink: 0,
+                  }}
+                >
+                  📋
+                </div>
+
+                <div>
+                  <p
+                    style={{
+                      margin: "0 0 4px",
+                      fontSize: 11,
+                      fontWeight: 800,
+                      letterSpacing: ".12em",
+                      color: "#c4b5fd",
+                    }}
+                  >
+                    PARTICIPANT ACTIVITY
+                  </p>
+
+                  <h3
+                    style={{
+                      margin: "0 0 5px",
+                      fontSize: 20,
+                    }}
+                  >
+                    Weekly Logs
+                  </h3>
+
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "#9ca3af",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Review submitted Weekly Job Logs and Career Development Logs.
+                  </p>
+                </div>
+              </div>
+
+              <span
+                aria-hidden="true"
+                style={{
+                  fontSize: 24,
+                  color: "#c4b5fd",
+                  flexShrink: 0,
+                }}
+              >
+                →
+              </span>
+            </a>
+
             <section
               style={
                 styles.card
@@ -10712,30 +10797,3 @@ const styles: Record<
       "wrap",
   },
 };
-
-<Link
-  href="/partner-dashboard/logs"
-  className="dashboardCard"
->
-  <div className="dashboardCardIcon">
-    📋
-  </div>
-
-  <div>
-    <p className="dashboardCardEyebrow">
-      PARTICIPANT ACTIVITY
-    </p>
-
-    <h3>
-      Weekly Logs
-    </h3>
-
-    <p>
-      Review submitted Weekly Job Logs and Career Development Logs.
-    </p>
-  </div>
-
-  <span className="dashboardCardArrow">
-    →
-  </span>
-</Link>
