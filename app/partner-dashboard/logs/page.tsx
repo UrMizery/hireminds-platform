@@ -1323,8 +1323,8 @@ export default function PartnerWeeklyLogsPage() {
                           }
                         >
                           {expanded
-                            ? "Close Log ↑"
-                            : "View Full Log ↓"}
+                            ? "Hide Full Job Log ↑"
+                            : "View Complete Job Log →"}
                         </button>
                       </div>
 
@@ -1689,8 +1689,8 @@ export default function PartnerWeeklyLogsPage() {
                           }
                         >
                           {expanded
-                            ? "Close Log ↑"
-                            : "View Full Log ↓"}
+                            ? "Hide Full Career Development Log ↑"
+                            : "View Complete Career Development Log →"}
                         </button>
                       </div>
 
@@ -2910,12 +2910,12 @@ export default function PartnerWeeklyLogsPage() {
         =============================================== */
 
         .recordAction {
-          padding:
-            14px 20px;
+          padding: 18px 20px 20px;
 
           display: flex;
 
           justify-content: flex-end;
+          align-items: center;
 
           border-top:
             1px solid
@@ -2925,10 +2925,20 @@ export default function PartnerWeeklyLogsPage() {
               255,
               0.055
             );
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              0.012
+            );
         }
 
         .viewButton {
-          padding: 9px 14px;
+          min-width: 220px;
+
+          padding: 13px 18px;
 
           border-radius: 999px;
 
@@ -2938,7 +2948,7 @@ export default function PartnerWeeklyLogsPage() {
               23,
               232,
               255,
-              0.16
+              0.28
             );
 
           background:
@@ -2946,25 +2956,52 @@ export default function PartnerWeeklyLogsPage() {
               23,
               232,
               255,
-              0.05
+              0.085
             );
 
-          color: #bff8ff;
+          color: #d8fbff;
 
           cursor: pointer;
 
-          font-size: 8px;
+          font-size: 10px;
 
-          font-weight: 900;
+          font-weight: 950;
+
+          transition:
+            transform 0.2s ease,
+            border-color 0.2s ease,
+            background 0.2s ease;
+        }
+
+        .viewButton:hover {
+          transform: translateY(-1px);
+
+          border-color:
+            rgba(
+              23,
+              232,
+              255,
+              0.46
+            );
+
+          background:
+            rgba(
+              23,
+              232,
+              255,
+              0.13
+            );
         }
 
         .careerViewButton {
+          min-width: 300px;
+
           border-color:
             rgba(
               126,
               106,
               255,
-              0.19
+              0.32
             );
 
           background:
@@ -2972,10 +3009,28 @@ export default function PartnerWeeklyLogsPage() {
               126,
               106,
               255,
-              0.055
+              0.1
             );
 
-          color: #c9c1ff;
+          color: #e2ddff;
+        }
+
+        .careerViewButton:hover {
+          border-color:
+            rgba(
+              126,
+              106,
+              255,
+              0.5
+            );
+
+          background:
+            rgba(
+              126,
+              106,
+              255,
+              0.15
+            );
         }
 
         /* ===============================================
