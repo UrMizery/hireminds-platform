@@ -4573,8 +4573,9 @@ export default function PartnerDashboardPage() {
                 styles.title
               }
             >
-              {partner?.organization_name ||
-                "Partner Dashboard"}
+            {isSystemAdmin
+  ? "HireMinds™ Administration"
+  : partner?.organization_name || "Partner Dashboard"}
             </h1>
 
             <p
