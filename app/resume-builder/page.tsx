@@ -706,15 +706,6 @@ return { ...item, bullets };
 );
 }
 
-function addExperienceBullet(index: number) {
-setExperiences((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-if (item.bullets.length >= BULLET_LIMIT) return item;
-return { ...item, bullets: [...item.bullets, { text: "" }] };
-})
-);
-}
 
 function addEducation() {
 setEducationItems((prev) => [...prev, createDefaultEducation()]);
@@ -781,10 +772,33 @@ async function callResumeAi(action: string, payload: Record<string, unknown>) {
 const response = await fetch("/api/resume-builder-ai", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
+cache: "no-store",
 body: JSON.stringify({ action, ...payload }),
 });
-const data = await response.json();
-if (!response.ok) throw new Error(data?.error || "AI assistance is unavailable right now.");
+
+const raw = await response.text();
+
+let data: any = {};
+try {
+data = raw ? JSON.parse(raw) : {};
+} catch {
+data = {};
+}
+
+if (!response.ok) {
+const detail =
+data?.error ||
+data?.message ||
+(raw && !raw.startsWith("<") ? raw : "") ||
+`Resume AI request failed (${response.status}).`;
+
+throw new Error(detail);
+}
+
+if (!raw) {
+throw new Error("Resume AI returned an empty response.");
+}
+
 return data;
 }
 
@@ -1661,7 +1675,7 @@ placeholder="2024"
 <div style={styles.aiActionRow}><button type="button" onClick={() => generateBulletIdeas(index)} style={styles.aiButton} disabled={aiLoadingKey === `bullets-${index}`}>{aiLoadingKey === `bullets-${index}` ? "Creating ideas..." : "✨ AI Bullet Ideas"}</button></div>
 {bulletIdeas[index]?.length ? <div style={styles.aiSuggestionBox}>
 <p style={styles.aiSuggestionTitle}>Bullet ideas for {item.roleTitle || "this role"}:</p>
-{bulletIdeas[index].map((suggestion, suggestionIndex) => <button key={suggestionIndex} type="button" onClick={() => { const emptyIndex = item.bullets.findIndex((b) => !b.text.trim()); if (emptyIndex >= 0) { updateExperienceBullet(index, emptyIndex, suggestion); } else { setMessage("All 4 bullet fields already have content. Replace or clear one before using another AI suggestion."); } }} style={styles.aiSuggestionButton}><span>{suggestion}</span><strong>Use suggestion</strong></button>)}
+{bulletIdeas[index].map((suggestion, suggestionIndex) => <button key={suggestionIndex} type="button" onClick={() => { const emptyIndex = item.bullets.findIndex((b) => !b.text.trim()); if (emptyIndex >= 0) updateExperienceBullet(index, emptyIndex, suggestion); else if (item.bullets.length < BULLET_LIMIT) setExperiences((prev) => prev.map((experience, i) => i === index ? { ...experience, bullets: [...experience.bullets, { text: suggestion }] } : experience)); }} style={styles.aiSuggestionButton}><span>{suggestion}</span><strong>Add bullet</strong></button>)}
 </div> : null}
 
 {item.bullets.map((bullet, bulletIndex) => (
@@ -1678,7 +1692,6 @@ placeholder="Describe the work you did"
 <button type="button" onClick={() => strengthenBullet(index, bulletIndex)} style={styles.inlineAiButton} disabled={aiLoadingKey === `strengthen-${index}-${bulletIndex}`}>{aiLoadingKey === `strengthen-${index}-${bulletIndex}` ? "Strengthening..." : "✨ Strengthen Bullet"}</button>
 </div>
 ))}
-
 
 </div>
 ))}
