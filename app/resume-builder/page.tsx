@@ -90,17 +90,17 @@ const MONTHS = [
 ];
 
 const RESUME_FORMAT_ORDERS: Record<ResumeType, ResumeSectionKey[]> = {
-Chronological: ["summary", "experience", "skills", "education", "certifications", "volunteer", "accomplishments"],
-Functional: ["summary", "skills", "accomplishments", "certifications", "education", "experience", "volunteer"],
-Combination: ["summary", "skills", "experience", "accomplishments", "education", "certifications", "volunteer"],
-Hybrid: ["summary", "skills", "experience", "certifications", "accomplishments", "education", "volunteer"],
+Chronological: ["summary", "experience", "education", "certifications", "skills", "volunteer", "accomplishments"],
+Functional: ["summary", "skills", "accomplishments", "experience", "education", "certifications", "volunteer"],
+Combination: ["summary", "skills", "experience", "education", "certifications", "volunteer", "accomplishments"],
+Hybrid: ["summary", "skills", "education", "certifications", "experience", "volunteer", "accomplishments"],
 };
 
 const RESUME_FORMAT_HELP: Record<ResumeType, string> = {
 Chronological: "Puts work history first and emphasizes a clear timeline. Best when your recent experience directly supports the role you want next.",
 Functional: "Leads with skills and accomplishments while moving work history lower. Best for career changes, gaps, re-entry, or limited directly related experience.",
 Combination: "Leads with a strong summary and skills, then gives full weight to work history. Best when both skills and experience are important.",
-Hybrid: "A balanced modern format that highlights skills, experience, certifications, and accomplishments while keeping a traditional ATS-friendly structure.",
+Hybrid: "Summary first, followed by skills, education and/or certifications, then experience and volunteer work. A balanced format for showing both preparation and experience.",
 };
 
 const TRANSLATIONS: Record<
@@ -136,7 +136,7 @@ pageTitle: "Create and save your resume draft.",
 font: "Resume Font",
 language: "Language",
 livePreview: "Resume Preview",
-previewHelp: "The preview stays visible while you build and expands as you type.",
+previewHelp: "Live resume preview — it stays visible while you work.",
 header: "Resume Header",
 summary: "Summary",
 summaryAndSkills: "Summary + Skills",
@@ -346,33 +346,12 @@ item.bullets.some((b) => b.text.trim())
 
 
 function getPrintFormatCss(type: ResumeType) {
-  if (type === "Chronological") {
-    return `
-      .resumeHeader { text-align:left; border-bottom:1px solid #111827; margin-bottom:16px; }
-      .resumeSectionTitle { text-align:left; border-bottom:1px solid #6b7280; padding-bottom:3px; font-size:11pt; letter-spacing:.04em; }
-      .skillsGrid { grid-template-columns:1fr 1fr 1fr; }
-      .resumeEntrySubheading { font-style:italic; font-weight:600; }
-    `;
-  }
-  if (type === "Functional") {
-    return `
-      .resumeHeader { text-align:center; border-bottom:2px solid #111827; margin-bottom:16px; }
-      .resumeSectionTitle { text-align:left; background:#f3f4f6; padding:4px 6px; font-size:11pt; letter-spacing:.05em; }
-      .skillsGrid { grid-template-columns:1fr 1fr; }
-      .resumeEntryTop { border-bottom:1px dotted #d1d5db; padding-bottom:4px; }
-    `;
-  }
-  if (type === "Combination") {
-    return `
-      .resumeHeader { text-align:center; border-bottom:1.5px solid #111827; margin-bottom:16px; }
-      .resumeSectionTitle { text-align:left; border-bottom:2px solid #111827; padding-bottom:3px; font-size:11pt; letter-spacing:.04em; }
-      .skillsGrid { grid-template-columns:1fr 1fr 1fr; }
-    `;
-  }
   return `
-    .resumeHeader { text-align:left; border-bottom:2px solid #111827; margin-bottom:16px; }
-    .resumeSectionTitle { text-align:left; border-bottom:1px solid #9ca3af; padding-bottom:3px; font-size:11pt; letter-spacing:.05em; }
+    .resumeHeader { text-align:center; margin-bottom:14px; padding-bottom:0; border:0 !important; }
+    .resumeSectionTitle { text-align:center; border:0 !important; background:transparent !important; padding:0 !important; margin:0 0 8px; font-size:11pt; letter-spacing:.04em; }
     .skillsGrid { grid-template-columns:1fr 1fr 1fr; }
+    .resumeEntryTop { border:0 !important; padding-bottom:0 !important; }
+    .resumeEntrySubheading { font-style:normal; font-weight:600; }
   `;
 }
 
@@ -392,80 +371,19 @@ type ResumeFormatVisuals = {
 };
 
 function getResumeFormatVisuals(type: ResumeType): ResumeFormatVisuals {
-  const base: ResumeFormatVisuals = {
-    paper: {},
-    header: {},
-    name: {},
-    contact: {},
-    linkedIn: {},
-    professionalTitle: {},
-    sectionBlock: {},
-    sectionTitle: {},
-    skillsGrid: {},
-    entryTop: {},
-    entryHeading: {},
-    entrySubheading: {},
-  };
-
-  if (type === "Chronological") {
-    return {
-      ...base,
-      header: { textAlign: "left", borderBottom: "1px solid #111827", paddingBottom: "10px", marginBottom: "16px" },
-      name: { fontSize: "20pt", letterSpacing: "0" },
-      contact: { textAlign: "left" },
-      linkedIn: { textAlign: "left" },
-      professionalTitle: { textAlign: "left", fontSize: "10.5pt", fontWeight: 700, margin: "3px 0 6px", color: "#111827" },
-      sectionTitle: { textAlign: "left", borderBottom: "1px solid #6b7280", paddingBottom: "3px", marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.04em" },
-      skillsGrid: { gridTemplateColumns: "1fr 1fr 1fr" },
-      entryHeading: { fontWeight: 700 },
-      entrySubheading: { fontStyle: "italic", fontWeight: 600 },
-    };
-  }
-
-  if (type === "Functional") {
-    return {
-      ...base,
-      header: { textAlign: "center", borderBottom: "2px solid #111827", paddingBottom: "10px", marginBottom: "16px" },
-      name: { fontSize: "21pt", letterSpacing: "0.01em" },
-      contact: { textAlign: "center" },
-      linkedIn: { textAlign: "center" },
-      professionalTitle: { textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "10pt", fontWeight: 700, margin: "2px 0 6px", color: "#374151" },
-      sectionBlock: { marginBottom: "16px" },
-      sectionTitle: { textAlign: "left", background: "#f3f4f6", padding: "4px 6px", marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.05em" },
-      skillsGrid: { gridTemplateColumns: "1fr 1fr" },
-      entryTop: { borderBottom: "1px dotted #d1d5db", paddingBottom: "4px" },
-      entryHeading: { fontWeight: 700 },
-      entrySubheading: { fontWeight: 500 },
-    };
-  }
-
-  if (type === "Combination") {
-    return {
-      ...base,
-      header: { textAlign: "center", borderBottom: "1.5px solid #111827", paddingBottom: "10px", marginBottom: "16px" },
-      name: { fontSize: "21pt", letterSpacing: "0" },
-      contact: { textAlign: "center" },
-      linkedIn: { textAlign: "center" },
-      professionalTitle: { textAlign: "center", fontSize: "10.5pt", fontWeight: 700, margin: "2px 0 6px", color: "#111827" },
-      sectionTitle: { textAlign: "left", borderBottom: "2px solid #111827", paddingBottom: "3px", marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.04em" },
-      skillsGrid: { gridTemplateColumns: "1fr 1fr 1fr" },
-      entryHeading: { fontWeight: 700 },
-      entrySubheading: { fontWeight: 700 },
-    };
-  }
-
-  // Hybrid
   return {
-    ...base,
-    header: { textAlign: "left", borderBottom: "2px solid #111827", paddingBottom: "10px", marginBottom: "16px" },
-    name: { fontSize: "21pt", letterSpacing: "0.01em" },
-    contact: { textAlign: "left" },
-    linkedIn: { textAlign: "left" },
-    professionalTitle: { textAlign: "left", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10pt", fontWeight: 700, margin: "2px 0 6px", color: "#374151" },
-    sectionTitle: { textAlign: "left", borderBottom: "1px solid #9ca3af", paddingBottom: "3px", marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.05em" },
+    paper: {},
+    header: { textAlign: "center", border: "none", paddingBottom: 0, marginBottom: "14px" },
+    name: { fontSize: "20pt", letterSpacing: "0" },
+    contact: { textAlign: "center" },
+    linkedIn: { textAlign: "center" },
+    professionalTitle: { textAlign: "center", fontSize: "10.5pt", fontWeight: 700, margin: "2px 0 6px", color: "#111827" },
+    sectionBlock: { marginBottom: "16px" },
+    sectionTitle: { textAlign: "center", border: "none", background: "transparent", padding: 0, marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.04em" },
     skillsGrid: { gridTemplateColumns: "1fr 1fr 1fr" },
+    entryTop: {},
     entryHeading: { fontWeight: 700 },
-    entrySubheading: { fontWeight: 600 },
+    entrySubheading: { fontWeight: 600, fontStyle: "normal" },
   };
 }
 
@@ -2305,8 +2223,11 @@ minWidth: 0,
 },
 rightCol: {
 position: "sticky",
-top: "20px",
+top: "10px",
 alignSelf: "start",
+maxHeight: "calc(100vh - 20px)",
+overflowY: "auto",
+paddingRight: "4px",
 },
 card: {
 background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
@@ -2317,12 +2238,12 @@ boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
 marginBottom: "18px",
 },
 previewCard: {
-background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
+background: "rgba(10,12,18,0.92)",
 border: "1px solid #262626",
-borderRadius: "28px",
-padding: "20px",
-boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
-marginBottom: "18px",
+borderRadius: "16px",
+padding: "10px 14px",
+boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+marginBottom: "10px",
 },
 cardKicker: {
 margin: "0 0 8px",
@@ -2517,8 +2438,8 @@ boxSizing: "border-box",
 },
 resumeHeader: {
 textAlign: "center",
-marginBottom: "20px",
-paddingBottom: "8px",
+marginBottom: "14px",
+paddingBottom: 0,
 },
 resumeName: {
 margin: "0 0 8px",
@@ -2548,13 +2469,14 @@ color: "#1d4ed8",
 wordBreak: "break-word",
 },
 resumeSectionBlock: {
-marginBottom: "20px",
+marginBottom: "16px",
 },
 resumeSectionTitle: {
-margin: "0 0 10px",
+margin: "0 0 8px",
 textAlign: "center",
-fontSize: "12pt",
+fontSize: "11pt",
 fontWeight: 700,
+letterSpacing: "0.04em",
 color: "#111827",
 },
 resumeParagraph: {
