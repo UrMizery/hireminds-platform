@@ -1,7 +1,7 @@
 // app/api/resume-builder-ai/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 
 function anthropicHeaders() {
   return {
