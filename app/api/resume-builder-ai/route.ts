@@ -1,39 +1,59 @@
 // app/api/resume-builder-ai/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
+/*
+  IMPORTANT:
+  This route intentionally uses the same Anthropic model and request pattern
+  already used by HireMinds' existing working /api/optimize-resume route.
+*/
 const MODEL =
-  process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-6";
+  process.env.ANTHROPIC_MODEL?.trim() ||
+  "claude-sonnet-4-20250514";
 
 type JsonRecord = Record<string, unknown>;
 
-function anthropicHeaders() {
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+function jsonError(message: string, status = 500, extra: JsonRecord = {}) {
+  return NextResponse.json(
+    {
+      error: message,
+      ...extra,
+    },
+    {
+      status,
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    },
+  );
+}
+
+function getApiKey() {
+  return process.env.ANTHROPIC_API_KEY?.trim() || "";
+}
+
+async function claude(prompt: string, maxTokens = 800) {
+  const apiKey = getApiKey();
 
   if (!apiKey) {
     throw new Error(
-      "Resume AI is not configured. Add ANTHROPIC_API_KEY in Vercel → Project Settings → Environment Variables, enable it for Production, and redeploy.",
+      "ANTHROPIC_API_KEY is missing in Vercel. Add it under Project Settings → Environment Variables for Production, then redeploy.",
     );
   }
 
-  return {
-    "Content-Type": "application/json",
-    "x-api-key": apiKey,
-    "anthropic-version": "2023-06-01",
-  };
-}
-
-async function askClaude(prompt: string, maxTokens = 700) {
   let response: Response;
 
   try {
     response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: anthropicHeaders(),
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
       cache: "no-store",
       body: JSON.stringify({
         model: MODEL,
         max_tokens: maxTokens,
-        temperature: 0.3,
         messages: [
           {
             role: "user",
@@ -43,34 +63,35 @@ async function askClaude(prompt: string, maxTokens = 700) {
       }),
     });
   } catch (error) {
-    console.error("Anthropic network error:", error);
-
+    console.error("resume-builder-ai network error:", error);
     throw new Error(
-      "Resume AI could not connect to the AI service. Please try again.",
+      "Resume AI could not connect to Anthropic. Please try again.",
     );
   }
 
-  let data: any = null;
+  const raw = await response.text();
 
+  let data: any = {};
   try {
-    data = await response.json();
+    data = raw ? JSON.parse(raw) : {};
   } catch {
+    console.error("resume-builder-ai non-JSON response:", raw);
     throw new Error(
-      `Resume AI received an unreadable response from the AI service (${response.status}).`,
+      `Resume AI received an unreadable response (${response.status}).`,
     );
   }
 
   if (!response.ok) {
+    console.error("resume-builder-ai Anthropic error:", {
+      status: response.status,
+      model: MODEL,
+      data,
+    });
+
     const providerMessage =
       data?.error?.message ||
       data?.message ||
-      `Anthropic request failed with status ${response.status}.`;
-
-    console.error("Anthropic API error:", {
-      status: response.status,
-      model: MODEL,
-      error: data,
-    });
+      `Anthropic returned HTTP ${response.status}.`;
 
     if (response.status === 401) {
       throw new Error(
@@ -80,44 +101,41 @@ async function askClaude(prompt: string, maxTokens = 700) {
 
     if (response.status === 403) {
       throw new Error(
-        `Resume AI does not have permission to use ${MODEL}. Check your Anthropic account/model access.`,
+        `Resume AI does not have access to model "${MODEL}". ${providerMessage}`,
       );
     }
 
     if (response.status === 404) {
       throw new Error(
-        `Resume AI model "${MODEL}" was not found. Set ANTHROPIC_MODEL to a model available to your Anthropic account.`,
+        `Resume AI could not find model "${MODEL}". ${providerMessage}`,
       );
     }
 
     if (response.status === 429) {
       throw new Error(
-        "Resume AI is temporarily rate-limited or the Anthropic account has reached its usage limit. Please try again shortly.",
+        `Resume AI reached an Anthropic rate/usage limit. ${providerMessage}`,
       );
     }
 
     throw new Error(providerMessage);
   }
 
-  const text = Array.isArray(data?.content)
-    ? data.content
-        .filter(
-          (block: any) =>
-            block &&
-            block.type === "text" &&
-            typeof block.text === "string",
-        )
-        .map((block: any) => block.text)
-        .join("")
-        .trim()
-    : "";
+  const text =
+    Array.isArray(data?.content)
+      ? data.content
+          .filter(
+            (block: any) =>
+              block?.type === "text" &&
+              typeof block?.text === "string",
+          )
+          .map((block: any) => block.text)
+          .join("")
+          .trim()
+      : "";
 
   if (!text) {
-    console.error("Empty Anthropic response:", data);
-
-    throw new Error(
-      "Resume AI returned an empty response. Please try again.",
-    );
+    console.error("resume-builder-ai empty Anthropic response:", data);
+    throw new Error("Resume AI returned an empty response.");
   }
 
   return text
@@ -126,7 +144,7 @@ async function askClaude(prompt: string, maxTokens = 700) {
     .trim();
 }
 
-function parseJson<T>(text: string, fallback: T): T {
+function safeJson<T>(text: string, fallback: T): T {
   try {
     return JSON.parse(text) as T;
   } catch {
@@ -134,8 +152,7 @@ function parseJson<T>(text: string, fallback: T): T {
     const objectEnd = text.lastIndexOf("}");
 
     if (
-      objectStart !== -1 &&
-      objectEnd !== -1 &&
+      objectStart >= 0 &&
       objectEnd > objectStart
     ) {
       try {
@@ -147,91 +164,53 @@ function parseJson<T>(text: string, fallback: T): T {
       }
     }
 
-    const arrayStart = text.indexOf("[");
-    const arrayEnd = text.lastIndexOf("]");
-
-    if (
-      arrayStart !== -1 &&
-      arrayEnd !== -1 &&
-      arrayEnd > arrayStart
-    ) {
-      try {
-        return JSON.parse(
-          text.slice(arrayStart, arrayEnd + 1),
-        ) as T;
-      } catch {
-        // continue
-      }
-    }
-
     return fallback;
   }
 }
 
-function stringArray(value: unknown, limit: number) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
+function cleanStringArray(value: unknown, limit: number) {
+  if (!Array.isArray(value)) return [];
 
   return value
-    .map((item) => String(item || "").trim())
+    .map((item) => String(item ?? "").trim())
     .filter(Boolean)
     .slice(0, limit);
 }
 
 function normalizeExperiences(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
+  if (!Array.isArray(value)) return [];
 
-  return value.slice(0, 6).map((experience: any) => ({
-    company: String(
-      experience?.company ||
-        experience?.companyName ||
+  return value.slice(0, 8).map((experience: any) => ({
+    companyName: String(
+      experience?.companyName ||
+        experience?.company ||
         "",
     ).trim(),
 
-    role: String(
-      experience?.role ||
-        experience?.roleTitle ||
+    roleTitle: String(
+      experience?.roleTitle ||
+        experience?.role ||
         experience?.title ||
         "",
     ).trim(),
 
-    location: String(
-      experience?.location || "",
-    ).trim(),
-
-    bullets: stringArray(
+    bullets: cleanStringArray(
       experience?.bullets,
       8,
     ),
   }));
 }
 
-function errorResponse(message: string, status = 500) {
-  return NextResponse.json(
-    {
-      error: message,
-      model: MODEL,
-    },
-    {
-      status,
-      headers: {
-        "Cache-Control": "no-store",
-      },
-    },
-  );
-}
-
+/*
+  Open /api/resume-builder-ai in the browser after deploy.
+  "configured": true confirms Vercel can see ANTHROPIC_API_KEY.
+*/
 export async function GET() {
   return NextResponse.json(
     {
       ok: true,
       route: "resume-builder-ai",
-      configured: Boolean(
-        process.env.ANTHROPIC_API_KEY?.trim(),
-      ),
+      configured: Boolean(getApiKey()),
       model: MODEL,
     },
     {
@@ -244,65 +223,77 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!getApiKey()) {
+      return jsonError(
+        "ANTHROPIC_API_KEY is missing in Vercel. Add it for Production and redeploy.",
+        500,
+        {
+          model: MODEL,
+        },
+      );
+    }
+
     let body: JsonRecord;
 
     try {
       body = (await req.json()) as JsonRecord;
     } catch {
-      return errorResponse(
+      return jsonError(
         "Resume AI received an invalid request.",
         400,
       );
     }
 
     const action = String(
-      body?.action || "",
+      body.action || "",
     ).trim();
 
     if (!action) {
-      return errorResponse(
+      return jsonError(
         "Resume AI action is missing.",
         400,
       );
     }
 
     /* =====================================================
-       PROFESSIONAL SUMMARY IDEAS
+       SUMMARY IDEAS
     ===================================================== */
 
     if (action === "generateSummaryIdeas") {
       const targetJobTitle = String(
-        body?.targetJobTitle || "",
+        body.targetJobTitle || "",
       ).trim();
 
-      const skills = stringArray(
-        body?.skills,
+      const currentSummary = String(
+        body.currentSummary || "",
+      ).trim();
+
+      const skills = cleanStringArray(
+        body.skills,
         12,
       );
 
       const experiences =
         normalizeExperiences(
-          body?.experiences,
+          body.experiences,
         );
-
-      const currentSummary = String(
-        body?.currentSummary || "",
-      ).trim();
 
       if (
         !targetJobTitle &&
+        !currentSummary &&
         skills.length === 0 &&
-        experiences.length === 0 &&
-        !currentSummary
+        experiences.length === 0
       ) {
-        return errorResponse(
-          "Add a target job title, skills, experience, or a current summary before asking AI for summary ideas.",
+        return jsonError(
+          "Add a target job title, skills, experience, or a current summary first.",
           400,
         );
       }
 
-      const text = await askClaude(
-        `You are a professional resume writer helping a job seeker create an accurate professional summary.
+      const text = await claude(
+        `You are a professional resume writer.
+
+Create exactly 3 concise professional summary options using ONLY the candidate information below.
 
 TARGET JOB TITLE:
 ${targetJobTitle || "Not provided"}
@@ -310,46 +301,41 @@ ${targetJobTitle || "Not provided"}
 CURRENT SUMMARY:
 ${currentSummary || "Not provided"}
 
-SKILLS THE CANDIDATE ENTERED:
+SKILLS:
 ${JSON.stringify(skills)}
 
-EXPERIENCE THE CANDIDATE ENTERED:
+EXPERIENCE:
 ${JSON.stringify(experiences)}
 
-Create exactly 3 professional summary options.
+RULES:
+- 2 to 3 concise sentences per option.
+- ATS-friendly and natural.
+- Never invent years of experience.
+- Never invent certifications, education, software, equipment, duties, metrics, accomplishments, industries, or skills.
+- Do not use first-person pronouns.
+- Do not write an objective statement.
+- Align to the target job only when the entered information supports it.
 
-REQUIREMENTS:
-- Each option should be concise and generally 2-3 sentences.
-- Use only facts the candidate actually provided.
-- Do not invent years of experience.
-- Do not invent certifications, software, equipment, industries, metrics, accomplishments, education, or responsibilities.
-- If information is limited, keep the wording broad and truthful.
-- Use strong, natural, ATS-friendly language.
-- Avoid first-person pronouns.
-- If a target job title is provided, align wording toward that role without pretending the candidate has experience they did not provide.
-- Do not use objective-statement wording such as "seeking a position where..."
-
-Return ONLY valid JSON in this exact shape:
+Return ONLY valid JSON:
 {"suggestions":["summary 1","summary 2","summary 3"]}`,
-        800,
+        900,
       );
 
-      const parsed =
-        parseJson<{
-          suggestions?: string[];
-        }>(text, {
-          suggestions: [],
-        });
+      const parsed = safeJson<{
+        suggestions?: string[];
+      }>(text, {
+        suggestions: [],
+      });
 
       const suggestions =
-        stringArray(
+        cleanStringArray(
           parsed.suggestions,
           3,
         );
 
-      if (suggestions.length === 0) {
+      if (!suggestions.length) {
         throw new Error(
-          "Resume AI did not return usable summary suggestions. Please try again.",
+          "Resume AI did not return usable summary ideas. Please try again.",
         );
       }
 
@@ -366,58 +352,56 @@ Return ONLY valid JSON in this exact shape:
     }
 
     /* =====================================================
-       JOB-TITLE / ROLE MEMORY PROMPTS
+       ROLE PROMPTS
     ===================================================== */
 
     if (action === "getRolePrompts") {
       const roleTitle = String(
-        body?.roleTitle || "",
+        body.roleTitle || "",
       ).trim();
 
       if (!roleTitle) {
-        return errorResponse(
+        return jsonError(
           "Enter a job title first.",
           400,
         );
       }
 
-      const text = await askClaude(
-        `A job seeker entered this past job title:
+      const text = await claude(
+        `The candidate entered this previous job title:
 
 "${roleTitle}"
 
-Give exactly 6 short memory prompts that can help the person remember responsibilities they may ACTUALLY have performed in that role.
+Create exactly 6 short memory-jogging questions that help the candidate remember responsibilities they MAY have actually performed.
 
-IMPORTANT:
-- These are brainstorming prompts, not resume claims.
-- Never state that the person performed a duty.
-- Do not invent software, equipment, certifications, metrics, accomplishments, or responsibilities.
-- Phrase every item as a question.
-- Begin with wording such as "Did you...", "Were you responsible for...", "Did you help...", or "Did your role include...?"
-- Keep each prompt practical and easy to understand.
-- Vary the prompts so they cover different common areas of the role.
+RULES:
+- These are prompts only, not resume claims.
+- Phrase each as a question.
+- Use wording such as "Did you...", "Did your role include...", "Were you responsible for...", or "Did you help..."
+- Do not invent facts.
+- Do not invent metrics, software, equipment, certifications, achievements, or responsibilities.
+- Keep each prompt simple and practical.
 
 Return ONLY valid JSON:
 {"prompts":["prompt 1","prompt 2","prompt 3","prompt 4","prompt 5","prompt 6"]}`,
-        650,
+        700,
       );
 
-      const parsed =
-        parseJson<{
-          prompts?: string[];
-        }>(text, {
-          prompts: [],
-        });
+      const parsed = safeJson<{
+        prompts?: string[];
+      }>(text, {
+        prompts: [],
+      });
 
       const prompts =
-        stringArray(
+        cleanStringArray(
           parsed.prompts,
           6,
         );
 
-      if (prompts.length === 0) {
+      if (!prompts.length) {
         throw new Error(
-          "Resume AI did not return usable role prompts. Please try again.",
+          "Resume AI did not return usable role ideas. Please try again.",
         );
       }
 
@@ -439,32 +423,32 @@ Return ONLY valid JSON:
 
     if (action === "generateBulletIdeas") {
       const roleTitle = String(
-        body?.roleTitle || "",
+        body.roleTitle || "",
       ).trim();
 
       const companyName = String(
-        body?.companyName || "",
+        body.companyName || "",
       ).trim();
 
       const targetJobTitle = String(
-        body?.targetJobTitle || "",
+        body.targetJobTitle || "",
       ).trim();
 
       const existingBullets =
-        stringArray(
-          body?.existingBullets,
+        cleanStringArray(
+          body.existingBullets,
           8,
         );
 
       if (!roleTitle) {
-        return errorResponse(
+        return jsonError(
           "Enter the work-experience job title first.",
           400,
         );
       }
 
-      const text = await askClaude(
-        `You are helping a job seeker brainstorm accurate resume bullet ideas.
+      const text = await claude(
+        `Help a job seeker brainstorm resume bullet ideas.
 
 PAST JOB TITLE:
 ${roleTitle}
@@ -472,44 +456,41 @@ ${roleTitle}
 COMPANY:
 ${companyName || "Not provided"}
 
-TARGET JOB TITLE:
+TARGET JOB:
 ${targetJobTitle || "Not provided"}
 
 EXISTING BULLETS:
 ${JSON.stringify(existingBullets)}
 
-Create exactly 5 concise bullet IDEAS commonly associated with the past job title.
+Create exactly 5 concise bullet IDEAS associated with this type of role.
 
-IMPORTANT RULES:
-- These are ideas for the candidate to review, not claims that they performed the duties.
-- Do not invent metrics or numbers.
-- Do not invent software, equipment, certifications, responsibilities, achievements, or outcomes.
-- Keep ideas broad enough that the candidate can decide whether each one is true.
-- Use clear action-oriented resume language.
-- Do not repeat existing bullets.
-- Do not add a bullet symbol at the beginning.
-- Do not exaggerate seniority or responsibility.
-- If the target role is provided, favor transferable wording that may be useful for that target role, while remaining truthful to the past role.
+RULES:
+- These are suggestions the candidate must verify before using.
+- Do not claim the candidate definitely performed them.
+- Do not invent metrics, software, equipment, certifications, achievements, or outcomes.
+- Do not repeat the existing bullets.
+- Do not add bullet symbols.
+- Use strong, resume-friendly wording.
+- Favor transferable wording for the target job only when appropriate.
 
 Return ONLY valid JSON:
 {"suggestions":["bullet 1","bullet 2","bullet 3","bullet 4","bullet 5"]}`,
-        800,
+        900,
       );
 
-      const parsed =
-        parseJson<{
-          suggestions?: string[];
-        }>(text, {
-          suggestions: [],
-        });
+      const parsed = safeJson<{
+        suggestions?: string[];
+      }>(text, {
+        suggestions: [],
+      });
 
       const suggestions =
-        stringArray(
+        cleanStringArray(
           parsed.suggestions,
           5,
         );
 
-      if (suggestions.length === 0) {
+      if (!suggestions.length) {
         throw new Error(
           "Resume AI did not return usable bullet ideas. Please try again.",
         );
@@ -528,63 +509,59 @@ Return ONLY valid JSON:
     }
 
     /* =====================================================
-       STRENGTHEN AN EXISTING BULLET
+       STRENGTHEN BULLET
     ===================================================== */
 
     if (action === "strengthenBullet") {
       const roleTitle = String(
-        body?.roleTitle || "",
+        body.roleTitle || "",
       ).trim();
 
       const currentBullet = String(
-        body?.currentBullet || "",
+        body.currentBullet || "",
       ).trim();
 
       const targetJobTitle = String(
-        body?.targetJobTitle || "",
+        body.targetJobTitle || "",
       ).trim();
 
       if (!currentBullet) {
-        return errorResponse(
+        return jsonError(
           "Write a bullet first.",
           400,
         );
       }
 
-      const text = await askClaude(
-        `Rewrite this resume bullet so it is stronger, clearer, and more professional while preserving the candidate's exact factual meaning.
+      const text = await claude(
+        `Rewrite this resume bullet to be clearer and stronger WITHOUT adding any new facts.
 
-ROLE TITLE:
+ROLE:
 ${roleTitle || "Not provided"}
 
-TARGET JOB TITLE:
+TARGET JOB:
 ${targetJobTitle || "Not provided"}
 
-CURRENT BULLET:
+ORIGINAL BULLET:
 ${currentBullet}
 
 RULES:
-- Preserve the factual meaning.
-- Do not invent numbers or metrics.
-- Do not invent software, tools, equipment, certifications, responsibilities, accomplishments, scope, or outcomes.
-- Do not add information that is not already present in the original bullet.
+- Preserve the exact factual meaning.
+- Never invent numbers, metrics, software, tools, equipment, certifications, responsibilities, achievements, scope, or outcomes.
+- Do not add information not already present.
 - Begin with a strong action verb when appropriate.
-- Improve clarity and professionalism.
 - Keep it concise.
 - Do not add a bullet symbol.
-- Return one rewritten version only.
 
 Return ONLY valid JSON:
 {"suggestion":"rewritten bullet"}`,
-        500,
+        600,
       );
 
-      const parsed =
-        parseJson<{
-          suggestion?: string;
-        }>(text, {
-          suggestion: "",
-        });
+      const parsed = safeJson<{
+        suggestion?: string;
+      }>(text, {
+        suggestion: "",
+      });
 
       const suggestion = String(
         parsed.suggestion || "",
@@ -608,7 +585,7 @@ Return ONLY valid JSON:
       );
     }
 
-    return errorResponse(
+    return jsonError(
       `Invalid Resume AI action: ${action}`,
       400,
     );
@@ -619,13 +596,16 @@ Return ONLY valid JSON:
         : "Resume AI is unavailable right now.";
 
     console.error(
-      "Resume Builder AI error:",
+      "resume-builder-ai error:",
       error,
     );
 
-    return errorResponse(
+    return jsonError(
       message,
       500,
+      {
+        model: MODEL,
+      },
     );
   }
 }
