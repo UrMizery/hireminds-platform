@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
-
+import { useEffect, useState, type CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 
 /* =========================================================
@@ -17,199 +11,190 @@ type Tool = {
   title: string;
   description: string;
   href: string;
-  status?: "Live" | "New";
-  accent?: "cyan" | "purple" | "blue" | "green";
+  label?: "Generator" | "Guide" | "Analyzer" | "Resource";
 };
 
-type ToolSection = {
-  eyebrow: string;
+type Category = {
   title: string;
   description: string;
   tools: Tool[];
 };
 
 /* =========================================================
-   DATA
+   TOOL CATEGORIES
 ========================================================= */
 
-const sections: ToolSection[] = [
+const categories: Category[] = [
   {
-    eyebrow: "Resume & Applications",
-    title: "Build stronger application materials",
+    title: "Resume & Application Tools",
     description:
-      "Create, strengthen, compare, and tailor the documents you use throughout your job search.",
+      "Create resumes and cover letters, analyze job descriptions, and strengthen your applications.",
     tools: [
       {
         title: "Resume Generator",
         description:
-          "Build, preview, save, and print a professional resume using guided sections and a structured layout.",
+          "Build, preview, save, and print a professional resume.",
         href: "/resume-builder",
-        status: "Live",
-        accent: "cyan",
+        label: "Generator",
       },
       {
         title: "Resume Format Guide",
         description:
-          "Compare chronological, functional, combination, and hybrid resume formats before deciding which structure fits your experience.",
+          "Learn which resume format may work best for your experience and career goals.",
         href: "/career-toolkit/resume-type-helper",
-        status: "Live",
-        accent: "blue",
+        label: "Guide",
       },
       {
         title: "Cover Letter Generator",
         description:
-          "Create a polished cover letter using guided prompts, professional wording, and a live preview.",
+          "Create a professional cover letter using guided prompts.",
         href: "/career-toolkit/cover-letter-generator",
-        status: "Live",
-        accent: "purple",
+        label: "Generator",
       },
       {
         title: "Job Description Analyzer",
         description:
-          "Break down a job posting to identify important skills, qualifications, keywords, systems, and employer expectations.",
+          "Identify important skills, qualifications, keywords, and employer expectations in a job posting.",
         href: "/career-toolkit/job-description-analyzer",
-        status: "New",
-        accent: "cyan",
+        label: "Analyzer",
       },
       {
         title: "Resume Match Analyzer",
         description:
-          "Compare your resume with a job description to identify strengths, missing keywords, gaps, and opportunities to improve alignment.",
+          "Compare your resume with a job description and identify opportunities to improve alignment.",
         href: "/career-toolkit/resume-match-analyzer",
-        status: "New",
-        accent: "purple",
+        label: "Analyzer",
       },
       {
         title: "New Opportunities Resume Generator",
         description:
-          "A guided resume experience for people rebuilding, reentering, restarting, or positioning life experience for a new professional direction.",
+          "Build a resume when restarting, reentering, changing direction, or presenting experience in a new way.",
         href: "/career-toolkit/new-opportunities-resume-generator",
-        status: "New",
-        accent: "green",
+        label: "Generator",
       },
     ],
   },
 
   {
-    eyebrow: "Interview Preparation",
-    title: "Prepare before the conversation",
+    title: "Interview Preparation Tools",
     description:
-      "Practice common questions, understand what employers may ask, and walk into interviews better prepared.",
+      "Practice interview questions, prepare stronger answers, and get ready for the conversation.",
     tools: [
       {
         title: "Interview Question Generator",
         description:
-          "Generate general and industry-focused interview questions so you can practice before the interview.",
+          "Generate general and industry-focused interview questions for practice.",
         href: "/career-toolkit/interview-question-generator",
-        status: "New",
-        accent: "purple",
+        label: "Generator",
       },
       {
         title: "Interview Questions & Preparation",
         description:
-          "Review common interview questions, sample responses, preparation guidance, and smart questions you can ask the employer.",
+          "Review common questions, sample responses, preparation guidance, and questions to ask an employer.",
         href: "/career-toolkit/interview-questions",
-        status: "Live",
-        accent: "cyan",
+        label: "Guide",
       },
     ],
   },
 
   {
-    eyebrow: "Career Planning",
-    title: "Build direction around what comes next",
+    title: "Career Planning & Branding Tools",
     description:
-      "Explore career options, clarify your goals, strengthen your professional identity, and plan your next move.",
+      "Explore career options, establish goals, strengthen your professional identity, and plan your next steps.",
     tools: [
       {
         title: "Career Path Generator",
         description:
-          "Explore possible career paths based on the type of work you enjoy, your preferred environment, and how quickly you want to get started.",
+          "Explore possible career paths based on your interests, preferences, and goals.",
         href: "/career-toolkit/career-path-generator",
-        status: "New",
-        accent: "cyan",
+        label: "Generator",
       },
       {
         title: "Career Goal Generator",
         description:
-          "Create a stronger career goal that explains where you want to go, why it matters, and what you can do next.",
+          "Turn your career ideas into a clearer goal and actionable next steps.",
         href: "/career-toolkit/career-goal-generator",
-        status: "New",
-        accent: "purple",
+        label: "Generator",
       },
       {
         title: "Professional Branding Generator",
         description:
-          "Strengthen your professional summary, biography, resume language, and positioning with clearer career-ready wording.",
+          "Strengthen your professional summary, biography, positioning, and career-ready language.",
         href: "/career-toolkit/professional-branding-generator",
-        status: "New",
-        accent: "blue",
+        label: "Generator",
       },
       {
         title: "Budget Generator",
         description:
-          "Build a simple monthly budget to better understand income, expenses, financial priorities, and what may remain each month.",
+          "Create a simple monthly budget to understand income, expenses, and financial priorities.",
         href: "/career-toolkit/budget-generator",
-        status: "New",
-        accent: "green",
+        label: "Generator",
       },
     ],
   },
 
   {
-    eyebrow: "Job Search & Organization",
-    title: "Stay organized while you move forward",
+    title: "Job Search & Follow-Up Tools",
     description:
-      "Track your activity, follow up professionally, and use practical guidance throughout your job search.",
+      "Organize your job search, track applications, communicate professionally, and follow up.",
     tools: [
       {
         title: "Job Log Generator",
         description:
-          "Track applications, employers, dates, contacts, interviews, outcomes, and follow-up activity in one organized place.",
+          "Track applications, employers, dates, contacts, interviews, outcomes, and follow-up activity.",
         href: "/career-toolkit/job-log-generator",
-        status: "New",
-        accent: "cyan",
+        label: "Generator",
       },
       {
         title: "The House of Letters",
         description:
-          "Create professional follow-ups, workplace letters, requests, resignations, thank-you messages, and other career communication.",
+          "Create professional follow-ups, thank-you letters, requests, resignations, and workplace communication.",
         href: "/career-toolkit/employer-follow-up-generator",
-        status: "New",
-        accent: "purple",
+        label: "Generator",
       },
       {
         title: "Job Search Tips",
         description:
-          "Learn how to read job descriptions, identify employer priorities, strengthen applications, and approach the search more intentionally.",
+          "Review practical guidance for applications, job descriptions, employer research, and job-search strategy.",
         href: "/career-toolkit/job-search-tips",
-        status: "Live",
-        accent: "blue",
+        label: "Guide",
       },
     ],
   },
 
   {
-    eyebrow: "Skills & Development",
-    title: "Strengthen what you bring to the table",
+    title: "Skills & Career Development Guides",
     description:
-      "Understand the skills employers look for and identify strengths you can use throughout your career.",
+      "Identify transferable strengths and understand the skills employers look for across industries.",
     tools: [
       {
         title: "Soft Skills",
         description:
-          "Explore communication, teamwork, adaptability, organization, time management, problem solving, and other transferable strengths.",
+          "Explore communication, teamwork, adaptability, organization, problem solving, and other transferable skills.",
         href: "/career-toolkit/soft-skills",
-        status: "Live",
-        accent: "cyan",
+        label: "Guide",
       },
       {
         title: "Industry Core Skills",
         description:
-          "Explore important skills across healthcare, manufacturing, warehouse, logistics, administrative work, hospitality, IT, trades, retail, and more.",
+          "Explore important skills used across healthcare, manufacturing, logistics, administration, hospitality, IT, trades, retail, and more.",
         href: "/career-toolkit/industry-core-skills",
-        status: "Live",
-        accent: "purple",
+        label: "Guide",
+      },
+    ],
+  },
+
+  {
+    title: "Career Videos & Learning Resources",
+    description:
+      "Watch short career-development videos and explore practical learning resources.",
+    tools: [
+      {
+        title: "Vid Feed Library",
+        description:
+          "Watch career-development videos covering resumes, interviews, applications, job searching, and professional communication.",
+        href: "/career-toolkit/community-feed",
+        label: "Resource",
       },
     ],
   },
@@ -221,6 +206,9 @@ const sections: ToolSection[] = [
 
 export default function CareerToolkitPage() {
   const [checkingAccess, setCheckingAccess] = useState(true);
+
+  // null = everything closed when the page first loads
+  const [openCategory, setOpenCategory] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -235,9 +223,9 @@ export default function CareerToolkitPage() {
         return;
       }
 
-      if (!mounted) return;
-
-      setCheckingAccess(false);
+      if (mounted) {
+        setCheckingAccess(false);
+      }
     }
 
     checkAccess();
@@ -247,200 +235,154 @@ export default function CareerToolkitPage() {
     };
   }, []);
 
+  function toggleCategory(index: number) {
+    setOpenCategory((current) => (current === index ? null : index));
+  }
+
   if (checkingAccess) {
     return (
       <main style={styles.loadingPage}>
-        <div style={styles.loadingGlow} />
+        <div style={styles.loadingDot} />
       </main>
     );
   }
 
   return (
     <main style={styles.page}>
-      <div style={styles.backgroundGlowOne} />
-      <div style={styles.backgroundGlowTwo} />
+      <div style={styles.glowOne} />
+      <div style={styles.glowTwo} />
 
-      <div style={styles.shell}>
+      <div style={styles.container}>
         {/* =================================================
-            HERO
+            HEADER
         ================================================= */}
 
         <section style={styles.hero}>
-          <div style={styles.heroMain}>
-            <div style={styles.heroBadge}>
-              Career ToolKit
-            </div>
+          <div style={styles.heroBadge}>Career ToolKit</div>
 
-            <h1 style={styles.title}>
-              Career tools without the clutter.
-            </h1>
+          <h1 style={styles.heroTitle}>
+            What would you like to work on?
+          </h1>
 
-            <p style={styles.subtitle}>
-              Build your resume, prepare for interviews,
-              organize your job search, strengthen your
-              skills, and plan what comes next—all from one
-              place.
-            </p>
-
-            <div style={styles.heroPills}>
-              <HeroPill>
-                Resume & Applications
-              </HeroPill>
-
-              <HeroPill>
-                Interview Preparation
-              </HeroPill>
-
-              <HeroPill>
-                Career Planning
-              </HeroPill>
-
-              <HeroPill>
-                Job Search
-              </HeroPill>
-
-              <HeroPill>
-                Skills & Development
-              </HeroPill>
-            </div>
-          </div>
-
-          <aside style={styles.featurePanel}>
-            <div style={styles.featurePanelGlow} />
-
-            <div style={styles.featurePanelContent}>
-              <p style={styles.featureEyebrow}>
-                Watch • Learn • Prepare
-              </p>
-
-              <h2 style={styles.featurePanelTitle}>
-                Vid Feed Library
-              </h2>
-
-              <p style={styles.featurePanelText}>
-                Watch short career-development videos
-                covering resumes, interviews, applications,
-                job boards, professional communication, and
-                practical job-search guidance.
-              </p>
-
-              <a
-                href="/career-toolkit/community-feed"
-                style={styles.primaryButton}
-              >
-                Open Vid Feed Library
-
-                <span style={styles.buttonArrow}>
-                  →
-                </span>
-              </a>
-            </div>
-          </aside>
-        </section>
-
-        {/* =================================================
-            QUICK NAV
-        ================================================= */}
-
-        <section style={styles.quickNavSection}>
-          <p style={styles.quickNavLabel}>
-            Jump to a section
+          <p style={styles.heroDescription}>
+            Select a category to find the right generator, guide,
+            analyzer, or career resource.
           </p>
-
-          <div style={styles.quickNav}>
-            {sections.map((section, index) => (
-              <a
-                key={section.eyebrow}
-                href={`#tool-section-${index}`}
-                style={styles.quickNavLink}
-              >
-                {section.eyebrow}
-              </a>
-            ))}
-          </div>
         </section>
 
         {/* =================================================
-            TOOL SECTIONS
+            ACCORDION
         ================================================= */}
 
-        {sections.map(
-          (section, sectionIndex) => (
-            <section
-              key={section.eyebrow}
-              id={`tool-section-${sectionIndex}`}
-              style={styles.section}
-            >
-              <div style={styles.sectionHeadingRow}>
-                <div>
-                  <p style={styles.sectionEyebrow}>
-                    {section.eyebrow}
-                  </p>
+        <section style={styles.accordion}>
+          {categories.map((category, index) => {
+            const isOpen = openCategory === index;
 
-                  <h2 style={styles.sectionTitle}>
-                    {section.title}
-                  </h2>
+            return (
+              <div
+                key={category.title}
+                style={{
+                  ...styles.category,
+                  ...(isOpen ? styles.categoryOpen : {}),
+                }}
+              >
+                {/* CATEGORY HEADER */}
 
-                  <p
-                    style={
-                      styles.sectionDescription
-                    }
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(index)}
+                  aria-expanded={isOpen}
+                  style={styles.categoryButton}
+                >
+                  <div style={styles.categoryText}>
+                    <div style={styles.categoryTitleRow}>
+                      <h2 style={styles.categoryTitle}>
+                        {category.title}
+                      </h2>
+
+                      <span style={styles.toolCount}>
+                        {category.tools.length}{" "}
+                        {category.tools.length === 1 ? "tool" : "tools"}
+                      </span>
+                    </div>
+
+                    <p style={styles.categoryDescription}>
+                      {category.description}
+                    </p>
+                  </div>
+
+                  <span
+                    style={{
+                      ...styles.chevron,
+                      transform: isOpen
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
+                    }}
                   >
-                    {section.description}
-                  </p>
-                </div>
+                    ↓
+                  </span>
+                </button>
 
-                <div style={styles.sectionCount}>
-                  {section.tools.length}{" "}
-                  {section.tools.length === 1
-                    ? "Tool"
-                    : "Tools"}
-                </div>
-              </div>
+                {/* OPEN CATEGORY */}
 
-              <div style={styles.toolGrid}>
-                {section.tools.map((tool) => (
-                  <ToolCard
-                    key={`${section.eyebrow}-${tool.title}`}
-                    tool={tool}
-                  />
-                ))}
+                {isOpen && (
+                  <div style={styles.toolList}>
+                    {category.tools.map((tool) => (
+                      <a
+                        key={tool.title}
+                        href={tool.href}
+                        style={styles.toolRow}
+                      >
+                        <div style={styles.toolMain}>
+                          <div style={styles.toolHeading}>
+                            <h3 style={styles.toolTitle}>
+                              {tool.title}
+                            </h3>
+
+                            {tool.label && (
+                              <span style={styles.toolLabel}>
+                                {tool.label}
+                              </span>
+                            )}
+                          </div>
+
+                          <p style={styles.toolDescription}>
+                            {tool.description}
+                          </p>
+                        </div>
+
+                        <span style={styles.toolArrow}>→</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
-            </section>
-          ),
-        )}
+            );
+          })}
+        </section>
 
         {/* =================================================
-            BOTTOM PANEL
+            FOOTER MESSAGE
         ================================================= */}
 
-        <section style={styles.bottomPanel}>
+        <section style={styles.helpPanel}>
           <div>
-            <p style={styles.bottomEyebrow}>
-              Career ToolKit
-            </p>
+            <p style={styles.helpEyebrow}>Not sure where to start?</p>
 
-            <h2 style={styles.bottomTitle}>
-              You do not have to use every tool.
+            <h2 style={styles.helpTitle}>
+              Choose the area that matches what you need today.
             </h2>
 
-            <p style={styles.bottomText}>
-              Start with what you need today. Build a
-              resume, prepare for an interview, organize
-              your applications, strengthen your skills,
-              or explore what comes next.
+            <p style={styles.helpText}>
+              You do not need to complete every tool. Open a category,
+              choose the resource that fits your goal, and come back
+              whenever you are ready for the next step.
             </p>
           </div>
 
-          <a
-            href="/profile"
-            style={styles.secondaryButton}
-          >
-            Return to Career Passport
-
-            <span style={styles.buttonArrow}>
-              →
-            </span>
+          <a href="/profile" style={styles.profileLink}>
+            Career Passport
+            <span>→</span>
           </a>
         </section>
       </div>
@@ -449,979 +391,326 @@ export default function CareerToolkitPage() {
 }
 
 /* =========================================================
-   TOOL CARD
-   ENTIRE CARD IS CLICKABLE
-========================================================= */
-
-function ToolCard({
-  tool,
-}: {
-  tool: Tool;
-}) {
-  const accent = getAccent(tool.accent);
-
-  return (
-    <a
-      href={tool.href}
-      style={{
-        ...styles.toolCard,
-        borderColor: accent.border,
-        boxShadow: accent.shadow,
-        textDecoration: "none",
-        color: "inherit",
-      }}
-    >
-      {/* Accent line */}
-
-      <div
-        style={{
-          ...styles.toolAccent,
-          background: accent.gradient,
-        }}
-      />
-
-      {/* Top */}
-
-      <div style={styles.toolCardTop}>
-        <div
-          style={{
-            ...styles.toolIcon,
-            background: accent.soft,
-            borderColor: accent.border,
-            color: accent.text,
-          }}
-        >
-          {getToolInitials(tool.title)}
-        </div>
-
-        {tool.status && (
-          <span
-            style={{
-              ...styles.statusTag,
-              background: accent.soft,
-              borderColor: accent.border,
-              color: accent.text,
-            }}
-          >
-            {tool.status}
-          </span>
-        )}
-      </div>
-
-      {/* Body */}
-
-      <div style={styles.toolCardBody}>
-        <h3 style={styles.toolTitle}>
-          {tool.title}
-        </h3>
-
-        <p style={styles.toolDescription}>
-          {tool.description}
-        </p>
-      </div>
-
-      {/* Visual footer only.
-          The entire card is already the link. */}
-
-      <div
-        style={{
-          ...styles.cardFooter,
-          color: accent.text,
-          borderTopColor: accent.border,
-        }}
-      >
-        <span>Open Tool</span>
-
-        <span style={styles.cardArrow}>
-          →
-        </span>
-      </div>
-    </a>
-  );
-}
-
-/* =========================================================
-   HERO PILL
-========================================================= */
-
-function HeroPill({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  return (
-    <span style={styles.heroPill}>
-      {children}
-    </span>
-  );
-}
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function getToolInitials(title: string) {
-  const ignored = new Set([
-    "the",
-    "of",
-    "and",
-    "&",
-  ]);
-
-  const words = title
-    .split(" ")
-    .filter(
-      (word) =>
-        word &&
-        !ignored.has(word.toLowerCase()),
-    );
-
-  const initials = words
-    .slice(0, 2)
-    .map(
-      (word) =>
-        word[0]?.toUpperCase(),
-    )
-    .join("");
-
-  return initials || "HM";
-}
-
-function getAccent(
-  accent: Tool["accent"] = "cyan",
-) {
-  const accents = {
-    cyan: {
-      text: "#9ff6ff",
-
-      soft:
-        "rgba(23,232,255,0.08)",
-
-      border:
-        "rgba(23,232,255,0.20)",
-
-      gradient:
-        "linear-gradient(90deg, rgba(23,232,255,0.95), rgba(23,232,255,0.05))",
-
-      shadow:
-        "0 24px 70px rgba(0,0,0,0.30), 0 0 32px rgba(23,232,255,0.035)",
-    },
-
-    purple: {
-      text: "#d0c8ff",
-
-      soft:
-        "rgba(126,106,255,0.10)",
-
-      border:
-        "rgba(126,106,255,0.24)",
-
-      gradient:
-        "linear-gradient(90deg, rgba(126,106,255,0.95), rgba(126,106,255,0.05))",
-
-      shadow:
-        "0 24px 70px rgba(0,0,0,0.30), 0 0 32px rgba(126,106,255,0.04)",
-    },
-
-    blue: {
-      text: "#bfdbfe",
-
-      soft:
-        "rgba(59,130,246,0.09)",
-
-      border:
-        "rgba(59,130,246,0.22)",
-
-      gradient:
-        "linear-gradient(90deg, rgba(59,130,246,0.95), rgba(59,130,246,0.05))",
-
-      shadow:
-        "0 24px 70px rgba(0,0,0,0.30), 0 0 32px rgba(59,130,246,0.04)",
-    },
-
-    green: {
-      text: "#bbf7d0",
-
-      soft:
-        "rgba(34,197,94,0.08)",
-
-      border:
-        "rgba(34,197,94,0.20)",
-
-      gradient:
-        "linear-gradient(90deg, rgba(34,197,94,0.90), rgba(34,197,94,0.05))",
-
-      shadow:
-        "0 24px 70px rgba(0,0,0,0.30), 0 0 32px rgba(34,197,94,0.035)",
-    },
-  };
-
-  return accents[accent];
-}
-
-/* =========================================================
    STYLES
 ========================================================= */
 
-const styles: Record<
-  string,
-  CSSProperties
-> = {
-  /* =====================================================
-     LOADING
-  ===================================================== */
-
+const styles: Record<string, CSSProperties> = {
   loadingPage: {
     minHeight: "100vh",
-
-    background:
-      "linear-gradient(180deg, #05070b 0%, #080a10 100%)",
-
+    background: "#06080d",
     display: "grid",
-
     placeItems: "center",
   },
 
-  loadingGlow: {
+  loadingDot: {
     width: "44px",
-
     height: "44px",
-
     borderRadius: "50%",
-
     background:
-      "radial-gradient(circle, rgba(23,232,255,0.45), rgba(23,232,255,0))",
+      "radial-gradient(circle, rgba(23,232,255,.55), rgba(23,232,255,0))",
   },
 
-  /* =====================================================
-     PAGE
-  ===================================================== */
-
   page: {
-    minHeight: "100vh",
-
     position: "relative",
-
+    minHeight: "100vh",
     overflow: "hidden",
-
+    padding: "42px 20px 80px",
     background:
-      "linear-gradient(180deg, #05070b 0%, #080a10 42%, #06080d 100%)",
-
-    color: "#f5f7fb",
-
-    padding:
-      "32px 20px 72px",
-
+      "linear-gradient(180deg, #05070b 0%, #080a10 48%, #06080d 100%)",
+    color: "#f6f7fb",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
 
-  backgroundGlowOne: {
+  glowOne: {
     position: "absolute",
-
-    top: "-260px",
-
-    left: "-180px",
-
-    width: "720px",
-
-    height: "720px",
-
+    width: "700px",
+    height: "700px",
+    left: "-300px",
+    top: "-300px",
     borderRadius: "50%",
-
     background:
-      "radial-gradient(circle, rgba(23,232,255,0.10) 0%, rgba(23,232,255,0.025) 36%, transparent 70%)",
-
+      "radial-gradient(circle, rgba(23,232,255,.09), transparent 67%)",
     pointerEvents: "none",
   },
 
-  backgroundGlowTwo: {
+  glowTwo: {
     position: "absolute",
-
-    top: "80px",
-
-    right: "-260px",
-
-    width: "760px",
-
-    height: "760px",
-
+    width: "700px",
+    height: "700px",
+    right: "-350px",
+    top: "100px",
     borderRadius: "50%",
-
     background:
-      "radial-gradient(circle, rgba(126,106,255,0.11) 0%, rgba(126,106,255,0.025) 38%, transparent 72%)",
-
+      "radial-gradient(circle, rgba(126,106,255,.09), transparent 67%)",
     pointerEvents: "none",
   },
 
-  shell: {
+  container: {
     position: "relative",
-
     zIndex: 1,
-
     width: "100%",
-
-    maxWidth: "1380px",
-
+    maxWidth: "1120px",
     margin: "0 auto",
-
-    display: "grid",
-
-    gap: "34px",
   },
 
-  /* =====================================================
-     HERO
-  ===================================================== */
+  /* HERO */
 
   hero: {
-    display: "grid",
-
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(320px, 1fr))",
-
-    gap: "18px",
-  },
-
-  heroMain: {
-    minHeight: "315px",
-
-    borderRadius: "34px",
-
-    padding: "38px",
-
-    border:
-      "1px solid rgba(255,255,255,0.075)",
-
-    background:
-      "linear-gradient(145deg, rgba(17,21,30,0.95), rgba(7,9,14,0.98))",
-
-    boxShadow:
-      "0 34px 100px rgba(0,0,0,0.38)",
-
-    display: "flex",
-
-    flexDirection: "column",
-
-    justifyContent: "center",
+    marginBottom: "34px",
+    padding: "6px 4px",
   },
 
   heroBadge: {
-    width: "fit-content",
-
-    marginBottom: "18px",
-
-    padding:
-      "8px 12px",
-
-    borderRadius: "999px",
-
-    border:
-      "1px solid rgba(23,232,255,0.20)",
-
-    background:
-      "rgba(23,232,255,0.07)",
-
-    color: "#aaf8ff",
-
-    fontSize: "11px",
-
-    fontWeight: 900,
-
-    letterSpacing: "0.16em",
-
-    textTransform: "uppercase",
-  },
-
-  title: {
-    margin: "0 0 16px",
-
-    maxWidth: "780px",
-
-    fontSize:
-      "clamp(38px, 5vw, 62px)",
-
-    lineHeight: 0.98,
-
-    letterSpacing: "-0.055em",
-
-    fontWeight: 850,
-
-    color: "#ffffff",
-  },
-
-  subtitle: {
-    margin: 0,
-
-    maxWidth: "760px",
-
-    color: "#b9c0cc",
-
-    fontSize: "16px",
-
-    lineHeight: 1.75,
-  },
-
-  heroPills: {
-    marginTop: "26px",
-
-    display: "flex",
-
-    flexWrap: "wrap",
-
-    gap: "9px",
-  },
-
-  heroPill: {
-    padding:
-      "8px 11px",
-
-    borderRadius: "999px",
-
-    background:
-      "rgba(255,255,255,0.035)",
-
-    border:
-      "1px solid rgba(255,255,255,0.07)",
-
-    color: "#c9ced7",
-
-    fontSize: "11px",
-
-    fontWeight: 750,
-  },
-
-  /* =====================================================
-     FEATURE PANEL
-  ===================================================== */
-
-  featurePanel: {
-    position: "relative",
-
-    overflow: "hidden",
-
-    minHeight: "315px",
-
-    borderRadius: "34px",
-
-    padding: "34px",
-
-    border:
-      "1px solid rgba(126,106,255,0.17)",
-
-    background:
-      "linear-gradient(145deg, rgba(15,15,27,0.96), rgba(8,9,15,0.99))",
-
-    boxShadow:
-      "0 34px 100px rgba(0,0,0,0.38)",
-
-    display: "flex",
-
-    alignItems: "center",
-  },
-
-  featurePanelGlow: {
-    position: "absolute",
-
-    width: "360px",
-
-    height: "360px",
-
-    borderRadius: "50%",
-
-    top: "-180px",
-
-    right: "-100px",
-
-    background:
-      "radial-gradient(circle, rgba(126,106,255,0.22), transparent 68%)",
-
-    pointerEvents: "none",
-  },
-
-  featurePanelContent: {
-    position: "relative",
-
-    zIndex: 1,
-  },
-
-  featureEyebrow: {
-    margin: "0 0 10px",
-
-    color: "#a99dff",
-
-    fontSize: "11px",
-
-    fontWeight: 900,
-
-    textTransform: "uppercase",
-
-    letterSpacing: "0.16em",
-  },
-
-  featurePanelTitle: {
-    margin: "0 0 12px",
-
-    color: "#ffffff",
-
-    fontSize: "30px",
-
-    lineHeight: 1.08,
-
-    letterSpacing: "-0.035em",
-
-    fontWeight: 850,
-  },
-
-  featurePanelText: {
-    margin: "0 0 22px",
-
-    color: "#b9c0cc",
-
-    fontSize: "14px",
-
-    lineHeight: 1.75,
-  },
-
-  primaryButton: {
     display: "inline-flex",
-
-    alignItems: "center",
-
-    gap: "10px",
-
-    width: "fit-content",
-
-    textDecoration: "none",
-
-    padding:
-      "13px 17px",
-
-    borderRadius: "15px",
-
-    border:
-      "1px solid rgba(126,106,255,0.30)",
-
-    background:
-      "linear-gradient(135deg, rgba(126,106,255,0.19), rgba(126,106,255,0.08))",
-
-    color: "#ece9ff",
-
-    fontSize: "13px",
-
-    fontWeight: 850,
+    marginBottom: "15px",
+    padding: "7px 11px",
+    borderRadius: "999px",
+    border: "1px solid rgba(23,232,255,.18)",
+    background: "rgba(23,232,255,.055)",
+    color: "#a9f8ff",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: ".15em",
+    textTransform: "uppercase",
   },
 
-  buttonArrow: {
-    fontSize: "16px",
-
+  heroTitle: {
+    margin: "0 0 12px",
+    color: "#ffffff",
+    fontSize: "clamp(34px, 5vw, 54px)",
     lineHeight: 1,
-  },
-
-  /* =====================================================
-     QUICK NAV
-  ===================================================== */
-
-  quickNavSection: {
-    display: "grid",
-
-    gap: "10px",
-
-    padding:
-      "4px 2px",
-  },
-
-  quickNavLabel: {
-    margin: 0,
-
-    color: "#737b88",
-
-    fontSize: "10px",
-
-    fontWeight: 900,
-
-    letterSpacing: "0.16em",
-
-    textTransform: "uppercase",
-  },
-
-  quickNav: {
-    display: "flex",
-
-    flexWrap: "wrap",
-
-    gap: "8px",
-  },
-
-  quickNavLink: {
-    textDecoration: "none",
-
-    padding:
-      "9px 12px",
-
-    borderRadius: "999px",
-
-    border:
-      "1px solid rgba(255,255,255,0.065)",
-
-    background:
-      "rgba(255,255,255,0.025)",
-
-    color: "#b8bec8",
-
-    fontSize: "11px",
-
-    fontWeight: 750,
-  },
-
-  /* =====================================================
-     SECTIONS
-  ===================================================== */
-
-  section: {
-    scrollMarginTop: "24px",
-
-    display: "grid",
-
-    gap: "18px",
-
-    paddingTop: "12px",
-  },
-
-  sectionHeadingRow: {
-    display: "flex",
-
-    justifyContent:
-      "space-between",
-
-    alignItems: "flex-end",
-
-    flexWrap: "wrap",
-
-    gap: "18px",
-  },
-
-  sectionEyebrow: {
-    margin: "0 0 8px",
-
-    color: "#76808f",
-
-    fontSize: "10px",
-
-    fontWeight: 900,
-
-    letterSpacing: "0.18em",
-
-    textTransform: "uppercase",
-  },
-
-  sectionTitle: {
-    margin: "0 0 8px",
-
-    color: "#f5f7fb",
-
-    fontSize:
-      "clamp(27px, 3vw, 36px)",
-
-    lineHeight: 1.08,
-
-    letterSpacing: "-0.04em",
-
+    letterSpacing: "-.05em",
     fontWeight: 850,
   },
 
-  sectionDescription: {
+  heroDescription: {
     margin: 0,
-
-    color: "#9199a7",
-
-    fontSize: "14px",
-
+    maxWidth: "690px",
+    color: "#a7aebb",
+    fontSize: "15px",
     lineHeight: 1.7,
-
-    maxWidth: "760px",
   },
 
-  sectionCount: {
-    flexShrink: 0,
+  /* ACCORDION */
 
-    padding:
-      "8px 11px",
-
-    borderRadius: "999px",
-
-    background:
-      "rgba(255,255,255,0.025)",
-
-    border:
-      "1px solid rgba(255,255,255,0.06)",
-
-    color: "#7f8794",
-
-    fontSize: "10px",
-
-    fontWeight: 850,
-
-    textTransform: "uppercase",
-
-    letterSpacing: "0.09em",
-  },
-
-  toolGrid: {
+  accordion: {
     display: "grid",
-
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(275px, 1fr))",
-
-    gap: "14px",
-  },
-
-  /* =====================================================
-     TOOL CARDS
-     ENTIRE CARD IS CLICKABLE
-  ===================================================== */
-
-  toolCard: {
-    position: "relative",
-
-    overflow: "hidden",
-
-    minHeight: "295px",
-
-    padding: "22px",
-
-    borderRadius: "25px",
-
-    border: "1px solid",
-
-    background:
-      "linear-gradient(145deg, rgba(15,18,25,0.94), rgba(7,9,14,0.98))",
-
-    display: "flex",
-
-    flexDirection: "column",
-
-    cursor: "pointer",
-
-    transition:
-      "transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease",
-  },
-
-  toolAccent: {
-    position: "absolute",
-
-    height: "2px",
-
-    top: 0,
-
-    left: "22px",
-
-    right: "22px",
-
-    opacity: 0.85,
-  },
-
-  toolCardTop: {
-    display: "flex",
-
-    justifyContent:
-      "space-between",
-
-    alignItems: "center",
-
     gap: "12px",
-
-    marginBottom: "20px",
   },
 
-  toolIcon: {
-    width: "42px",
-
-    height: "42px",
-
-    borderRadius: "13px",
-
-    border: "1px solid",
-
-    display: "grid",
-
-    placeItems: "center",
-
-    fontSize: "11px",
-
-    fontWeight: 950,
-
-    letterSpacing: "0.05em",
+  category: {
+    overflow: "hidden",
+    borderRadius: "22px",
+    border: "1px solid rgba(255,255,255,.07)",
+    background:
+      "linear-gradient(145deg, rgba(15,18,25,.94), rgba(8,10,15,.98))",
+    boxShadow: "0 18px 55px rgba(0,0,0,.22)",
   },
 
-  statusTag: {
-    padding:
-      "6px 9px",
-
-    borderRadius: "999px",
-
-    border: "1px solid",
-
-    fontSize: "9px",
-
-    fontWeight: 950,
-
-    letterSpacing: "0.09em",
-
-    textTransform: "uppercase",
+  categoryOpen: {
+    border: "1px solid rgba(23,232,255,.16)",
   },
 
-  toolCardBody: {
+  categoryButton: {
+    width: "100%",
+    border: "none",
+    outline: "none",
+    cursor: "pointer",
+    background: "transparent",
+    color: "inherit",
+    padding: "23px 24px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    textAlign: "left",
+    fontFamily: "inherit",
+  },
+
+  categoryText: {
     flex: 1,
+    minWidth: 0,
+  },
+
+  categoryTitleRow: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "10px",
+    marginBottom: "7px",
+  },
+
+  categoryTitle: {
+    margin: 0,
+    color: "#f4f6fa",
+    fontSize: "19px",
+    lineHeight: 1.2,
+    letterSpacing: "-.025em",
+    fontWeight: 820,
+  },
+
+  toolCount: {
+    padding: "5px 8px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,.065)",
+    background: "rgba(255,255,255,.025)",
+    color: "#838b98",
+    fontSize: "9px",
+    fontWeight: 850,
+    textTransform: "uppercase",
+    letterSpacing: ".06em",
+  },
+
+  categoryDescription: {
+    margin: 0,
+    maxWidth: "780px",
+    color: "#8f97a4",
+    fontSize: "13px",
+    lineHeight: 1.55,
+  },
+
+  chevron: {
+    flexShrink: 0,
+    width: "34px",
+    height: "34px",
+    display: "grid",
+    placeItems: "center",
+    borderRadius: "50%",
+    border: "1px solid rgba(23,232,255,.15)",
+    background: "rgba(23,232,255,.045)",
+    color: "#9df6ff",
+    fontSize: "17px",
+    transition: "transform .2s ease",
+  },
+
+  /* TOOL LIST */
+
+  toolList: {
+    borderTop: "1px solid rgba(255,255,255,.055)",
+    padding: "8px",
+    display: "grid",
+    gap: "6px",
+  },
+
+  toolRow: {
+    width: "100%",
+    minHeight: "86px",
+    padding: "16px 17px",
+    borderRadius: "15px",
+    border: "1px solid transparent",
+    background: "rgba(255,255,255,.018)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "18px",
+    textDecoration: "none",
+    color: "inherit",
+    cursor: "pointer",
+  },
+
+  toolMain: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  toolHeading: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginBottom: "6px",
   },
 
   toolTitle: {
-    margin: "0 0 10px",
+    margin: 0,
+    color: "#eef1f6",
+    fontSize: "15px",
+    lineHeight: 1.25,
+    fontWeight: 800,
+  },
 
-    color: "#f4f6fb",
-
-    fontSize: "20px",
-
-    lineHeight: 1.16,
-
-    letterSpacing: "-0.025em",
-
-    fontWeight: 830,
+  toolLabel: {
+    padding: "4px 7px",
+    borderRadius: "999px",
+    border: "1px solid rgba(126,106,255,.18)",
+    background: "rgba(126,106,255,.06)",
+    color: "#c6bdff",
+    fontSize: "8px",
+    lineHeight: 1,
+    fontWeight: 900,
+    textTransform: "uppercase",
+    letterSpacing: ".07em",
   },
 
   toolDescription: {
     margin: 0,
-
-    color: "#9fa6b2",
-
-    fontSize: "13px",
-
-    lineHeight: 1.72,
+    maxWidth: "820px",
+    color: "#858e9c",
+    fontSize: "12px",
+    lineHeight: 1.55,
   },
 
-  cardFooter: {
-    marginTop: "22px",
+  toolArrow: {
+    flexShrink: 0,
+    color: "#91f3fb",
+    fontSize: "19px",
+    fontWeight: 500,
+  },
 
-    paddingTop: "16px",
+  /* HELP PANEL */
 
-    borderTop:
-      "1px solid",
-
+  helpPanel: {
+    marginTop: "26px",
+    padding: "24px",
+    borderRadius: "22px",
+    border: "1px solid rgba(255,255,255,.06)",
+    background: "rgba(255,255,255,.018)",
     display: "flex",
-
     alignItems: "center",
-
-    justifyContent:
-      "space-between",
-
-    gap: "10px",
-
-    fontSize: "11px",
-
-    fontWeight: 850,
-  },
-
-  cardArrow: {
-    fontSize: "18px",
-
-    lineHeight: 1,
-  },
-
-  /* =====================================================
-     BOTTOM
-  ===================================================== */
-
-  bottomPanel: {
-    marginTop: "12px",
-
-    padding: "28px",
-
-    borderRadius: "28px",
-
-    border:
-      "1px solid rgba(255,255,255,0.065)",
-
-    background:
-      "linear-gradient(135deg, rgba(15,18,25,0.94), rgba(8,10,15,0.98))",
-
-    display: "flex",
-
-    justifyContent:
-      "space-between",
-
-    alignItems: "center",
-
+    justifyContent: "space-between",
     flexWrap: "wrap",
-
-    gap: "22px",
+    gap: "20px",
   },
 
-  bottomEyebrow: {
-    margin: "0 0 8px",
-
-    color: "#747d8a",
-
-    fontSize: "10px",
-
+  helpEyebrow: {
+    margin: "0 0 7px",
+    color: "#7d8693",
+    fontSize: "9px",
     fontWeight: 900,
-
-    letterSpacing: "0.16em",
-
+    letterSpacing: ".12em",
     textTransform: "uppercase",
   },
 
-  bottomTitle: {
-    margin: "0 0 8px",
-
-    color: "#ffffff",
-
-    fontSize: "24px",
-
-    lineHeight: 1.1,
-
-    letterSpacing: "-0.035em",
-
-    fontWeight: 850,
+  helpTitle: {
+    margin: "0 0 7px",
+    color: "#f3f5f9",
+    fontSize: "19px",
+    lineHeight: 1.25,
+    fontWeight: 800,
+    letterSpacing: "-.02em",
   },
 
-  bottomText: {
+  helpText: {
     margin: 0,
-
-    maxWidth: "760px",
-
-    color: "#969eaa",
-
-    fontSize: "13px",
-
-    lineHeight: 1.7,
+    maxWidth: "720px",
+    color: "#8e96a3",
+    fontSize: "12px",
+    lineHeight: 1.6,
   },
 
-  secondaryButton: {
+  profileLink: {
     flexShrink: 0,
-
-    display: "inline-flex",
-
-    alignItems: "center",
-
-    gap: "10px",
-
+    padding: "11px 14px",
+    borderRadius: "13px",
+    border: "1px solid rgba(23,232,255,.15)",
+    background: "rgba(23,232,255,.045)",
+    color: "#b7f9ff",
     textDecoration: "none",
-
-    padding:
-      "12px 15px",
-
-    borderRadius: "14px",
-
-    border:
-      "1px solid rgba(23,232,255,0.18)",
-
-    background:
-      "rgba(23,232,255,0.055)",
-
-    color: "#c8fbff",
-
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "10px",
     fontSize: "11px",
-
     fontWeight: 850,
   },
 };
