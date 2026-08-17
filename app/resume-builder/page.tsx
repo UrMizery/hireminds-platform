@@ -89,6 +89,20 @@ const MONTHS = [
 "Dec",
 ];
 
+const RESUME_FORMAT_ORDERS: Record<ResumeType, ResumeSectionKey[]> = {
+Chronological: ["summary", "skills", "experience", "education", "certifications", "volunteer", "accomplishments"],
+Functional: ["summary", "skills", "accomplishments", "experience", "education", "certifications", "volunteer"],
+Combination: ["summary", "skills", "experience", "accomplishments", "education", "certifications", "volunteer"],
+Hybrid: ["summary", "skills", "experience", "certifications", "education", "volunteer", "accomplishments"],
+};
+
+const RESUME_FORMAT_HELP: Record<ResumeType, string> = {
+Chronological: "Best when your recent work history directly supports the role you want next.",
+Functional: "Highlights skills and accomplishments first when experience is limited, changing, or less directly related.",
+Combination: "Balances a strong skills section with a clear work-history section.",
+Hybrid: "Blends skills, experience, certifications, and education for a flexible modern format.",
+};
+
 const TRANSLATIONS: Record<
 ResumeLanguage,
 {
@@ -399,6 +413,12 @@ const openTrackedRef = useRef(false);
 
 const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
 const [language, setLanguage] = useState<ResumeLanguage>("English");
+const [resumeType, setResumeType] = useState<ResumeType>("Hybrid");
+const [targetJobTitle, setTargetJobTitle] = useState("");
+const [aiLoadingKey, setAiLoadingKey] = useState("");
+const [summarySuggestions, setSummarySuggestions] = useState<string[]>([]);
+const [roleIdeas, setRoleIdeas] = useState<Record<number, string[]>>({});
+const [bulletIdeas, setBulletIdeas] = useState<Record<number, string[]>>({});
 
 const [fullName, setFullName] = useState("");
 const [phone, setPhone] = useState("");
@@ -494,6 +514,8 @@ const draft = JSON.parse(raw);
 
 setFontFamily(draft.fontFamily || "Times New Roman");
 setLanguage(draft.language || "English");
+setResumeType(draft.resumeType || "Hybrid");
+setTargetJobTitle(draft.targetJobTitle || "");
 setFullName(draft.fullName || "");
 setPhone(draft.phone || "");
 setCity(draft.city || "");
@@ -524,18 +546,11 @@ Array.isArray(draft.volunteerItems) && draft.volunteerItems.length
 ? draft.volunteerItems
 : [createDefaultVolunteer()]
 );
+const loadedType: ResumeType = draft.resumeType || "Hybrid";
 setSectionOrder(
 Array.isArray(draft.sectionOrder) && draft.sectionOrder.length
 ? draft.sectionOrder
-: [
-"summary",
-"skills",
-"experience",
-"education",
-"certifications",
-"volunteer",
-"accomplishments",
-]
+: RESUME_FORMAT_ORDERS[loadedType]
 );
 }
 } catch {
@@ -551,6 +566,8 @@ if (!draftLoaded) return;
 const draft = {
 fontFamily,
 language,
+resumeType,
+targetJobTitle,
 fullName,
 phone,
 city,
@@ -573,6 +590,8 @@ window.localStorage.setItem(RESUME_DRAFT_STORAGE_KEY, JSON.stringify(draft));
 draftLoaded,
 fontFamily,
 language,
+resumeType,
+targetJobTitle,
 fullName,
 phone,
 city,
@@ -601,7 +620,6 @@ return skillsInput
 }, [skillsInput]);
 
 const skillColumns = useMemo(() => splitSkillsIntoColumns(skills), [skills]);
-const detectedResumeType = useMemo(() => detectResumeType(sectionOrder), [sectionOrder]);
 const activeExperiences = useMemo(
 () => experiences.filter((item) => hasExperienceContent(item)),
 [experiences]
@@ -710,8 +728,75 @@ return { ...item, bullets: [...item.bullets, { text: "" }] };
 );
 }
 
-function moveSection(index: number, direction: "up" | "down") {
-setSectionOrder((prev) => moveItem(prev, index, direction));
+function applyResumeType(nextType: ResumeType) {
+setResumeType(nextType);
+setSectionOrder([...RESUME_FORMAT_ORDERS[nextType]]);
+}
+
+async function callResumeAi(action: string, payload: Record<string, unknown>) {
+const response = await fetch("/api/optimize-resume", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ action, ...payload }),
+});
+const data = await response.json();
+if (!response.ok) throw new Error(data?.error || "AI assistance is unavailable right now.");
+return data;
+}
+
+async function generateSummaryIdeas() {
+setMessage("");
+setAiLoadingKey("summary");
+try {
+const data = await callResumeAi("generateSummaryIdeas", {
+targetJobTitle,
+skills,
+experiences: experiences.map((item) => ({ roleTitle: item.roleTitle, companyName: item.companyName, bullets: item.bullets.map((b) => b.text).filter(Boolean) })),
+});
+setSummarySuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+} catch (error) {
+setMessage(error instanceof Error ? error.message : "Unable to generate summary ideas.");
+} finally { setAiLoadingKey(""); }
+}
+
+async function generateRoleIdeas(index: number) {
+const roleTitle = experiences[index]?.roleTitle?.trim();
+if (!roleTitle) { setMessage("Enter a job title first so AI can give you role-specific ideas."); return; }
+setMessage("");
+setAiLoadingKey(`role-${index}`);
+try {
+const data = await callResumeAi("getRolePrompts", { roleTitle });
+setRoleIdeas((prev) => ({ ...prev, [index]: Array.isArray(data.prompts) ? data.prompts : [] }));
+} catch (error) {
+setMessage(error instanceof Error ? error.message : "Unable to generate role ideas.");
+} finally { setAiLoadingKey(""); }
+}
+
+async function generateBulletIdeas(index: number) {
+const item = experiences[index];
+if (!item?.roleTitle?.trim()) { setMessage("Enter the job title first so AI can suggest relevant bullet ideas."); return; }
+setMessage("");
+setAiLoadingKey(`bullets-${index}`);
+try {
+const data = await callResumeAi("generateBulletIdeas", { roleTitle: item.roleTitle, companyName: item.companyName, existingBullets: item.bullets.map((b) => b.text).filter(Boolean), targetJobTitle });
+setBulletIdeas((prev) => ({ ...prev, [index]: Array.isArray(data.suggestions) ? data.suggestions : [] }));
+} catch (error) {
+setMessage(error instanceof Error ? error.message : "Unable to generate bullet ideas.");
+} finally { setAiLoadingKey(""); }
+}
+
+async function strengthenBullet(index: number, bulletIndex: number) {
+const item = experiences[index];
+const current = item?.bullets?.[bulletIndex]?.text?.trim();
+if (!current) { setMessage("Write a bullet first, then use Strengthen Bullet."); return; }
+setMessage("");
+setAiLoadingKey(`strengthen-${index}-${bulletIndex}`);
+try {
+const data = await callResumeAi("strengthenBullet", { roleTitle: item.roleTitle, currentBullet: current, targetJobTitle });
+if (data.suggestion) updateExperienceBullet(index, bulletIndex, data.suggestion);
+} catch (error) {
+setMessage(error instanceof Error ? error.message : "Unable to strengthen this bullet.");
+} finally { setAiLoadingKey(""); }
 }
 
 async function handleSaveDraft() {
@@ -797,7 +882,7 @@ print-color-adjust: exact;
 width: 100%;
 max-width: 100%;
 margin: 0 auto;
-padding-top: 90px;
+padding-top: 0;
 color: #111827;
 }
 
@@ -813,23 +898,23 @@ padding: 0 0 8px;
 
 .resumeName {
 margin: 0 0 8px;
-font-size: 28px;
+font-size: 20pt;
 font-weight: 700;
 color: #111827;
 }
 
 .resumeContact {
 margin: 0 0 6px;
-font-size: 14px;
-line-height: 1.5;
+font-size: 10.5pt;
+line-height: 1.35;
 color: #374151;
 word-break: break-word;
 }
 
 .resumeLinkedin {
 margin: 0;
-font-size: 14px;
-line-height: 1.5;
+font-size: 10.5pt;
+line-height: 1.35;
 color: #1d4ed8;
 word-break: break-word;
 }
@@ -843,15 +928,15 @@ page-break-inside: auto;
 .resumeSectionTitle {
 margin: 0 0 10px;
 text-align: center;
-font-size: 22px;
+font-size: 12pt;
 font-weight: 700;
 color: #111827;
 }
 
 .resumeParagraph {
 margin: 0;
-font-size: 15px;
-line-height: 1.7;
+font-size: 11pt;
+line-height: 1.35;
 color: #111827;
 white-space: pre-wrap;
 word-break: break-word;
@@ -869,8 +954,8 @@ min-width: 0;
 
 .skillItem {
 margin: 0 0 8px;
-font-size: 15px;
-line-height: 1.5;
+font-size: 11pt;
+line-height: 1.35;
 color: #111827;
 word-break: break-word;
 }
@@ -891,29 +976,29 @@ margin-bottom: 6px;
 
 .resumeEntryHeading {
 margin: 0;
-font-size: 16px;
+font-size: 11pt;
 font-weight: 700;
 color: #111827;
 }
 
 .resumeEntrySubheading {
 margin: 4px 0 0;
-font-size: 15px;
+font-size: 11pt;
 font-weight: 600;
 color: #111827;
 }
 
 .resumeEntryDates {
 margin: 0;
-font-size: 14px;
+font-size: 10.5pt;
 color: #374151;
 white-space: nowrap;
 }
 
 .resumeBullet {
 margin: 4px 0;
-font-size: 15px;
-line-height: 1.65;
+font-size: 11pt;
+line-height: 1.35;
 color: #111827;
 white-space: pre-wrap;
 word-break: break-word;
@@ -942,9 +1027,7 @@ if (!summaryText && !summaryHeading) return null;
 return (
 <section className="resumeSection" style={styles.resumeSectionBlock}>
 <h3 style={styles.resumeSectionTitle}>{summaryHeading || ui.summary}</h3>
-<p style={styles.resumeParagraph}>
-{summaryText || "Add your professional summary here."}
-</p>
+<p style={{ ...styles.resumeParagraph, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setSummaryText(e.currentTarget.textContent?.trim() || "")}>{summaryText || "Click here to add your professional summary."}</p>
 </section>
 );
 
@@ -982,9 +1065,7 @@ return (
 ? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
 : ""}
 </p>
-<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
-{item.roleTitle || "Role Title"}
-</p>
+<p className="resumeEntrySubheading" style={{ ...styles.resumeEntrySubheading, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => { const originalIndex = experiences.indexOf(item); if (originalIndex >= 0) updateExperience(originalIndex, "roleTitle", e.currentTarget.textContent?.trim() || ""); }}>{item.roleTitle || "Role Title"}</p>
 </div>
 <p className="resumeEntryDates" style={styles.resumeEntryDates}>
 {formatDateRange(
@@ -999,9 +1080,7 @@ item.isPresent
 {item.bullets
 .filter((b) => b.text.trim())
 .map((bullet, bulletIndex) => (
-<p key={bulletIndex} className="resumeBullet" style={styles.resumeBullet}>
-• {bullet.text}
-</p>
+<p key={bulletIndex} className="resumeBullet" style={{ ...styles.resumeBullet, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => { const originalIndex = experiences.indexOf(item); if (originalIndex >= 0) updateExperienceBullet(originalIndex, bulletIndex, (e.currentTarget.textContent || "").replace(/^•\s*/, "").trim()); }}>• {bullet.text}</p>
 ))}
 </div>
 ))}
@@ -1292,13 +1371,21 @@ Profile page.
 </p>
 </section>
 <section style={styles.card}>
-<p style={styles.cardKicker}>RESUME TYPE</p>
-<h2 style={styles.cardTitle}>
-You’re currently building a {detectedResumeType} Resume
-</h2>
-<p style={styles.previewHelp}>
-This updates automatically based on how you move your sections around.
-</p>
+<p style={styles.cardKicker}>RESUME FORMAT</p>
+<h2 style={styles.cardTitle}>Choose your resume format</h2>
+<p style={styles.previewHelp}>Select a format and the resume automatically reorganizes the section order.</p>
+<div style={styles.formatPickerRow}>
+<div style={{ flex: 1, minWidth: "240px" }}>
+<label style={styles.inputLabel}>Resume Format</label>
+<select value={resumeType} onChange={(e) => applyResumeType(e.target.value as ResumeType)} style={styles.input}>
+<option value="Hybrid">Hybrid</option>
+<option value="Functional">Functional</option>
+<option value="Chronological">Chronological</option>
+<option value="Combination">Combination</option>
+</select>
+</div>
+<div style={styles.formatHelpBox}><strong>{resumeType}:</strong> {RESUME_FORMAT_HELP[resumeType]}</div>
+</div>
 </section>
 <section style={styles.card}>
 <p style={styles.cardKicker}>HEADER</p>
@@ -1366,6 +1453,10 @@ placeholder="LinkedIn URL"
 <p style={styles.cardKicker}>SUMMARY</p>
 <h2 style={styles.cardTitle}>{ui.summaryAndSkills}</h2>
 
+<label style={styles.inputLabel}>Target Job Title / Role</label>
+<input value={targetJobTitle} onChange={(e) => setTargetJobTitle(e.target.value)} style={styles.input} placeholder="Example: Administrative Assistant" />
+<p style={styles.helper}>This helps AI give job-title-specific summary and bullet ideas.</p>
+
 <label style={styles.inputLabel}>
 Summary Heading (optional, can be blank or "Summary")
 </label>
@@ -1383,6 +1474,14 @@ onChange={(e) => setSummaryText(e.target.value)}
 style={styles.textarea}
 placeholder="Example: Client-focused workforce development professional with experience in talent acquisition, resume writing, employer engagement, and job readiness coaching."
 />
+<div style={styles.aiActionRow}>
+<button type="button" onClick={generateSummaryIdeas} style={styles.aiButton} disabled={aiLoadingKey === "summary"}>{aiLoadingKey === "summary" ? "Writing ideas..." : "✨ AI Summary Ideas"}</button>
+<span style={styles.aiSafetyText}>AI should only use the experience and skills you entered.</span>
+</div>
+{summarySuggestions.length > 0 ? <div style={styles.aiSuggestionBox}>
+<p style={styles.aiSuggestionTitle}>Choose a summary idea:</p>
+{summarySuggestions.map((suggestion, suggestionIndex) => <button key={suggestionIndex} type="button" onClick={() => setSummaryText(suggestion)} style={styles.aiSuggestionButton}><span>{suggestion}</span><strong>Use this</strong></button>)}
+</div> : null}
 
 <label style={styles.inputLabel}>Skills (comma separated, up to 9)</label>
 <input
@@ -1417,6 +1516,7 @@ onChange={(e) => updateExperience(index, "roleTitle", e.target.value)}
 style={styles.input}
 placeholder="Role Title"
 />
+<button type="button" onClick={() => generateRoleIdeas(index)} style={styles.inlineAiButton} disabled={aiLoadingKey === `role-${index}`}>{aiLoadingKey === `role-${index}` ? "Thinking..." : "✨ Ideas for this role"}</button>
 </div>
 <div>
 <label style={styles.inputLabel}>City</label>
@@ -1498,7 +1598,17 @@ placeholder="2024"
 </div>
 )}
 
+{roleIdeas[index]?.length ? <div style={styles.rolePromptBox}>
+<p style={styles.aiSuggestionTitle}>Think about whether you did any of these:</p>
+{roleIdeas[index].map((idea, ideaIndex) => <p key={ideaIndex} style={styles.rolePromptItem}>• {idea}</p>)}
+<p style={styles.aiSafetyText}>Memory prompts only—add only responsibilities you actually performed.</p>
+</div> : null}
 <p style={styles.helper}>You can add up to 5 bullet points per role.</p>
+<div style={styles.aiActionRow}><button type="button" onClick={() => generateBulletIdeas(index)} style={styles.aiButton} disabled={aiLoadingKey === `bullets-${index}`}>{aiLoadingKey === `bullets-${index}` ? "Creating ideas..." : "✨ AI Bullet Ideas"}</button></div>
+{bulletIdeas[index]?.length ? <div style={styles.aiSuggestionBox}>
+<p style={styles.aiSuggestionTitle}>Bullet ideas for {item.roleTitle || "this role"}:</p>
+{bulletIdeas[index].map((suggestion, suggestionIndex) => <button key={suggestionIndex} type="button" onClick={() => { const emptyIndex = item.bullets.findIndex((b) => !b.text.trim()); if (emptyIndex >= 0) updateExperienceBullet(index, emptyIndex, suggestion); else if (item.bullets.length < BULLET_LIMIT) setExperiences((prev) => prev.map((experience, i) => i === index ? { ...experience, bullets: [...experience.bullets, { text: suggestion }] } : experience)); }} style={styles.aiSuggestionButton}><span>{suggestion}</span><strong>Add bullet</strong></button>)}
+</div> : null}
 
 {item.bullets.map((bullet, bulletIndex) => (
 <div key={bulletIndex}>
@@ -1511,6 +1621,7 @@ updateExperienceBullet(index, bulletIndex, e.target.value)
 style={styles.input}
 placeholder="Describe the work you did"
 />
+<button type="button" onClick={() => strengthenBullet(index, bulletIndex)} style={styles.inlineAiButton} disabled={aiLoadingKey === `strengthen-${index}-${bulletIndex}`}>{aiLoadingKey === `strengthen-${index}-${bulletIndex}` ? "Strengthening..." : "✨ Strengthen Bullet"}</button>
 </div>
 ))}
 
@@ -1915,46 +2026,6 @@ placeholder="Awards, recognitions, achievements, notable wins"
 />
 </section>
 
-<section style={styles.card}>
-<p style={styles.cardKicker}>ORDER</p>
-<h2 style={styles.cardTitle}>{ui.moveSections}</h2>
-
-{sectionOrder.map((section, index) => (
-<div key={section} style={styles.orderRow}>
-<span style={styles.orderLabel}>
-{section === "summary"
-? "Summary"
-: section === "skills"
-? "Skills"
-: section === "experience"
-? "Experience"
-: section === "education"
-? "Education"
-: section === "certifications"
-? "Certifications"
-: section === "volunteer"
-? "Volunteer"
-: "Accomplishments"}
-</span>
-<div style={styles.orderButtons}>
-<button
-type="button"
-onClick={() => moveSection(index, "up")}
-style={styles.orderButton}
->
-Up
-</button>
-<button
-type="button"
-onClick={() => moveSection(index, "down")}
-style={styles.orderButton}
->
-Down
-</button>
-</div>
-</div>
-))}
-</section>
 
 {message ? (
 <div className="flashMessage" style={styles.messageBox}>
@@ -1986,7 +2057,7 @@ style={styles.saveButton}
 <h2 style={styles.cardTitle}>{ui.livePreview}</h2>
 <p style={styles.previewHelp}>{ui.previewHelp}</p>
 <p style={styles.resumeTypePreview}>
-  Current layout: <strong>{detectedResumeType}</strong>
+  Current format: <strong>{resumeType}</strong> • Click directly into the white resume to edit visible text.
 </p>
 </div>
 
@@ -1999,18 +2070,14 @@ fontFamily,
 }}
 >
 <div className="resumeHeader" style={styles.resumeHeader}>
-<h1 className="resumeName" style={styles.resumeName}>
-{fullName || "Your Name"}
-</h1>
+<h1 className="resumeName" style={{ ...styles.resumeName, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setFullName(e.currentTarget.textContent?.trim() || "")}>{fullName || "Your Name"}</h1>
 <p className="resumeContact" style={styles.resumeContact}>
 {[phone, email, [city, stateName].filter(Boolean).join(", ")]
 .filter(Boolean)
 .join(" • ")}
 </p>
 {linkedinUrl ? (
-<p className="resumeLinkedin" style={styles.resumeLinkedin}>
-{linkedinUrl}
-</p>
+<p className="resumeLinkedin" style={{ ...styles.resumeLinkedin, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setLinkedinUrl(e.currentTarget.textContent?.trim() || "")}>{linkedinUrl}</p>
 ) : null}
 </div>
 
@@ -2089,7 +2156,7 @@ maxWidth: "760px",
 },
 layout: {
 display: "grid",
-gridTemplateColumns: "minmax(0, 1fr) 520px",
+gridTemplateColumns: "minmax(360px, 0.72fr) minmax(0, 1.28fr)",
 gap: "24px",
 alignItems: "start",
 },
@@ -2126,7 +2193,7 @@ textTransform: "uppercase",
 },
 cardTitle: {
 margin: "0 0 10px",
-fontSize: "28px",
+fontSize: "20pt",
 lineHeight: 1.1,
 color: "#fafafa",
 fontWeight: 700,
@@ -2134,8 +2201,8 @@ fontWeight: 700,
 previewHelp: {
 margin: 0,
 color: "#d4d4d8",
-fontSize: "15px",
-lineHeight: 1.5,
+fontSize: "11pt",
+lineHeight: 1.35,
 },
 resumeTypePreview: {
 margin: "12px 0 0",
@@ -2214,7 +2281,7 @@ color: "#fff",
 border: "1px solid rgba(255,255,255,0.16)",
 borderRadius: "14px",
 padding: "10px 14px",
-fontSize: "15px",
+fontSize: "11pt",
 fontWeight: 600,
 cursor: "pointer",
 },
@@ -2295,15 +2362,16 @@ marginBottom: "16px",
 fontSize: "15px",
 },
 resumePaper: {
-width: "100%",
-minHeight: "1120px",
+width: "8.5in",
+maxWidth: "100%",
+minHeight: "11in",
 height: "auto",
 overflow: "visible",
 background: "#fff",
 borderRadius: "18px",
 border: "1px solid #e5e7eb",
 boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
-padding: "34px 32px 42px",
+padding: "0.5in",
 color: "#111827",
 boxSizing: "border-box",
 },
@@ -2320,15 +2388,15 @@ color: "#111827",
 },
 resumeContact: {
 margin: "0 0 6px",
-fontSize: "14px",
-lineHeight: 1.5,
+fontSize: "10.5pt",
+lineHeight: 1.35,
 color: "#374151",
 wordBreak: "break-word",
 },
 resumeLinkedin: {
 margin: 0,
-fontSize: "14px",
-lineHeight: 1.5,
+fontSize: "10.5pt",
+lineHeight: 1.35,
 color: "#1d4ed8",
 wordBreak: "break-word",
 },
@@ -2338,14 +2406,14 @@ marginBottom: "20px",
 resumeSectionTitle: {
 margin: "0 0 10px",
 textAlign: "center",
-fontSize: "22px",
+fontSize: "12pt",
 fontWeight: 700,
 color: "#111827",
 },
 resumeParagraph: {
 margin: 0,
-fontSize: "15px",
-lineHeight: 1.7,
+fontSize: "11pt",
+lineHeight: 1.35,
 color: "#111827",
 whiteSpace: "pre-wrap",
 wordBreak: "break-word",
@@ -2377,7 +2445,7 @@ marginBottom: "6px",
 },
 resumeEntryHeading: {
 margin: 0,
-fontSize: "16px",
+fontSize: "11pt",
 fontWeight: 700,
 color: "#111827",
 },
@@ -2389,16 +2457,69 @@ color: "#111827",
 },
 resumeEntryDates: {
 margin: 0,
-fontSize: "14px",
+fontSize: "10.5pt",
 color: "#374151",
 whiteSpace: "nowrap",
 },
 resumeBullet: {
 margin: "4px 0",
-fontSize: "15px",
-lineHeight: 1.65,
+fontSize: "11pt",
+lineHeight: 1.35,
 color: "#111827",
 whiteSpace: "pre-wrap",
 wordBreak: "break-word",
 },
+formatPickerRow: {
+display: "flex",
+alignItems: "stretch",
+gap: "14px",
+flexWrap: "wrap",
+marginTop: "16px",
+},
+formatHelpBox: {
+flex: "1 1 320px",
+border: "1px solid rgba(23,232,255,0.18)",
+background: "rgba(23,232,255,0.055)",
+borderRadius: "18px",
+padding: "14px 16px",
+color: "#dffcff",
+fontSize: "14px",
+lineHeight: 1.55,
+},
+aiActionRow: {
+display: "flex",
+alignItems: "center",
+gap: "10px",
+flexWrap: "wrap",
+margin: "10px 0 14px",
+},
+aiButton: {
+background: "linear-gradient(135deg, rgba(126,106,255,0.22), rgba(23,232,255,0.12))",
+color: "#ffffff",
+border: "1px solid rgba(126,106,255,0.34)",
+borderRadius: "14px",
+padding: "10px 13px",
+fontSize: "13px",
+fontWeight: 800,
+cursor: "pointer",
+},
+inlineAiButton: {
+marginTop: "7px",
+background: "rgba(126,106,255,0.09)",
+color: "#d8d2ff",
+border: "1px solid rgba(126,106,255,0.22)",
+borderRadius: "12px",
+padding: "8px 10px",
+fontSize: "12px",
+fontWeight: 750,
+cursor: "pointer",
+},
+aiSafetyText: { color: "#9ca3af", fontSize: "12px", lineHeight: 1.45 },
+aiSuggestionBox: { margin: "10px 0 16px", border: "1px solid rgba(126,106,255,0.18)", background: "rgba(126,106,255,0.045)", borderRadius: "16px", padding: "12px", display: "grid", gap: "8px" },
+aiSuggestionTitle: { margin: 0, color: "#ede9fe", fontSize: "13px", fontWeight: 850 },
+aiSuggestionButton: { width: "100%", display: "flex", justifyContent: "space-between", gap: "14px", textAlign: "left", background: "#090b12", color: "#f3f4f6", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "13px", padding: "11px 12px", fontSize: "12px", lineHeight: 1.5, cursor: "pointer" },
+rolePromptBox: { margin: "10px 0 14px", border: "1px solid rgba(23,232,255,0.14)", background: "rgba(23,232,255,0.035)", borderRadius: "16px", padding: "12px 14px" },
+rolePromptItem: { margin: "5px 0", color: "#d1d5db", fontSize: "12px", lineHeight: 1.45 },
+editableResumeText: { outline: "none", borderRadius: "3px", cursor: "text" },
+
 };
