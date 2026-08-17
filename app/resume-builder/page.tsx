@@ -90,17 +90,17 @@ const MONTHS = [
 ];
 
 const RESUME_FORMAT_ORDERS: Record<ResumeType, ResumeSectionKey[]> = {
-Chronological: ["summary", "skills", "experience", "education", "certifications", "volunteer", "accomplishments"],
-Functional: ["summary", "skills", "accomplishments", "experience", "education", "certifications", "volunteer"],
+Chronological: ["summary", "experience", "skills", "education", "certifications", "volunteer", "accomplishments"],
+Functional: ["summary", "skills", "accomplishments", "certifications", "education", "experience", "volunteer"],
 Combination: ["summary", "skills", "experience", "accomplishments", "education", "certifications", "volunteer"],
-Hybrid: ["summary", "skills", "experience", "certifications", "education", "volunteer", "accomplishments"],
+Hybrid: ["summary", "skills", "experience", "certifications", "accomplishments", "education", "volunteer"],
 };
 
 const RESUME_FORMAT_HELP: Record<ResumeType, string> = {
-Chronological: "Best when your recent work history directly supports the role you want next.",
-Functional: "Highlights skills and accomplishments first when experience is limited, changing, or less directly related.",
-Combination: "Balances a strong skills section with a clear work-history section.",
-Hybrid: "Blends skills, experience, certifications, and education for a flexible modern format.",
+Chronological: "Puts work history first and emphasizes a clear timeline. Best when your recent experience directly supports the role you want next.",
+Functional: "Leads with skills and accomplishments while moving work history lower. Best for career changes, gaps, re-entry, or limited directly related experience.",
+Combination: "Leads with a strong summary and skills, then gives full weight to work history. Best when both skills and experience are important.",
+Hybrid: "A balanced modern format that highlights skills, experience, certifications, and accomplishments while keeping a traditional ATS-friendly structure.",
 };
 
 const TRANSLATIONS: Record<
@@ -343,6 +343,132 @@ item.bullets.some((b) => b.text.trim())
 );
 }
 
+
+
+function getPrintFormatCss(type: ResumeType) {
+  if (type === "Chronological") {
+    return `
+      .resumeHeader { text-align:left; border-bottom:1px solid #111827; margin-bottom:16px; }
+      .resumeSectionTitle { text-align:left; border-bottom:1px solid #6b7280; padding-bottom:3px; font-size:11pt; letter-spacing:.04em; }
+      .skillsGrid { grid-template-columns:1fr 1fr 1fr; }
+      .resumeEntrySubheading { font-style:italic; font-weight:600; }
+    `;
+  }
+  if (type === "Functional") {
+    return `
+      .resumeHeader { text-align:center; border-bottom:2px solid #111827; margin-bottom:16px; }
+      .resumeSectionTitle { text-align:left; background:#f3f4f6; padding:4px 6px; font-size:11pt; letter-spacing:.05em; }
+      .skillsGrid { grid-template-columns:1fr 1fr; }
+      .resumeEntryTop { border-bottom:1px dotted #d1d5db; padding-bottom:4px; }
+    `;
+  }
+  if (type === "Combination") {
+    return `
+      .resumeHeader { text-align:center; border-bottom:1.5px solid #111827; margin-bottom:16px; }
+      .resumeSectionTitle { text-align:left; border-bottom:2px solid #111827; padding-bottom:3px; font-size:11pt; letter-spacing:.04em; }
+      .skillsGrid { grid-template-columns:1fr 1fr 1fr; }
+    `;
+  }
+  return `
+    .resumeHeader { text-align:left; border-bottom:2px solid #111827; margin-bottom:16px; }
+    .resumeSectionTitle { text-align:left; border-bottom:1px solid #9ca3af; padding-bottom:3px; font-size:11pt; letter-spacing:.05em; }
+    .skillsGrid { grid-template-columns:1fr 1fr 1fr; }
+  `;
+}
+
+type ResumeFormatVisuals = {
+  paper: CSSProperties;
+  header: CSSProperties;
+  name: CSSProperties;
+  contact: CSSProperties;
+  linkedIn: CSSProperties;
+  professionalTitle: CSSProperties;
+  sectionBlock: CSSProperties;
+  sectionTitle: CSSProperties;
+  skillsGrid: CSSProperties;
+  entryTop: CSSProperties;
+  entryHeading: CSSProperties;
+  entrySubheading: CSSProperties;
+};
+
+function getResumeFormatVisuals(type: ResumeType): ResumeFormatVisuals {
+  const base: ResumeFormatVisuals = {
+    paper: {},
+    header: {},
+    name: {},
+    contact: {},
+    linkedIn: {},
+    professionalTitle: {},
+    sectionBlock: {},
+    sectionTitle: {},
+    skillsGrid: {},
+    entryTop: {},
+    entryHeading: {},
+    entrySubheading: {},
+  };
+
+  if (type === "Chronological") {
+    return {
+      ...base,
+      header: { textAlign: "left", borderBottom: "1px solid #111827", paddingBottom: "10px", marginBottom: "16px" },
+      name: { fontSize: "20pt", letterSpacing: "0" },
+      contact: { textAlign: "left" },
+      linkedIn: { textAlign: "left" },
+      professionalTitle: { textAlign: "left", fontSize: "10.5pt", fontWeight: 700, margin: "3px 0 6px", color: "#111827" },
+      sectionTitle: { textAlign: "left", borderBottom: "1px solid #6b7280", paddingBottom: "3px", marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.04em" },
+      skillsGrid: { gridTemplateColumns: "1fr 1fr 1fr" },
+      entryHeading: { fontWeight: 700 },
+      entrySubheading: { fontStyle: "italic", fontWeight: 600 },
+    };
+  }
+
+  if (type === "Functional") {
+    return {
+      ...base,
+      header: { textAlign: "center", borderBottom: "2px solid #111827", paddingBottom: "10px", marginBottom: "16px" },
+      name: { fontSize: "21pt", letterSpacing: "0.01em" },
+      contact: { textAlign: "center" },
+      linkedIn: { textAlign: "center" },
+      professionalTitle: { textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "10pt", fontWeight: 700, margin: "2px 0 6px", color: "#374151" },
+      sectionBlock: { marginBottom: "16px" },
+      sectionTitle: { textAlign: "left", background: "#f3f4f6", padding: "4px 6px", marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.05em" },
+      skillsGrid: { gridTemplateColumns: "1fr 1fr" },
+      entryTop: { borderBottom: "1px dotted #d1d5db", paddingBottom: "4px" },
+      entryHeading: { fontWeight: 700 },
+      entrySubheading: { fontWeight: 500 },
+    };
+  }
+
+  if (type === "Combination") {
+    return {
+      ...base,
+      header: { textAlign: "center", borderBottom: "1.5px solid #111827", paddingBottom: "10px", marginBottom: "16px" },
+      name: { fontSize: "21pt", letterSpacing: "0" },
+      contact: { textAlign: "center" },
+      linkedIn: { textAlign: "center" },
+      professionalTitle: { textAlign: "center", fontSize: "10.5pt", fontWeight: 700, margin: "2px 0 6px", color: "#111827" },
+      sectionTitle: { textAlign: "left", borderBottom: "2px solid #111827", paddingBottom: "3px", marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.04em" },
+      skillsGrid: { gridTemplateColumns: "1fr 1fr 1fr" },
+      entryHeading: { fontWeight: 700 },
+      entrySubheading: { fontWeight: 700 },
+    };
+  }
+
+  // Hybrid
+  return {
+    ...base,
+    header: { textAlign: "left", borderBottom: "2px solid #111827", paddingBottom: "10px", marginBottom: "16px" },
+    name: { fontSize: "21pt", letterSpacing: "0.01em" },
+    contact: { textAlign: "left" },
+    linkedIn: { textAlign: "left" },
+    professionalTitle: { textAlign: "left", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10pt", fontWeight: 700, margin: "2px 0 6px", color: "#374151" },
+    sectionTitle: { textAlign: "left", borderBottom: "1px solid #9ca3af", paddingBottom: "3px", marginBottom: "8px", fontSize: "11pt", letterSpacing: "0.05em" },
+    skillsGrid: { gridTemplateColumns: "1fr 1fr 1fr" },
+    entryHeading: { fontWeight: 700 },
+    entrySubheading: { fontWeight: 600 },
+  };
+}
+
 function createDefaultExperience(): ExperienceItem {
 return {
 companyName: "",
@@ -547,11 +673,10 @@ Array.isArray(draft.volunteerItems) && draft.volunteerItems.length
 : [createDefaultVolunteer()]
 );
 const loadedType: ResumeType = draft.resumeType || "Hybrid";
-setSectionOrder(
-Array.isArray(draft.sectionOrder) && draft.sectionOrder.length
-? draft.sectionOrder
-: RESUME_FORMAT_ORDERS[loadedType]
-);
+setResumeType(loadedType);
+// Always use the selected format's canonical order so an older saved
+// custom order cannot make the format dropdown appear broken.
+setSectionOrder([...RESUME_FORMAT_ORDERS[loadedType]]);
 }
 } catch {
 // ignore bad local draft
@@ -610,6 +735,7 @@ sectionOrder,
 ]);
 
 const ui = TRANSLATIONS[language];
+const formatVisuals = useMemo(() => getResumeFormatVisuals(resumeType), [resumeType]);
 
 const skills = useMemo(() => {
 return skillsInput
@@ -734,7 +860,7 @@ setSectionOrder([...RESUME_FORMAT_ORDERS[nextType]]);
 }
 
 async function callResumeAi(action: string, payload: Record<string, unknown>) {
-const response = await fetch("/api/optimize-resume", {
+const response = await fetch("/api/resume-builder-ai", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ action, ...payload }),
@@ -808,6 +934,8 @@ setSaving(true);
 const draft = {
 fontFamily,
 language,
+resumeType,
+targetJobTitle,
 fullName,
 phone,
 city,
@@ -878,6 +1006,8 @@ body {
 print-color-adjust: exact;
 }
 
+${getPrintFormatCss(resumeType)}
+
 .print-resume {
 width: 100%;
 max-width: 100%;
@@ -887,18 +1017,24 @@ color: #111827;
 }
 
 .resumeHeader {
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
+position: static;
 background: white;
-text-align: center;
 padding: 0 0 8px;
+break-inside: avoid;
+page-break-inside: avoid;
 }
 
 .resumeName {
 margin: 0 0 8px;
 font-size: 20pt;
+font-weight: 700;
+color: #111827;
+}
+
+.resumeProfessionalTitle {
+margin: 2px 0 6px;
+font-size: 10.5pt;
+line-height: 1.25;
 font-weight: 700;
 color: #111827;
 }
@@ -1025,8 +1161,8 @@ switch (section) {
 case "summary":
 if (!summaryText && !summaryHeading) return null;
 return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>{summaryHeading || ui.summary}</h3>
+<section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{summaryHeading || ui.summary}</h3>
 <p style={{ ...styles.resumeParagraph, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setSummaryText(e.currentTarget.textContent?.trim() || "")}>{summaryText || "Click here to add your professional summary."}</p>
 </section>
 );
@@ -1034,9 +1170,9 @@ return (
 case "skills":
 if (!skills.length) return null;
 return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>SKILLS</h3>
-<div className="skillsGrid" style={styles.skillsGrid}>
+<section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>SKILLS</h3>
+<div className="skillsGrid" style={{ ...styles.skillsGrid, ...formatVisuals.skillsGrid }}>
 {skillColumns.map((column, index) => (
 <div key={index} className="skillColumn" style={styles.skillColumn}>
 {column.map((skill, skillIndex) => (
@@ -1053,19 +1189,19 @@ return (
 case "experience":
 if (!activeExperiences.length) return null;
 return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>WORK EXPERIENCE</h3>
+<section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>WORK EXPERIENCE</h3>
 {activeExperiences.map((item, index) => (
 <div key={index} className="resumeEntry" style={styles.resumeEntry}>
-<div className="resumeEntryTop" style={styles.resumeEntryTop}>
+<div className="resumeEntryTop" style={{ ...styles.resumeEntryTop, ...formatVisuals.entryTop }}>
 <div>
-<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+<p className="resumeEntryHeading" style={{ ...styles.resumeEntryHeading, ...formatVisuals.entryHeading }}>
 {item.companyName || "Company"}{" "}
 {item.city || item.state
 ? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
 : ""}
 </p>
-<p className="resumeEntrySubheading" style={{ ...styles.resumeEntrySubheading, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => { const originalIndex = experiences.indexOf(item); if (originalIndex >= 0) updateExperience(originalIndex, "roleTitle", e.currentTarget.textContent?.trim() || ""); }}>{item.roleTitle || "Role Title"}</p>
+<p className="resumeEntrySubheading" style={{ ...styles.resumeEntrySubheading, ...formatVisuals.entrySubheading, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => { const originalIndex = experiences.indexOf(item); if (originalIndex >= 0) updateExperience(originalIndex, "roleTitle", e.currentTarget.textContent?.trim() || ""); }}>{item.roleTitle || "Role Title"}</p>
 </div>
 <p className="resumeEntryDates" style={styles.resumeEntryDates}>
 {formatDateRange(
@@ -1090,19 +1226,19 @@ item.isPresent
 case "education":
 if (!activeEducation.length) return null;
 return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>EDUCATION</h3>
+<section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>EDUCATION</h3>
 {activeEducation.map((item, index) => (
 <div key={index} className="resumeEntry" style={styles.resumeEntry}>
-<div className="resumeEntryTop" style={styles.resumeEntryTop}>
+<div className="resumeEntryTop" style={{ ...styles.resumeEntryTop, ...formatVisuals.entryTop }}>
 <div>
-<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+<p className="resumeEntryHeading" style={{ ...styles.resumeEntryHeading, ...formatVisuals.entryHeading }}>
 {item.schoolName || "School"}{" "}
 {item.city || item.state
 ? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
 : ""}
 </p>
-<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
+<p className="resumeEntrySubheading" style={{ ...styles.resumeEntrySubheading, ...formatVisuals.entrySubheading }}>
 {item.degree || "Degree"}
 {item.gpa ? ` | GPA: ${item.gpa}` : ""}
 </p>
@@ -1125,19 +1261,19 @@ item.isPresent
 case "certifications":
 if (!activeCertificates.length) return null;
 return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>CERTIFICATIONS</h3>
+<section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>CERTIFICATIONS</h3>
 {activeCertificates.map((item, index) => (
 <div key={index} className="resumeEntry" style={styles.resumeEntry}>
-<div className="resumeEntryTop" style={styles.resumeEntryTop}>
+<div className="resumeEntryTop" style={{ ...styles.resumeEntryTop, ...formatVisuals.entryTop }}>
 <div>
-<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+<p className="resumeEntryHeading" style={{ ...styles.resumeEntryHeading, ...formatVisuals.entryHeading }}>
 {item.organizationName || "Organization"}{" "}
 {item.city || item.state
 ? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
 : ""}
 </p>
-<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
+<p className="resumeEntrySubheading" style={{ ...styles.resumeEntrySubheading, ...formatVisuals.entrySubheading }}>
 {item.certificateName || "Certificate / Course Name"}
 </p>
 </div>
@@ -1159,19 +1295,19 @@ item.isPresent
 case "volunteer":
 if (!activeVolunteer.length) return null;
 return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>VOLUNTEER WORK</h3>
+<section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>VOLUNTEER WORK</h3>
 {activeVolunteer.map((item, index) => (
 <div key={index} className="resumeEntry" style={styles.resumeEntry}>
-<div className="resumeEntryTop" style={styles.resumeEntryTop}>
+<div className="resumeEntryTop" style={{ ...styles.resumeEntryTop, ...formatVisuals.entryTop }}>
 <div>
-<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+<p className="resumeEntryHeading" style={{ ...styles.resumeEntryHeading, ...formatVisuals.entryHeading }}>
 {item.organizationName || "Organization"}{" "}
 {item.city || item.state
 ? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
 : ""}
 </p>
-<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
+<p className="resumeEntrySubheading" style={{ ...styles.resumeEntrySubheading, ...formatVisuals.entrySubheading }}>
 {item.roleTitle || "Role Title"}
 </p>
 </div>
@@ -1200,8 +1336,8 @@ item.isPresent
 case "accomplishments":
 if (!accomplishments.trim()) return null;
 return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>ACCOMPLISHMENTS</h3>
+<section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>ACCOMPLISHMENTS</h3>
 <p style={styles.resumeParagraph}>{accomplishments}</p>
 </section>
 );
@@ -1373,7 +1509,7 @@ Profile page.
 <section style={styles.card}>
 <p style={styles.cardKicker}>RESUME FORMAT</p>
 <h2 style={styles.cardTitle}>Choose your resume format</h2>
-<p style={styles.previewHelp}>Select a format and the resume automatically reorganizes the section order.</p>
+<p style={styles.previewHelp}>Select a format and the live resume automatically changes its section order and visual structure.</p>
 <div style={styles.formatPickerRow}>
 <div style={{ flex: 1, minWidth: "240px" }}>
 <label style={styles.inputLabel}>Resume Format</label>
@@ -2066,18 +2202,22 @@ ref={resumePrintRef}
 className="resumePaper"
 style={{
 ...styles.resumePaper,
+...formatVisuals.paper,
 fontFamily,
 }}
 >
-<div className="resumeHeader" style={styles.resumeHeader}>
-<h1 className="resumeName" style={{ ...styles.resumeName, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setFullName(e.currentTarget.textContent?.trim() || "")}>{fullName || "Your Name"}</h1>
-<p className="resumeContact" style={styles.resumeContact}>
+<div className="resumeHeader" style={{ ...styles.resumeHeader, ...formatVisuals.header }}>
+<h1 className="resumeName" style={{ ...styles.resumeName, ...formatVisuals.name, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setFullName(e.currentTarget.textContent?.trim() || "")}>{fullName || "Your Name"}</h1>
+{targetJobTitle ? (
+<p className="resumeProfessionalTitle" style={{ ...styles.resumeProfessionalTitle, ...formatVisuals.professionalTitle }}>{targetJobTitle}</p>
+) : null}
+<p className="resumeContact" style={{ ...styles.resumeContact, ...formatVisuals.contact }}>
 {[phone, email, [city, stateName].filter(Boolean).join(", ")]
 .filter(Boolean)
 .join(" • ")}
 </p>
 {linkedinUrl ? (
-<p className="resumeLinkedin" style={{ ...styles.resumeLinkedin, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setLinkedinUrl(e.currentTarget.textContent?.trim() || "")}>{linkedinUrl}</p>
+<p className="resumeLinkedin" style={{ ...styles.resumeLinkedin, ...formatVisuals.linkedIn, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setLinkedinUrl(e.currentTarget.textContent?.trim() || "")}>{linkedinUrl}</p>
 ) : null}
 </div>
 
@@ -2382,7 +2522,14 @@ paddingBottom: "8px",
 },
 resumeName: {
 margin: "0 0 8px",
-fontSize: "28px",
+fontSize: "20pt",
+fontWeight: 700,
+color: "#111827",
+},
+resumeProfessionalTitle: {
+margin: "2px 0 6px",
+fontSize: "10.5pt",
+lineHeight: 1.25,
 fontWeight: 700,
 color: "#111827",
 },
@@ -2427,8 +2574,8 @@ skillColumn: {
 minWidth: 0,
 },
 skillItem: {
-margin: "0 0 8px",
-fontSize: "15px",
+margin: "0 0 6px",
+fontSize: "10.5pt",
 lineHeight: 1.5,
 color: "#111827",
 wordBreak: "break-word",
@@ -2450,8 +2597,8 @@ fontWeight: 700,
 color: "#111827",
 },
 resumeEntrySubheading: {
-margin: "4px 0 0",
-fontSize: "15px",
+margin: "3px 0 0",
+fontSize: "10.5pt",
 fontWeight: 600,
 color: "#111827",
 },
