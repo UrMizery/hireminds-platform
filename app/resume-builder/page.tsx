@@ -1661,7 +1661,7 @@ placeholder="2024"
 <div style={styles.aiActionRow}><button type="button" onClick={() => generateBulletIdeas(index)} style={styles.aiButton} disabled={aiLoadingKey === `bullets-${index}`}>{aiLoadingKey === `bullets-${index}` ? "Creating ideas..." : "✨ AI Bullet Ideas"}</button></div>
 {bulletIdeas[index]?.length ? <div style={styles.aiSuggestionBox}>
 <p style={styles.aiSuggestionTitle}>Bullet ideas for {item.roleTitle || "this role"}:</p>
-{bulletIdeas[index].map((suggestion, suggestionIndex) => <button key={suggestionIndex} type="button" onClick={() => { const emptyIndex = item.bullets.findIndex((b) => !b.text.trim()); if (emptyIndex >= 0) updateExperienceBullet(index, emptyIndex, suggestion); else if (item.bullets.length < BULLET_LIMIT) setExperiences((prev) => prev.map((experience, i) => i === index ? { ...experience, bullets: [...experience.bullets, { text: suggestion }] } : experience)); }} style={styles.aiSuggestionButton}><span>{suggestion}</span><strong>Add bullet</strong></button>)}
+{bulletIdeas[index].map((suggestion, suggestionIndex) => <button key={suggestionIndex} type="button" onClick={() => { const emptyIndex = item.bullets.findIndex((b) => !b.text.trim()); if (emptyIndex >= 0) { updateExperienceBullet(index, emptyIndex, suggestion); } else { setMessage("All 4 bullet fields already have content. Replace or clear one before using another AI suggestion."); } }} style={styles.aiSuggestionButton}><span>{suggestion}</span><strong>Use suggestion</strong></button>)}
 </div> : null}
 
 {item.bullets.map((bullet, bulletIndex) => (
@@ -1679,13 +1679,7 @@ placeholder="Describe the work you did"
 </div>
 ))}
 
-<button
-type="button"
-onClick={() => addExperienceBullet(index)}
-style={styles.smallButton}
->
-+ Add Bullet
-</button>
+
 </div>
 ))}
 
