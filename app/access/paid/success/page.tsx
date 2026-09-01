@@ -1,77 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import {
+  FormEvent,
+  Suspense,
+  useMemo,
+  useState,
+} from "react";
 
-export default function PaidSignupSuccessPage() {
+import { useSearchParams } from "next/navigation";
+import { supabase } from "../../../lib/supabase";
+
+function PaidSuccessContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
-  const sessionId =
-    searchParams.get("session_id") || "";
+  const sessionId = useMemo(
+    () => searchParams.get("session_id") || "",
+    [searchParams]
+  );
 
-  const [password, setPassword] =
-    useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
 
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
+  const [message, setMessage] = useState(
+    "Stripe payment received. Create your HireMinds password to finish activating your account."
+  );
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [message, setMessage] =
-    useState("");
+  async function finish(e: FormEvent) {
+    e.preventDefault();
 
-  const [error, setError] =
-    useState("");
-
-  useEffect(() => {
-    if (!sessionId) {
-      setError(
-        "Your Stripe payment session could not be found."
-      );
-    }
-  }, [sessionId]);
-
-  async function completeSignup(
-    event: React.FormEvent
-  ) {
-    event.preventDefault();
-
-    setError("");
-    setMessage("");
+    if (loading) return;
 
     if (!sessionId) {
-      setError(
-        "Your Stripe payment session could not be found."
+      setMessage(
+        "The Stripe payment session is missing. Please contact HireMinds support."
       );
       return;
     }
 
     if (password.length < 8) {
-      setError(
-        "Your password must be at least 8 characters."
+      setMessage(
+        "Please use a password with at least 8 characters."
       );
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError(
-        "Your passwords do not match."
-      );
+    if (password !== confirm) {
+      setMessage("The passwords do not match.");
       return;
     }
-
-    setLoading(true);
 
     try {
+      setLoading(true);
+
+      setMessage(
+        "Verifying your payment and creating your account…"
+      );
+
       const response = await fetch(
         "/api/stripe/complete-signup",
         {
           method: "POST",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             sessionId,
@@ -80,29 +72,33 @@ export default function PaidSignupSuccessPage() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !data?.ok) {
         throw new Error(
-          data?.error ||
-            "Your HireMinds account could not be created."
+          data?.error || "Account activation failed."
         );
       }
 
+      const { error } =
+        await supabase.auth.signInWithPassword({
+          email: data.email,
+          password,
+        });
+
+      if (error) {
+        throw new Error(
+          "Your account was created, but automatic sign-in failed. Please use the Sign In page."
+        );
+      }
+
+      window.location.replace("/profile");
+    } catch (error: any) {
       setMessage(
-        "Your HireMinds account is ready."
+        error?.message ||
+          "We could not finish activating your account."
       );
 
-      setTimeout(() => {
-        router.push("/login");
-      }, 1500);
-    } catch (err: any) {
-      setError(
-        err?.message ||
-          "Your HireMinds account could not be created."
-      );
-    } finally {
       setLoading(false);
     }
   }
@@ -110,182 +106,169 @@ export default function PaidSignupSuccessPage() {
   return (
     <main
       style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px 20px",
-        background: "#f7f9fb",
+        minHeight: "80vh",
+        display: "grid",
+        placeItems: "center",
+        background: "#eef2f5",
+        padding: 24,
+        color: "#101820",
       }}
     >
-      <section
+      <form
+        onSubmit={finish}
         style={{
           width: "100%",
-          maxWidth: "520px",
-          background: "#ffffff",
-          border: "1px solid #dfe6ec",
-          borderRadius: "22px",
-          padding: "32px",
+          maxWidth: 560,
+          padding: 36,
+          border: "1px solid #c8d0d8",
+          borderRadius: 24,
+          background: "white",
           boxShadow:
-            "0 20px 50px rgba(0,0,0,0.08)",
+            "0 20px 55px rgba(0,0,0,.10)",
         }}
       >
-        <p
+        <div
           style={{
-            margin: "0 0 10px",
-            fontSize: "13px",
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "#1677b8",
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: 2,
+            color: "#1479b8",
+            marginBottom: 10,
           }}
         >
-          Payment confirmed
-        </p>
+          PAYMENT CONFIRMED
+        </div>
 
         <h1
           style={{
+            fontSize: 34,
             margin: "0 0 12px",
-            fontSize: "38px",
-            lineHeight: 1.05,
           }}
         >
-          Create your HireMinds password
+          Create your HireMinds account
         </h1>
 
         <p
           style={{
-            margin: "0 0 26px",
-            color: "#52606d",
-            lineHeight: 1.6,
+            lineHeight: 1.65,
+            color: "#53606d",
+            marginBottom: 24,
           }}
         >
-          Your payment was completed through Stripe.
-          Create your password below to finish setting
-          up your HireMinds account.
+          {message}
         </p>
 
-        <form onSubmit={completeSignup}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 700,
-            }}
-          >
-            Password
-          </label>
+        <label
+          style={{
+            display: "block",
+            fontWeight: 700,
+            marginBottom: 8,
+          }}
+        >
+          Create Password
+        </label>
 
-          <input
-            type="password"
-            value={password}
-            onChange={(event) =>
-              setPassword(
-                event.target.value
-              )
-            }
-            placeholder="At least 8 characters"
-            autoComplete="new-password"
-            style={{
-              width: "100%",
-              padding: "14px 16px",
-              marginBottom: "18px",
-              borderRadius: "12px",
-              border: "1px solid #cbd5df",
-              fontSize: "16px",
-              boxSizing: "border-box",
-            }}
-          />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
+          minLength={8}
+          required
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "14px 16px",
+            border: "1px solid #aeb8c2",
+            borderRadius: 10,
+            fontSize: 16,
+            marginBottom: 16,
+          }}
+        />
 
-          <label
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 700,
-            }}
-          >
-            Confirm password
-          </label>
+        <label
+          style={{
+            display: "block",
+            fontWeight: 700,
+            marginBottom: 8,
+          }}
+        >
+          Confirm Password
+        </label>
 
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(event) =>
-              setConfirmPassword(
-                event.target.value
-              )
-            }
-            placeholder="Re-enter your password"
-            autoComplete="new-password"
-            style={{
-              width: "100%",
-              padding: "14px 16px",
-              marginBottom: "18px",
-              borderRadius: "12px",
-              border: "1px solid #cbd5df",
-              fontSize: "16px",
-              boxSizing: "border-box",
-            }}
-          />
+        <input
+          type="password"
+          value={confirm}
+          onChange={(e) =>
+            setConfirm(e.target.value)
+          }
+          minLength={8}
+          required
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "14px 16px",
+            border: "1px solid #aeb8c2",
+            borderRadius: 10,
+            fontSize: 16,
+            marginBottom: 20,
+          }}
+        />
 
-          {error && (
-            <div
-              style={{
-                marginBottom: "18px",
-                padding: "12px 14px",
-                borderRadius: "10px",
-                background: "#fff1f1",
-                color: "#9d2b2b",
-              }}
-            >
-              {error}
-            </div>
-          )}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: "15px 18px",
+            border: 0,
+            borderRadius: 10,
+            background: "#0d78b8",
+            color: "white",
+            fontWeight: 800,
+            fontSize: 16,
+            cursor: "pointer",
+            opacity: loading ? 0.7 : 1,
+          }}
+        >
+          {loading
+            ? "Activating…"
+            : "Create Account & Enter HireMinds"}
+        </button>
 
-          {message && (
-            <div
-              style={{
-                marginBottom: "18px",
-                padding: "12px 14px",
-                borderRadius: "10px",
-                background: "#edf9f1",
-                color: "#20613b",
-              }}
-            >
-              {message}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={
-              loading || !sessionId
-            }
-            style={{
-              width: "100%",
-              padding: "15px 18px",
-              borderRadius: "12px",
-              border: "none",
-              background: "#1677b8",
-              color: "#ffffff",
-              fontSize: "16px",
-              fontWeight: 700,
-              cursor:
-                loading
-                  ? "wait"
-                  : "pointer",
-              opacity:
-                loading || !sessionId
-                  ? 0.6
-                  : 1,
-            }}
-          >
-            {loading
-              ? "Creating account..."
-              : "Create HireMinds Account"}
-          </button>
-        </form>
-      </section>
+        <p
+          style={{
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: "#6d7884",
+            marginTop: 16,
+          }}
+        >
+          Your HireMinds account is created only after this paid Stripe session is verified.
+        </p>
+      </form>
     </main>
+  );
+}
+
+export default function PaidSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "80vh",
+            display: "grid",
+            placeItems: "center",
+            background: "#eef2f5",
+          }}
+        >
+          <p>Loading payment confirmation…</p>
+        </main>
+      }
+    >
+      <PaidSuccessContent />
+    </Suspense>
   );
 }
