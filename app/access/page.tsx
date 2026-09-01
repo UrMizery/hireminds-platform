@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 type AccessMethod = "subscription" | "referral";
@@ -42,17 +41,29 @@ const PLANS: Array<{
 ];
 
 export default function AccessPage() {
-  const router = useRouter();
-
   const [loadingUser, setLoadingUser] = useState(true);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
   const [accessMethod, setAccessMethod] =
     useState<AccessMethod>("subscription");
+
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("annual");
   const [referralCode, setReferralCode] = useState("");
+
+  // PAID SUBSCRIPTION ACKNOWLEDGMENTS
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [billingConfirmed, setBillingConfirmed] = useState(false);
+  const [renewalConfirmed, setRenewalConfirmed] = useState(false);
+  const [termsConfirmed, setTermsConfirmed] = useState(false);
+
+  // REFERRAL ACCESS ACKNOWLEDGMENT
+  const [referralExpirationConfirmed, setReferralExpirationConfirmed] =
+    useState(false);
 
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"error" | "success" | "">("");
+  const [messageType, setMessageType] = useState<
+    "error" | "success" | "info" | ""
+  >("");
   const [loading, setLoading] = useState(false);
 
   const selectedPlanDetails = useMemo(
@@ -64,15 +75,11 @@ export default function AccessPage() {
     let mounted = true;
 
     async function loadUser() {
-      const { data, error } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
 
       if (!mounted) return;
 
-      if (error || !data.user) {
-        router.replace("/signup");
-        return;
-      }
-
+      setIsSignedIn(Boolean(data.user));
       setLoadingUser(false);
     }
 
@@ -81,7 +88,17 @@ export default function AccessPage() {
     return () => {
       mounted = false;
     };
-  }, [router]);
+  }, []);
+
+  function resetMessage() {
+    setMessage("");
+    setMessageType("");
+  }
+
+  function selectAccessMethod(method: AccessMethod) {
+    resetMessage();
+    setAccessMethod(method);
+  }
 
   async function validateReferralCode(code: string) {
     const response = await fetch("/api/access/validate-referral", {
@@ -125,8 +142,7 @@ export default function AccessPage() {
 
     if (loading) return;
 
-    setMessage("");
-    setMessageType("");
+    resetMessage();
 
     try {
       setLoading(true);
@@ -135,7 +151,9 @@ export default function AccessPage() {
         await supabase.auth.getUser();
 
       if (authError || !authData.user) {
-        throw new Error("Please sign in again to continue.");
+        throw new Error(
+          "Please sign in to your existing HireMinds account before continuing."
+        );
       }
 
       const user = authData.user;
@@ -147,19 +165,32 @@ export default function AccessPage() {
           throw new Error("Please enter your referral code.");
         }
 
+        if (!referralExpirationConfirmed) {
+          throw new Error(
+            "Please confirm that you understand referral access is available through December 31, 2026."
+          );
+        }
+
         const referral = await validateReferralCode(code);
 
         const normalizedReferralCode =
           referral.normalizedCode || code.toUpperCase();
 
         /*
-          Store only pending access details here.
-          Referral access becomes active AFTER the user signs the consent form.
+          IMPORTANT:
+          - Do NOT overwrite candidate_profiles.referral_code.
+            That field is preserved for historical/program reporting.
+          - New/refreshed referral access is stored in access_referral_code.
+          - Access is NOT activated here.
+          - The user must complete the full HireMinds consent form first.
         */
         const { error: updateError } = await supabase
           .from("candidate_profiles")
           .update({
-            subscription_referral_code: normalizedReferralCode,
+            access_referral_code: normalizedReferralCode,
+            access_referral_verified_at: new Date().toISOString(),
+            referral_consent_accepted: false,
+            referral_consent_accepted_at: null,
             has_referral_access: false,
             has_paid_access: false,
             access_tier: "pending_referral_consent",
@@ -176,14 +207,20 @@ export default function AccessPage() {
             normalizedReferralCode
           );
 
+          localStorage.setItem(
+            "hireminds_referral_expiration_confirmed",
+            "true"
+          );
+
           if (referral.expiresAt) {
             localStorage.setItem(
               "hireminds_pending_referral_expires_at",
               referral.expiresAt
             );
           } else {
-            localStorage.removeItem(
-              "hireminds_pending_referral_expires_at"
+            localStorage.setItem(
+              "hireminds_pending_referral_expires_at",
+              "2026-12-31T23:59:59-05:00"
             );
           }
         } catch {
@@ -194,22 +231,45 @@ export default function AccessPage() {
         return;
       }
 
+      /*
+        PAID SUBSCRIPTION PATH
+        December 31, 2026 referral language does NOT apply here.
+      */
       if (!ageConfirmed) {
         throw new Error(
-          "Please confirm that you are 18 years of age or older before continuing."
+          "Please confirm that you are 18 years of age or older."
+        );
+      }
+
+      if (!billingConfirmed) {
+        throw new Error(
+          "Please confirm that you understand the price and billing frequency of your selected subscription."
+        );
+      }
+
+      if (!renewalConfirmed) {
+        throw new Error(
+          "Please confirm that you understand the recurring billing terms."
+        );
+      }
+
+      if (!termsConfirmed) {
+        throw new Error(
+          "Please confirm that you agree to the HireMinds Terms and Privacy Policy."
         );
       }
 
       /*
-        Paid users do not complete the full referral consent form.
-        Save their selected plan and age confirmation, then continue to payment.
+        Store the user's selected plan and acknowledgment.
+        The actual subscription is not active until payment succeeds.
       */
       const { error: paidUpdateError } = await supabase
         .from("candidate_profiles")
         .update({
           subscription_plan: selectedPlan,
+          subscription_provider: "square",
           subscription_status: "pending_payment",
-          subscription_18_plus_confirmed: true,
+          paid_age_18_confirmed_at: new Date().toISOString(),
           has_paid_access: false,
           access_tier: "pending_payment",
         })
@@ -217,6 +277,27 @@ export default function AccessPage() {
 
       if (paidUpdateError) {
         throw new Error(paidUpdateError.message);
+      }
+
+      try {
+        localStorage.setItem(
+          "hireminds_pending_subscription_plan",
+          selectedPlan
+        );
+        localStorage.setItem(
+          "hireminds_paid_billing_acknowledged",
+          "true"
+        );
+        localStorage.setItem(
+          "hireminds_paid_renewal_acknowledged",
+          "true"
+        );
+        localStorage.setItem(
+          "hireminds_terms_acknowledged",
+          "true"
+        );
+      } catch {
+        // Payment page should still rely on authenticated server/database data.
       }
 
       window.location.href = `/access/paid?plan=${encodeURIComponent(
@@ -247,24 +328,33 @@ export default function AccessPage() {
           <div style={styles.noticeIcon}>!</div>
 
           <div>
-            <p style={styles.noticeEyebrow}>EXISTING ACCOUNT</p>
+            <p style={styles.noticeEyebrow}>EXISTING ACCOUNT ACCESS</p>
+
             <h1 style={styles.noticeTitle}>
               Your HireMinds access needs to be refreshed.
             </h1>
 
             <p style={styles.noticeText}>
-              Your current HireMinds access is available through{" "}
-              <strong>December 31, 2026</strong>. Because your account has not
-              been used in more than 3 weeks, please enter an approved referral
-              code or choose a subscription to continue.
+              Choose how you would like to continue your HireMinds access.
+              You may select a subscription or enter an approved referral code.
             </p>
+
+            {!isSignedIn ? (
+              <p style={styles.previewText}>
+                You are currently viewing this page while signed out. You can
+                review the access options, but you will need to sign in before
+                continuing.
+              </p>
+            ) : null}
           </div>
         </section>
 
         <section style={styles.card}>
           <div style={styles.sectionHeadingWrap}>
             <p style={styles.sectionEyebrow}>CONTINUE YOUR ACCESS</p>
+
             <h2 style={styles.sectionTitle}>Choose Your HireMinds Access</h2>
+
             <p style={styles.sectionText}>
               Select a subscription or enter an approved referral code.
             </p>
@@ -273,7 +363,7 @@ export default function AccessPage() {
           <div style={styles.methodTabs}>
             <button
               type="button"
-              onClick={() => setAccessMethod("subscription")}
+              onClick={() => selectAccessMethod("subscription")}
               style={{
                 ...styles.methodButton,
                 ...(accessMethod === "subscription"
@@ -286,7 +376,7 @@ export default function AccessPage() {
 
             <button
               type="button"
-              onClick={() => setAccessMethod("referral")}
+              onClick={() => selectAccessMethod("referral")}
               style={{
                 ...styles.methodButton,
                 ...(accessMethod === "referral"
@@ -308,7 +398,10 @@ export default function AccessPage() {
                     <button
                       type="button"
                       key={plan.key}
-                      onClick={() => setSelectedPlan(plan.key)}
+                      onClick={() => {
+                        resetMessage();
+                        setSelectedPlan(plan.key);
+                      }}
                       style={{
                         ...styles.planCard,
                         ...(selected ? styles.planCardSelected : {}),
@@ -319,8 +412,11 @@ export default function AccessPage() {
                       ) : null}
 
                       <span style={styles.planTitle}>{plan.title}</span>
+
                       <span style={styles.planPrice}>{plan.price}</span>
+
                       <span style={styles.planBilling}>{plan.billing}</span>
+
                       <span style={styles.planEquivalent}>
                         {plan.equivalent}
                       </span>
@@ -338,31 +434,86 @@ export default function AccessPage() {
                 })}
               </div>
 
-              <label style={styles.ageBox}>
-                <input
-                  type="checkbox"
-                  checked={ageConfirmed}
-                  onChange={(e) => setAgeConfirmed(e.target.checked)}
-                  style={styles.checkbox}
-                />
-
-                <span>
-                  I confirm that I am{" "}
-                  <strong>18 years of age or older.</strong>
-                </span>
-              </label>
-
               <div style={styles.selectedSummary}>
                 <span style={styles.selectedSummaryLabel}>Selected plan</span>
+
                 <strong>
                   {selectedPlanDetails?.title} — {selectedPlanDetails?.price}
                 </strong>
+              </div>
+
+              <div style={styles.acknowledgmentPanel}>
+                <p style={styles.acknowledgmentTitle}>
+                  Subscription Acknowledgments
+                </p>
+
+                <label style={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={ageConfirmed}
+                    onChange={(e) => setAgeConfirmed(e.target.checked)}
+                    style={styles.checkbox}
+                  />
+
+                  <span>
+                    I confirm that I am{" "}
+                    <strong>18 years of age or older.</strong>
+                  </span>
+                </label>
+
+                <label style={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={billingConfirmed}
+                    onChange={(e) => setBillingConfirmed(e.target.checked)}
+                    style={styles.checkbox}
+                  />
+
+                  <span>
+                    I understand the price and billing frequency of the
+                    subscription plan I selected.
+                  </span>
+                </label>
+
+                <label style={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={renewalConfirmed}
+                    onChange={(e) => setRenewalConfirmed(e.target.checked)}
+                    style={styles.checkbox}
+                  />
+
+                  <span>
+                    I understand that my subscription will renew according to
+                    the selected billing cycle unless canceled according to the
+                    applicable cancellation terms.
+                  </span>
+                </label>
+
+                <label style={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={termsConfirmed}
+                    onChange={(e) => setTermsConfirmed(e.target.checked)}
+                    style={styles.checkbox}
+                  />
+
+                  <span>
+                    I agree to the HireMinds Terms and Privacy Policy.
+                  </span>
+                </label>
+
+                <p style={styles.paymentNote}>
+                  Final payment details and authorization will be completed
+                  during checkout.
+                </p>
               </div>
             </>
           ) : (
             <div style={styles.referralPanel}>
               <div>
                 <p style={styles.referralTitle}>Have a Referral Code?</p>
+
                 <p style={styles.referralText}>
                   Enter the referral code provided to you.
                 </p>
@@ -383,14 +534,31 @@ export default function AccessPage() {
 
               <div style={styles.referralHelp}>
                 <strong>Need a referral code?</strong>
+
                 <span>
                   Contact <strong>info@hireminds.app</strong>
                 </span>
               </div>
 
+              <label style={styles.referralExpirationBox}>
+                <input
+                  type="checkbox"
+                  checked={referralExpirationConfirmed}
+                  onChange={(e) =>
+                    setReferralExpirationConfirmed(e.target.checked)
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I understand that my HireMinds referral access is available
+                  through <strong>December 31, 2026.</strong>
+                </span>
+              </label>
+
               <p style={styles.referralConsentText}>
-                Referral-code access requires completion of the HireMinds
-                consent form before access is activated.
+                After your referral code is accepted, you will complete the
+                HireMinds consent form before access is activated.
               </p>
             </div>
           )}
@@ -402,6 +570,8 @@ export default function AccessPage() {
               ...styles.message,
               ...(messageType === "success"
                 ? styles.successMessage
+                : messageType === "info"
+                ? styles.infoMessage
                 : styles.errorMessage),
             }}
           >
@@ -496,6 +666,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#f0dfb0",
     lineHeight: 1.65,
     fontSize: "14px",
+  },
+
+  previewText: {
+    margin: "12px 0 0",
+    padding: "10px 12px",
+    borderRadius: "10px",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    color: "#fff2cb",
+    fontSize: "12px",
+    lineHeight: 1.5,
   },
 
   card: {
@@ -633,27 +813,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#7fc0ff",
   },
 
-  ageBox: {
-    marginTop: "18px",
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "10px",
-    padding: "14px 15px",
-    borderRadius: "12px",
-    backgroundColor: "#0b1016",
-    border: "1px solid #2d3946",
-    color: "#dce5ee",
-    fontSize: "13px",
-    lineHeight: 1.5,
-    cursor: "pointer",
-  },
-
-  checkbox: {
-    width: "18px",
-    height: "18px",
-    marginTop: "1px",
-  },
-
   selectedSummary: {
     display: "flex",
     justifyContent: "space-between",
@@ -670,6 +829,48 @@ const styles: { [key: string]: React.CSSProperties } = {
 
   selectedSummaryLabel: {
     color: "#8f9cab",
+  },
+
+  acknowledgmentPanel: {
+    marginTop: "18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "11px",
+    padding: "18px",
+    borderRadius: "14px",
+    backgroundColor: "#0b1016",
+    border: "1px solid #2d3946",
+  },
+
+  acknowledgmentTitle: {
+    margin: "0 0 2px",
+    color: "#ffffff",
+    fontSize: "14px",
+    fontWeight: 900,
+  },
+
+  checkboxRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "10px",
+    color: "#dce5ee",
+    fontSize: "13px",
+    lineHeight: 1.5,
+    cursor: "pointer",
+  },
+
+  checkbox: {
+    width: "18px",
+    height: "18px",
+    minWidth: "18px",
+    marginTop: "1px",
+  },
+
+  paymentNote: {
+    margin: "2px 0 0",
+    color: "#8593a3",
+    fontSize: "11px",
+    lineHeight: 1.5,
   },
 
   referralPanel: {
@@ -732,6 +933,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     lineHeight: 1.45,
   },
 
+  referralExpirationBox: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "10px",
+    padding: "14px 15px",
+    borderRadius: "12px",
+    backgroundColor: "rgba(255, 193, 7, 0.08)",
+    border: "1px solid rgba(255, 193, 7, 0.3)",
+    color: "#f6e3ad",
+    fontSize: "13px",
+    lineHeight: 1.55,
+    cursor: "pointer",
+  },
+
   referralConsentText: {
     margin: 0,
     color: "#93a0ae",
@@ -757,6 +972,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: "1px solid rgba(46, 204, 113, 0.32)",
     backgroundColor: "rgba(46, 204, 113, 0.08)",
     color: "#9ce8b9",
+  },
+
+  infoMessage: {
+    border: "1px solid rgba(22, 131, 255, 0.32)",
+    backgroundColor: "rgba(22, 131, 255, 0.08)",
+    color: "#a9d5ff",
   },
 
   submitButton: {
