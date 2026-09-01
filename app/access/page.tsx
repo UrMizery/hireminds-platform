@@ -84,14 +84,65 @@ export default function AccessPage() {
 
     async function loadCheckout() {
       try {
-        const { data: authData, error: authError } =
-          await supabase.auth.getUser();
+        /*
+          IMPORTANT:
+          If the user reached /access immediately after entering a valid
+          referral code on Signup, the Signup page already stored the
+          validated pending referral code locally.
+
+          That means /access should immediately become the CONSENT page.
+          It should NOT stop on a sign-in/error screen first.
+        */
+        let pendingReferralCode = "";
+        let pendingPlan: PlanKey | "" = "";
+
+        try {
+          pendingReferralCode =
+            localStorage.getItem("hireminds_pending_referral_code") || "";
+
+          const savedPlan =
+            localStorage.getItem("hireminds_pending_subscription_plan") || "";
+
+          if (
+            savedPlan === "monthly" ||
+            savedPlan === "four_month" ||
+            savedPlan === "annual"
+          ) {
+            pendingPlan = savedPlan;
+          }
+        } catch {
+          // Continue with server/account lookup below.
+        }
 
         if (!mounted) return;
 
-        if (authError || !authData.user) {
+        if (pendingReferralCode) {
+          setReferralCode(pendingReferralCode);
+          setMode("referral");
+        } else if (pendingPlan) {
+          setSelectedPlan(pendingPlan);
+          setMode("subscription");
+        }
+
+        /*
+          Load the authenticated account/profile when available.
+          This enriches the consent page with the user's name/email and
+          confirms the pending access state in Supabase.
+
+          If there is temporarily no session, we DO NOT replace a valid
+          pending-referral consent screen with an error page.
+        */
+        const { data: authData } = await supabase.auth.getUser();
+
+        if (!mounted) return;
+
+        if (!authData.user) {
+          if (pendingReferralCode || pendingPlan) {
+            return;
+          }
+
           setMessage(
-            "Please sign in to your HireMinds account before continuing checkout."
+            "Please begin from the HireMinds signup page or sign in to continue."
           );
           setMode("error");
           return;
@@ -121,7 +172,10 @@ export default function AccessPage() {
         setFullName(safeName);
         setEmail(profile?.email || user.email || "");
         setPhone(profile?.phone || "");
-        setReferralCode(profile?.access_referral_code || "");
+
+        if (profile?.access_referral_code) {
+          setReferralCode(profile.access_referral_code);
+        }
 
         const profilePlan = profile?.subscription_plan as PlanKey | null;
 
@@ -134,10 +188,9 @@ export default function AccessPage() {
         }
 
         /*
-          NEW REFERRAL SIGNUP:
-          Signup already validated the referral code and saved
-          access_tier = pending_referral_consent.
-          Do NOT ask for the referral code again.
+          REFERRAL PATH:
+          The referral code has already been validated on Signup.
+          /access is now the consent + acknowledgment checkout page.
         */
         if (
           profile?.access_tier === "pending_referral_consent" ||
@@ -149,8 +202,8 @@ export default function AccessPage() {
         }
 
         /*
-          PAID SIGNUP / SUBSCRIPTION CHECKOUT:
-          Signup saved the selected plan as pending_payment.
+          SUBSCRIPTION PATH:
+          /access is the checkout-review page before secure payment.
         */
         if (
           profile?.access_tier === "pending_payment" ||
@@ -161,14 +214,31 @@ export default function AccessPage() {
           return;
         }
 
-        /*
-          Fallback for an authenticated account that lands here without
-          a pending checkout state. Keep the user in the subscription
-          checkout instead of exposing duplicate referral questions.
-        */
+        if (pendingReferralCode) {
+          setMode("referral");
+          return;
+        }
+
         setMode("subscription");
       } catch (error: any) {
         if (!mounted) return;
+
+        /*
+          If a valid referral code is already pending, keep the consent
+          page visible rather than replacing it with an error screen.
+        */
+        try {
+          const pendingReferralCode =
+            localStorage.getItem("hireminds_pending_referral_code") || "";
+
+          if (pendingReferralCode) {
+            setReferralCode(pendingReferralCode);
+            setMode("referral");
+            return;
+          }
+        } catch {
+          // Continue to normal error state.
+        }
 
         setMessage(
           error?.message ||
@@ -450,7 +520,7 @@ export default function AccessPage() {
 
             <p style={styles.heroText}>
               {mode === "referral"
-                ? "Your referral code has already been verified. Review the HireMinds consent agreement below and complete your referral checkout."
+                ? "Your referral code has been verified. This is your HireMinds consent and acknowledgment step. Review each section, confirm your referral-access terms, and complete checkout to activate access."
                 : "Review your HireMinds subscription, confirm your checkout acknowledgments, and continue to secure payment."}
             </p>
           </div>
