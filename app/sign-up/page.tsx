@@ -77,6 +77,7 @@ export default function SignupPage() {
 
   const [accessMethod, setAccessMethod] =
     useState<AccessMethod>("subscription");
+
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("annual");
   const [referralCode, setReferralCode] = useState("");
 
@@ -188,8 +189,8 @@ export default function SignupPage() {
       state: cleanState || null,
 
       /*
-        referral_code remains the historical/program attribution field.
-        access_referral_code is the current access authorization code.
+        Keep referral_code for historical/program attribution.
+        Use access_referral_code for current referral access.
       */
       referral_code: normalizedReferralCode,
       access_referral_code:
@@ -386,23 +387,52 @@ export default function SignupPage() {
     <main style={styles.page}>
       <form onSubmit={handleSignUp} style={styles.shell}>
         <section style={styles.hero}>
-          <div style={styles.brandPill}>HIREMINDS</div>
+          <div style={styles.heroAccent} />
 
-          <h1 style={styles.heroTitle}>
-            Your career tools, all in one place.
-          </h1>
+          <div style={styles.heroContent}>
+            <div style={styles.brandPill}>HIREMINDS</div>
 
-          <p style={styles.heroText}>
-            Build stronger applications, prepare for interviews, organize your
-            job search, and keep developing your career from one Career
-            Passport.
-          </p>
+            <h1 style={styles.heroTitle}>
+              Your career tools, all in one place.
+            </h1>
+
+            <p style={styles.heroText}>
+              Build stronger applications, prepare for interviews, organize your
+              job search, and keep developing your career from one Career
+              Passport.
+            </p>
+          </div>
+
+          <div style={styles.heroPanel}>
+            <div style={styles.heroPanelItem}>
+              <span style={styles.heroPanelLabel}>BUILD</span>
+              <strong style={styles.heroPanelValue}>Stronger Applications</strong>
+            </div>
+
+            <div style={styles.heroDivider} />
+
+            <div style={styles.heroPanelItem}>
+              <span style={styles.heroPanelLabel}>PREPARE</span>
+              <strong style={styles.heroPanelValue}>For Interviews</strong>
+            </div>
+
+            <div style={styles.heroDivider} />
+
+            <div style={styles.heroPanelItem}>
+              <span style={styles.heroPanelLabel}>TRACK</span>
+              <strong style={styles.heroPanelValue}>Your Progress</strong>
+            </div>
+          </div>
         </section>
 
         <section style={styles.toolsSection}>
           <div style={styles.centerHeading}>
             <p style={styles.eyebrow}>WHAT'S INCLUDED</p>
-            <h2 style={styles.toolsTitle}>One platform. Your next move.</h2>
+            <h2 style={styles.toolsTitle}>Everything you need to keep moving.</h2>
+            <p style={styles.toolsIntro}>
+              HireMinds brings practical career tools together in one clean,
+              guided workspace.
+            </p>
           </div>
 
           <div style={styles.toolGrid}>
@@ -727,10 +757,13 @@ export default function SignupPage() {
             : "Create Career Passport & Continue to Consent"}
         </button>
 
-        <p style={styles.footer}>
-          HireMinds • Career tools designed to help you move forward with
-          clarity and confidence.
-        </p>
+        <footer style={styles.footer}>
+          <div style={styles.footerMark}>HIREMINDS</div>
+          <p style={styles.footerText}>
+            Career tools designed to help you move forward with clarity and
+            confidence.
+          </p>
+        </footer>
       </form>
     </main>
   );
@@ -740,8 +773,8 @@ const styles: { [key: string]: React.CSSProperties } = {
   page: {
     minHeight: "100vh",
     background:
-      "linear-gradient(180deg, #f7fbff 0%, #ffffff 35%, #f7faff 100%)",
-    color: "#162033",
+      "linear-gradient(180deg, #eef2f6 0%, #f7f9fb 22%, #ffffff 52%, #edf1f5 100%)",
+    color: "#121820",
     padding: "34px 18px 60px",
     boxSizing: "border-box",
   },
@@ -756,55 +789,114 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 
   hero: {
+    position: "relative",
+    overflow: "hidden",
+    padding: "34px 30px 28px",
+    borderRadius: "28px",
+    background:
+      "linear-gradient(135deg, #ffffff 0%, #f4f7fa 48%, #e7edf4 100%)",
+    border: "1px solid #cfd6de",
+    boxShadow: "0 18px 48px rgba(24, 39, 56, 0.10)",
+  },
+
+  heroAccent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "7px",
+    background:
+      "linear-gradient(90deg, #111111 0%, #626b75 25%, #2d7fbd 63%, #0e5f9b 100%)",
+  },
+
+  heroContent: {
     textAlign: "center",
-    padding: "32px 18px 18px",
+    padding: "10px 12px 22px",
   },
 
   brandPill: {
     display: "inline-block",
     padding: "7px 12px",
     borderRadius: "999px",
-    backgroundColor: "#e7f3ff",
-    color: "#176bb5",
+    backgroundColor: "#111820",
+    color: "#ffffff",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.14em",
   },
 
   heroTitle: {
-    margin: "16px auto 0",
-    maxWidth: "760px",
+    margin: "18px auto 0",
+    maxWidth: "780px",
     fontSize: "clamp(36px, 6vw, 58px)",
     lineHeight: 1.04,
-    color: "#13213a",
+    color: "#101820",
     fontWeight: 900,
     letterSpacing: "-0.035em",
   },
 
   heroText: {
-    maxWidth: "700px",
+    maxWidth: "720px",
     margin: "16px auto 0",
-    color: "#607086",
+    color: "#505c68",
     fontSize: "16px",
     lineHeight: 1.7,
   },
 
+  heroPanel: {
+    display: "grid",
+    gridTemplateColumns: "repeat(5, auto)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "16px",
+    marginTop: "4px",
+    padding: "17px 18px",
+    borderRadius: "18px",
+    backgroundColor: "#111820",
+    color: "#ffffff",
+  },
+
+  heroPanelItem: {
+    textAlign: "center",
+  },
+
+  heroPanelLabel: {
+    display: "block",
+    color: "#8abfe7",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: "0.12em",
+  },
+
+  heroPanelValue: {
+    display: "block",
+    marginTop: "4px",
+    color: "#ffffff",
+    fontSize: "13px",
+  },
+
+  heroDivider: {
+    width: "1px",
+    height: "28px",
+    backgroundColor: "#414b55",
+  },
+
   toolsSection: {
-    padding: "26px",
+    padding: "28px",
     borderRadius: "24px",
     backgroundColor: "#ffffff",
-    border: "1px solid #e3ebf5",
-    boxShadow: "0 16px 45px rgba(42, 88, 130, 0.08)",
+    border: "1px solid #cfd7df",
+    boxShadow: "0 16px 42px rgba(26, 43, 61, 0.08)",
   },
 
   centerHeading: {
     textAlign: "center",
-    marginBottom: "20px",
+    marginBottom: "22px",
   },
 
   eyebrow: {
     margin: "0 0 6px",
-    color: "#2673b8",
+    color: "#176ba8",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.13em",
@@ -812,9 +904,17 @@ const styles: { [key: string]: React.CSSProperties } = {
 
   toolsTitle: {
     margin: 0,
-    color: "#152238",
-    fontSize: "28px",
+    color: "#111820",
+    fontSize: "29px",
     fontWeight: 900,
+  },
+
+  toolsIntro: {
+    maxWidth: "680px",
+    margin: "9px auto 0",
+    color: "#647180",
+    fontSize: "14px",
+    lineHeight: 1.55,
   },
 
   toolGrid: {
@@ -829,43 +929,45 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: "flex-start",
     padding: "16px",
     borderRadius: "16px",
-    backgroundColor: "#f8fbff",
-    border: "1px solid #e5edf7",
+    background:
+      "linear-gradient(180deg, #fbfcfd 0%, #f0f3f6 100%)",
+    border: "1px solid #d3dae1",
   },
 
   toolIcon: {
-    width: "35px",
-    height: "35px",
-    minWidth: "35px",
+    width: "36px",
+    height: "36px",
+    minWidth: "36px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: "11px",
-    backgroundColor: "#dcefff",
-    color: "#176bb5",
+    backgroundColor: "#dcecf8",
+    border: "1px solid #bcd3e5",
+    color: "#176ba8",
     fontWeight: 900,
   },
 
   toolTitle: {
     margin: "0 0 4px",
-    color: "#17253a",
+    color: "#111820",
     fontSize: "14px",
     fontWeight: 900,
   },
 
   toolText: {
     margin: 0,
-    color: "#6c7b8f",
+    color: "#5e6976",
     fontSize: "12px",
-    lineHeight: 1.5,
+    lineHeight: 1.55,
   },
 
   card: {
     padding: "28px",
     borderRadius: "24px",
     backgroundColor: "#ffffff",
-    border: "1px solid #e3eaf3",
-    boxShadow: "0 16px 45px rgba(42, 88, 130, 0.08)",
+    border: "1px solid #ccd4dc",
+    boxShadow: "0 16px 42px rgba(27, 42, 58, 0.08)",
   },
 
   sectionHeading: {
@@ -876,22 +978,23 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 
   stepBadge: {
-    width: "38px",
-    height: "38px",
-    minWidth: "38px",
+    width: "39px",
+    height: "39px",
+    minWidth: "39px",
     borderRadius: "12px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#e5f3ff",
-    color: "#1b70b7",
+    backgroundColor: "#111820",
+    color: "#ffffff",
     fontSize: "15px",
     fontWeight: 900,
+    boxShadow: "inset 0 0 0 1px #2c3741",
   },
 
   sectionTitle: {
     margin: 0,
-    color: "#17253a",
+    color: "#111820",
     fontSize: "26px",
     fontWeight: 900,
   },
@@ -913,7 +1016,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 
   label: {
-    color: "#34465d",
+    color: "#263443",
     fontSize: "12px",
     fontWeight: 800,
   },
@@ -922,12 +1025,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: "100%",
     padding: "14px 15px",
     borderRadius: "12px",
-    border: "1px solid #ccd9e6",
-    backgroundColor: "#fbfdff",
-    color: "#19283c",
+    border: "1px solid #bfc9d3",
+    backgroundColor: "#f9fafb",
+    color: "#111820",
     outline: "none",
     boxSizing: "border-box",
     fontSize: "15px",
+    boxShadow: "inset 0 1px 2px rgba(17, 24, 32, 0.04)",
   },
 
   passwordWrap: {
@@ -939,12 +1043,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: "100%",
     padding: "14px 75px 14px 15px",
     borderRadius: "12px",
-    border: "1px solid #ccd9e6",
-    backgroundColor: "#fbfdff",
-    color: "#19283c",
+    border: "1px solid #bfc9d3",
+    backgroundColor: "#f9fafb",
+    color: "#111820",
     outline: "none",
     boxSizing: "border-box",
     fontSize: "15px",
+    boxShadow: "inset 0 1px 2px rgba(17, 24, 32, 0.04)",
   },
 
   passwordToggle: {
@@ -954,9 +1059,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     transform: "translateY(-50%)",
     border: "none",
     background: "transparent",
-    color: "#1c6fae",
+    color: "#176ba8",
     cursor: "pointer",
-    fontWeight: 800,
+    fontWeight: 900,
   },
 
   methodTabs: {
@@ -964,22 +1069,27 @@ const styles: { [key: string]: React.CSSProperties } = {
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: "10px",
     marginBottom: "20px",
+    padding: "5px",
+    borderRadius: "15px",
+    backgroundColor: "#e9edf1",
+    border: "1px solid #d0d7de",
   },
 
   methodButton: {
     padding: "14px",
-    borderRadius: "13px",
-    border: "1px solid #d4dfeb",
-    backgroundColor: "#f8fbff",
-    color: "#5b6a7c",
+    borderRadius: "11px",
+    border: "1px solid transparent",
+    backgroundColor: "transparent",
+    color: "#586574",
     fontWeight: 900,
     cursor: "pointer",
   },
 
   methodButtonActive: {
-    border: "1px solid #2b7fc4",
-    backgroundColor: "#e8f4ff",
-    color: "#176bb5",
+    border: "1px solid #166fae",
+    backgroundColor: "#ffffff",
+    color: "#176ba8",
+    boxShadow: "0 6px 16px rgba(23, 107, 168, 0.10)",
   },
 
   planGrid: {
@@ -995,24 +1105,26 @@ const styles: { [key: string]: React.CSSProperties } = {
     textAlign: "left",
     padding: "19px",
     borderRadius: "18px",
-    border: "1px solid #dbe5ef",
-    backgroundColor: "#ffffff",
-    color: "#19283c",
+    border: "1px solid #cbd3db",
+    background:
+      "linear-gradient(180deg, #ffffff 0%, #f3f5f7 100%)",
+    color: "#111820",
     cursor: "pointer",
   },
 
   planCardSelected: {
-    border: "2px solid #2b7fc4",
-    backgroundColor: "#f2f9ff",
-    boxShadow: "0 10px 30px rgba(43, 127, 196, 0.12)",
+    border: "2px solid #176ba8",
+    background:
+      "linear-gradient(180deg, #f8fcff 0%, #eaf4fb 100%)",
+    boxShadow: "0 12px 30px rgba(23, 107, 168, 0.14)",
   },
 
   planBadge: {
     alignSelf: "flex-start",
     padding: "5px 9px",
     borderRadius: "999px",
-    backgroundColor: "#e4f2ff",
-    color: "#176bb5",
+    backgroundColor: "#111820",
+    color: "#ffffff",
     fontSize: "10px",
     fontWeight: 900,
     letterSpacing: "0.05em",
@@ -1034,18 +1146,18 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginTop: "7px",
     fontSize: "31px",
     fontWeight: 900,
-    color: "#14223a",
+    color: "#111820",
   },
 
   planBilling: {
     marginTop: "3px",
-    color: "#718095",
+    color: "#6c7885",
     fontSize: "12px",
   },
 
   planEquivalent: {
     marginTop: "8px",
-    color: "#2572b3",
+    color: "#176ba8",
     fontSize: "12px",
     fontWeight: 800,
   },
@@ -1053,14 +1165,14 @@ const styles: { [key: string]: React.CSSProperties } = {
   planSelect: {
     marginTop: "auto",
     paddingTop: "17px",
-    color: "#8693a2",
+    color: "#747f8b",
     fontSize: "11px",
     fontWeight: 900,
     textTransform: "uppercase",
   },
 
   planSelectActive: {
-    color: "#1d73b8",
+    color: "#176ba8",
   },
 
   selectedSummary: {
@@ -1071,9 +1183,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     flexWrap: "wrap",
     padding: "13px 15px",
     borderRadius: "12px",
-    backgroundColor: "#f7faff",
-    border: "1px solid #dee8f1",
-    color: "#283950",
+    backgroundColor: "#edf1f4",
+    border: "1px solid #cdd5dc",
+    color: "#1b2734",
     fontSize: "13px",
   },
 
@@ -1084,13 +1196,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: "11px",
     padding: "18px",
     borderRadius: "15px",
-    backgroundColor: "#f9fbfd",
-    border: "1px solid #dfe8f1",
+    backgroundColor: "#f4f6f8",
+    border: "1px solid #cbd3da",
   },
 
   ackTitle: {
     margin: "0 0 2px",
-    color: "#22344a",
+    color: "#111820",
     fontSize: "14px",
     fontWeight: 900,
   },
@@ -1099,7 +1211,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: "flex",
     gap: "10px",
     alignItems: "flex-start",
-    color: "#4c5d72",
+    color: "#3f4c59",
     fontSize: "13px",
     lineHeight: 1.5,
     cursor: "pointer",
@@ -1110,11 +1222,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: "18px",
     minWidth: "18px",
     marginTop: "1px",
+    accentColor: "#176ba8",
   },
 
   smallNote: {
     margin: "2px 0 0",
-    color: "#7f8d9d",
+    color: "#75808b",
     fontSize: "11px",
     lineHeight: 1.5,
   },
@@ -1125,20 +1238,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: "16px",
     padding: "22px",
     borderRadius: "17px",
-    backgroundColor: "#f7fbff",
-    border: "1px solid #d8e8f6",
+    background:
+      "linear-gradient(180deg, #f7f9fb 0%, #eef2f5 100%)",
+    border: "1px solid #c8d2db",
   },
 
   referralTitle: {
     margin: 0,
-    color: "#18304a",
+    color: "#111820",
     fontSize: "20px",
     fontWeight: 900,
   },
 
   referralText: {
     margin: "5px 0 0",
-    color: "#6c7b8c",
+    color: "#65717c",
     fontSize: "13px",
   },
 
@@ -1148,9 +1262,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: "4px",
     padding: "13px 14px",
     borderRadius: "12px",
-    backgroundColor: "#edf7ff",
-    border: "1px solid #d2e8fa",
-    color: "#37546e",
+    backgroundColor: "#e5f1f8",
+    border: "1px solid #bfd6e6",
+    color: "#2a4e67",
     fontSize: "13px",
   },
 
@@ -1160,9 +1274,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: "flex-start",
     padding: "14px 15px",
     borderRadius: "12px",
-    backgroundColor: "#fff9e9",
-    border: "1px solid #f0d98f",
-    color: "#6b5927",
+    backgroundColor: "#f2f3f4",
+    border: "1px solid #c9ced3",
+    color: "#3f474f",
     fontSize: "13px",
     lineHeight: 1.5,
     cursor: "pointer",
@@ -1172,8 +1286,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: "14px 16px",
     borderRadius: "12px",
     backgroundColor: "#fff1f1",
-    border: "1px solid #efc6c6",
-    color: "#a13d3d",
+    border: "1px solid #dbaaaa",
+    color: "#8c2f2f",
     fontSize: "13px",
     fontWeight: 800,
   },
@@ -1182,19 +1296,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: "100%",
     padding: "16px 18px",
     borderRadius: "14px",
-    border: "none",
-    backgroundColor: "#1f79bd",
+    border: "1px solid #0f5e95",
+    background:
+      "linear-gradient(90deg, #176ba8 0%, #2786c6 100%)",
     color: "#ffffff",
     fontSize: "15px",
     fontWeight: 900,
     cursor: "pointer",
-    boxShadow: "0 10px 24px rgba(31, 121, 189, 0.18)",
+    boxShadow: "0 10px 24px rgba(23, 107, 168, 0.20)",
   },
 
   footer: {
-    margin: "-6px 0 0",
     textAlign: "center",
-    color: "#8a97a7",
+    padding: "20px 16px 4px",
+  },
+
+  footerMark: {
+    color: "#111820",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: "0.14em",
+  },
+
+  footerText: {
+    margin: "7px 0 0",
+    color: "#6f7882",
     fontSize: "11px",
   },
 };
