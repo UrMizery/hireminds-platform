@@ -268,9 +268,9 @@ export default function SignupPage() {
     }
 
     if (accessMethod === "referral" && !password) {
-  setMessage("Please create a password.");
-  return;
-}
+      setMessage("Please create a password.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -336,31 +336,46 @@ export default function SignupPage() {
         );
       }
 
-      await createAccount({
-        normalizedReferralCode: null,
-      });
+      const checkoutResponse = await fetch(
+        "/api/stripe/create-checkout-session",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            plan: selectedPlan,
+            fullName: cleanFullName,
+            email: cleanEmail,
+            phone: phone.trim(),
+            city: city.trim(),
+            state: stateName.trim(),
+          }),
+        }
+      );
+
+      const checkoutRaw = await checkoutResponse.text();
+
+      let checkoutData: {
+        ok?: boolean;
+        url?: string;
+        error?: string;
+      } = {};
 
       try {
-        localStorage.setItem(
-          "hireminds_pending_subscription_plan",
-          selectedPlan
-        );
-        localStorage.setItem(
-          "hireminds_paid_billing_acknowledged",
-          "true"
-        );
-        localStorage.setItem(
-          "hireminds_paid_renewal_acknowledged",
-          "true"
-        );
-        localStorage.setItem("hireminds_terms_acknowledged", "true");
+        checkoutData = checkoutRaw ? JSON.parse(checkoutRaw) : {};
       } catch {
-        // Checkout should rely on authenticated server/database state.
+        checkoutData = {};
       }
 
-      window.location.href = `/access/paid?plan=${encodeURIComponent(
-        selectedPlan
-      )}`;
+      if (!checkoutResponse.ok || !checkoutData.url) {
+        throw new Error(
+          checkoutData.error ||
+            "Stripe checkout could not be started. Please try again."
+        );
+      }
+
+      window.location.href = checkoutData.url;
     } catch (error: any) {
       setMessage(
         error?.message ||
@@ -584,28 +599,39 @@ export default function SignupPage() {
               />
             </label>
 
-            <label style={{ ...styles.field, ...styles.fullWidth }}>
-              <span style={styles.label}>Password *</span>
+            {accessMethod === "referral" ? (
+              <label style={{ ...styles.field, ...styles.fullWidth }}>
+                <span style={styles.label}>Password *</span>
 
-              <div style={styles.passwordWrap}>
-                <input
-                  placeholder="Password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={styles.passwordInput}
-                  required
-                />
+                <div style={styles.passwordWrap}>
+                  <input
+                    placeholder="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={styles.passwordInput}
+                    required
+                  />
 
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  style={styles.passwordToggle}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    style={styles.passwordToggle}
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+              </label>
+            ) : (
+              <div style={{ ...styles.field, ...styles.fullWidth }}>
+                <span style={styles.label}>Password</span>
+                <div style={styles.selectedSummary}>
+                  <span style={styles.selectedValue}>
+                    You will create your HireMinds password after Stripe confirms your payment.
+                  </span>
+                </div>
               </div>
-            </label>
+            )}
           </div>
         </section>
 
@@ -835,7 +861,7 @@ export default function SignupPage() {
             {loading
               ? "Please wait..."
               : accessMethod === "subscription"
-              ? "Create Career Passport & Continue to Payment"
+              ? "Continue to Secure Payment"
               : "Create Career Passport & Continue to Consent"}
           </span>
           {!loading ? <span style={styles.buttonArrow}>→</span> : null}
