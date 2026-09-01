@@ -77,8 +77,6 @@ export default function SignupPage() {
   const [billingConfirmed, setBillingConfirmed] = useState(false);
   const [renewalConfirmed, setRenewalConfirmed] = useState(false);
   const [termsConfirmed, setTermsConfirmed] = useState(false);
-  const [referralExpirationConfirmed, setReferralExpirationConfirmed] =
-    useState(false);
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -98,19 +96,30 @@ export default function SignupPage() {
       headers: {
         "Content-Type": "application/json",
       },
+
+      /*
+        IMPORTANT:
+        The server validator expects the property name "code".
+        It returns:
+        {
+          valid: true,
+          code: "...",
+          expiresAt: "...",
+          message: "Referral code verified."
+        }
+      */
       body: JSON.stringify({
-        referralCode: code,
-        mode: "signup",
+        code,
       }),
     });
 
     const raw = await response.text();
 
     let data: {
-      ok?: boolean;
-      error?: string;
-      normalizedCode?: string;
+      valid?: boolean;
+      code?: string;
       expiresAt?: string | null;
+      message?: string;
     } = {};
 
     try {
@@ -119,9 +128,9 @@ export default function SignupPage() {
       data = {};
     }
 
-    if (!response.ok || !data.ok) {
+    if (!response.ok || !data.valid) {
       throw new Error(
-        data.error ||
+        data.message ||
           "This referral code is not active or recognized. Please check the code and try again."
       );
     }
@@ -273,16 +282,10 @@ export default function SignupPage() {
           throw new Error("Please enter your referral code.");
         }
 
-        if (!referralExpirationConfirmed) {
-          throw new Error(
-            "Please confirm that you understand referral access is available through December 31, 2026."
-          );
-        }
-
         const referral = await validateReferralCode(code);
 
         const normalizedReferralCode =
-          referral.normalizedCode || code.toUpperCase();
+          referral.code || code.trim().toUpperCase();
 
         await createAccount({
           normalizedReferralCode,
@@ -294,10 +297,6 @@ export default function SignupPage() {
             normalizedReferralCode
           );
           localStorage.setItem(
-            "hireminds_referral_expiration_confirmed",
-            "true"
-          );
-          localStorage.setItem(
             "hireminds_pending_referral_expires_at",
             referral.expiresAt || "2026-12-31T23:59:59-05:00"
           );
@@ -305,7 +304,11 @@ export default function SignupPage() {
           // Database/server validation remains authoritative.
         }
 
-        window.location.href = "/access/consent";
+        /*
+          Referral code was already validated on Signup.
+          /access is the consent + required acknowledgment page.
+        */
+        window.location.href = "/access";
         return;
       }
 
@@ -808,25 +811,18 @@ export default function SignupPage() {
                 <strong>info@hireminds.app</strong>
               </div>
 
-              <label style={styles.expirationBox}>
-                <input
-                  type="checkbox"
-                  checked={referralExpirationConfirmed}
-                  onChange={(e) =>
-                    setReferralExpirationConfirmed(e.target.checked)
-                  }
-                  style={styles.checkbox}
-                />
-
+              <div style={styles.expirationBox}>
                 <span>
-                  I understand that my HireMinds referral access is available
-                  through <strong>December 31, 2026.</strong>
+                  After your referral code is verified, you will continue to
+                  the HireMinds <strong>Consent & Access</strong> page. There
+                  you will review the consent agreement and acknowledge the
+                  referral-access expiration date before access is activated.
                 </span>
-              </label>
+              </div>
 
               <p style={styles.smallNote}>
-                After your referral code is accepted, you will complete the
-                HireMinds consent form before access is activated.
+                Referral access acknowledgment is completed on the next page,
+                so you will not be asked to acknowledge the same term twice.
               </p>
             </div>
           )}
@@ -1669,4 +1665,3 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "11px",
   },
 };
-
