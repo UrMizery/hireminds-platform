@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 type PlanKey = "monthly" | "four_month" | "annual";
 
-type SupabaseUser = {
-  id?: string;
-  email?: string;
-};
-
 const STRIPE_PRICE_ENV: Record<PlanKey, string> = {
   monthly: "STRIPE_PRICE_MONTHLY",
   four_month: "STRIPE_PRICE_FOUR_MONTH",
@@ -14,11 +9,7 @@ const STRIPE_PRICE_ENV: Record<PlanKey, string> = {
 };
 
 function isPlanKey(value: unknown): value is PlanKey {
-  return (
-    value === "monthly" ||
-    value === "four_month" ||
-    value === "annual"
-  );
+  return value === "monthly" || value === "four_month" || value === "annual";
 }
 
 function getSiteUrl(request: NextRequest) {
@@ -31,189 +22,29 @@ function getSiteUrl(request: NextRequest) {
     return configured.replace(/\/+$/, "");
   }
 
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost || request.headers.get("host");
+  const host =
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host");
 
   const protocol =
     request.headers.get("x-forwarded-proto") ||
     (host?.includes("localhost") ? "http" : "https");
 
   if (!host) {
-    throw new Error(
-      "Could not determine the HireMinds site URL. Add NEXT_PUBLIC_SITE_URL in Vercel."
-    );
+    throw new Error("Could not determine the HireMinds site URL.");
   }
 
   return `${protocol}://${host}`;
 }
 
-async function getSupabaseUser(
-  accessToken: string
-): Promise<SupabaseUser | null> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      "Supabase environment variables are missing."
-    );
-  }
-
-  const response = await fetch(
-    `${supabaseUrl}/auth/v1/user`,
-    {
-      method: "GET",
-      headers: {
-        apikey: supabaseAnonKey,
-        Authorization: `Bearer ${accessToken}`,
-      },
-      cache: "no-store",
-    }
-  );
-
-  if (!response.ok) {
-    return null;
-  }
-
-  return response.json();
+function clean(value: unknown, max = 500) {
+  return String(value ?? "")
+    .trim()
+    .slice(0, max);
 }
 
-async function createStripeCheckoutSession(options: {
-  stripeSecretKey: string;
-  stripePriceId: string;
-  userId: string;
-  email: string;
-  plan: PlanKey;
-  siteUrl: string;
-}) {
-  const {
-    stripeSecretKey,
-    stripePriceId,
-    userId,
-    email,
-    plan,
-    siteUrl,
-  } = options;
-
-  const params = new URLSearchParams();
-
-  /*
-    This is a recurring subscription checkout.
-
-    IMPORTANT:
-    This route ONLY creates the Stripe Checkout Session.
-    It does NOT activate HireMinds paid access.
-
-    Paid access must remain locked until the Stripe webhook
-    confirms the subscription/payment.
-  */
-  params.set("mode", "subscription");
-
-  params.set("customer_email", email);
-  params.set("client_reference_id", userId);
-
-  params.set(
-    "line_items[0][price]",
-    stripePriceId
-  );
-
-  params.set(
-    "line_items[0][quantity]",
-    "1"
-  );
-
-  params.set(
-    "success_url",
-    `${siteUrl}/access/paid/success?session_id={CHECKOUT_SESSION_ID}`
-  );
-
-  params.set(
-    "cancel_url",
-    `${siteUrl}/access/paid?plan=${encodeURIComponent(
-      plan
-    )}`
-  );
-
-  /*
-    Session metadata.
-  */
-  params.set(
-    "metadata[user_id]",
-    userId
-  );
-
-  params.set(
-    "metadata[plan]",
-    plan
-  );
-
-  /*
-    Subscription metadata.
-    This lets the webhook identify which HireMinds user
-    and plan belong to the Stripe subscription.
-  */
-  params.set(
-    "subscription_data[metadata][user_id]",
-    userId
-  );
-
-  params.set(
-    "subscription_data[metadata][plan]",
-    plan
-  );
-
-  /*
-    Allow valid Stripe promotion codes if you create them later.
-  */
-  params.set(
-    "allow_promotion_codes",
-    "true"
-  );
-
-  const stripeResponse = await fetch(
-    "https://api.stripe.com/v1/checkout/sessions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${stripeSecretKey}`,
-        "Content-Type":
-          "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-      cache: "no-store",
-    }
-  );
-
-  const stripeData =
-    await stripeResponse.json();
-
-  return {
-    stripeResponse,
-    stripeData,
-  };
-}
-
-export async function POST(
-  request: NextRequest
-) {
+export async function POST(request: NextRequest) {
   try {
-    /*
-      REQUIRED VERCEL VARIABLES:
-
-      STRIPE_SECRET_KEY
-
-      STRIPE_PRICE_MONTHLY
-      STRIPE_PRICE_FOUR_MONTH
-      STRIPE_PRICE_ANNUAL
-
-      NEXT_PUBLIC_SUPABASE_URL
-      NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-      Recommended:
-      NEXT_PUBLIC_SITE_URL=https://www.hireminds.app
-    */
-
     const stripeSecretKey =
       process.env.STRIPE_SECRET_KEY;
 
@@ -221,8 +52,7 @@ export async function POST(
       return NextResponse.json(
         {
           ok: false,
-          error:
-            "Stripe is not configured yet. Add STRIPE_SECRET_KEY in Vercel.",
+          error: "Stripe is not configured.",
         },
         {
           status: 500,
@@ -230,85 +60,15 @@ export async function POST(
       );
     }
 
-    /*
-      The paid page must send the signed-in user's
-      Supabase access token in:
+    const body = await request.json();
 
-      Authorization: Bearer <access_token>
-    */
-    const authHeader =
-      request.headers.get("authorization");
-
-    if (
-      !authHeader ||
-      !authHeader.startsWith("Bearer ")
-    ) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Your HireMinds session could not be verified. Please sign in again.",
-        },
-        {
-          status: 401,
-        }
-      );
-    }
-
-    const accessToken =
-      authHeader
-        .slice("Bearer ".length)
-        .trim();
-
-    if (!accessToken) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Your HireMinds session could not be verified. Please sign in again.",
-        },
-        {
-          status: 401,
-        }
-      );
-    }
-
-    /*
-      Verify the token directly against Supabase Auth.
-    */
-    const user =
-      await getSupabaseUser(
-        accessToken
-      );
-
-    if (!user?.id || !user?.email) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Your HireMinds session has expired. Please sign in again.",
-        },
-        {
-          status: 401,
-        }
-      );
-    }
-
-    /*
-      Read the selected plan.
-    */
-    const body =
-      await request.json();
-
-    const plan =
-      body?.plan;
+    const plan = body?.plan;
 
     if (!isPlanKey(plan)) {
       return NextResponse.json(
         {
           ok: false,
-          error:
-            "Invalid HireMinds subscription plan.",
+          error: "Invalid subscription plan.",
         },
         {
           status: 400,
@@ -316,9 +76,28 @@ export async function POST(
       );
     }
 
-    /*
-      Get the correct Stripe Price ID from Vercel.
-    */
+    const fullName = clean(body?.fullName, 120);
+    const email = clean(body?.email, 254).toLowerCase();
+    const phone = clean(body?.phone, 40);
+    const city = clean(body?.city, 100);
+    const state = clean(body?.state, 100);
+
+    if (
+      !fullName ||
+      !email ||
+      !email.includes("@")
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Name and a valid email are required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const priceEnvName =
       STRIPE_PRICE_ENV[plan];
 
@@ -329,8 +108,7 @@ export async function POST(
       return NextResponse.json(
         {
           ok: false,
-          error:
-            `Stripe price is not configured for ${plan}. Add ${priceEnvName} in Vercel.`,
+          error: `${priceEnvName} is missing in Vercel.`,
         },
         {
           status: 500,
@@ -338,27 +116,131 @@ export async function POST(
       );
     }
 
-    const siteUrl =
-      getSiteUrl(request);
+    const siteUrl = getSiteUrl(request);
 
-    const {
-      stripeResponse,
-      stripeData,
-    } =
-      await createStripeCheckoutSession(
-        {
-          stripeSecretKey,
-          stripePriceId,
-          userId: user.id,
-          email: user.email,
-          plan,
-          siteUrl,
-        }
+    const params = new URLSearchParams();
+
+    params.set("mode", "subscription");
+
+    params.set(
+      "customer_email",
+      email
+    );
+
+    params.set(
+      "line_items[0][price]",
+      stripePriceId
+    );
+
+    params.set(
+      "line_items[0][quantity]",
+      "1"
+    );
+
+    params.set(
+      "success_url",
+      `${siteUrl}/access/paid/success?session_id={CHECKOUT_SESSION_ID}`
+    );
+
+    params.set(
+      "cancel_url",
+      `${siteUrl}/sign-up?plan=${encodeURIComponent(
+        plan
+      )}&checkout=canceled`
+    );
+
+    params.set(
+      "allow_promotion_codes",
+      "true"
+    );
+
+    /*
+      IMPORTANT:
+
+      We are NOT creating a Supabase account here.
+
+      The person is only entering signup information
+      so Stripe can process payment first.
+
+      After Stripe confirms payment, the account
+      creation flow will happen.
+    */
+
+    params.set(
+      "metadata[signup_flow]",
+      "post_payment_account_creation"
+    );
+
+    params.set(
+      "metadata[plan]",
+      plan
+    );
+
+    params.set(
+      "metadata[full_name]",
+      fullName
+    );
+
+    params.set(
+      "metadata[email]",
+      email
+    );
+
+    if (phone) {
+      params.set(
+        "metadata[phone]",
+        phone
       );
+    }
 
-    if (!stripeResponse.ok) {
+    if (city) {
+      params.set(
+        "metadata[city]",
+        city
+      );
+    }
+
+    if (state) {
+      params.set(
+        "metadata[state]",
+        state
+      );
+    }
+
+    params.set(
+      "subscription_data[metadata][plan]",
+      plan
+    );
+
+    params.set(
+      "subscription_data[metadata][signup_flow]",
+      "post_payment_account_creation"
+    );
+
+    const stripeResponse = await fetch(
+      "https://api.stripe.com/v1/checkout/sessions",
+      {
+        method: "POST",
+        headers: {
+          Authorization:
+            `Bearer ${stripeSecretKey}`,
+          "Content-Type":
+            "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+        cache: "no-store",
+      }
+    );
+
+    const stripeData =
+      await stripeResponse.json();
+
+    if (
+      !stripeResponse.ok ||
+      !stripeData?.url
+    ) {
       console.error(
-        "Stripe Checkout Session error:",
+        "Stripe checkout error:",
         stripeData
       );
 
@@ -371,39 +253,16 @@ export async function POST(
         },
         {
           status:
-            stripeResponse.status ||
-            500,
+            stripeResponse.status || 500,
         }
       );
     }
 
-    if (
-      !stripeData?.id ||
-      !stripeData?.url
-    ) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Stripe did not return a valid checkout session.",
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        ok: true,
-        url: stripeData.url,
-        sessionId:
-          stripeData.id,
-      },
-      {
-        status: 200,
-      }
-    );
+    return NextResponse.json({
+      ok: true,
+      url: stripeData.url,
+      sessionId: stripeData.id,
+    });
   } catch (error: any) {
     console.error(
       "Create Stripe Checkout Session error:",
@@ -415,26 +274,11 @@ export async function POST(
         ok: false,
         error:
           error?.message ||
-          "Stripe checkout could not be started. Please try again.",
+          "Stripe checkout could not be started.",
       },
       {
         status: 500,
       }
     );
   }
-}
-
-export async function GET() {
-  return NextResponse.json(
-    {
-      ok: true,
-      route:
-        "/api/stripe/create-checkout-session",
-      message:
-        "HireMinds Stripe checkout endpoint is running.",
-    },
-    {
-      status: 200,
-    }
-  );
 }
