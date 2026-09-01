@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -55,7 +55,7 @@ function normalizePlan(value: string | null): PlanKey {
   return "monthly";
 }
 
-export default function PaidAccessPage() {
+function PaidAccessPageContent() {
   const searchParams = useSearchParams();
 
   const planFromUrl = normalizePlan(searchParams.get("plan"));
@@ -517,6 +517,77 @@ export default function PaidAccessPage() {
         </footer>
       </div>
     </main>
+  );
+}
+
+export default function PaidAccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "28px 18px",
+            boxSizing: "border-box",
+            background:
+              "linear-gradient(180deg, #e7ebef 0%, #f4f6f8 18%, #ffffff 52%, #e7edf2 100%)",
+          }}
+        >
+          <section
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              padding: "36px",
+              boxSizing: "border-box",
+              borderRadius: "24px",
+              backgroundColor: "#ffffff",
+              border: "1px solid #cbd2d9",
+              boxShadow: "0 18px 50px rgba(16,29,43,0.12)",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                color: "#176fae",
+                fontSize: "10px",
+                fontWeight: 950,
+                letterSpacing: "0.16em",
+              }}
+            >
+              HIREMINDS
+            </div>
+
+            <h1
+              style={{
+                margin: "14px 0 8px",
+                color: "#111820",
+                fontSize: "30px",
+                fontWeight: 950,
+                letterSpacing: "-0.03em",
+              }}
+            >
+              Preparing your checkout
+            </h1>
+
+            <p
+              style={{
+                margin: 0,
+                color: "#68737d",
+                fontSize: "14px",
+                lineHeight: 1.6,
+              }}
+            >
+              We&apos;re loading your selected HireMinds subscription.
+            </p>
+          </section>
+        </main>
+      }
+    >
+      <PaidAccessPageContent />
+    </Suspense>
   );
 }
 
