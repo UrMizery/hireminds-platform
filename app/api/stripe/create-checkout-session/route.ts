@@ -281,4 +281,86 @@ export async function POST(request: NextRequest) {
       }
     );
   }
+}export async function GET() {
+  try {
+    const secret = process.env.STRIPE_SECRET_KEY;
+
+    if (!secret) {
+      return NextResponse.json({
+        ok: false,
+        error: "STRIPE_SECRET_KEY missing",
+      });
+    }
+
+    const accountResponse = await fetch(
+      "https://api.stripe.com/v1/account",
+      {
+        headers: {
+          Authorization: `Bearer ${secret}`,
+        },
+        cache: "no-store",
+      }
+    );
+
+    const account = await accountResponse.json();
+
+    const prices = {
+      monthly: process.env.STRIPE_PRICE_MONTHLY,
+      four_month: process.env.STRIPE_PRICE_FOUR_MONTH,
+      annual: process.env.STRIPE_PRICE_ANNUAL,
+    };
+
+    const priceChecks: Record<string, any> = {};
+
+    for (const [name, priceId] of Object.entries(prices)) {
+      if (!priceId) {
+        priceChecks[name] = {
+          configured: false,
+          found: false,
+        };
+        continue;
+      }
+
+      const response = await fetch(
+        `https://api.stripe.com/v1/prices/${encodeURIComponent(
+          priceId.trim()
+        )}`,
+        {
+          headers: {
+            Authorization: `Bearer ${secret}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json();
+
+      priceChecks[name] = {
+        configured: true,
+        found: response.ok,
+        status: response.status,
+        error: response.ok
+          ? null
+          : data?.error?.message || "Unknown Stripe error",
+      };
+    }
+
+    return NextResponse.json({
+      ok: accountResponse.ok,
+      stripeAccountId: account?.id || null,
+      businessName:
+        account?.settings?.dashboard?.display_name ||
+        account?.business_profile?.name ||
+        null,
+      prices: priceChecks,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: error?.message || "Stripe diagnostic failed",
+      },
+      { status: 500 }
+    );
+  }
 }
