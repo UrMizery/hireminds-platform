@@ -1,4 +1,4 @@
-"use client";
+
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -259,10 +259,48 @@ function PaidAccessPageContent() {
         throw new Error(profileError.message);
       }
 
+      /*
+        The Stripe API route verifies the logged-in HireMinds user with
+        the Supabase access token. Send the current session token in the
+        Authorization header.
+      */
+      let activeSession = session;
+
+      /*
+        If the token is close to expiring or stale, refresh it before
+        creating the Stripe Checkout Session.
+      */
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      const expiresAt = activeSession?.expires_at || 0;
+
+      if (expiresAt && expiresAt <= nowInSeconds + 60) {
+        const {
+          data: refreshData,
+          error: refreshError,
+        } = await supabase.auth.refreshSession();
+
+        if (refreshError) {
+          throw new Error(
+            "Your HireMinds session expired. Please sign in again and return to checkout."
+          );
+        }
+
+        activeSession = refreshData.session;
+      }
+
+      const accessToken = activeSession?.access_token;
+
+      if (!accessToken) {
+        throw new Error(
+          "Your HireMinds session could not be verified. Please sign in again."
+        );
+      }
+
       const response = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           plan: selectedPlan,
