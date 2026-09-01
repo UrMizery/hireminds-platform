@@ -7,6 +7,11 @@ type ReferralCodeConfig = {
 };
 
 const REFERRAL_CODES: Record<string, ReferralCodeConfig> = {
+  /*
+    CURRENT REPLACEMENT FOR THE OLD YWCA CODE.
+    YWCA is intentionally NOT included as a valid code.
+    Existing database records containing YWCA remain untouched.
+  */
   "12.2026": {
     active: true,
     label: "HireMinds Referral Access",
@@ -56,66 +61,64 @@ const REFERRAL_CODES: Record<string, ReferralCodeConfig> = {
   },
 
   /*
-    Legacy code.
-    Keep this recognized so existing/history-based users are not broken.
-    New users should use 12.2026 going forward.
-  */
-  YWCA: {
-    active: true,
-    label: "Legacy Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  /*
-    Reserved future codes.
-    They are intentionally preserved here but remain inactive until
-    you decide to activate them.
+    RESERVED FUTURE REFERRAL CODES.
+    Keep these placeholders in the system, but they are not active
+    until you intentionally activate them.
   */
   REFERRAL_06: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_07: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_08: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_09: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_10: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_11: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_12: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_13: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_14: {
     active: false,
     label: "Reserved Referral Code",
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
+
   REFERRAL_15: {
     active: false,
     label: "Reserved Referral Code",
@@ -139,6 +142,24 @@ export async function POST(request: NextRequest) {
         {
           valid: false,
           message: "Enter a referral code.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+      IMPORTANT:
+      YWCA was replaced by 12.2026.
+      YWCA must NOT validate for new or refreshed referral access.
+      This does not alter historical YWCA records already stored
+      in Supabase.
+    */
+    if (code === "YWCA") {
+      return NextResponse.json(
+        {
+          valid: false,
+          message:
+            "That referral code is no longer active. Please use your current referral code.",
         },
         { status: 400 }
       );
