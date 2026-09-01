@@ -40,7 +40,7 @@ const PLANS: Array<{
   },
 ];
 
-const CONSENT_VERSION = "HM-REFERRAL-2026-09";
+const CONSENT_VERSION = "HM-REFERRAL-2026-09-INDEPENDENT-PLATFORM";
 const REFERRAL_EXPIRES_AT = "2026-12-31T23:59:59-05:00";
 
 export default function AccessPage() {
@@ -54,6 +54,8 @@ export default function AccessPage() {
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("monthly");
 
   const [eligibilityAccepted, setEligibilityAccepted] = useState(false);
+  const [independentPlatformAccepted, setIndependentPlatformAccepted] =
+    useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [communityAccepted, setCommunityAccepted] = useState(false);
   const [employerVisibilityAccepted, setEmployerVisibilityAccepted] =
@@ -262,6 +264,13 @@ export default function AccessPage() {
 
     if (!eligibilityAccepted) {
       setMessage("Please complete the Eligibility acknowledgment.");
+      return;
+    }
+
+    if (!independentPlatformAccepted) {
+      setMessage(
+        "Please acknowledge that HireMinds is a separate optional digital platform and is not a service provided by the nonprofit organization that referred you."
+      );
       return;
     }
 
@@ -621,6 +630,71 @@ export default function AccessPage() {
                       style={styles.checkbox}
                     />
                     <span>I acknowledge and agree.</span>
+                  </label>
+                </div>
+
+                <div
+                  style={{
+                    ...styles.consentCardWhite,
+                    gridColumn: "1 / -1",
+                    border: "1px solid #9fc5df",
+                    background:
+                      "linear-gradient(145deg, #f8fbfd 0%, #eaf4fa 100%)",
+                  }}
+                >
+                  <p style={styles.consentKicker}>
+                    INDEPENDENT PLATFORM ACKNOWLEDGMENT
+                  </p>
+                  <h3 style={styles.consentTitle}>
+                    HireMinds is separate from the nonprofit organization that
+                    referred you
+                  </h3>
+
+                  <p style={styles.consentText}>
+                    Thank you for your interest in registering for HireMinds™,
+                    an optional digital career development platform designed to
+                    support your job search through resume development, career
+                    resources, job-search tools, and workforce development
+                    support.
+                  </p>
+
+                  <p style={styles.consentText}>
+                    Participation in HireMinds is completely voluntary.
+                    HireMinds is a separate digital platform and is not
+                    operated by, owned by, or a service of the nonprofit
+                    organization that referred you.
+                  </p>
+
+                  <p style={styles.consentText}>
+                    Registration for HireMinds is not required to participate
+                    in any workforce development, training, employment, or
+                    supportive services provided by the nonprofit organization
+                    that referred you.
+                  </p>
+
+                  <p style={styles.consentText}>
+                    Choosing not to register for or use HireMinds will not
+                    affect your participation in, eligibility for, or access to
+                    services provided by the referring nonprofit organization.
+                  </p>
+
+                  <label style={styles.checkRow}>
+                    <input
+                      type="checkbox"
+                      checked={independentPlatformAccepted}
+                      onChange={(e) =>
+                        setIndependentPlatformAccepted(e.target.checked)
+                      }
+                      style={styles.checkbox}
+                    />
+                    <span>
+                      <strong>
+                        I understand that HireMinds is a separate optional
+                        digital platform
+                      </strong>{" "}
+                      and is not a service provided by the nonprofit
+                      organization that referred me.
+                    </span>
                   </label>
                 </div>
 
