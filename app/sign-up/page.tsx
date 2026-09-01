@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type AccessMethod = "subscription" | "referral";
-type PlanKey = "annual" | "four_month" | "monthly";
+type PlanKey = "monthly" | "four_month" | "annual";
 
 const PLANS: Array<{
   key: PlanKey;
@@ -15,12 +15,12 @@ const PLANS: Array<{
   badge?: string;
 }> = [
   {
-    key: "annual",
-    title: "Annual",
-    price: "$179.88",
-    billing: "per year • paid in full",
-    equivalent: "$14.99/mo equivalent",
-    badge: "BEST VALUE",
+    key: "monthly",
+    title: "Monthly",
+    price: "$24.99",
+    billing: "per month",
+    equivalent: "Flexible monthly access",
+    badge: "START HERE",
   },
   {
     key: "four_month",
@@ -31,44 +31,30 @@ const PLANS: Array<{
     badge: "SAVE 20%",
   },
   {
-    key: "monthly",
-    title: "Monthly",
-    price: "$24.99",
-    billing: "per month",
-    equivalent: "Flexible monthly access",
+    key: "annual",
+    title: "Annual",
+    price: "$179.88",
+    billing: "per year • paid in full",
+    equivalent: "$14.99/mo equivalent",
+    badge: "BEST VALUE",
   },
 ];
 
-const FEATURES = [
+const IMPACT_ITEMS = [
   {
-    number: "01",
-    title: "Build stronger applications",
-    text: "Create and improve resumes, cover letters, professional summaries, and career materials without starting from a blank page.",
+    title: "Apply Smarter",
+    text: "Understand the job before you apply — requirements, keywords, fit, and gaps.",
+    tone: "blue",
   },
   {
-    number: "02",
-    title: "Stop applying blindly",
-    text: "Break down job descriptions, compare your resume to the role, identify missing skills and keywords, and make smarter application decisions.",
+    title: "Show Up Stronger",
+    text: "Build better resumes, cover letters, interview responses, and professional branding.",
+    tone: "dark",
   },
   {
-    number: "03",
-    title: "Prepare before the interview",
-    text: "Practice interview questions, organize STAR examples, research your target role, and strengthen how you communicate your experience.",
-  },
-  {
-    number: "04",
-    title: "Know your next move",
-    text: "Explore career paths, identify transferable skills, set professional goals, and turn career uncertainty into an action plan.",
-  },
-  {
-    number: "05",
-    title: "Track the work that gets results",
-    text: "Keep your job search, career development activity, notes, applications, and progress organized in one Career Passport.",
-  },
-  {
-    number: "06",
-    title: "Keep developing",
-    text: "Use guided career tools, resources, videos, job opportunities as available, and new HireMinds features throughout your access period.",
+    title: "Move With Direction",
+    text: "Track your search, explore career paths, set goals, and know what to do next.",
+    tone: "silver",
   },
 ];
 
@@ -83,14 +69,14 @@ export default function SignupPage() {
 
   const [accessMethod, setAccessMethod] =
     useState<AccessMethod>("subscription");
-  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("annual");
+
+  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("monthly");
   const [referralCode, setReferralCode] = useState("");
 
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [billingConfirmed, setBillingConfirmed] = useState(false);
   const [renewalConfirmed, setRenewalConfirmed] = useState(false);
   const [termsConfirmed, setTermsConfirmed] = useState(false);
-
   const [referralExpirationConfirmed, setReferralExpirationConfirmed] =
     useState(false);
 
@@ -384,7 +370,7 @@ export default function SignupPage() {
   return (
     <main style={styles.page}>
       <form onSubmit={handleSignUp} style={styles.shell}>
-        {/* HERO */}
+        {/* TOP INTRO - KEPT STRONG */}
         <section style={styles.hero}>
           <div style={styles.heroBlueGlow} />
           <div style={styles.heroSilverGlow} />
@@ -461,65 +447,72 @@ export default function SignupPage() {
           </div>
         </section>
 
-        {/* DIFFERENCE STRIP */}
-        <section style={styles.differenceStrip}>
-          <div style={styles.differenceItem}>
-            <span style={styles.differenceSmall}>NOT JUST</span>
-            <strong style={styles.differenceBig}>Resume Tools</strong>
-          </div>
-
-          <span style={styles.plus}>+</span>
-
-          <div style={styles.differenceItem}>
-            <span style={styles.differenceSmall}>NOT JUST</span>
-            <strong style={styles.differenceBig}>Job Listings</strong>
-          </div>
-
-          <span style={styles.plus}>+</span>
-
-          <div style={styles.differenceItem}>
-            <span style={styles.differenceSmall}>NOT JUST</span>
-            <strong style={styles.differenceBig}>AI Answers</strong>
-          </div>
-
-          <div style={styles.equalsBlock}>
-            <span style={styles.equals}> = </span>
-            <strong style={styles.equalsText}>Career Strategy</strong>
-          </div>
-        </section>
-
-        {/* FEATURES */}
-        <section style={styles.featureSection}>
-          <div style={styles.featureHeader}>
+        {/* SHORTER, STRONGER VALUE SECTION */}
+        <section style={styles.impactSection}>
+          <div style={styles.impactHeader}>
             <div>
               <p style={styles.eyebrow}>HOW HIREMINDS HELPS</p>
-              <h2 style={styles.featureHeadline}>
-                From “What do I do?” to “I know my next step.”
+              <h2 style={styles.impactHeadline}>
+                More than tools. A smarter way to move.
               </h2>
             </div>
 
-            <p style={styles.featureIntro}>
-              The platform connects the pieces of a job search instead of
-              treating each task like a separate document.
-            </p>
+            <div style={styles.startPrice}>
+              <span style={styles.startPriceLabel}>STARTING AT</span>
+              <strong style={styles.startPriceValue}>$24.99</strong>
+              <span style={styles.startPriceSub}>/ month</span>
+            </div>
           </div>
 
-          <div style={styles.featureGrid}>
-            {FEATURES.map((feature) => (
-              <article key={feature.number} style={styles.featureCard}>
-                <div style={styles.featureTop}>
-                  <span style={styles.featureNumber}>{feature.number}</span>
-                  <span style={styles.featureDash} />
-                </div>
+          <div style={styles.impactGrid}>
+            {IMPACT_ITEMS.map((item) => {
+              const toneStyle =
+                item.tone === "blue"
+                  ? styles.impactBlue
+                  : item.tone === "dark"
+                  ? styles.impactDark
+                  : styles.impactSilver;
 
-                <h3 style={styles.featureTitle}>{feature.title}</h3>
-                <p style={styles.featureText}>{feature.text}</p>
-              </article>
-            ))}
+              const textStyle =
+                item.tone === "dark" ? styles.impactTextLight : styles.impactTextDark;
+
+              return (
+                <article
+                  key={item.title}
+                  style={{
+                    ...styles.impactCard,
+                    ...toneStyle,
+                  }}
+                >
+                  <div style={styles.impactAccent} />
+                  <h3 style={{ ...styles.impactTitle, ...textStyle }}>
+                    {item.title}
+                  </h3>
+                  <p style={{ ...styles.impactText, ...textStyle }}>
+                    {item.text}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+
+          <div style={styles.toolRibbon}>
+            <span style={styles.toolRibbonLabel}>ONE PLATFORM</span>
+            <span style={styles.toolRibbonItem}>Resume Builder</span>
+            <span style={styles.toolDot}>•</span>
+            <span style={styles.toolRibbonItem}>Resume Match</span>
+            <span style={styles.toolDot}>•</span>
+            <span style={styles.toolRibbonItem}>Job Description Analyzer</span>
+            <span style={styles.toolDot}>•</span>
+            <span style={styles.toolRibbonItem}>Interview Prep</span>
+            <span style={styles.toolDot}>•</span>
+            <span style={styles.toolRibbonItem}>Career Goals</span>
+            <span style={styles.toolDot}>•</span>
+            <span style={styles.toolRibbonItem}>Job Search Tracking</span>
           </div>
         </section>
 
-        {/* SIGNUP */}
+        {/* ACCOUNT */}
         <section style={styles.signupSection}>
           <div style={styles.signupHeader}>
             <div style={styles.signupNumber}>01</div>
@@ -616,7 +609,7 @@ export default function SignupPage() {
         {/* ACCESS */}
         <section style={styles.signupSection}>
           <div style={styles.signupHeader}>
-            <div style={styles.signupNumber}>02</div>
+            <div style={styles.signupNumberBlue}>02</div>
 
             <div>
               <p style={styles.eyebrow}>CHOOSE YOUR ACCESS</p>
@@ -683,7 +676,16 @@ export default function SignupPage() {
                       <div style={styles.planTop}>
                         <span style={styles.planTitle}>{plan.title}</span>
                         {plan.badge ? (
-                          <span style={styles.planBadge}>{plan.badge}</span>
+                          <span
+                            style={{
+                              ...styles.planBadge,
+                              ...(plan.key === "monthly"
+                                ? styles.planBadgeBlue
+                                : {}),
+                            }}
+                          >
+                            {plan.badge}
+                          </span>
                         ) : null}
                       </div>
 
@@ -840,7 +842,6 @@ export default function SignupPage() {
               ? "Create Career Passport & Continue to Payment"
               : "Create Career Passport & Continue to Consent"}
           </span>
-
           {!loading ? <span style={styles.buttonArrow}>→</span> : null}
         </button>
 
@@ -858,7 +859,8 @@ export default function SignupPage() {
 const styles: { [key: string]: React.CSSProperties } = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#f1f3f5",
+    background:
+      "linear-gradient(180deg, #e7ebef 0%, #f4f6f8 18%, #ffffff 52%, #e7edf2 100%)",
     color: "#11151b",
     padding: "28px 18px 60px",
     boxSizing: "border-box",
@@ -878,31 +880,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     overflow: "hidden",
     borderRadius: "30px",
     backgroundColor: "#ffffff",
-    border: "1px solid #d2d7dd",
-    boxShadow: "0 18px 50px rgba(16, 29, 43, 0.10)",
+    border: "1px solid #cbd2d9",
+    boxShadow: "0 18px 50px rgba(16, 29, 43, 0.11)",
   },
 
   heroBlueGlow: {
     position: "absolute",
-    width: "420px",
-    height: "420px",
+    width: "430px",
+    height: "430px",
     right: "-170px",
     top: "-180px",
     borderRadius: "50%",
     background:
-      "radial-gradient(circle, rgba(30, 126, 190, 0.19) 0%, rgba(30, 126, 190, 0.05) 48%, rgba(30, 126, 190, 0) 72%)",
+      "radial-gradient(circle, rgba(29, 126, 191, 0.22) 0%, rgba(29, 126, 191, 0.06) 48%, rgba(29, 126, 191, 0) 72%)",
     pointerEvents: "none",
   },
 
   heroSilverGlow: {
     position: "absolute",
-    width: "360px",
-    height: "360px",
-    left: "-150px",
-    bottom: "-190px",
+    width: "380px",
+    height: "380px",
+    left: "-160px",
+    bottom: "-205px",
     borderRadius: "50%",
     background:
-      "radial-gradient(circle, rgba(146, 153, 162, 0.20) 0%, rgba(146, 153, 162, 0.04) 55%, rgba(146, 153, 162, 0) 74%)",
+      "radial-gradient(circle, rgba(149, 156, 165, 0.22) 0%, rgba(149, 156, 165, 0.05) 55%, rgba(149, 156, 165, 0) 74%)",
     pointerEvents: "none",
   },
 
@@ -988,7 +990,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: "17px 18px",
     maxWidth: "680px",
     borderRadius: "16px",
-    backgroundColor: "#f0f2f4",
+    background:
+      "linear-gradient(90deg, #edf1f4 0%, #e5eef5 100%)",
     borderLeft: "4px solid #176fae",
   },
 
@@ -1021,13 +1024,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: "30px",
     borderRadius: "22px",
     background:
-      "linear-gradient(145deg, #111820 0%, #202a34 100%)",
-    boxShadow: "0 18px 40px rgba(12, 20, 28, 0.20)",
+      "linear-gradient(145deg, #111820 0%, #202a34 55%, #174d70 100%)",
+    boxShadow: "0 18px 40px rgba(12, 20, 28, 0.22)",
   },
 
   heroRightEyebrow: {
     margin: "0 0 24px",
-    color: "#78b7e1",
+    color: "#79bde8",
     fontSize: "10px",
     fontWeight: 950,
     letterSpacing: "0.16em",
@@ -1040,7 +1043,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 
   heroRightNumber: {
-    color: "#6aa8d3",
+    color: "#72b4df",
     fontSize: "11px",
     fontWeight: 900,
     paddingTop: "2px",
@@ -1054,90 +1057,33 @@ const styles: { [key: string]: React.CSSProperties } = {
 
   heroRightText: {
     margin: "5px 0 0",
-    color: "#bac3cc",
+    color: "#c2cad1",
     fontSize: "12px",
     lineHeight: 1.55,
   },
 
   heroRightLine: {
     height: "1px",
-    backgroundColor: "#394550",
+    backgroundColor: "#40505c",
     margin: "19px 0",
   },
 
-  differenceStrip: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "20px",
-    flexWrap: "wrap",
-    padding: "24px 28px",
-    borderRadius: "22px",
+  impactSection: {
+    padding: "34px",
+    borderRadius: "28px",
     background:
-      "linear-gradient(90deg, #e1e5e8 0%, #f8f9fa 50%, #dde3e8 100%)",
-    border: "1px solid #cdd3d8",
+      "linear-gradient(135deg, #ffffff 0%, #f7f9fb 58%, #eef3f7 100%)",
+    border: "1px solid #ccd4db",
+    boxShadow: "0 14px 40px rgba(22, 33, 44, 0.07)",
   },
 
-  differenceItem: {
+  impactHeader: {
     display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    minWidth: "140px",
-  },
-
-  differenceSmall: {
-    color: "#78818a",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.16em",
-  },
-
-  differenceBig: {
-    marginTop: "4px",
-    color: "#151a20",
-    fontSize: "15px",
-    fontWeight: 900,
-  },
-
-  plus: {
-    color: "#176fae",
-    fontSize: "24px",
-    fontWeight: 300,
-  },
-
-  equalsBlock: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    paddingLeft: "5px",
-  },
-
-  equals: {
-    color: "#176fae",
-    fontSize: "28px",
-    fontWeight: 300,
-  },
-
-  equalsText: {
-    color: "#176fae",
-    fontSize: "18px",
-    fontWeight: 950,
-  },
-
-  featureSection: {
-    padding: "38px",
-    borderRadius: "26px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #d1d6db",
-    boxShadow: "0 14px 40px rgba(22, 33, 44, 0.06)",
-  },
-
-  featureHeader: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1.5fr) minmax(260px, 0.7fr)",
-    gap: "34px",
-    alignItems: "end",
-    marginBottom: "30px",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: "24px",
+    flexWrap: "wrap",
+    marginBottom: "24px",
   },
 
   eyebrow: {
@@ -1148,71 +1094,136 @@ const styles: { [key: string]: React.CSSProperties } = {
     letterSpacing: "0.16em",
   },
 
-  featureHeadline: {
+  impactHeadline: {
     margin: 0,
-    maxWidth: "700px",
     color: "#111820",
-    fontSize: "clamp(30px, 4vw, 44px)",
-    lineHeight: 1.05,
+    fontSize: "clamp(30px, 4vw, 46px)",
+    lineHeight: 1.04,
     fontWeight: 950,
-    letterSpacing: "-0.035em",
+    letterSpacing: "-0.04em",
   },
 
-  featureIntro: {
+  startPrice: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: "5px",
+    padding: "15px 18px",
+    borderRadius: "16px",
+    backgroundColor: "#111820",
+    boxShadow: "0 12px 26px rgba(17, 24, 32, 0.14)",
+  },
+
+  startPriceLabel: {
+    color: "#7eb9df",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.12em",
+    marginRight: "4px",
+  },
+
+  startPriceValue: {
+    color: "#ffffff",
+    fontSize: "28px",
+    fontWeight: 950,
+    letterSpacing: "-0.03em",
+  },
+
+  startPriceSub: {
+    color: "#c2ccd5",
+    fontSize: "11px",
+  },
+
+  impactGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gap: "14px",
+  },
+
+  impactCard: {
+    position: "relative",
+    overflow: "hidden",
+    minHeight: "175px",
+    padding: "24px",
+    borderRadius: "20px",
+    border: "1px solid rgba(120, 130, 140, 0.20)",
+    boxShadow: "0 12px 26px rgba(24, 42, 58, 0.08)",
+  },
+
+  impactBlue: {
+    background:
+      "linear-gradient(145deg, #dbeefb 0%, #f6fbff 72%)",
+  },
+
+  impactDark: {
+    background:
+      "linear-gradient(145deg, #111820 0%, #1d2a35 64%, #176fae 150%)",
+  },
+
+  impactSilver: {
+    background:
+      "linear-gradient(145deg, #e2e5e8 0%, #f8f9fa 72%)",
+  },
+
+  impactAccent: {
+    width: "38px",
+    height: "5px",
+    borderRadius: "999px",
+    backgroundColor: "#176fae",
+    marginBottom: "28px",
+  },
+
+  impactTitle: {
     margin: 0,
-    color: "#626d77",
+    fontSize: "21px",
+    lineHeight: 1.1,
+    fontWeight: 950,
+    letterSpacing: "-0.02em",
+  },
+
+  impactText: {
+    margin: "11px 0 0",
     fontSize: "13px",
     lineHeight: 1.65,
   },
 
-  featureGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    borderTop: "1px solid #dce0e4",
-    borderLeft: "1px solid #dce0e4",
+  impactTextLight: {
+    color: "#ffffff",
   },
 
-  featureCard: {
-    minHeight: "200px",
-    padding: "23px",
-    borderRight: "1px solid #dce0e4",
-    borderBottom: "1px solid #dce0e4",
-    backgroundColor: "#ffffff",
+  impactTextDark: {
+    color: "#25313c",
   },
 
-  featureTop: {
+  toolRibbon: {
     display: "flex",
     alignItems: "center",
-    gap: "11px",
-    marginBottom: "24px",
+    justifyContent: "center",
+    gap: "10px",
+    flexWrap: "wrap",
+    marginTop: "20px",
+    padding: "14px 16px",
+    borderRadius: "14px",
+    backgroundColor: "#e7edf2",
+    border: "1px solid #d0d8df",
   },
 
-  featureNumber: {
+  toolRibbonLabel: {
     color: "#176fae",
-    fontSize: "10px",
+    fontSize: "9px",
     fontWeight: 950,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.12em",
+    marginRight: "4px",
   },
 
-  featureDash: {
-    width: "34px",
-    height: "1px",
-    backgroundColor: "#b8c0c7",
+  toolRibbonItem: {
+    color: "#2e3944",
+    fontSize: "11px",
+    fontWeight: 850,
   },
 
-  featureTitle: {
-    margin: 0,
-    color: "#141a20",
-    fontSize: "18px",
-    lineHeight: 1.2,
-    fontWeight: 900,
-  },
-
-  featureText: {
-    margin: "11px 0 0",
-    color: "#5c6771",
-    fontSize: "13px",
-    lineHeight: 1.65,
+  toolDot: {
+    color: "#7c8a96",
+    fontSize: "10px",
   },
 
   signupSection: {
@@ -1243,6 +1254,23 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "11px",
     fontWeight: 950,
     letterSpacing: "0.04em",
+  },
+
+  signupNumberBlue: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "45px",
+    height: "45px",
+    minWidth: "45px",
+    borderRadius: "14px",
+    background:
+      "linear-gradient(145deg, #176fae 0%, #258bc8 100%)",
+    color: "#ffffff",
+    fontSize: "11px",
+    fontWeight: 950,
+    letterSpacing: "0.04em",
+    boxShadow: "0 8px 18px rgba(23, 111, 174, 0.18)",
   },
 
   signupTitle: {
@@ -1287,7 +1315,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: "100%",
     padding: "14px 15px",
     borderRadius: "12px",
-    border: "1px solid #bcc5cd",
+    border: "1px solid #b9c4cd",
     backgroundColor: "#f8f9fa",
     color: "#111820",
     outline: "none",
@@ -1304,7 +1332,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: "100%",
     padding: "14px 75px 14px 15px",
     borderRadius: "12px",
-    border: "1px solid #bcc5cd",
+    border: "1px solid #b9c4cd",
     backgroundColor: "#f8f9fa",
     color: "#111820",
     outline: "none",
@@ -1331,8 +1359,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginBottom: "23px",
     padding: "5px",
     borderRadius: "14px",
-    backgroundColor: "#e4e8eb",
-    border: "1px solid #ced4d9",
+    background:
+      "linear-gradient(90deg, #e2e6e9 0%, #e8eef3 100%)",
+    border: "1px solid #cbd3d9",
   },
 
   methodButton: {
@@ -1366,15 +1395,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: "20px",
     borderRadius: "18px",
     border: "1px solid #c7cdd3",
-    backgroundColor: "#f8f9fa",
+    background:
+      "linear-gradient(180deg, #ffffff 0%, #f0f3f5 100%)",
     color: "#111820",
     cursor: "pointer",
   },
 
   planCardSelected: {
     border: "2px solid #176fae",
-    backgroundColor: "#ffffff",
-    boxShadow: "0 13px 30px rgba(23, 111, 174, 0.13)",
+    background:
+      "linear-gradient(180deg, #ffffff 0%, #eaf5fc 100%)",
+    boxShadow: "0 13px 30px rgba(23, 111, 174, 0.16)",
   },
 
   planTop: {
@@ -1392,6 +1423,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "9px",
     fontWeight: 950,
     letterSpacing: "0.06em",
+  },
+
+  planBadgeBlue: {
+    background:
+      "linear-gradient(90deg, #176fae 0%, #2588c7 100%)",
   },
 
   planTitle: {
@@ -1445,8 +1481,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     flexWrap: "wrap",
     padding: "14px 16px",
     borderRadius: "12px",
-    backgroundColor: "#eef1f3",
-    border: "1px solid #ced5db",
+    background:
+      "linear-gradient(90deg, #e9edf0 0%, #e6f0f7 100%)",
+    border: "1px solid #cbd6de",
   },
 
   selectedLabel: {
@@ -1468,7 +1505,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: "12px",
     padding: "19px",
     borderRadius: "15px",
-    backgroundColor: "#f3f5f6",
+    background:
+      "linear-gradient(180deg, #f5f7f8 0%, #edf1f4 100%)",
     border: "1px solid #cbd2d8",
   },
 
@@ -1510,8 +1548,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: "17px",
     padding: "24px",
     borderRadius: "18px",
-    backgroundColor: "#f4f6f7",
-    border: "1px solid #c9d0d6",
+    background:
+      "linear-gradient(145deg, #f7f9fa 0%, #e8f1f7 100%)",
+    border: "1px solid #c7d2da",
   },
 
   referralIntro: {
@@ -1523,7 +1562,8 @@ const styles: { [key: string]: React.CSSProperties } = {
   referralBadge: {
     padding: "7px 9px",
     borderRadius: "9px",
-    backgroundColor: "#111820",
+    background:
+      "linear-gradient(90deg, #111820 0%, #176fae 140%)",
     color: "#ffffff",
     fontSize: "9px",
     fontWeight: 950,
@@ -1550,8 +1590,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: "4px",
     padding: "13px 15px",
     borderRadius: "12px",
-    backgroundColor: "#e4f0f8",
-    border: "1px solid #bfd4e3",
+    backgroundColor: "#dcecf7",
+    border: "1px solid #bad2e3",
     color: "#254a64",
     fontSize: "13px",
   },
@@ -1598,12 +1638,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: "15px",
     border: "1px solid #0c5d95",
     background:
-      "linear-gradient(90deg, #135f98 0%, #1c7bb9 55%, #2588c7 100%)",
+      "linear-gradient(90deg, #111820 0%, #176fae 45%, #2588c7 100%)",
     color: "#ffffff",
     fontSize: "15px",
     fontWeight: 950,
     cursor: "pointer",
-    boxShadow: "0 12px 28px rgba(23, 111, 174, 0.22)",
+    boxShadow: "0 12px 28px rgba(23, 111, 174, 0.24)",
   },
 
   buttonArrow: {
@@ -1629,3 +1669,4 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "11px",
   },
 };
+
