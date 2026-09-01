@@ -18,7 +18,7 @@ const PLANS: Array<{
     key: "annual",
     title: "Annual",
     price: "$179.88",
-    billing: "per year - paid in full",
+    billing: "per year • paid in full",
     equivalent: "$14.99/mo equivalent",
     badge: "BEST VALUE",
   },
@@ -39,30 +39,36 @@ const PLANS: Array<{
   },
 ];
 
-const TOOL_GROUPS = [
+const FEATURES = [
   {
-    title: "Build",
-    text: "Resume Builder, Resume Optimization, Cover Letters & Professional Branding",
+    number: "01",
+    title: "Build stronger applications",
+    text: "Create and improve resumes, cover letters, professional summaries, and career materials without starting from a blank page.",
   },
   {
-    title: "Match",
-    text: "Job Description Analyzer, Resume Match Analyzer & Industry Skills",
+    number: "02",
+    title: "Stop applying blindly",
+    text: "Break down job descriptions, compare your resume to the role, identify missing skills and keywords, and make smarter application decisions.",
   },
   {
-    title: "Prepare",
-    text: "Interview Preparation, Career Goals, Career Paths & Soft Skills",
+    number: "03",
+    title: "Prepare before the interview",
+    text: "Practice interview questions, organize STAR examples, research your target role, and strengthen how you communicate your experience.",
   },
   {
-    title: "Track",
-    text: "Job Search Logs, Career Development Logs, Notes & Career Profile",
+    number: "04",
+    title: "Know your next move",
+    text: "Explore career paths, identify transferable skills, set professional goals, and turn career uncertainty into an action plan.",
   },
   {
-    title: "Learn",
-    text: "Career Toolkit Resources, Video Library & Guided Career Activities",
+    number: "05",
+    title: "Track the work that gets results",
+    text: "Keep your job search, career development activity, notes, applications, and progress organized in one Career Passport.",
   },
   {
-    title: "Explore",
-    text: "Job Board access as available, new opportunities & platform updates",
+    number: "06",
+    title: "Keep developing",
+    text: "Use guided career tools, resources, videos, job opportunities as available, and new HireMinds features throughout your access period.",
   },
 ];
 
@@ -77,7 +83,6 @@ export default function SignupPage() {
 
   const [accessMethod, setAccessMethod] =
     useState<AccessMethod>("subscription");
-
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("annual");
   const [referralCode, setReferralCode] = useState("");
 
@@ -188,10 +193,6 @@ export default function SignupPage() {
       city: cleanCity || null,
       state: cleanState || null,
 
-      /*
-        Keep referral_code for historical/program attribution.
-        Use access_referral_code for current referral access.
-      */
       referral_code: normalizedReferralCode,
       access_referral_code:
         accessMethod === "referral" ? normalizedReferralCode : null,
@@ -363,10 +364,7 @@ export default function SignupPage() {
           "hireminds_paid_renewal_acknowledged",
           "true"
         );
-        localStorage.setItem(
-          "hireminds_terms_acknowledged",
-          "true"
-        );
+        localStorage.setItem("hireminds_terms_acknowledged", "true");
       } catch {
         // Checkout should rely on authenticated server/database state.
       }
@@ -386,76 +384,153 @@ export default function SignupPage() {
   return (
     <main style={styles.page}>
       <form onSubmit={handleSignUp} style={styles.shell}>
+        {/* HERO */}
         <section style={styles.hero}>
-          <div style={styles.heroAccent} />
+          <div style={styles.heroBlueGlow} />
+          <div style={styles.heroSilverGlow} />
 
-          <div style={styles.heroContent}>
-            <div style={styles.brandPill}>HIREMINDS</div>
+          <div style={styles.heroInner}>
+            <div style={styles.heroLeft}>
+              <div style={styles.brandLine}>
+                <span style={styles.brandDot} />
+                <span style={styles.brandLabel}>HIREMINDS</span>
+                <span style={styles.brandDivider}>/</span>
+                <span style={styles.brandSub}>YOUR CAREER PASSPORT</span>
+              </div>
 
-            <h1 style={styles.heroTitle}>
-              Your career tools, all in one place.
-            </h1>
+              <h1 style={styles.heroTitle}>
+                Don&apos;t just generate a resume.
+                <span style={styles.heroBlueText}> Build your next move.</span>
+              </h1>
 
-            <p style={styles.heroText}>
-              Build stronger applications, prepare for interviews, organize your
-              job search, and keep developing your career from one Career
-              Passport.
-            </p>
-          </div>
+              <p style={styles.heroLead}>
+                HireMinds is more than a resume generator and more than a job
+                board. It is a career-development platform built to help you
+                understand the opportunity, strengthen your application,
+                prepare for the conversation, track your progress, and make
+                smarter career moves.
+              </p>
 
-          <div style={styles.heroPanel}>
-            <div style={styles.heroPanelItem}>
-              <span style={styles.heroPanelLabel}>BUILD</span>
-              <strong style={styles.heroPanelValue}>Stronger Applications</strong>
+              <div style={styles.heroStatement}>
+                <span style={styles.statementMark}>HM</span>
+                <p style={styles.statementText}>
+                  <strong>A generator gives you a document.</strong>
+                  <br />
+                  HireMinds helps you understand what to do with it.
+                </p>
+              </div>
             </div>
 
-            <div style={styles.heroDivider} />
+            <aside style={styles.heroRight}>
+              <p style={styles.heroRightEyebrow}>THE HIREMINDS DIFFERENCE</p>
 
-            <div style={styles.heroPanelItem}>
-              <span style={styles.heroPanelLabel}>PREPARE</span>
-              <strong style={styles.heroPanelValue}>For Interviews</strong>
-            </div>
+              <div style={styles.heroRightRow}>
+                <span style={styles.heroRightNumber}>01</span>
+                <div>
+                  <strong style={styles.heroRightTitle}>Understand</strong>
+                  <p style={styles.heroRightText}>
+                    Read the role. Identify what matters. Know where you fit.
+                  </p>
+                </div>
+              </div>
 
-            <div style={styles.heroDivider} />
+              <div style={styles.heroRightLine} />
 
-            <div style={styles.heroPanelItem}>
-              <span style={styles.heroPanelLabel}>TRACK</span>
-              <strong style={styles.heroPanelValue}>Your Progress</strong>
-            </div>
+              <div style={styles.heroRightRow}>
+                <span style={styles.heroRightNumber}>02</span>
+                <div>
+                  <strong style={styles.heroRightTitle}>Position</strong>
+                  <p style={styles.heroRightText}>
+                    Present your experience with intention — not guesswork.
+                  </p>
+                </div>
+              </div>
+
+              <div style={styles.heroRightLine} />
+
+              <div style={styles.heroRightRow}>
+                <span style={styles.heroRightNumber}>03</span>
+                <div>
+                  <strong style={styles.heroRightTitle}>Move</strong>
+                  <p style={styles.heroRightText}>
+                    Apply smarter, prepare better, and keep building forward.
+                  </p>
+                </div>
+              </div>
+            </aside>
           </div>
         </section>
 
-        <section style={styles.toolsSection}>
-          <div style={styles.centerHeading}>
-            <p style={styles.eyebrow}>WHAT'S INCLUDED</p>
-            <h2 style={styles.toolsTitle}>Everything you need to keep moving.</h2>
-            <p style={styles.toolsIntro}>
-              HireMinds brings practical career tools together in one clean,
-              guided workspace.
+        {/* DIFFERENCE STRIP */}
+        <section style={styles.differenceStrip}>
+          <div style={styles.differenceItem}>
+            <span style={styles.differenceSmall}>NOT JUST</span>
+            <strong style={styles.differenceBig}>Resume Tools</strong>
+          </div>
+
+          <span style={styles.plus}>+</span>
+
+          <div style={styles.differenceItem}>
+            <span style={styles.differenceSmall}>NOT JUST</span>
+            <strong style={styles.differenceBig}>Job Listings</strong>
+          </div>
+
+          <span style={styles.plus}>+</span>
+
+          <div style={styles.differenceItem}>
+            <span style={styles.differenceSmall}>NOT JUST</span>
+            <strong style={styles.differenceBig}>AI Answers</strong>
+          </div>
+
+          <div style={styles.equalsBlock}>
+            <span style={styles.equals}> = </span>
+            <strong style={styles.equalsText}>Career Strategy</strong>
+          </div>
+        </section>
+
+        {/* FEATURES */}
+        <section style={styles.featureSection}>
+          <div style={styles.featureHeader}>
+            <div>
+              <p style={styles.eyebrow}>HOW HIREMINDS HELPS</p>
+              <h2 style={styles.featureHeadline}>
+                From “What do I do?” to “I know my next step.”
+              </h2>
+            </div>
+
+            <p style={styles.featureIntro}>
+              The platform connects the pieces of a job search instead of
+              treating each task like a separate document.
             </p>
           </div>
 
-          <div style={styles.toolGrid}>
-            {TOOL_GROUPS.map((group) => (
-              <div key={group.title} style={styles.toolCard}>
-                <div style={styles.toolIcon}>{group.title.charAt(0)}</div>
-
-                <div>
-                  <h3 style={styles.toolTitle}>{group.title}</h3>
-                  <p style={styles.toolText}>{group.text}</p>
+          <div style={styles.featureGrid}>
+            {FEATURES.map((feature) => (
+              <article key={feature.number} style={styles.featureCard}>
+                <div style={styles.featureTop}>
+                  <span style={styles.featureNumber}>{feature.number}</span>
+                  <span style={styles.featureDash} />
                 </div>
-              </div>
+
+                <h3 style={styles.featureTitle}>{feature.title}</h3>
+                <p style={styles.featureText}>{feature.text}</p>
+              </article>
             ))}
           </div>
         </section>
 
-        <section style={styles.card}>
-          <div style={styles.sectionHeading}>
-            <span style={styles.stepBadge}>1</span>
+        {/* SIGNUP */}
+        <section style={styles.signupSection}>
+          <div style={styles.signupHeader}>
+            <div style={styles.signupNumber}>01</div>
 
             <div>
               <p style={styles.eyebrow}>CREATE YOUR ACCOUNT</p>
-              <h2 style={styles.sectionTitle}>Create Your Career Passport</h2>
+              <h2 style={styles.signupTitle}>Create Your Career Passport</h2>
+              <p style={styles.signupText}>
+                Start with your account information, then choose how you will
+                access HireMinds.
+              </p>
             </div>
           </div>
 
@@ -538,13 +613,17 @@ export default function SignupPage() {
           </div>
         </section>
 
-        <section style={styles.card}>
-          <div style={styles.sectionHeading}>
-            <span style={styles.stepBadge}>2</span>
+        {/* ACCESS */}
+        <section style={styles.signupSection}>
+          <div style={styles.signupHeader}>
+            <div style={styles.signupNumber}>02</div>
 
             <div>
               <p style={styles.eyebrow}>CHOOSE YOUR ACCESS</p>
-              <h2 style={styles.sectionTitle}>How will you use HireMinds?</h2>
+              <h2 style={styles.signupTitle}>Choose how you&apos;ll continue.</h2>
+              <p style={styles.signupText}>
+                Select a subscription or enter an approved referral code.
+              </p>
             </div>
           </div>
 
@@ -601,13 +680,13 @@ export default function SignupPage() {
                         ...(selected ? styles.planCardSelected : {}),
                       }}
                     >
-                      {plan.badge ? (
-                        <span style={styles.planBadge}>{plan.badge}</span>
-                      ) : (
-                        <span style={styles.planBadgePlaceholder} />
-                      )}
+                      <div style={styles.planTop}>
+                        <span style={styles.planTitle}>{plan.title}</span>
+                        {plan.badge ? (
+                          <span style={styles.planBadge}>{plan.badge}</span>
+                        ) : null}
+                      </div>
 
-                      <span style={styles.planTitle}>{plan.title}</span>
                       <span style={styles.planPrice}>{plan.price}</span>
                       <span style={styles.planBilling}>{plan.billing}</span>
                       <span style={styles.planEquivalent}>
@@ -620,7 +699,7 @@ export default function SignupPage() {
                           ...(selected ? styles.planSelectActive : {}),
                         }}
                       >
-                        {selected ? "Selected" : "Select"}
+                        {selected ? "✓ Selected" : "Select plan"}
                       </span>
                     </button>
                   );
@@ -628,8 +707,8 @@ export default function SignupPage() {
               </div>
 
               <div style={styles.selectedSummary}>
-                <span>Selected plan</span>
-                <strong>
+                <span style={styles.selectedLabel}>SELECTED PLAN</span>
+                <strong style={styles.selectedValue}>
                   {selectedPlanDetails?.title} — {selectedPlanDetails?.price}
                 </strong>
               </div>
@@ -697,11 +776,15 @@ export default function SignupPage() {
             </>
           ) : (
             <div style={styles.referralPanel}>
-              <div>
-                <h3 style={styles.referralTitle}>Have a Referral Code?</h3>
-                <p style={styles.referralText}>
-                  Enter the referral code provided to you.
-                </p>
+              <div style={styles.referralIntro}>
+                <div style={styles.referralBadge}>REFERRAL ACCESS</div>
+
+                <div>
+                  <h3 style={styles.referralTitle}>Have a Referral Code?</h3>
+                  <p style={styles.referralText}>
+                    Enter the referral code provided to you.
+                  </p>
+                </div>
               </div>
 
               <label style={styles.field}>
@@ -717,10 +800,10 @@ export default function SignupPage() {
               </label>
 
               <div style={styles.referralHelp}>
-                <strong>Need a referral code?</strong>
-                <span>
-                  Contact <strong>info@hireminds.app</strong>
+                <span style={styles.referralHelpLabel}>
+                  Need a referral code?
                 </span>
+                <strong>info@hireminds.app</strong>
               </div>
 
               <label style={styles.expirationBox}>
@@ -750,18 +833,21 @@ export default function SignupPage() {
         {message ? <div style={styles.message}>{message}</div> : null}
 
         <button type="submit" style={styles.submitButton} disabled={loading}>
-          {loading
-            ? "Please wait..."
-            : accessMethod === "subscription"
-            ? "Create Career Passport & Continue to Payment"
-            : "Create Career Passport & Continue to Consent"}
+          <span>
+            {loading
+              ? "Please wait..."
+              : accessMethod === "subscription"
+              ? "Create Career Passport & Continue to Payment"
+              : "Create Career Passport & Continue to Consent"}
+          </span>
+
+          {!loading ? <span style={styles.buttonArrow}>→</span> : null}
         </button>
 
         <footer style={styles.footer}>
-          <div style={styles.footerMark}>HIREMINDS</div>
+          <div style={styles.footerBrand}>HIREMINDS</div>
           <p style={styles.footerText}>
-            Career tools designed to help you move forward with clarity and
-            confidence.
+            Your career is bigger than one application.
           </p>
         </footer>
       </form>
@@ -772,16 +858,15 @@ export default function SignupPage() {
 const styles: { [key: string]: React.CSSProperties } = {
   page: {
     minHeight: "100vh",
-    background:
-      "linear-gradient(180deg, #eef2f6 0%, #f7f9fb 22%, #ffffff 52%, #edf1f5 100%)",
-    color: "#121820",
-    padding: "34px 18px 60px",
+    backgroundColor: "#f1f3f5",
+    color: "#11151b",
+    padding: "28px 18px 60px",
     boxSizing: "border-box",
   },
 
   shell: {
     width: "100%",
-    maxWidth: "1040px",
+    maxWidth: "1120px",
     margin: "0 auto",
     display: "flex",
     flexDirection: "column",
@@ -791,218 +876,395 @@ const styles: { [key: string]: React.CSSProperties } = {
   hero: {
     position: "relative",
     overflow: "hidden",
-    padding: "34px 30px 28px",
-    borderRadius: "28px",
-    background:
-      "linear-gradient(135deg, #ffffff 0%, #f4f7fa 48%, #e7edf4 100%)",
-    border: "1px solid #cfd6de",
-    boxShadow: "0 18px 48px rgba(24, 39, 56, 0.10)",
+    borderRadius: "30px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #d2d7dd",
+    boxShadow: "0 18px 50px rgba(16, 29, 43, 0.10)",
   },
 
-  heroAccent: {
+  heroBlueGlow: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "7px",
+    width: "420px",
+    height: "420px",
+    right: "-170px",
+    top: "-180px",
+    borderRadius: "50%",
     background:
-      "linear-gradient(90deg, #111111 0%, #626b75 25%, #2d7fbd 63%, #0e5f9b 100%)",
+      "radial-gradient(circle, rgba(30, 126, 190, 0.19) 0%, rgba(30, 126, 190, 0.05) 48%, rgba(30, 126, 190, 0) 72%)",
+    pointerEvents: "none",
   },
 
-  heroContent: {
-    textAlign: "center",
-    padding: "10px 12px 22px",
+  heroSilverGlow: {
+    position: "absolute",
+    width: "360px",
+    height: "360px",
+    left: "-150px",
+    bottom: "-190px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(146, 153, 162, 0.20) 0%, rgba(146, 153, 162, 0.04) 55%, rgba(146, 153, 162, 0) 74%)",
+    pointerEvents: "none",
   },
 
-  brandPill: {
-    display: "inline-block",
-    padding: "7px 12px",
-    borderRadius: "999px",
-    backgroundColor: "#111820",
-    color: "#ffffff",
-    fontSize: "11px",
-    fontWeight: 900,
+  heroInner: {
+    position: "relative",
+    zIndex: 1,
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1.45fr) minmax(300px, 0.75fr)",
+    gap: "40px",
+    alignItems: "stretch",
+    padding: "52px",
+  },
+
+  heroLeft: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+
+  brandLine: {
+    display: "flex",
+    alignItems: "center",
+    gap: "9px",
+    marginBottom: "22px",
+    flexWrap: "wrap",
+  },
+
+  brandDot: {
+    width: "10px",
+    height: "10px",
+    borderRadius: "50%",
+    backgroundColor: "#1c79b7",
+    boxShadow: "0 0 0 5px rgba(28, 121, 183, 0.10)",
+  },
+
+  brandLabel: {
+    color: "#111820",
+    fontSize: "12px",
+    fontWeight: 950,
     letterSpacing: "0.14em",
   },
 
-  heroTitle: {
-    margin: "18px auto 0",
-    maxWidth: "780px",
-    fontSize: "clamp(36px, 6vw, 58px)",
-    lineHeight: 1.04,
-    color: "#101820",
-    fontWeight: 900,
-    letterSpacing: "-0.035em",
+  brandDivider: {
+    color: "#a4acb4",
+    fontSize: "11px",
   },
 
-  heroText: {
-    maxWidth: "720px",
-    margin: "16px auto 0",
-    color: "#505c68",
-    fontSize: "16px",
-    lineHeight: 1.7,
-  },
-
-  heroPanel: {
-    display: "grid",
-    gridTemplateColumns: "repeat(5, auto)",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "16px",
-    marginTop: "4px",
-    padding: "17px 18px",
-    borderRadius: "18px",
-    backgroundColor: "#111820",
-    color: "#ffffff",
-  },
-
-  heroPanelItem: {
-    textAlign: "center",
-  },
-
-  heroPanelLabel: {
-    display: "block",
-    color: "#8abfe7",
+  brandSub: {
+    color: "#68737f",
     fontSize: "10px",
-    fontWeight: 900,
+    fontWeight: 850,
     letterSpacing: "0.12em",
   },
 
-  heroPanelValue: {
-    display: "block",
-    marginTop: "4px",
-    color: "#ffffff",
-    fontSize: "13px",
-  },
-
-  heroDivider: {
-    width: "1px",
-    height: "28px",
-    backgroundColor: "#414b55",
-  },
-
-  toolsSection: {
-    padding: "28px",
-    borderRadius: "24px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #cfd7df",
-    boxShadow: "0 16px 42px rgba(26, 43, 61, 0.08)",
-  },
-
-  centerHeading: {
-    textAlign: "center",
-    marginBottom: "22px",
-  },
-
-  eyebrow: {
-    margin: "0 0 6px",
-    color: "#176ba8",
-    fontSize: "11px",
-    fontWeight: 900,
-    letterSpacing: "0.13em",
-  },
-
-  toolsTitle: {
+  heroTitle: {
     margin: 0,
-    color: "#111820",
-    fontSize: "29px",
-    fontWeight: 900,
+    maxWidth: "760px",
+    color: "#0d1117",
+    fontSize: "clamp(43px, 6.7vw, 70px)",
+    lineHeight: 0.98,
+    fontWeight: 950,
+    letterSpacing: "-0.052em",
   },
 
-  toolsIntro: {
+  heroBlueText: {
+    color: "#176fae",
+  },
+
+  heroLead: {
+    maxWidth: "760px",
+    margin: "23px 0 0",
+    color: "#4f5a66",
+    fontSize: "17px",
+    lineHeight: 1.72,
+    fontWeight: 500,
+  },
+
+  heroStatement: {
+    display: "flex",
+    alignItems: "center",
+    gap: "15px",
+    marginTop: "28px",
+    padding: "17px 18px",
     maxWidth: "680px",
-    margin: "9px auto 0",
-    color: "#647180",
+    borderRadius: "16px",
+    backgroundColor: "#f0f2f4",
+    borderLeft: "4px solid #176fae",
+  },
+
+  statementMark: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "44px",
+    height: "44px",
+    minWidth: "44px",
+    borderRadius: "12px",
+    backgroundColor: "#111820",
+    color: "#ffffff",
+    fontSize: "11px",
+    fontWeight: 950,
+    letterSpacing: "0.05em",
+  },
+
+  statementText: {
+    margin: 0,
+    color: "#29323b",
     fontSize: "14px",
     lineHeight: 1.55,
   },
 
-  toolGrid: {
+  heroRight: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    padding: "30px",
+    borderRadius: "22px",
+    background:
+      "linear-gradient(145deg, #111820 0%, #202a34 100%)",
+    boxShadow: "0 18px 40px rgba(12, 20, 28, 0.20)",
+  },
+
+  heroRightEyebrow: {
+    margin: "0 0 24px",
+    color: "#78b7e1",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
+  },
+
+  heroRightRow: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gridTemplateColumns: "35px 1fr",
     gap: "12px",
   },
 
-  toolCard: {
-    display: "flex",
-    gap: "13px",
-    alignItems: "flex-start",
-    padding: "16px",
-    borderRadius: "16px",
-    background:
-      "linear-gradient(180deg, #fbfcfd 0%, #f0f3f6 100%)",
-    border: "1px solid #d3dae1",
+  heroRightNumber: {
+    color: "#6aa8d3",
+    fontSize: "11px",
+    fontWeight: 900,
+    paddingTop: "2px",
   },
 
-  toolIcon: {
-    width: "36px",
-    height: "36px",
-    minWidth: "36px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: "11px",
-    backgroundColor: "#dcecf8",
-    border: "1px solid #bcd3e5",
-    color: "#176ba8",
+  heroRightTitle: {
+    color: "#ffffff",
+    fontSize: "16px",
     fontWeight: 900,
   },
 
-  toolTitle: {
-    margin: "0 0 4px",
-    color: "#111820",
-    fontSize: "14px",
-    fontWeight: 900,
-  },
-
-  toolText: {
-    margin: 0,
-    color: "#5e6976",
+  heroRightText: {
+    margin: "5px 0 0",
+    color: "#bac3cc",
     fontSize: "12px",
     lineHeight: 1.55,
   },
 
-  card: {
-    padding: "28px",
-    borderRadius: "24px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #ccd4dc",
-    boxShadow: "0 16px 42px rgba(27, 42, 58, 0.08)",
+  heroRightLine: {
+    height: "1px",
+    backgroundColor: "#394550",
+    margin: "19px 0",
   },
 
-  sectionHeading: {
+  differenceStrip: {
     display: "flex",
-    gap: "12px",
     alignItems: "center",
-    marginBottom: "22px",
-  },
-
-  stepBadge: {
-    width: "39px",
-    height: "39px",
-    minWidth: "39px",
-    borderRadius: "12px",
-    display: "flex",
     justifyContent: "center",
+    gap: "20px",
+    flexWrap: "wrap",
+    padding: "24px 28px",
+    borderRadius: "22px",
+    background:
+      "linear-gradient(90deg, #e1e5e8 0%, #f8f9fa 50%, #dde3e8 100%)",
+    border: "1px solid #cdd3d8",
+  },
+
+  differenceItem: {
+    display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    backgroundColor: "#111820",
-    color: "#ffffff",
+    minWidth: "140px",
+  },
+
+  differenceSmall: {
+    color: "#78818a",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
+  },
+
+  differenceBig: {
+    marginTop: "4px",
+    color: "#151a20",
     fontSize: "15px",
     fontWeight: 900,
-    boxShadow: "inset 0 0 0 1px #2c3741",
   },
 
-  sectionTitle: {
+  plus: {
+    color: "#176fae",
+    fontSize: "24px",
+    fontWeight: 300,
+  },
+
+  equalsBlock: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    paddingLeft: "5px",
+  },
+
+  equals: {
+    color: "#176fae",
+    fontSize: "28px",
+    fontWeight: 300,
+  },
+
+  equalsText: {
+    color: "#176fae",
+    fontSize: "18px",
+    fontWeight: 950,
+  },
+
+  featureSection: {
+    padding: "38px",
+    borderRadius: "26px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #d1d6db",
+    boxShadow: "0 14px 40px rgba(22, 33, 44, 0.06)",
+  },
+
+  featureHeader: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1.5fr) minmax(260px, 0.7fr)",
+    gap: "34px",
+    alignItems: "end",
+    marginBottom: "30px",
+  },
+
+  eyebrow: {
+    margin: "0 0 7px",
+    color: "#176fae",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
+  },
+
+  featureHeadline: {
+    margin: 0,
+    maxWidth: "700px",
+    color: "#111820",
+    fontSize: "clamp(30px, 4vw, 44px)",
+    lineHeight: 1.05,
+    fontWeight: 950,
+    letterSpacing: "-0.035em",
+  },
+
+  featureIntro: {
+    margin: 0,
+    color: "#626d77",
+    fontSize: "13px",
+    lineHeight: 1.65,
+  },
+
+  featureGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    borderTop: "1px solid #dce0e4",
+    borderLeft: "1px solid #dce0e4",
+  },
+
+  featureCard: {
+    minHeight: "200px",
+    padding: "23px",
+    borderRight: "1px solid #dce0e4",
+    borderBottom: "1px solid #dce0e4",
+    backgroundColor: "#ffffff",
+  },
+
+  featureTop: {
+    display: "flex",
+    alignItems: "center",
+    gap: "11px",
+    marginBottom: "24px",
+  },
+
+  featureNumber: {
+    color: "#176fae",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.08em",
+  },
+
+  featureDash: {
+    width: "34px",
+    height: "1px",
+    backgroundColor: "#b8c0c7",
+  },
+
+  featureTitle: {
+    margin: 0,
+    color: "#141a20",
+    fontSize: "18px",
+    lineHeight: 1.2,
+    fontWeight: 900,
+  },
+
+  featureText: {
+    margin: "11px 0 0",
+    color: "#5c6771",
+    fontSize: "13px",
+    lineHeight: 1.65,
+  },
+
+  signupSection: {
+    padding: "34px",
+    borderRadius: "26px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #cfd5da",
+    boxShadow: "0 14px 40px rgba(21, 32, 43, 0.06)",
+  },
+
+  signupHeader: {
+    display: "flex",
+    gap: "15px",
+    alignItems: "flex-start",
+    marginBottom: "27px",
+  },
+
+  signupNumber: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "45px",
+    height: "45px",
+    minWidth: "45px",
+    borderRadius: "14px",
+    backgroundColor: "#111820",
+    color: "#ffffff",
+    fontSize: "11px",
+    fontWeight: 950,
+    letterSpacing: "0.04em",
+  },
+
+  signupTitle: {
     margin: 0,
     color: "#111820",
-    fontSize: "26px",
-    fontWeight: 900,
+    fontSize: "29px",
+    lineHeight: 1.1,
+    fontWeight: 950,
+    letterSpacing: "-0.025em",
+  },
+
+  signupText: {
+    margin: "7px 0 0",
+    color: "#68737d",
+    fontSize: "13px",
+    lineHeight: 1.55,
   },
 
   formGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "15px",
+    gap: "16px",
   },
 
   field: {
@@ -1016,22 +1278,21 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 
   label: {
-    color: "#263443",
+    color: "#2b3540",
     fontSize: "12px",
-    fontWeight: 800,
+    fontWeight: 850,
   },
 
   input: {
     width: "100%",
     padding: "14px 15px",
     borderRadius: "12px",
-    border: "1px solid #bfc9d3",
-    backgroundColor: "#f9fafb",
+    border: "1px solid #bcc5cd",
+    backgroundColor: "#f8f9fa",
     color: "#111820",
     outline: "none",
     boxSizing: "border-box",
     fontSize: "15px",
-    boxShadow: "inset 0 1px 2px rgba(17, 24, 32, 0.04)",
   },
 
   passwordWrap: {
@@ -1043,13 +1304,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: "100%",
     padding: "14px 75px 14px 15px",
     borderRadius: "12px",
-    border: "1px solid #bfc9d3",
-    backgroundColor: "#f9fafb",
+    border: "1px solid #bcc5cd",
+    backgroundColor: "#f8f9fa",
     color: "#111820",
     outline: "none",
     boxSizing: "border-box",
     fontSize: "15px",
-    boxShadow: "inset 0 1px 2px rgba(17, 24, 32, 0.04)",
   },
 
   passwordToggle: {
@@ -1059,7 +1319,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     transform: "translateY(-50%)",
     border: "none",
     background: "transparent",
-    color: "#176ba8",
+    color: "#176fae",
     cursor: "pointer",
     fontWeight: 900,
   },
@@ -1067,125 +1327,137 @@ const styles: { [key: string]: React.CSSProperties } = {
   methodTabs: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "10px",
-    marginBottom: "20px",
+    gap: "6px",
+    marginBottom: "23px",
     padding: "5px",
-    borderRadius: "15px",
-    backgroundColor: "#e9edf1",
-    border: "1px solid #d0d7de",
+    borderRadius: "14px",
+    backgroundColor: "#e4e8eb",
+    border: "1px solid #ced4d9",
   },
 
   methodButton: {
     padding: "14px",
-    borderRadius: "11px",
+    borderRadius: "10px",
     border: "1px solid transparent",
     backgroundColor: "transparent",
-    color: "#586574",
+    color: "#5c6770",
     fontWeight: 900,
     cursor: "pointer",
   },
 
   methodButtonActive: {
-    border: "1px solid #166fae",
     backgroundColor: "#ffffff",
-    color: "#176ba8",
-    boxShadow: "0 6px 16px rgba(23, 107, 168, 0.10)",
+    border: "1px solid #176fae",
+    color: "#176fae",
+    boxShadow: "0 5px 14px rgba(23, 111, 174, 0.10)",
   },
 
   planGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "13px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))",
+    gap: "14px",
   },
 
   planCard: {
-    minHeight: "230px",
+    minHeight: "225px",
     display: "flex",
     flexDirection: "column",
     textAlign: "left",
-    padding: "19px",
+    padding: "20px",
     borderRadius: "18px",
-    border: "1px solid #cbd3db",
-    background:
-      "linear-gradient(180deg, #ffffff 0%, #f3f5f7 100%)",
+    border: "1px solid #c7cdd3",
+    backgroundColor: "#f8f9fa",
     color: "#111820",
     cursor: "pointer",
   },
 
   planCardSelected: {
-    border: "2px solid #176ba8",
-    background:
-      "linear-gradient(180deg, #f8fcff 0%, #eaf4fb 100%)",
-    boxShadow: "0 12px 30px rgba(23, 107, 168, 0.14)",
+    border: "2px solid #176fae",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 13px 30px rgba(23, 111, 174, 0.13)",
+  },
+
+  planTop: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "10px",
   },
 
   planBadge: {
-    alignSelf: "flex-start",
-    padding: "5px 9px",
+    padding: "5px 8px",
     borderRadius: "999px",
     backgroundColor: "#111820",
     color: "#ffffff",
-    fontSize: "10px",
-    fontWeight: 900,
-    letterSpacing: "0.05em",
-  },
-
-  planBadgePlaceholder: {
-    height: "22px",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.06em",
   },
 
   planTitle: {
-    marginTop: "15px",
-    fontSize: "13px",
-    fontWeight: 900,
+    color: "#111820",
+    fontSize: "12px",
+    fontWeight: 950,
     textTransform: "uppercase",
-    letterSpacing: "0.07em",
+    letterSpacing: "0.09em",
   },
 
   planPrice: {
-    marginTop: "7px",
-    fontSize: "31px",
-    fontWeight: 900,
+    marginTop: "25px",
     color: "#111820",
+    fontSize: "34px",
+    fontWeight: 950,
+    letterSpacing: "-0.03em",
   },
 
   planBilling: {
     marginTop: "3px",
-    color: "#6c7885",
+    color: "#707a83",
     fontSize: "12px",
   },
 
   planEquivalent: {
     marginTop: "8px",
-    color: "#176ba8",
+    color: "#176fae",
     fontSize: "12px",
-    fontWeight: 800,
+    fontWeight: 850,
   },
 
   planSelect: {
     marginTop: "auto",
-    paddingTop: "17px",
-    color: "#747f8b",
-    fontSize: "11px",
-    fontWeight: 900,
+    paddingTop: "18px",
+    color: "#78828c",
+    fontSize: "10px",
+    fontWeight: 950,
     textTransform: "uppercase",
+    letterSpacing: "0.06em",
   },
 
   planSelectActive: {
-    color: "#176ba8",
+    color: "#176fae",
   },
 
   selectedSummary: {
-    marginTop: "14px",
+    marginTop: "15px",
     display: "flex",
     justifyContent: "space-between",
-    gap: "15px",
+    gap: "14px",
     flexWrap: "wrap",
-    padding: "13px 15px",
+    padding: "14px 16px",
     borderRadius: "12px",
-    backgroundColor: "#edf1f4",
-    border: "1px solid #cdd5dc",
-    color: "#1b2734",
+    backgroundColor: "#eef1f3",
+    border: "1px solid #ced5db",
+  },
+
+  selectedLabel: {
+    color: "#68737d",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.12em",
+  },
+
+  selectedValue: {
+    color: "#151c23",
     fontSize: "13px",
   },
 
@@ -1193,25 +1465,25 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginTop: "16px",
     display: "flex",
     flexDirection: "column",
-    gap: "11px",
-    padding: "18px",
+    gap: "12px",
+    padding: "19px",
     borderRadius: "15px",
-    backgroundColor: "#f4f6f8",
-    border: "1px solid #cbd3da",
+    backgroundColor: "#f3f5f6",
+    border: "1px solid #cbd2d8",
   },
 
   ackTitle: {
     margin: "0 0 2px",
     color: "#111820",
     fontSize: "14px",
-    fontWeight: 900,
+    fontWeight: 950,
   },
 
   checkboxRow: {
     display: "flex",
     gap: "10px",
     alignItems: "flex-start",
-    color: "#3f4c59",
+    color: "#404b55",
     fontSize: "13px",
     lineHeight: 1.5,
     cursor: "pointer",
@@ -1222,12 +1494,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: "18px",
     minWidth: "18px",
     marginTop: "1px",
-    accentColor: "#176ba8",
+    accentColor: "#176fae",
   },
 
   smallNote: {
     margin: "2px 0 0",
-    color: "#75808b",
+    color: "#747f89",
     fontSize: "11px",
     lineHeight: 1.5,
   },
@@ -1235,24 +1507,40 @@ const styles: { [key: string]: React.CSSProperties } = {
   referralPanel: {
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
-    padding: "22px",
-    borderRadius: "17px",
-    background:
-      "linear-gradient(180deg, #f7f9fb 0%, #eef2f5 100%)",
-    border: "1px solid #c8d2db",
+    gap: "17px",
+    padding: "24px",
+    borderRadius: "18px",
+    backgroundColor: "#f4f6f7",
+    border: "1px solid #c9d0d6",
+  },
+
+  referralIntro: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+  },
+
+  referralBadge: {
+    padding: "7px 9px",
+    borderRadius: "9px",
+    backgroundColor: "#111820",
+    color: "#ffffff",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.08em",
+    whiteSpace: "nowrap",
   },
 
   referralTitle: {
     margin: 0,
     color: "#111820",
     fontSize: "20px",
-    fontWeight: 900,
+    fontWeight: 950,
   },
 
   referralText: {
-    margin: "5px 0 0",
-    color: "#65717c",
+    margin: "4px 0 0",
+    color: "#66717b",
     fontSize: "13px",
   },
 
@@ -1260,12 +1548,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: "flex",
     flexDirection: "column",
     gap: "4px",
-    padding: "13px 14px",
+    padding: "13px 15px",
     borderRadius: "12px",
-    backgroundColor: "#e5f1f8",
-    border: "1px solid #bfd6e6",
-    color: "#2a4e67",
+    backgroundColor: "#e4f0f8",
+    border: "1px solid #bfd4e3",
+    color: "#254a64",
     fontSize: "13px",
+  },
+
+  referralHelpLabel: {
+    color: "#547187",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
   },
 
   expirationBox: {
@@ -1274,9 +1570,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: "flex-start",
     padding: "14px 15px",
     borderRadius: "12px",
-    backgroundColor: "#f2f3f4",
-    border: "1px solid #c9ced3",
-    color: "#3f474f",
+    backgroundColor: "#ffffff",
+    border: "1px solid #c7ced4",
+    color: "#3e4852",
     fontSize: "13px",
     lineHeight: 1.5,
     cursor: "pointer",
@@ -1285,42 +1581,51 @@ const styles: { [key: string]: React.CSSProperties } = {
   message: {
     padding: "14px 16px",
     borderRadius: "12px",
-    backgroundColor: "#fff1f1",
-    border: "1px solid #dbaaaa",
+    backgroundColor: "#fff0f0",
+    border: "1px solid #daa8a8",
     color: "#8c2f2f",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 850,
   },
 
   submitButton: {
     width: "100%",
-    padding: "16px 18px",
-    borderRadius: "14px",
-    border: "1px solid #0f5e95",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "14px",
+    padding: "17px 20px",
+    borderRadius: "15px",
+    border: "1px solid #0c5d95",
     background:
-      "linear-gradient(90deg, #176ba8 0%, #2786c6 100%)",
+      "linear-gradient(90deg, #135f98 0%, #1c7bb9 55%, #2588c7 100%)",
     color: "#ffffff",
     fontSize: "15px",
-    fontWeight: 900,
+    fontWeight: 950,
     cursor: "pointer",
-    boxShadow: "0 10px 24px rgba(23, 107, 168, 0.20)",
+    boxShadow: "0 12px 28px rgba(23, 111, 174, 0.22)",
+  },
+
+  buttonArrow: {
+    fontSize: "20px",
+    fontWeight: 400,
   },
 
   footer: {
     textAlign: "center",
-    padding: "20px 16px 4px",
+    padding: "17px 12px 2px",
   },
 
-  footerMark: {
+  footerBrand: {
     color: "#111820",
-    fontSize: "11px",
-    fontWeight: 900,
-    letterSpacing: "0.14em",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.15em",
   },
 
   footerText: {
-    margin: "7px 0 0",
-    color: "#6f7882",
+    margin: "6px 0 0",
+    color: "#727c85",
     fontSize: "11px",
   },
 };
