@@ -1,4 +1,4 @@
-
+"use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -519,6 +519,7 @@ function PaidAccessContent() {
     </main>
   );
 }
+
 
 export default function PaidAccessPage() {
   return (
