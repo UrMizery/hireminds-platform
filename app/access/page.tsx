@@ -610,7 +610,7 @@ export default function AccessPage() {
                 ) : null}
               </div>
 
-              <div style={styles.consentGrid}>
+              <div style={styles.topConsentGrid}>
                 <div style={styles.consentCardBlue}>
                   <p style={styles.consentKicker}>ELIGIBILITY</p>
                   <h3 style={styles.consentTitle}>Your account information</h3>
@@ -633,15 +633,7 @@ export default function AccessPage() {
                   </label>
                 </div>
 
-                <div
-                  style={{
-                    ...styles.consentCardWhite,
-                    gridColumn: "1 / -1",
-                    border: "1px solid #9fc5df",
-                    background:
-                      "linear-gradient(145deg, #f8fbfd 0%, #eaf4fa 100%)",
-                  }}
-                >
+                <div style={styles.consentCardIndependent}>
                   <p style={styles.consentKicker}>
                     INDEPENDENT PLATFORM ACKNOWLEDGMENT
                   </p>
@@ -651,25 +643,19 @@ export default function AccessPage() {
                   </h3>
 
                   <p style={styles.consentText}>
-                    Thank you for your interest in registering for HireMinds™,
-                    an optional digital career development platform designed to
-                    support your job search through resume development, career
-                    resources, job-search tools, and workforce development
-                    support.
+                    HireMinds™ is an optional digital career development
+                    platform designed to support your job search through resume
+                    development, career resources, job-search tools, and
+                    workforce development support.
                   </p>
 
                   <p style={styles.consentText}>
-                    Participation in HireMinds is completely voluntary.
-                    HireMinds is a separate digital platform and is not
-                    operated by, owned by, or a service of the nonprofit
-                    organization that referred you.
-                  </p>
-
-                  <p style={styles.consentText}>
-                    Registration for HireMinds is not required to participate
-                    in any workforce development, training, employment, or
-                    supportive services provided by the nonprofit organization
-                    that referred you.
+                    Participation is voluntary. HireMinds is a separate digital
+                    platform and is not operated by, owned by, or a service of
+                    the nonprofit organization that referred you. Registration
+                    is not required to participate in workforce development,
+                    training, employment, or supportive services provided by
+                    the referring nonprofit organization.
                   </p>
 
                   <p style={styles.consentText}>
@@ -697,7 +683,9 @@ export default function AccessPage() {
                     </span>
                   </label>
                 </div>
+              </div>
 
+              <div style={styles.bottomConsentGrid}>
                 <div style={styles.consentCardSilver}>
                   <p style={styles.consentKicker}>PRIVACY & SECURITY</p>
                   <h3 style={styles.consentTitle}>
@@ -1474,10 +1462,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     overflowWrap: "anywhere",
   },
 
-  consentGrid: {
+  topConsentGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gridTemplateColumns: "minmax(0, 0.82fr) minmax(0, 1.18fr)",
     gap: "14px",
+    alignItems: "stretch",
+  },
+
+  bottomConsentGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: "14px",
+    marginTop: "14px",
+    alignItems: "stretch",
+  },
+
+  consentCardIndependent: {
+    minHeight: "235px",
+    display: "flex",
+    flexDirection: "column",
+    padding: "23px",
+    borderRadius: "20px",
+    background:
+      "linear-gradient(145deg, #f7fbfe 0%, #e8f3fa 100%)",
+    border: "1px solid #9fc5df",
+    boxShadow: "0 10px 26px rgba(23, 111, 174, 0.08)",
   },
 
   consentCardBlue: {
