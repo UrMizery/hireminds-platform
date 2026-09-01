@@ -267,10 +267,10 @@ export default function SignupPage() {
       return;
     }
 
-    if (!password) {
-      setMessage("Please create a password.");
-      return;
-    }
+    if (accessMethod === "referral" && !password) {
+  setMessage("Please create a password.");
+  return;
+}
 
     try {
       setLoading(true);
