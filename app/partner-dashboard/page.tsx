@@ -1493,27 +1493,42 @@ export default function PartnerDashboardPage() {
         if (
           partnerError
         ) {
-          setMessage(
-            partnerError.message
-          );
+          await supabase.auth.signOut();
 
-          setLoading(
-            false
-          );
+          window.location.href =
+            "/employer-partner-login";
 
           return;
         }
 
-        if (
-          !partnerRow
-        ) {
-          setMessage(
-            "This account does not have Partner Dashboard access."
+        const accountType =
+          String(
+            partnerRow?.account_type ||
+              ""
+          )
+            .trim()
+            .toLowerCase();
+
+        const hasPartnerDashboardAccess =
+          !!partnerRow &&
+          (
+            accountType ===
+              "partner" ||
+            accountType ===
+              "super_admin"
           );
 
-          setLoading(
-            false
+        if (
+          !hasPartnerDashboardAccess
+        ) {
+          await supabase.auth.signOut();
+
+          localStorage.removeItem(
+            "hireminds_referral_code"
           );
+
+          window.location.href =
+            "/employer-partner-login";
 
           return;
         }
@@ -1535,7 +1550,7 @@ export default function PartnerDashboardPage() {
             );
 
         if (
-          partnerRow.account_type !==
+          accountType !==
             "super_admin" &&
           email.toLowerCase() !==
             SYSTEM_ADMIN_EMAIL.toLowerCase()
@@ -1590,7 +1605,7 @@ export default function PartnerDashboardPage() {
             );
 
         if (
-          partnerRow.account_type !==
+          accountType !==
             "super_admin" &&
           email.toLowerCase() !==
             SYSTEM_ADMIN_EMAIL.toLowerCase()
@@ -1718,9 +1733,22 @@ export default function PartnerDashboardPage() {
           authData.user?.email ||
           "";
 
+        const accountType =
+          String(
+            partner?.account_type ||
+              ""
+          )
+            .trim()
+            .toLowerCase();
+
+        const canLoadAdminData =
+          email.toLowerCase() ===
+            SYSTEM_ADMIN_EMAIL.toLowerCase() ||
+          accountType ===
+            "super_admin";
+
         if (
-          email.toLowerCase() !==
-          SYSTEM_ADMIN_EMAIL.toLowerCase()
+          !canLoadAdminData
         ) {
           return;
         }
@@ -1938,7 +1966,9 @@ export default function PartnerDashboardPage() {
           });
         }
       },
-      []
+      [
+        partner?.account_type,
+      ]
     );
 
   useEffect(
@@ -1953,14 +1983,13 @@ export default function PartnerDashboardPage() {
   useEffect(
     () => {
       if (
-        currentUserEmail.toLowerCase() ===
-        SYSTEM_ADMIN_EMAIL.toLowerCase()
+        isSystemAdmin
       ) {
         loadAdminData();
       }
     },
     [
-      currentUserEmail,
+      isSystemAdmin,
       loadAdminData,
     ]
   );
