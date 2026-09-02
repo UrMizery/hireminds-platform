@@ -57,6 +57,9 @@ export default function CoverLetterGeneratorPage() {
   const [signatureName, setSignatureName] = useState("");
   const [message, setMessage] = useState("");
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [aiLoading, setAiLoading] = useState<
+    "opening" | "experience" | "value" | "closing" | "all" | null
+  >(null);
 
   const [userId, setUserId] = useState("");
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -176,6 +179,117 @@ export default function CoverLetterGeneratorPage() {
     closingLine,
     signatureName,
   ]);
+
+  async function requestAiSection(
+    section: "opening" | "experience" | "value" | "closing"
+  ) {
+    try {
+      setAiLoading(section);
+      setMessage("");
+
+      const currentText =
+        section === "opening"
+          ? openingLine
+          : section === "experience"
+            ? experienceLine
+            : section === "value"
+              ? valueLine
+              : closingLine;
+
+      const response = await fetch("/api/cover-letter-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "section",
+          section,
+          fullName,
+          jobTitle,
+          companyName,
+          employerName,
+          hiringManager,
+          openingLine,
+          experienceLine,
+          valueLine,
+          closingLine,
+          currentText,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to generate AI suggestions.");
+      }
+
+      const generated = String(data?.text || "").trim();
+
+      if (!generated) {
+        throw new Error("AI returned an empty response.");
+      }
+
+      if (section === "opening") setOpeningLine(generated);
+      if (section === "experience") setExperienceLine(generated);
+      if (section === "value") setValueLine(generated);
+      if (section === "closing") setClosingLine(generated);
+
+      setMessage("AI suggestion added. Review and personalize it before saving.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to generate AI suggestions right now."
+      );
+    } finally {
+      setAiLoading(null);
+    }
+  }
+
+  async function requestAiFullDraft() {
+    try {
+      setAiLoading("all");
+      setMessage("");
+
+      const response = await fetch("/api/cover-letter-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "all",
+          fullName,
+          jobTitle,
+          companyName,
+          employerName,
+          hiringManager,
+          openingLine,
+          experienceLine,
+          valueLine,
+          closingLine,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to generate the cover letter draft.");
+      }
+
+      if (data?.opening) setOpeningLine(String(data.opening).trim());
+      if (data?.experience) setExperienceLine(String(data.experience).trim());
+      if (data?.value) setValueLine(String(data.value).trim());
+      if (data?.closing) setClosingLine(String(data.closing).trim());
+
+      setMessage(
+        "AI draft created. Review each paragraph and personalize the details before saving."
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to generate the cover letter draft right now."
+      );
+    } finally {
+      setAiLoading(null);
+    }
+  }
 
   async function handleSaveDraft() {
     try {
@@ -495,7 +609,18 @@ export default function CoverLetterGeneratorPage() {
                   <p style={styles.sectionKicker}>LETTER CONTENT</p>
                   <h2 style={styles.sectionTitle}>Build the message</h2>
                 </div>
-                <span style={styles.sectionHint}>Keep it focused and specific</span>
+
+                <button
+                  type="button"
+                  onClick={requestAiFullDraft}
+                  disabled={aiLoading !== null}
+                  style={{
+                    ...styles.aiDraftAllButton,
+                    ...(aiLoading !== null ? styles.aiButtonDisabled : {}),
+                  }}
+                >
+                  {aiLoading === "all" ? "Drafting..." : "✦ Draft All with AI"}
+                </button>
               </div>
 
               <TextAreaField
@@ -503,6 +628,9 @@ export default function CoverLetterGeneratorPage() {
                 value={openingLine}
                 onChange={setOpeningLine}
                 placeholder="I am writing to express my interest in the [Job Title] position at [Company Name]."
+                onAi={() => requestAiSection("opening")}
+                aiLoading={aiLoading === "opening"}
+                aiDisabled={aiLoading !== null}
               />
 
               <TextAreaField
@@ -510,6 +638,9 @@ export default function CoverLetterGeneratorPage() {
                 value={experienceLine}
                 onChange={setExperienceLine}
                 placeholder="Connect your experience and strengths to the role."
+                onAi={() => requestAiSection("experience")}
+                aiLoading={aiLoading === "experience"}
+                aiDisabled={aiLoading !== null}
               />
 
               <TextAreaField
@@ -517,6 +648,9 @@ export default function CoverLetterGeneratorPage() {
                 value={valueLine}
                 onChange={setValueLine}
                 placeholder="Explain the value you would bring to the team."
+                onAi={() => requestAiSection("value")}
+                aiLoading={aiLoading === "value"}
+                aiDisabled={aiLoading !== null}
               />
 
               <TextAreaField
@@ -524,6 +658,9 @@ export default function CoverLetterGeneratorPage() {
                 value={closingLine}
                 onChange={setClosingLine}
                 placeholder="Thank the employer and close with interest in speaking further."
+                onAi={() => requestAiSection("closing")}
+                aiLoading={aiLoading === "closing"}
+                aiDisabled={aiLoading !== null}
               />
 
               <Field
@@ -708,15 +845,38 @@ function TextAreaField({
   value,
   onChange,
   placeholder,
+  onAi,
+  aiLoading,
+  aiDisabled,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  onAi?: () => void;
+  aiLoading?: boolean;
+  aiDisabled?: boolean;
 }) {
   return (
     <div style={styles.fieldWrap}>
-      <label style={styles.label}>{label}</label>
+      <div style={styles.textAreaLabelRow}>
+        <label style={{ ...styles.label, marginBottom: 0 }}>{label}</label>
+
+        {onAi ? (
+          <button
+            type="button"
+            onClick={onAi}
+            disabled={aiDisabled}
+            style={{
+              ...styles.aiAssistButton,
+              ...(aiDisabled ? styles.aiButtonDisabled : {}),
+            }}
+          >
+            {aiLoading ? "Thinking..." : value.trim() ? "✦ Improve with AI" : "✦ Write with AI"}
+          </button>
+        ) : null}
+      </div>
+
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -1159,6 +1319,46 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "240px",
     overflow: "hidden",
     textOverflow: "ellipsis",
+  },
+
+  textAreaLabelRow: {
+    marginBottom: "7px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+  },
+
+  aiAssistButton: {
+    flexShrink: 0,
+    minHeight: "30px",
+    padding: "0 11px",
+    borderRadius: "999px",
+    border: "1px solid rgba(22,119,255,.24)",
+    background: "linear-gradient(120deg, rgba(22,119,255,.10), rgba(22,119,255,.04))",
+    color: "#145fad",
+    fontSize: "10px",
+    fontWeight: 850,
+    cursor: "pointer",
+  },
+
+  aiDraftAllButton: {
+    flexShrink: 0,
+    minHeight: "36px",
+    padding: "0 14px",
+    borderRadius: "999px",
+    border: "1px solid #1677FF",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    fontSize: "10px",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 8px 18px rgba(22,119,255,.16)",
+  },
+
+  aiButtonDisabled: {
+    opacity: 0.55,
+    cursor: "not-allowed",
   },
 
   message: {
