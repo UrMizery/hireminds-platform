@@ -1019,181 +1019,336 @@ printWindow.document.write(`
 <style>
 @page {
 size: letter;
-margin: 0.92in 0.55in 0.42in;
+margin: 0;
 }
 
-html, body {
+html,
+body {
 margin: 0;
 padding: 0;
-background: white;
+background: #ffffff;
 color: #111827;
 font-family: ${fontFamily}, serif;
-}
-
-body {
 -webkit-print-color-adjust: exact;
 print-color-adjust: exact;
 }
 
-${getPrintFormatCss(resumeType)}
+* { box-sizing: border-box; }
 
-.print-resume {
-width: 100%;
-max-width: 100%;
+#printSource {
+position: fixed;
+left: -10000px;
+top: 0;
+width: 7.4in;
+visibility: hidden;
+pointer-events: none;
+}
+
+#printPages {
+width: 8.5in;
 margin: 0 auto;
-padding-top: 0;
-color: #111827;
+background: #ffffff;
+}
+
+.printPage {
+width: 8.5in;
+height: 11in;
+padding: 0.34in 0.55in 0.4in;
+margin: 0;
+background: #ffffff;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+page-break-after: always;
+break-after: page;
+}
+
+.printPage:last-child {
+page-break-after: auto;
+break-after: auto;
+}
+
+.pageHeader {
+flex: 0 0 auto;
+width: 100%;
+margin: 0 0 8px;
+padding: 0 0 6px;
+border-bottom: 1px solid #d1d5db;
+background: #ffffff;
+}
+
+.pageBody {
+flex: 1 1 auto;
+min-height: 0;
+overflow: hidden;
+width: 100%;
 }
 
 .resumeHeader {
-position: fixed;
-top: 0.16in;
-left: 0.55in;
-right: 0.55in;
-z-index: 20;
-background: white;
-margin: 0;
-padding: 0 0 6px;
-break-inside: avoid;
-page-break-inside: avoid;
+position: static !important;
+width: 100%;
+text-align: center !important;
+margin: 0 !important;
+padding: 0 !important;
+border: 0 !important;
+background: #ffffff !important;
 }
 
 .resumeName {
-margin: 0 0 3px;
-font-size: 18pt;
-font-weight: 700;
-color: #111827;
-}
-
-.resumeProfessionalTitle {
-margin: 2px 0 6px;
-font-size: 10.5pt;
-line-height: 1.25;
-font-weight: 700;
-color: #111827;
+margin: 0 0 3px !important;
+font-size: 18pt !important;
+line-height: 1.05 !important;
+font-weight: 700 !important;
+color: #111827 !important;
 }
 
 .resumeContact {
-margin: 0 0 2px;
-font-size: 9.5pt;
-line-height: 1.2;
-color: #374151;
-word-break: break-word;
+margin: 0 0 2px !important;
+font-size: 9.5pt !important;
+line-height: 1.15 !important;
+color: #374151 !important;
+word-break: break-word !important;
+text-align: center !important;
 }
 
 .resumeLinkedin {
-margin: 0;
-font-size: 9.25pt;
-line-height: 1.15;
-color: #1d4ed8;
-word-break: break-word;
-}
-
-.resumeSection {
-margin-bottom: 11px;
-break-inside: auto;
-page-break-inside: auto;
+margin: 0 !important;
+font-size: 9pt !important;
+line-height: 1.15 !important;
+color: #1d4ed8 !important;
+word-break: break-word !important;
+text-align: center !important;
 }
 
 .resumeSectionTitle {
-margin: 0 0 10px;
-text-align: center;
-font-size: 12pt;
-font-weight: 700;
-color: #111827;
+margin: 7px 0 5px !important;
+padding: 0 !important;
+text-align: center !important;
+font-size: 10.5pt !important;
+line-height: 1.1 !important;
+font-weight: 700 !important;
+letter-spacing: .03em !important;
+color: #111827 !important;
+background: transparent !important;
+border: 0 !important;
 }
 
 .resumeParagraph {
-margin: 0;
-font-size: 10pt;
-line-height: 1.24;
-color: #111827;
-white-space: pre-wrap;
-word-break: break-word;
+margin: 0 !important;
+font-size: 10pt !important;
+line-height: 1.2 !important;
+color: #111827 !important;
+white-space: pre-wrap !important;
+word-break: break-word !important;
 }
 
 .skillsGrid {
-display: grid;
-grid-template-columns: 1fr 1fr 1fr;
-gap: 10px 24px;
+display: grid !important;
+grid-template-columns: 1fr 1fr 1fr !important;
+gap: 3px 20px !important;
+margin-bottom: 2px !important;
 }
-
-.skillColumn {
-min-width: 0;
-}
-
+.skillColumn { min-width: 0 !important; }
 .skillItem {
-margin: 0 0 8px;
-font-size: 11pt;
-line-height: 1.35;
-color: #111827;
-word-break: break-word;
+margin: 0 0 2px !important;
+font-size: 9.75pt !important;
+line-height: 1.18 !important;
+color: #111827 !important;
+word-break: break-word !important;
 }
 
-.resumeEntry {
-margin-bottom: 9px;
-break-inside: auto;
-page-break-inside: auto;
+.printEntry {
+margin: 0 0 7px !important;
+padding: 0 !important;
 }
 
 .resumeEntryTop {
-display: flex;
-justify-content: space-between;
-align-items: flex-start;
-gap: 16px;
-margin-bottom: 4px;
-break-inside: avoid;
-page-break-inside: avoid;
-break-after: avoid;
-page-break-after: avoid;
+display: flex !important;
+justify-content: space-between !important;
+align-items: flex-start !important;
+gap: 12px !important;
+margin: 0 0 2px !important;
+padding: 0 !important;
+border: 0 !important;
 }
 
-.resumeEntryHeading {
-margin: 0;
-font-size: 11pt;
-font-weight: 700;
-color: #111827;
-}
-
+.resumeEntryHeading,
 .resumeEntrySubheading {
-margin: 4px 0 0;
-font-size: 11pt;
-font-weight: 600;
-color: #111827;
+margin: 0 !important;
+font-size: 9.9pt !important;
+line-height: 1.16 !important;
+color: #111827 !important;
 }
-
+.resumeEntryHeading { font-weight: 700 !important; }
+.resumeEntrySubheading {
+margin-top: 1px !important;
+font-weight: 600 !important;
+font-style: normal !important;
+}
 .resumeEntryDates {
-margin: 0;
-font-size: 10.5pt;
-color: #374151;
-white-space: nowrap;
+margin: 0 !important;
+font-size: 9.25pt !important;
+line-height: 1.15 !important;
+color: #374151 !important;
+white-space: nowrap !important;
+}
+.resumeBullet {
+margin: 1px 0 !important;
+font-size: 9.8pt !important;
+line-height: 1.19 !important;
+color: #111827 !important;
+white-space: pre-wrap !important;
+word-break: break-word !important;
 }
 
-.resumeBullet {
-margin: 1.5px 0;
-font-size: 10pt;
-line-height: 1.22;
-orphans: 2;
-widows: 2;
-color: #111827;
-white-space: pre-wrap;
-word-break: break-word;
+@media print {
+html, body {
+width: 8.5in;
+margin: 0 !important;
+padding: 0 !important;
+background: #ffffff !important;
+}
+#printPages { margin: 0 !important; }
+.printPage { margin: 0 !important; box-shadow: none !important; }
 }
 </style>
 </head>
 <body>
-<div class="print-resume">
-${resumeHtml}
-</div>
+<div id="printSource">${resumeHtml}</div>
+<div id="printPages"></div>
+<script>
+(function () {
+var source = document.getElementById("printSource");
+var pagesRoot = document.getElementById("printPages");
+if (!source || !pagesRoot) return;
+var originalHeader = source.querySelector(".resumeHeader");
+if (!originalHeader) return;
+var currentBody = null;
+
+function createPage() {
+var page = document.createElement("div");
+page.className = "printPage";
+var pageHeader = document.createElement("div");
+pageHeader.className = "pageHeader";
+pageHeader.appendChild(originalHeader.cloneNode(true));
+var pageBody = document.createElement("div");
+pageBody.className = "pageBody";
+page.appendChild(pageHeader);
+page.appendChild(pageBody);
+pagesRoot.appendChild(page);
+currentBody = pageBody;
+return pageBody;
+}
+
+function fits(body) {
+return body.scrollHeight <= body.clientHeight + 1;
+}
+
+function getBody() {
+return currentBody || createPage();
+}
+
+function newPage() {
+return createPage();
+}
+
+function appendAtomic(node) {
+var body = getBody();
+var clone = node.cloneNode(true);
+body.appendChild(clone);
+if (!fits(body)) {
+body.removeChild(clone);
+body = newPage();
+body.appendChild(clone);
+}
+}
+
+function appendEntry(entry) {
+var body = getBody();
+var top = entry.querySelector(".resumeEntryTop");
+var bullets = Array.prototype.slice.call(entry.querySelectorAll(":scope > .resumeBullet"));
+var shell = document.createElement("div");
+shell.className = "printEntry";
+if (top) shell.appendChild(top.cloneNode(true));
+if (bullets.length) shell.appendChild(bullets[0].cloneNode(true));
+body.appendChild(shell);
+
+if (!fits(body)) {
+body.removeChild(shell);
+body = newPage();
+shell = document.createElement("div");
+shell.className = "printEntry";
+if (top) shell.appendChild(top.cloneNode(true));
+if (bullets.length) shell.appendChild(bullets[0].cloneNode(true));
+body.appendChild(shell);
+}
+
+for (var i = 1; i < bullets.length; i += 1) {
+var bullet = bullets[i].cloneNode(true);
+shell.appendChild(bullet);
+if (!fits(body)) {
+shell.removeChild(bullet);
+body = newPage();
+shell = document.createElement("div");
+shell.className = "printEntry";
+shell.appendChild(bullet);
+body.appendChild(shell);
+}
+}
+}
+
+function appendSection(section) {
+var children = Array.prototype.slice.call(section.children);
+if (!children.length) return;
+var title = children[0];
+var content = children.slice(1);
+var body = getBody();
+var titleClone = title.cloneNode(true);
+body.appendChild(titleClone);
+if (!fits(body)) {
+body.removeChild(titleClone);
+body = newPage();
+body.appendChild(titleClone);
+}
+
+if (content.length) {
+var probe = content[0].cloneNode(true);
+body.appendChild(probe);
+var ok = fits(body);
+body.removeChild(probe);
+if (!ok) {
+body.removeChild(titleClone);
+body = newPage();
+body.appendChild(titleClone);
+}
+}
+
+for (var i = 0; i < content.length; i += 1) {
+var child = content[i];
+if (child.classList && child.classList.contains("resumeEntry")) appendEntry(child);
+else appendAtomic(child);
+}
+}
+
+createPage();
+var topLevel = Array.prototype.slice.call(source.children);
+for (var i = 0; i < topLevel.length; i += 1) {
+var wrapper = topLevel[i];
+if (wrapper.classList && wrapper.classList.contains("resumeHeader")) continue;
+var section = wrapper.matches && wrapper.matches(".resumeSection") ? wrapper : (wrapper.querySelector ? wrapper.querySelector(".resumeSection") : null);
+if (section) appendSection(section);
+}
+source.remove();
+})();
+<\/script>
 </body>
 </html>
 `);
 printWindow.document.close();
 printWindow.focus();
-
 setTimeout(() => {
 printWindow.print();
-}, 300);
+}, 700);
 }
 
 function renderResumeSection(section: ResumeSectionKey) {
@@ -1405,7 +1560,7 @@ return (
 @media print {
 @page {
 size: letter;
-margin: 0.48in 0.55in 0.5in;
+margin: 0.45in 0.55in 0.5in;
 }
 
 html,
@@ -1488,7 +1643,7 @@ overflow: visible !important;
 .resumeHeader {
 position: static !important;
 background: white !important;
-margin: 0 !important;
+margin: 0 0 12px !important;
 padding: 0 0 8px !important;
 break-inside: avoid !important;
 page-break-inside: avoid !important;
