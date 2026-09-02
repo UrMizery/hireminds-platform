@@ -463,6 +463,8 @@ const [userId, setUserId] = useState("");
 const [message, setMessage] = useState("");
 const [saving, setSaving] = useState(false);
 const [parsingResume, setParsingResume] = useState(false);
+const [importMessage, setImportMessage] = useState("");
+const [importError, setImportError] = useState(false);
 const [draftLoaded, setDraftLoaded] = useState(false);
 const resumePrintRef = useRef<HTMLDivElement>(null);
 const openTrackedRef = useRef(false);
@@ -797,12 +799,22 @@ if (!shouldReplace) return;
 }
 
 setMessage("");
+setImportMessage(`Uploading ${file.name}...`);
+setImportError(false);
 setParsingResume(true);
+
+const controller = new AbortController();
+const timeoutId = window.setTimeout(() => controller.abort(), 55000);
 
 try {
 const formData = new FormData();
 formData.append("file", file);
-const response = await fetch("/api/resume-parse", { method: "POST", body: formData });
+setImportMessage("Reading and organizing your resume...");
+const response = await fetch("/api/resume-parse", {
+method: "POST",
+body: formData,
+signal: controller.signal,
+});
 const raw = await response.text();
 let data: any = {};
 try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
@@ -832,10 +844,21 @@ setVolunteerItems(Array.isArray(parsed.volunteerItems) && parsed.volunteerItems.
 ? parsed.volunteerItems.map((item: any) => ({ ...createDefaultVolunteer(), ...item, bullets: Array.isArray(item.bullets) && item.bullets.length ? item.bullets.slice(0, BULLET_LIMIT).map((b: any) => ({ text: typeof b === "string" ? b : b?.text || "" })) : [{ text: "" }, { text: "" }, { text: "" }, { text: "" }] }))
 : [createDefaultVolunteer()]);
 
-setMessage("Resume imported. Review the information below and make any changes before printing or saving.");
+setImportMessage("Resume imported successfully. Review the information below and make any changes you want.");
+setImportError(false);
+setMessage("");
 } catch (error) {
-setMessage(error instanceof Error ? error.message : "Unable to import this resume.");
+const errorText =
+error instanceof DOMException && error.name === "AbortError"
+? "Resume import timed out. Please try again with a text-based PDF or DOCX file."
+: error instanceof Error
+? error.message
+: "Unable to import this resume.";
+setImportMessage(errorText);
+setImportError(true);
+setMessage("");
 } finally {
+window.clearTimeout(timeoutId);
 setParsingResume(false);
 }
 }
@@ -1558,6 +1581,26 @@ style={styles.select}
 <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={parsingResume} onChange={(e) => { const file = e.target.files?.[0] || null; void handleResumeUpload(file); e.currentTarget.value = ""; }} style={{ display: "none" }} />
 </label>
 </div>
+{importMessage ? (
+<div
+role="status"
+aria-live="polite"
+style={{
+marginTop: "12px",
+padding: "11px 13px",
+borderRadius: "10px",
+border: `1px solid ${importError ? "#ef4444" : "#2f81f7"}`,
+background: importError ? "rgba(239,68,68,.08)" : "rgba(47,129,247,.08)",
+color: importError ? "#b91c1c" : "#dbeafe",
+fontSize: "13px",
+fontWeight: 700,
+lineHeight: 1.45,
+}}
+>
+{parsingResume ? "⏳ " : importError ? "⚠️ " : "✓ "}
+{importMessage}
+</div>
+) : null}
 </section>
 <section style={styles.card}>
 <p style={styles.cardKicker}>RESUME FORMAT</p>
