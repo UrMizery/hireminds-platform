@@ -830,12 +830,19 @@ export default function SignupPage() {
                 />
               </label>
 
-              <div style={styles.referralHelp}>
+              <a
+                href="/contact"
+                style={{
+                  ...styles.referralHelp,
+                  textDecoration: "none",
+                  cursor: "pointer",
+                }}
+              >
                 <span style={styles.referralHelpLabel}>
-                  Need a referral code?
+                  Need a Referral Code?
                 </span>
-                <strong>info@hireminds.app</strong>
-              </div>
+                <strong>Complete the Contact Form →</strong>
+              </a>
 
               <div style={styles.expirationBox}>
                 <span>
