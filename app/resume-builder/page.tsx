@@ -462,6 +462,7 @@ const [loadingUser, setLoadingUser] = useState(true);
 const [userId, setUserId] = useState("");
 const [message, setMessage] = useState("");
 const [saving, setSaving] = useState(false);
+const [parsingResume, setParsingResume] = useState(false);
 const [draftLoaded, setDraftLoaded] = useState(false);
 const resumePrintRef = useRef<HTMLDivElement>(null);
 const openTrackedRef = useRef(false);
@@ -777,6 +778,66 @@ return { ...item, bullets: [...item.bullets, { text: "" }] };
 function applyResumeType(nextType: ResumeType) {
 setResumeType(nextType);
 setSectionOrder([...RESUME_FORMAT_ORDERS[nextType]]);
+}
+
+async function handleResumeUpload(file: File | null) {
+if (!file) return;
+
+const hasCurrentContent = Boolean(
+fullName.trim() || phone.trim() || email.trim() || summaryText.trim() || skillsInput.trim() ||
+experiences.some(hasExperienceContent) || educationItems.some(hasEducationContent) ||
+certificateItems.some(hasCertificateContent) || volunteerItems.some(hasVolunteerContent)
+);
+
+if (hasCurrentContent) {
+const shouldReplace = window.confirm(
+"Importing this resume will replace the information currently in the builder. Continue?"
+);
+if (!shouldReplace) return;
+}
+
+setMessage("");
+setParsingResume(true);
+
+try {
+const formData = new FormData();
+formData.append("file", file);
+const response = await fetch("/api/resume-parse", { method: "POST", body: formData });
+const raw = await response.text();
+let data: any = {};
+try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
+if (!response.ok) throw new Error(data?.error || "Unable to import this resume.");
+
+const parsed = data?.parsedResume || {};
+setFullName(parsed.fullName || "");
+setPhone(parsed.phone || "");
+setEmail(parsed.email || "");
+setCity(parsed.city || "");
+setStateName(parsed.stateName || "");
+setLinkedinUrl(parsed.linkedinUrl || "");
+setSummaryText(parsed.summaryText || "");
+setSkillsInput(Array.isArray(parsed.skills) ? parsed.skills.slice(0, SKILL_LIMIT).join(", ") : "");
+setAccomplishments(parsed.accomplishments || "");
+
+setExperiences(Array.isArray(parsed.experiences) && parsed.experiences.length
+? parsed.experiences.map((item: any) => ({ ...createDefaultExperience(), ...item, bullets: Array.isArray(item.bullets) && item.bullets.length ? item.bullets.slice(0, BULLET_LIMIT).map((b: any) => ({ text: typeof b === "string" ? b : b?.text || "" })) : [{ text: "" }, { text: "" }, { text: "" }, { text: "" }] }))
+: [createDefaultExperience()]);
+setEducationItems(Array.isArray(parsed.educationItems) && parsed.educationItems.length
+? parsed.educationItems.map((item: any) => ({ ...createDefaultEducation(), ...item }))
+: [createDefaultEducation()]);
+setCertificateItems(Array.isArray(parsed.certificateItems) && parsed.certificateItems.length
+? parsed.certificateItems.map((item: any) => ({ ...createDefaultCertificate(), ...item }))
+: [createDefaultCertificate()]);
+setVolunteerItems(Array.isArray(parsed.volunteerItems) && parsed.volunteerItems.length
+? parsed.volunteerItems.map((item: any) => ({ ...createDefaultVolunteer(), ...item, bullets: Array.isArray(item.bullets) && item.bullets.length ? item.bullets.slice(0, BULLET_LIMIT).map((b: any) => ({ text: typeof b === "string" ? b : b?.text || "" })) : [{ text: "" }, { text: "" }, { text: "" }, { text: "" }] }))
+: [createDefaultVolunteer()]);
+
+setMessage("Resume imported. Review the information below and make any changes before printing or saving.");
+} catch (error) {
+setMessage(error instanceof Error ? error.message : "Unable to import this resume.");
+} finally {
+setParsingResume(false);
+}
 }
 
 async function callResumeAi(action: string, payload: Record<string, unknown>) {
@@ -1486,11 +1547,17 @@ style={styles.select}
 <section style={styles.card}>
 <p style={styles.cardKicker}>RESUME GENERATOR</p>
 <h2 style={styles.cardTitle}>Create your resume</h2>
-<p style={styles.previewHelp}>
-This builder now saves your work as a local draft in this browser. To make a
-resume visible on your public profile, upload your final resume from the
-Profile page.
-</p>
+<p style={styles.previewHelp}>Start from scratch or import an existing resume. Your information stays editable and updates the live preview as you work.</p>
+<div style={styles.importRow}>
+<div>
+<strong style={styles.importTitle}>Already have a resume?</strong>
+<p style={styles.importText}>Upload a PDF or DOCX and HireMinds will use it to fill the builder. Review the imported information before using your final resume.</p>
+</div>
+<label style={{ ...styles.uploadButton, opacity: parsingResume ? 0.65 : 1 }}>
+{parsingResume ? "Reading Resume..." : "Upload Resume"}
+<input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={parsingResume} onChange={(e) => { const file = e.target.files?.[0] || null; void handleResumeUpload(file); e.currentTarget.value = ""; }} style={{ display: "none" }} />
+</label>
+</div>
 </section>
 <section style={styles.card}>
 <p style={styles.cardKicker}>RESUME FORMAT</p>
@@ -2229,6 +2296,22 @@ alignItems: "center",
 justifyContent: "center",
 fontSize: "18px",
 color: "#e5e7eb",
+},
+importRow: {
+display: "flex",
+justifyContent: "space-between",
+alignItems: "center",
+gap: "20px",
+marginTop: "18px",
+paddingTop: "18px",
+borderTop: "1px solid rgba(148,163,184,0.18)",
+flexWrap: "wrap",
+},
+importTitle: { color: "#ffffff", fontSize: "15px" },
+importText: { margin: "5px 0 0", color: "#9aa9bc", fontSize: "13px", lineHeight: 1.55, maxWidth: "620px" },
+uploadButton: {
+display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: "42px", padding: "0 18px",
+borderRadius: "8px", background: "#1677FF", color: "#ffffff", fontSize: "13px", fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap",
 },
 topBar: {
 display: "flex",
