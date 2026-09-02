@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { usePathname } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
@@ -49,7 +48,10 @@ const nhpSkillsQuestNavItems: NavItem[] = [
 function normalizeRole(rawRole: unknown): UserRole {
   const normalizedRole = String(rawRole || "").toLowerCase().trim();
 
-  if (normalizedRole === "admin") return "admin";
+  if (normalizedRole === "admin" || normalizedRole === "super_admin") {
+    return "admin";
+  }
+
   if (normalizedRole === "partner") return "partner";
   if (normalizedRole === "employer") return "employer";
 
@@ -68,8 +70,6 @@ function normalizeRole(rawRole: unknown): UserRole {
 }
 
 export default function SiteHeader() {
-  const pathname = usePathname();
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loadingLogout, setLoadingLogout] = useState(false);
@@ -86,11 +86,99 @@ export default function SiteHeader() {
   useEffect(() => {
     let mounted = true;
 
-    async function checkAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    async function resolveAccess(sessionUser: any) {
+      if (!sessionUser) {
+        return {
+          role: "guest" as UserRole,
+          referralCode: "",
+        };
+      }
 
+      const email = String(sessionUser.email || "").trim().toLowerCase();
+
+      const [partnerResult, candidateByUserResult] = await Promise.all([
+        email
+          ? supabase
+              .from("partners")
+              .select("account_type, referral_code, contact_email")
+              .eq("contact_email", email)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null } as any),
+
+        supabase
+          .from("candidate_profiles")
+          .select("user_id, email, referral_code")
+          .eq("user_id", sessionUser.id)
+          .maybeSingle(),
+      ]);
+
+      if (partnerResult.error) {
+        console.error("Header partner access check failed:", partnerResult.error);
+      }
+
+      if (candidateByUserResult.error) {
+        console.error(
+          "Header candidate access check failed:",
+          candidateByUserResult.error
+        );
+      }
+
+      const partnerRow = partnerResult.data as
+        | {
+            account_type?: string | null;
+            referral_code?: string | null;
+            contact_email?: string | null;
+          }
+        | null;
+
+      const candidateRow = candidateByUserResult.data as
+        | {
+            user_id?: string | null;
+            email?: string | null;
+            referral_code?: string | null;
+          }
+        | null;
+
+      let resolvedRole: UserRole = "guest";
+
+      if (partnerRow?.account_type) {
+        resolvedRole = normalizeRole(partnerRow.account_type);
+      } else if (candidateRow) {
+        resolvedRole = "candidate";
+      } else {
+        const metadataRole =
+          sessionUser.app_metadata?.role ||
+          sessionUser.user_metadata?.role ||
+          sessionUser.user_metadata?.account_type ||
+          "";
+
+        const normalizedMetadataRole = normalizeRole(metadataRole);
+
+        if (normalizedMetadataRole === "employer") {
+          resolvedRole = "employer";
+        }
+      }
+
+      const metadataReferralCode =
+        sessionUser.app_metadata?.referral_code ||
+        sessionUser.user_metadata?.referral_code ||
+        sessionUser.user_metadata?.referralCode ||
+        sessionUser.user_metadata?.access_code ||
+        "";
+
+      const resolvedReferralCode =
+        partnerRow?.referral_code ||
+        candidateRow?.referral_code ||
+        metadataReferralCode ||
+        "";
+
+      return {
+        role: resolvedRole,
+        referralCode: String(resolvedReferralCode).trim().toUpperCase(),
+      };
+    }
+
+    async function applySession(session: any) {
       const sessionUser = session?.user ?? null;
 
       if (!mounted) return;
@@ -103,25 +191,24 @@ export default function SiteHeader() {
         return;
       }
 
+      setCheckingAuth(true);
+
+      const access = await resolveAccess(sessionUser);
+
+      if (!mounted) return;
+
       setIsLoggedIn(true);
-
-      const rawRole =
-        sessionUser.app_metadata?.role ||
-        sessionUser.user_metadata?.role ||
-        sessionUser.user_metadata?.account_type ||
-        "candidate";
-
-      setRole(normalizeRole(rawRole));
-
-      const userReferralCode =
-        sessionUser.app_metadata?.referral_code ||
-        sessionUser.user_metadata?.referral_code ||
-        sessionUser.user_metadata?.referralCode ||
-        sessionUser.user_metadata?.access_code ||
-        "";
-
-      setReferralCode(String(userReferralCode).trim().toUpperCase());
+      setRole(access.role);
+      setReferralCode(access.referralCode);
       setCheckingAuth(false);
+    }
+
+    async function checkAuth() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      await applySession(session);
     }
 
     checkAuth();
@@ -129,37 +216,7 @@ export default function SiteHeader() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const sessionUser = session?.user ?? null;
-
-      if (!mounted) return;
-
-      if (!sessionUser) {
-        setIsLoggedIn(false);
-        setRole("guest");
-        setReferralCode("");
-        setCheckingAuth(false);
-        return;
-      }
-
-      setIsLoggedIn(true);
-
-      const rawRole =
-        sessionUser.app_metadata?.role ||
-        sessionUser.user_metadata?.role ||
-        sessionUser.user_metadata?.account_type ||
-        "candidate";
-
-      setRole(normalizeRole(rawRole));
-
-      const userReferralCode =
-        sessionUser.app_metadata?.referral_code ||
-        sessionUser.user_metadata?.referral_code ||
-        sessionUser.user_metadata?.referralCode ||
-        sessionUser.user_metadata?.access_code ||
-        "";
-
-      setReferralCode(String(userReferralCode).trim().toUpperCase());
-      setCheckingAuth(false);
+      void applySession(session);
     });
 
     return () => {
@@ -219,19 +276,8 @@ export default function SiteHeader() {
   const isEmployer = role === "employer";
   const isNHP = referralCode === "NHP2026";
 
-  const partnerStickyRoutes = new Set([
-    "/messages",
-    "/partner-dashboard/career-map",
-    "/partner-dashboard/workshop-resources",
-    "/partner-dashboard/report-summary",
-  ]);
-
-  const isPartnerPage =
-    pathname?.startsWith("/partner-dashboard") ||
-    partnerStickyRoutes.has(pathname || "");
-
   const hasCareerPathwayAccess =
-    CAREER_PATHWAY_ACCESS_CODES.includes(referralCode);
+    isAdmin || CAREER_PATHWAY_ACCESS_CODES.includes(referralCode);
 
   const activeCareerPathwayNavItems = isNHP
     ? nhpCareerPathwayNavItems
@@ -242,29 +288,29 @@ export default function SiteHeader() {
     : skillsQuestNavItems;
 
   const showMyProfile =
-    isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
+    isLoggedIn && (isCandidate || isPartner || isAdmin);
 
   const showCareerToolkit =
-    isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
+    isLoggedIn && (isCandidate || isPartner || isAdmin);
 
   const showCareerPathway =
     isLoggedIn &&
-    (isCandidate || isPartner || isAdmin || isPartnerPage) &&
+    (isCandidate || isPartner || isAdmin) &&
     hasCareerPathwayAccess;
 
   const showSkillsQuest =
     isLoggedIn &&
-    (isCandidate || isPartner || isAdmin || isPartnerPage) &&
+    (isCandidate || isPartner || isAdmin) &&
     hasCareerPathwayAccess;
 
   const showPartnerDashboard =
-    isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+    isLoggedIn && (isPartner || isAdmin);
 
   const showPartnerTools =
-    isLoggedIn && (isPartner || isAdmin || isPartnerPage);
+    isLoggedIn && (isPartner || isAdmin);
 
   const showNotes =
-    isLoggedIn && (isCandidate || isPartner || isAdmin || isPartnerPage);
+    isLoggedIn && (isCandidate || isPartner || isAdmin);
 
   return (
     <header style={styles.header}>
