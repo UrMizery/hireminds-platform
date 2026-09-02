@@ -62,7 +62,9 @@ export default function ContactPage() {
         throw new Error(data?.error || "Unable to submit your message.");
       }
 
-      setStatusMessage("Your message was sent successfully. A HireMinds team member will follow up soon.");
+      setStatusMessage(
+        "Your message was sent successfully. A HireMinds team member will follow up soon."
+      );
       setFullName("");
       setPhone("");
       setEmail("");
@@ -211,7 +213,7 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at top, rgba(37,99,235,0.16) 0%, rgba(5,5,5,1) 38%, rgba(13,13,15,1) 100%)",
+      "radial-gradient(ellipse at 14% 16%, rgba(42,121,230,0.20) 0%, rgba(10,54,112,0.10) 30%, transparent 55%), radial-gradient(ellipse at 86% 70%, rgba(25,104,214,0.18) 0%, rgba(8,43,92,0.08) 32%, transparent 58%), radial-gradient(ellipse at 52% -8%, rgba(90,162,255,0.11) 0%, transparent 40%), linear-gradient(135deg,#020812 0%,#05172a 28%,#03101f 50%,#08213d 72%,#020914 100%)",
     color: "#e7e7e7",
     padding: "48px 24px",
     fontFamily:
@@ -225,15 +227,16 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: "860px",
   },
   panel: {
-    background: "linear-gradient(180deg, rgba(20,20,20,0.96) 0%, rgba(24,24,24,0.98) 100%)",
-    border: "1px solid #262626",
+    background:
+      "linear-gradient(180deg, rgba(9,18,31,0.96) 0%, rgba(7,14,25,0.98) 100%)",
+    border: "1px solid rgba(120,145,175,0.20)",
     borderRadius: "30px",
     padding: "36px",
-    boxShadow: "0 30px 80px rgba(0,0,0,0.4)",
+    boxShadow: "0 30px 80px rgba(0,0,0,0.42)",
   },
   kicker: {
     margin: "0 0 8px",
-    color: "#a1a1aa",
+    color: "#1677FF",
     fontSize: "12px",
     letterSpacing: "0.18em",
     textTransform: "uppercase",
@@ -242,18 +245,18 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 0 14px",
     fontSize: "42px",
     fontWeight: 600,
-    color: "#f5f5f5",
+    color: "#ffffff",
     lineHeight: 1.1,
   },
   subtitle: {
     margin: "0 0 28px",
-    color: "#d4d4d8",
+    color: "#c7cdd6",
     fontSize: "16px",
     lineHeight: 1.8,
     maxWidth: "700px",
   },
   inlineLink: {
-    color: "#f5f5f5",
+    color: "#1677FF",
     textDecoration: "underline",
   },
   form: {
@@ -270,7 +273,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "8px",
   },
   label: {
-    color: "#d4d4d8",
+    color: "#d7dce4",
     fontSize: "13px",
     fontWeight: 600,
   },
@@ -278,9 +281,9 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     padding: "15px 16px",
     borderRadius: "18px",
-    border: "1px solid #313131",
-    background: "#0f0f10",
-    color: "#f4f4f5",
+    border: "1px solid rgba(120,145,175,0.24)",
+    background: "#050b13",
+    color: "#f4f7fb",
     fontSize: "15px",
     boxSizing: "border-box",
     outline: "none",
@@ -290,9 +293,9 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "160px",
     padding: "15px 16px",
     borderRadius: "18px",
-    border: "1px solid #313131",
-    background: "#0f0f10",
-    color: "#f4f4f5",
+    border: "1px solid rgba(120,145,175,0.24)",
+    background: "#050b13",
+    color: "#f4f7fb",
     fontSize: "15px",
     resize: "vertical",
     boxSizing: "border-box",
@@ -303,16 +306,16 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     padding: "16px 18px",
     borderRadius: "18px",
-    border: "1px solid #d1d5db",
-    background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
-    color: "#09090b",
+    border: "1px solid #1677FF",
+    background: "#1677FF",
+    color: "#ffffff",
     fontSize: "15px",
     fontWeight: 700,
     cursor: "pointer",
   },
   status: {
     margin: "8px 0 0",
-    color: "#e5e5e5",
+    color: "#e5e9ef",
     fontSize: "14px",
     lineHeight: 1.7,
   },
