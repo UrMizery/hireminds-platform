@@ -335,21 +335,15 @@ export default function SiteHeader() {
               ) : null}
 
               {showCareerPathway ? (
-                <div
-                  style={styles.dropdownWrap}
-                  ref={careerPathwayDropdownRef}
-                >
+                <div style={styles.dropdownWrap} ref={careerPathwayDropdownRef}>
                   <button
                     type="button"
-                    onClick={() =>
-                      setCareerPathwayOpen((prev) => !prev)
-                    }
+                    onClick={() => setCareerPathwayOpen((prev) => !prev)}
                     style={styles.dropdownTrigger}
                     aria-haspopup="menu"
                     aria-expanded={careerPathwayOpen}
                   >
                     Career Pathway
-
                     <span
                       style={{
                         ...styles.dropdownChevron,
@@ -369,9 +363,7 @@ export default function SiteHeader() {
                           key={item.href}
                           href={item.href}
                           style={styles.dropdownItem}
-                          onClick={() =>
-                            setCareerPathwayOpen(false)
-                          }
+                          onClick={() => setCareerPathwayOpen(false)}
                         >
                           {item.label}
                         </a>
@@ -382,21 +374,15 @@ export default function SiteHeader() {
               ) : null}
 
               {showSkillsQuest ? (
-                <div
-                  style={styles.dropdownWrap}
-                  ref={skillsQuestDropdownRef}
-                >
+                <div style={styles.dropdownWrap} ref={skillsQuestDropdownRef}>
                   <button
                     type="button"
-                    onClick={() =>
-                      setSkillsQuestOpen((prev) => !prev)
-                    }
+                    onClick={() => setSkillsQuestOpen((prev) => !prev)}
                     style={styles.dropdownTrigger}
                     aria-haspopup="menu"
                     aria-expanded={skillsQuestOpen}
                   >
                     SkillsQuest
-
                     <span
                       style={{
                         ...styles.dropdownChevron,
@@ -416,9 +402,7 @@ export default function SiteHeader() {
                           key={item.href}
                           href={item.href}
                           style={styles.dropdownItem}
-                          onClick={() =>
-                            setSkillsQuestOpen(false)
-                          }
+                          onClick={() => setSkillsQuestOpen(false)}
                         >
                           {item.label}
                         </a>
@@ -435,21 +419,15 @@ export default function SiteHeader() {
               ) : null}
 
               {showPartnerTools ? (
-                <div
-                  style={styles.dropdownWrap}
-                  ref={partnerDropdownRef}
-                >
+                <div style={styles.dropdownWrap} ref={partnerDropdownRef}>
                   <button
                     type="button"
-                    onClick={() =>
-                      setPartnersOpen((prev) => !prev)
-                    }
+                    onClick={() => setPartnersOpen((prev) => !prev)}
                     style={styles.dropdownTrigger}
                     aria-haspopup="menu"
                     aria-expanded={partnersOpen}
                   >
                     Tools
-
                     <span
                       style={{
                         ...styles.dropdownChevron,
@@ -469,9 +447,7 @@ export default function SiteHeader() {
                           key={item.href}
                           href={item.href}
                           style={styles.dropdownItem}
-                          onClick={() =>
-                            setPartnersOpen(false)
-                          }
+                          onClick={() => setPartnersOpen(false)}
                         >
                           {item.label}
                         </a>
@@ -491,9 +467,7 @@ export default function SiteHeader() {
                 <button
                   type="button"
                   onClick={() =>
-                    window.dispatchEvent(
-                      new Event("toggle-notes-panel")
-                    )
+                    window.dispatchEvent(new Event("toggle-notes-panel"))
                   }
                   style={styles.notesButtonLike}
                 >
@@ -513,10 +487,7 @@ export default function SiteHeader() {
           ) : null}
 
           {!checkingAuth && !isLoggedIn ? (
-            <a
-              href="/employer-partner-login"
-              style={styles.link}
-            >
+            <a href="/employer-partner-login" style={styles.link}>
               Employer/Partner Sign In
             </a>
           ) : null}
