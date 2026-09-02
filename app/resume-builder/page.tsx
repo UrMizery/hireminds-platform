@@ -1019,7 +1019,7 @@ printWindow.document.write(`
 <style>
 @page {
 size: letter;
-margin: 0.48in 0.55in 0.5in;
+margin: 0.92in 0.55in 0.42in;
 }
 
 html, body {
@@ -1046,17 +1046,21 @@ color: #111827;
 }
 
 .resumeHeader {
-position: static;
+position: fixed;
+top: 0.16in;
+left: 0.55in;
+right: 0.55in;
+z-index: 20;
 background: white;
 margin: 0;
-padding: 0 0 8px;
+padding: 0 0 6px;
 break-inside: avoid;
 page-break-inside: avoid;
 }
 
 .resumeName {
-margin: 0 0 8px;
-font-size: 20pt;
+margin: 0 0 3px;
+font-size: 18pt;
 font-weight: 700;
 color: #111827;
 }
@@ -1070,17 +1074,17 @@ color: #111827;
 }
 
 .resumeContact {
-margin: 0 0 6px;
-font-size: 10.5pt;
-line-height: 1.35;
+margin: 0 0 2px;
+font-size: 9.5pt;
+line-height: 1.2;
 color: #374151;
 word-break: break-word;
 }
 
 .resumeLinkedin {
 margin: 0;
-font-size: 10.5pt;
-line-height: 1.35;
+font-size: 9.25pt;
+line-height: 1.15;
 color: #1d4ed8;
 word-break: break-word;
 }
@@ -1128,8 +1132,8 @@ word-break: break-word;
 
 .resumeEntry {
 margin-bottom: 9px;
-break-inside: avoid;
-page-break-inside: avoid;
+break-inside: auto;
+page-break-inside: auto;
 }
 
 .resumeEntryTop {
@@ -1137,7 +1141,11 @@ display: flex;
 justify-content: space-between;
 align-items: flex-start;
 gap: 16px;
-margin-bottom: 6px;
+margin-bottom: 4px;
+break-inside: avoid;
+page-break-inside: avoid;
+break-after: avoid;
+page-break-after: avoid;
 }
 
 .resumeEntryHeading {
@@ -1162,9 +1170,11 @@ white-space: nowrap;
 }
 
 .resumeBullet {
-margin: 2px 0;
+margin: 1.5px 0;
 font-size: 10pt;
-line-height: 1.24;
+line-height: 1.22;
+orphans: 2;
+widows: 2;
 color: #111827;
 white-space: pre-wrap;
 word-break: break-word;
@@ -1487,6 +1497,18 @@ page-break-inside: avoid !important;
 .resumeSection {
 break-inside: auto !important;
 page-break-inside: auto !important;
+}
+
+.resumeEntry {
+break-inside: auto !important;
+page-break-inside: auto !important;
+}
+
+.resumeEntryTop {
+break-inside: avoid !important;
+page-break-inside: avoid !important;
+break-after: avoid !important;
+page-break-after: avoid !important;
 }
 
 .builderTopRow,
