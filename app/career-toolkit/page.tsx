@@ -1073,5 +1073,4 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 850,
   },
 
-  fakeLines: {},
 };
