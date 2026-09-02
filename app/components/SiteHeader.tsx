@@ -280,6 +280,10 @@ export default function SiteHeader() {
             Home
           </a>
 
+          <a href="/explore" style={styles.link}>
+            Explore
+          </a>
+
           {!checkingAuth && !isLoggedIn ? (
             <a href="/sign-in" style={styles.link}>
               Sign In
@@ -458,8 +462,6 @@ export default function SiteHeader() {
             </>
           ) : null}
 
-          <span style={styles.lockedLink}>Job Board 🔒</span>
-
           {!checkingAuth && !isLoggedIn ? (
             <a href="/employer-partner-login" style={styles.link}>
               Employer/Partner Sign In
@@ -595,12 +597,6 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: "10px",
     whiteSpace: "nowrap",
     background: "transparent",
-  },
-
-  lockedLink: {
-    color: "#7c7c85",
-    fontSize: "15px",
-    whiteSpace: "nowrap",
   },
 
   logoutButton: {
