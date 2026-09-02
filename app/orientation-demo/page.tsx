@@ -1,14 +1,135 @@
 "use client";
 
 import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+
+const PLACEHOLDER_REFERRAL_CODES = [
+  "PATHWAY2026",
+  "SKILLSQUEST2026",
+];
 
 export default function OrientationDemoPage() {
+  const [allowed, setAllowed] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    async function checkAccess() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const user = session?.user;
+
+      if (!user?.email) {
+        setAllowed(false);
+        setChecked(true);
+        return;
+      }
+
+      const normalizedEmail = user.email.trim().toLowerCase();
+
+      const [partnerResult, candidateResult] = await Promise.all([
+        supabase
+          .from("partners")
+          .select("account_type, contact_email")
+          .eq("contact_email", normalizedEmail)
+          .maybeSingle(),
+
+        supabase
+          .from("candidate_profiles")
+          .select("referral_code")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+
+      if (partnerResult.error) {
+        console.error(
+          "Orientation Demo partner access check failed:",
+          partnerResult.error
+        );
+      }
+
+      if (candidateResult.error) {
+        console.error(
+          "Orientation Demo candidate access check failed:",
+          candidateResult.error
+        );
+      }
+
+      const accountType = String(
+        partnerResult.data?.account_type || ""
+      )
+        .trim()
+        .toLowerCase();
+
+      const isSuperAdmin = accountType === "super_admin";
+
+      const userReferralCode = String(
+        candidateResult.data?.referral_code ||
+          user.app_metadata?.referral_code ||
+          user.user_metadata?.referral_code ||
+          user.user_metadata?.referralCode ||
+          user.user_metadata?.access_code ||
+          ""
+      )
+        .trim()
+        .toUpperCase();
+
+      setAllowed(
+        isSuperAdmin ||
+          PLACEHOLDER_REFERRAL_CODES.includes(userReferralCode)
+      );
+
+      setChecked(true);
+    }
+
+    checkAccess();
+  }, []);
+
+  if (!checked) {
+    return (
+      <main style={styles.main}>
+        Loading Orientation...
+      </main>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <main style={styles.main}>
+        <section style={styles.lockCard}>
+          <p style={styles.kicker}>
+            Restricted Learning Area
+          </p>
+
+          <h1 style={styles.title}>
+            Orientation Locked
+          </h1>
+
+          <p style={styles.subtitle}>
+            This training area is currently available only to approved
+            Career Pathway and SkillsQuest participants.
+          </p>
+
+          <Link href="/" style={styles.lockButton}>
+            Return Home
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main style={styles.main}>
       <section style={styles.card}>
-        <p style={styles.kicker}>TWP2026 • Day 1</p>
+        <p style={styles.kicker}>
+          Career Pathway • Day 1
+        </p>
 
-        <h1 style={styles.title}>Orientation + Platform Navigation</h1>
+        <h1 style={styles.title}>
+          Orientation + Platform Navigation
+        </h1>
 
         <p style={styles.subtitle}>
           This orientation is instructor-led and introduces participants to
@@ -17,7 +138,10 @@ export default function OrientationDemoPage() {
         </p>
 
         <div style={styles.banner}>
-          <strong>Live Instructor Session</strong>
+          <strong>
+            Live Instructor Session
+          </strong>
+
           <p>
             This training is completed together in class and does not require
             self-paced study guides or timed completion.
@@ -25,22 +149,29 @@ export default function OrientationDemoPage() {
         </div>
 
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>What We Will Review</h2>
+          <h2 style={styles.sectionTitle}>
+            What We Will Review
+          </h2>
 
           <div style={styles.grid}>
             <div style={styles.box}>
-              <h3 style={styles.boxTitle}>Platform Navigation</h3>
+              <h3 style={styles.boxTitle}>
+                Platform Navigation
+              </h3>
+
               <p>
                 Participants will receive a guided walkthrough of HireMinds and
                 become familiar with the tools, resources, and learning areas
                 used throughout the Healthcare Career Pathway Program.
               </p>
+
               <p>
                 During orientation we will review where to locate Career
                 Pathway content, SkillsQuest activities, assigned training,
                 study guides, notes, assessments, certifications, and training
                 progress.
               </p>
+
               <p>
                 Participants will also be introduced to resume tools, interview
                 preparation resources, career development tools, and learning
@@ -53,17 +184,20 @@ export default function OrientationDemoPage() {
               <h3 style={styles.boxTitle}>
                 Program Orientation + Expectations
               </h3>
+
               <p>
                 Participants will review course expectations and receive a
                 complete overview of the Healthcare Career Pathway Program
                 structure.
               </p>
+
               <p>
                 Training schedules, participation expectations, communication
                 guidelines, classroom procedures, guided materials,
                 assessments, demonstrations, and career preparation activities
                 will be reviewed.
               </p>
+
               <p>
                 Participants will have an opportunity to ask questions, discuss
                 personal goals, and understand what successful completion of the
@@ -72,12 +206,16 @@ export default function OrientationDemoPage() {
             </div>
 
             <div style={styles.box}>
-              <h3 style={styles.boxTitle}>Healthcare Pathway Overview</h3>
+              <h3 style={styles.boxTitle}>
+                Healthcare Pathway Overview
+              </h3>
+
               <p>
                 Participants will be introduced to healthcare support careers,
                 customer service expectations, communication skills, safety
                 awareness, and workforce readiness.
               </p>
+
               <p>
                 The session will explain how the three-week pathway connects
                 career readiness, CPR and First Aid awareness, customer
@@ -87,13 +225,17 @@ export default function OrientationDemoPage() {
             </div>
 
             <div style={styles.box}>
-              <h3 style={styles.boxTitle}>Career Passport Overview</h3>
+              <h3 style={styles.boxTitle}>
+                Career Passport Overview
+              </h3>
+
               <p>
                 Participants will receive an introduction to Career Passport and
                 learn how HireMinds can support resume creation, career
                 exploration, professional branding, and long-term employment
                 readiness.
               </p>
+
               <p>
                 Participants will also learn how Career Passport connects
                 skills, training activities, and career preparation into one
@@ -104,21 +246,44 @@ export default function OrientationDemoPage() {
         </section>
 
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Learning Objectives</h2>
+          <h2 style={styles.sectionTitle}>
+            Learning Objectives
+          </h2>
+
           <div style={styles.listCard}>
             <ul>
-              <li>Navigate the HireMinds platform</li>
-              <li>Understand the Healthcare Career Pathway structure</li>
-              <li>Review program expectations and completion steps</li>
-              <li>Understand where study guides and assessments are located</li>
-              <li>Identify how Career Passport supports employment readiness</li>
-              <li>Set personal goals for the training experience</li>
+              <li>
+                Navigate the HireMinds platform
+              </li>
+
+              <li>
+                Understand the Healthcare Career Pathway structure
+              </li>
+
+              <li>
+                Review program expectations and completion steps
+              </li>
+
+              <li>
+                Understand where study guides and assessments are located
+              </li>
+
+              <li>
+                Identify how Career Passport supports employment readiness
+              </li>
+
+              <li>
+                Set personal goals for the training experience
+              </li>
             </ul>
           </div>
         </section>
 
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Class Discussion</h2>
+          <h2 style={styles.sectionTitle}>
+            Class Discussion
+          </h2>
+
           <div style={styles.discussionBox}>
             <p>
               Think about one personal or career goal you hope to accomplish
@@ -130,7 +295,10 @@ export default function OrientationDemoPage() {
           </div>
         </section>
 
-        <Link href="/skillsquest" style={styles.button}>
+        <Link
+          href="/skillsquest"
+          style={styles.button}
+        >
           Back to Career Pathway
         </Link>
       </section>
@@ -147,6 +315,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 24,
     fontFamily: "system-ui, Arial, sans-serif",
   },
+
   card: {
     maxWidth: 1050,
     margin: "0 auto",
@@ -156,6 +325,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(255,255,255,.12)",
     lineHeight: 1.7,
   },
+
   kicker: {
     color: "#7db7ff",
     fontWeight: 900,
@@ -163,16 +333,19 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: "uppercase",
     letterSpacing: 1.3,
   },
+
   title: {
     fontSize: 44,
     fontWeight: 950,
     margin: "8px 0",
   },
+
   subtitle: {
     color: "rgba(255,255,255,.78)",
     maxWidth: 900,
     fontSize: 16,
   },
+
   banner: {
     marginTop: 25,
     padding: 20,
@@ -180,19 +353,23 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(125,183,255,.22)",
     borderRadius: 16,
   },
+
   section: {
     marginTop: 34,
   },
+
   sectionTitle: {
     fontSize: 28,
     marginBottom: 16,
   },
+
   grid: {
     display: "flex",
     flexDirection: "column",
     gap: 18,
     marginTop: 20,
   },
+
   box: {
     padding: 26,
     borderRadius: 18,
@@ -200,26 +377,50 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(255,255,255,.10)",
     width: "100%",
   },
+
   boxTitle: {
     fontSize: 24,
     marginBottom: 14,
     color: "#7db7ff",
   },
+
   listCard: {
     padding: 22,
     borderRadius: 18,
     background: "rgba(0,0,0,.28)",
     border: "1px solid rgba(255,255,255,.10)",
   },
+
   discussionBox: {
     padding: 22,
     borderRadius: 18,
     background: "rgba(125,183,255,.10)",
     border: "1px solid rgba(125,183,255,.20)",
   },
+
   button: {
     display: "inline-block",
     marginTop: 28,
+    background: "#fff",
+    color: "#000",
+    padding: "12px 18px",
+    borderRadius: 12,
+    textDecoration: "none",
+    fontWeight: 900,
+  },
+
+  lockCard: {
+    maxWidth: 650,
+    margin: "100px auto",
+    padding: 30,
+    borderRadius: 22,
+    background: "rgba(255,255,255,.06)",
+    border: "1px solid rgba(255,255,255,.12)",
+  },
+
+  lockButton: {
+    display: "inline-block",
+    marginTop: 18,
     background: "#fff",
     color: "#000",
     padding: "12px 18px",
