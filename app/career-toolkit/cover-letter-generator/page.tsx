@@ -742,28 +742,28 @@ function getSignatureFont(style: SignatureStyle) {
 function getSignatureExtraStyle(style: SignatureStyle): CSSProperties {
   if (style === "Modern Script") {
     return {
-      fontSize: "31px",
+      fontSize: "23px",
       fontWeight: 400,
-      letterSpacing: "-0.04em",
-      transform: "rotate(-1deg)",
-    };
-  }
-
-  if (style === "Clean Signature") {
-    return {
-      fontSize: "20px",
-      fontWeight: 700,
-      fontStyle: "italic",
       letterSpacing: "-0.02em",
       transform: "none",
     };
   }
 
+  if (style === "Clean Signature") {
+    return {
+      fontSize: "17px",
+      fontWeight: 600,
+      fontStyle: "italic",
+      letterSpacing: "-0.01em",
+      transform: "none",
+    };
+  }
+
   return {
-    fontSize: "34px",
+    fontSize: "24px",
     fontWeight: 400,
-    letterSpacing: "-0.035em",
-    transform: "rotate(-2deg)",
+    letterSpacing: "-0.02em",
+    transform: "none",
   };
 }
 
@@ -815,7 +815,7 @@ function getTemplateStyles(template: CoverLetterTemplate) {
         letterSpacing: "-0.03em",
       } as CSSProperties,
       targetRole: {
-        color: "#64748b",
+        color: "#c7d6e7",
       } as CSSProperties,
       contact: {
         color: "#64748b",
@@ -869,7 +869,7 @@ const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at 7% 0%, rgba(22,119,255,.10), transparent 24%), linear-gradient(180deg, #EDF3F9 0%, #F6F8FB 100%)",
+      "radial-gradient(circle at 8% 0%, rgba(22,119,255,.18), transparent 24%), radial-gradient(circle at 92% 12%, rgba(10,42,78,.12), transparent 26%), linear-gradient(180deg, #DCE7F2 0%, #E8EEF5 48%, #DDE6EF 100%)",
     color: "#0f172a",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -887,8 +887,12 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "flex-end",
     gap: "24px",
     marginBottom: "26px",
-    paddingBottom: "22px",
-    borderBottom: "1px solid #d8e2ed",
+    padding: "28px 30px",
+    borderRadius: "20px",
+    border: "1px solid rgba(33,78,124,.18)",
+    background:
+      "linear-gradient(120deg, rgba(9,36,67,.98) 0%, rgba(13,55,101,.96) 62%, rgba(22,119,255,.88) 130%)",
+    boxShadow: "0 18px 38px rgba(18,49,82,.14)",
   },
 
   kicker: {
@@ -902,7 +906,7 @@ const styles: Record<string, CSSProperties> = {
   pageTitle: {
     margin: "0 0 10px",
     maxWidth: "860px",
-    color: "#0b1b31",
+    color: "#ffffff",
     fontSize: "clamp(36px, 4vw, 54px)",
     lineHeight: 1.02,
     letterSpacing: "-0.045em",
@@ -918,10 +922,14 @@ const styles: Record<string, CSSProperties> = {
 
   backTop: {
     flexShrink: 0,
-    color: "#24466b",
+    color: "#dcecff",
     textDecoration: "none",
     fontSize: "12px",
     fontWeight: 800,
+    padding: "10px 14px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,.18)",
+    background: "rgba(255,255,255,.06)",
   },
 
   shell: {
@@ -934,6 +942,7 @@ const styles: Record<string, CSSProperties> = {
   leftCol: {
     display: "grid",
     gap: "16px",
+    padding: "0 2px",
   },
 
   rightCol: {
@@ -942,8 +951,12 @@ const styles: Record<string, CSSProperties> = {
   },
 
   controlSection: {
-    padding: "24px 0",
-    borderBottom: "1px solid #dbe4ee",
+    padding: "24px",
+    borderRadius: "18px",
+    border: "1px solid rgba(57,93,131,.16)",
+    background:
+      "linear-gradient(145deg, rgba(244,248,252,.82) 0%, rgba(229,237,246,.72) 100%)",
+    boxShadow: "0 12px 28px rgba(30,58,90,.055)",
   },
 
   sectionHeadingRow: {
@@ -964,7 +977,7 @@ const styles: Record<string, CSSProperties> = {
 
   sectionTitle: {
     margin: 0,
-    color: "#102238",
+    color: "#ffffff",
     fontSize: "22px",
     lineHeight: 1.2,
     letterSpacing: "-0.025em",
@@ -987,7 +1000,7 @@ const styles: Record<string, CSSProperties> = {
     textAlign: "left",
     borderRadius: "14px",
     border: "1px solid #dbe3ed",
-    background: "rgba(255,255,255,.72)",
+    background: "rgba(242,247,252,.78)",
     color: "#0f172a",
     cursor: "pointer",
     fontFamily: "inherit",
@@ -995,7 +1008,7 @@ const styles: Record<string, CSSProperties> = {
 
   templateCardSelected: {
     borderColor: "#1677FF",
-    background: "#f8fbff",
+    background: "linear-gradient(145deg, #EDF5FF 0%, #DDEBFA 100%)",
     boxShadow: "0 0 0 3px rgba(22,119,255,.08)",
   },
 
@@ -1098,7 +1111,7 @@ const styles: Record<string, CSSProperties> = {
     padding: "11px 13px",
     borderRadius: "9px",
     border: "1px solid #cfd9e5",
-    background: "rgba(255,255,255,.82)",
+    background: "rgba(247,250,253,.88)",
     color: "#102238",
     fontSize: "13px",
     boxSizing: "border-box",
@@ -1121,13 +1134,15 @@ const styles: Record<string, CSSProperties> = {
   },
 
   signaturePreviewRow: {
-    marginTop: "2px",
-    padding: "15px 0 2px",
+    marginTop: "6px",
+    padding: "14px 16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     gap: "20px",
-    borderTop: "1px solid #e0e7ef",
+    borderRadius: "12px",
+    border: "1px solid #cbd9e8",
+    background: "linear-gradient(120deg, #EAF2FB 0%, #DDEAF8 100%)",
   },
 
   signaturePreviewLabel: {
@@ -1141,6 +1156,9 @@ const styles: Record<string, CSSProperties> = {
   signaturePreview: {
     color: "#102238",
     whiteSpace: "nowrap",
+    maxWidth: "240px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
 
   message: {
@@ -1199,6 +1217,10 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: "space-between",
     alignItems: "flex-end",
     gap: "16px",
+    padding: "14px 16px",
+    borderRadius: "12px",
+    background: "linear-gradient(120deg, #0B2748 0%, #123E6C 100%)",
+    boxShadow: "0 10px 24px rgba(11,39,72,.12)",
   },
 
   previewKicker: {
@@ -1215,18 +1237,19 @@ const styles: Record<string, CSSProperties> = {
   },
 
   previewHint: {
-    color: "#7c8b9d",
+    color: "#a9c6e5",
     fontSize: "10px",
   },
 
   previewPaper: {
     minHeight: "980px",
     padding: "58px 62px",
-    background: "#ffffff",
+    background:
+      "linear-gradient(180deg, #FCFDFE 0%, #F7FAFC 100%)",
     color: "#111827",
-    borderRadius: "4px",
-    border: "1px solid #dbe3ec",
-    boxShadow: "0 26px 65px rgba(15,23,42,.12)",
+    borderRadius: "8px",
+    border: "1px solid #C9D6E4",
+    boxShadow: "0 28px 70px rgba(15,23,42,.16)",
     boxSizing: "border-box",
   },
 
@@ -1313,9 +1336,9 @@ const styles: Record<string, CSSProperties> = {
   },
 
   signature: {
-    margin: "0 0 5px",
+    margin: "0 0 4px",
     color: "#0f172a",
-    lineHeight: 1.08,
+    lineHeight: 1.12,
     transformOrigin: "left center",
   },
 
