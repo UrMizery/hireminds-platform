@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 */
 const MODEL =
   process.env.ANTHROPIC_MODEL?.trim() ||
-  "claude-sonnet-4-20250514";
+  "claude-sonnet-4-6";
 
 type JsonRecord = Record<string, unknown>;
 
