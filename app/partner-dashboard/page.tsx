@@ -96,6 +96,7 @@ type MeetingRequestRow = {
   service_type: string;
   other_service?: string | null;
   notes?: string | null;
+  admin_notes?: string | null;
   status: string;
   confirmed_slot_id?: string | null;
 
@@ -903,6 +904,198 @@ function requestStatusStyle(
     border:
       "1px solid rgba(250,204,21,.22)",
   };
+}
+
+
+function requestStatusLabel(
+  status: string
+) {
+  const normalized =
+    status.toLowerCase();
+
+  if (
+    normalized ===
+    "approved"
+  ) {
+    return "APPROVED • WAITING ON PARTICIPANT";
+  }
+
+  if (
+    normalized ===
+    "confirmed"
+  ) {
+    return "CONFIRMED";
+  }
+
+  if (
+    normalized ===
+    "pending"
+  ) {
+    return "PENDING REQUEST";
+  }
+
+  if (
+    normalized ===
+    "reschedule_requested"
+  ) {
+    return "RESCHEDULE REQUESTED";
+  }
+
+  if (
+    normalized ===
+    "rescheduled"
+  ) {
+    return "RESCHEDULED";
+  }
+
+  if (
+    normalized ===
+    "completed"
+  ) {
+    return "COMPLETED";
+  }
+
+  if (
+    normalized ===
+    "cancelled"
+  ) {
+    return "CANCELLED";
+  }
+
+  if (
+    normalized ===
+    "declined"
+  ) {
+    return "DECLINED";
+  }
+
+  return status
+    .replaceAll("_", " ")
+    .toUpperCase();
+}
+
+function requestStatusRank(
+  status: string
+) {
+  const normalized =
+    status.toLowerCase();
+
+  const rank: Record<
+    string,
+    number
+  > = {
+    reschedule_requested: 0,
+    pending: 1,
+    approved: 2,
+    confirmed: 3,
+    rescheduled: 4,
+    completed: 5,
+    cancelled: 6,
+    declined: 7,
+  };
+
+  return (
+    rank[normalized] ??
+    99
+  );
+}
+
+function requestCardStatusStyle(
+  status: string
+): CSSProperties {
+  const normalized =
+    status.toLowerCase();
+
+  if (
+    normalized ===
+    "confirmed"
+  ) {
+    return {
+      borderLeft:
+        "5px solid #22c55e",
+      background:
+        "linear-gradient(90deg, rgba(34,197,94,.055), #0f0f11 18%)",
+    };
+  }
+
+  if (
+    normalized ===
+    "pending"
+  ) {
+    return {
+      borderLeft:
+        "5px solid #facc15",
+      background:
+        "linear-gradient(90deg, rgba(250,204,21,.05), #0f0f11 18%)",
+    };
+  }
+
+  if (
+    normalized ===
+    "approved"
+  ) {
+    return {
+      borderLeft:
+        "5px solid #3b82f6",
+      background:
+        "linear-gradient(90deg, rgba(59,130,246,.055), #0f0f11 18%)",
+    };
+  }
+
+  if (
+    normalized ===
+      "reschedule_requested" ||
+    normalized ===
+      "rescheduled"
+  ) {
+    return {
+      borderLeft:
+        "5px solid #a855f7",
+      background:
+        "linear-gradient(90deg, rgba(168,85,247,.055), #0f0f11 18%)",
+    };
+  }
+
+  if (
+    normalized ===
+    "cancelled"
+  ) {
+    return {
+      borderLeft:
+        "5px solid #ef4444",
+      background:
+        "linear-gradient(90deg, rgba(239,68,68,.05), #0f0f11 18%)",
+      opacity: 0.86,
+    };
+  }
+
+  if (
+    normalized ===
+    "declined"
+  ) {
+    return {
+      borderLeft:
+        "5px solid #71717a",
+      background:
+        "linear-gradient(90deg, rgba(113,113,122,.06), #0f0f11 18%)",
+      opacity: 0.82,
+    };
+  }
+
+  if (
+    normalized ===
+    "completed"
+  ) {
+    return {
+      borderLeft:
+        "5px solid #60a5fa",
+      background:
+        "linear-gradient(90deg, rgba(96,165,250,.045), #0f0f11 18%)",
+      opacity: 0.9,
+    };
+  }
+
+  return {};
 }
 
 /* =========================================================
@@ -1955,6 +2148,114 @@ export default function PartnerDashboardPage() {
     await loadAdminData();
   }
 
+  async function editAdminNotes(
+    request: MeetingRequestRow
+  ) {
+    if (
+      !isSystemAdmin
+    ) {
+      return;
+    }
+
+    const nextNote =
+      window.prompt(
+        "Admin notes for this appointment:",
+        request.admin_notes ||
+          ""
+      );
+
+    if (
+      nextNote ===
+      null
+    ) {
+      return;
+    }
+
+    setMessage(
+      ""
+    );
+
+    const {
+      error,
+    } =
+      await supabase
+        .from(
+          "meeting_requests"
+        )
+        .update({
+          admin_notes:
+            nextNote.trim() ||
+            null,
+
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq(
+          "id",
+          request.id
+        );
+
+    if (
+      error
+    ) {
+      setMessage(
+        `Could not save admin notes: ${error.message}`
+      );
+
+      return;
+    }
+
+    setMessage(
+      "Admin notes saved."
+    );
+
+    await loadAdminData();
+  }
+
+  function openBookedRequest(
+    requestId?: string | null
+  ) {
+    if (
+      !requestId
+    ) {
+      return;
+    }
+
+    const request =
+      meetingRequests.find(
+        (
+          item
+        ) =>
+          item.id ===
+          requestId
+      );
+
+    setActiveTab(
+      "meeting_requests"
+    );
+
+    setRequestFilter(
+      "all"
+    );
+
+    setRequestSearch(
+      request?.participant_email ||
+        request?.participant_name ||
+        requestId
+    );
+
+    window.setTimeout(
+      () => {
+        window.scrollTo({
+          top: 0,
+          behavior:
+            "smooth",
+        });
+      },
+      50
+    );
+  }
+
   async function confirmRequestSlot(
     requestId: string,
     slotId: string
@@ -2037,11 +2338,67 @@ export default function PartnerDashboardPage() {
       return;
     }
 
+    const unusedChoiceSlotIds =
+      getRequestChoices(
+        requestId
+      )
+        .map(
+          (
+            choice
+          ) =>
+            choice.slot_id
+        )
+        .filter(
+          (
+            choiceSlotId
+          ) =>
+            choiceSlotId !==
+            slotId
+        );
+
+    if (
+      unusedChoiceSlotIds.length >
+      0
+    ) {
+      const {
+        error:
+          releaseError,
+      } =
+        await supabase
+          .from(
+            "availability_slots"
+          )
+          .update({
+            booked_request_id:
+              null,
+
+            updated_at:
+              new Date().toISOString(),
+          })
+          .in(
+            "id",
+            unusedChoiceSlotIds
+          )
+          .eq(
+            "booked_request_id",
+            requestId
+          );
+
+      if (
+        releaseError
+      ) {
+        console.error(
+          "Could not release unused appointment choices:",
+          releaseError
+        );
+      }
+    }
+
     setMessage(
       request.status ===
       "reschedule_requested"
-        ? "Reschedule approved. The new appointment is waiting for participant confirmation in Career Connect."
-        : "Appointment approved. The selected time is booked. The participant must now confirm it in Career Connect."
+        ? "Reschedule approved. The selected time is reserved and any unused preferred times were released."
+        : "Appointment approved. The selected time is reserved for this participant and the other preferred times were released back to availability."
     );
 
     await loadAdminData();
@@ -2147,29 +2504,6 @@ export default function PartnerDashboardPage() {
       );
 
       return;
-    }
-
-    if (
-      editingAvailabilityId
-    ) {
-      const existingSlot =
-        availabilitySlots.find(
-          (
-            slot
-          ) =>
-            slot.id ===
-            editingAvailabilityId
-        );
-
-      if (
-        existingSlot?.booked_request_id
-      ) {
-        setMessage(
-          "This appointment time is booked. Cancel or reschedule the confirmed appointment before editing it."
-        );
-
-        return;
-      }
     }
 
     const start =
@@ -2366,16 +2700,6 @@ export default function PartnerDashboardPage() {
     slot:
       AvailabilitySlotRow
   ) {
-    if (
-      slot.booked_request_id
-    ) {
-      setMessage(
-        "This appointment time is booked. Cancel or reschedule the confirmed appointment before editing it."
-      );
-
-      return;
-    }
-
     const start =
       new Date(
         slot.start_time
@@ -2452,7 +2776,9 @@ export default function PartnerDashboardPage() {
     );
 
     setMessage(
-      "Editing availability."
+      slot.booked_request_id
+        ? "Editing booked appointment time. Saving changes will update the time tied to the booked request."
+        : "Editing availability."
     );
 
     window.scrollTo({
@@ -3008,6 +3334,77 @@ export default function PartnerDashboardPage() {
         meetingRequests,
         requestFilter,
         requestSearch,
+      ]
+    );
+
+  const sortedMeetingRequests =
+    useMemo(
+      () => {
+        return [
+          ...filteredMeetingRequests,
+        ].sort(
+          (
+            a,
+            b
+          ) => {
+            const aParticipant =
+              (
+                a.participant_name ||
+                a.participant_email ||
+                a.user_id ||
+                ""
+              ).toLowerCase();
+
+            const bParticipant =
+              (
+                b.participant_name ||
+                b.participant_email ||
+                b.user_id ||
+                ""
+              ).toLowerCase();
+
+            const participantCompare =
+              aParticipant.localeCompare(
+                bParticipant
+              );
+
+            if (
+              participantCompare !==
+              0
+            ) {
+              return participantCompare;
+            }
+
+            const statusCompare =
+              requestStatusRank(
+                a.status
+              ) -
+              requestStatusRank(
+                b.status
+              );
+
+            if (
+              statusCompare !==
+              0
+            ) {
+              return statusCompare;
+            }
+
+            return (
+              new Date(
+                b.created_at ||
+                  0
+              ).getTime() -
+              new Date(
+                a.created_at ||
+                  0
+              ).getTime()
+            );
+          }
+        );
+      },
+      [
+        filteredMeetingRequests,
       ]
     );
 
@@ -5489,9 +5886,10 @@ export default function PartnerDashboardPage() {
                 styles.requestList
               }
             >
-              {filteredMeetingRequests.map(
+              {sortedMeetingRequests.map(
                 (
-                  request
+                  request,
+                  index
                 ) => {
                   const choices =
                     getRequestChoices(
@@ -5508,14 +5906,180 @@ export default function PartnerDashboardPage() {
                       request.user_id
                     );
 
+                  const participantGroupKey =
+                    request.user_id ||
+                    request.participant_email?.toLowerCase() ||
+                    request.participant_name?.toLowerCase() ||
+                    request.id;
+
+                  const previousRequest =
+                    index >
+                    0
+                      ? sortedMeetingRequests[
+                          index -
+                            1
+                        ]
+                      : null;
+
+                  const previousGroupKey =
+                    previousRequest
+                      ? previousRequest.user_id ||
+                        previousRequest.participant_email?.toLowerCase() ||
+                        previousRequest.participant_name?.toLowerCase() ||
+                        previousRequest.id
+                      : null;
+
+                  const isNewParticipant =
+                    participantGroupKey !==
+                    previousGroupKey;
+
+                  const participantRequests =
+                    sortedMeetingRequests.filter(
+                      (
+                        item
+                      ) =>
+                        (
+                          item.user_id ||
+                          item.participant_email?.toLowerCase() ||
+                          item.participant_name?.toLowerCase() ||
+                          item.id
+                        ) ===
+                        participantGroupKey
+                    );
+
+                  const confirmedCount =
+                    participantRequests.filter(
+                      (
+                        item
+                      ) =>
+                        item.status ===
+                        "confirmed"
+                    ).length;
+
+                  const activeCount =
+                    participantRequests.filter(
+                      (
+                        item
+                      ) =>
+                        [
+                          "pending",
+                          "approved",
+                          "reschedule_requested",
+                          "rescheduled",
+                        ].includes(
+                          item.status
+                        )
+                    ).length;
+
+                  const closedCount =
+                    participantRequests.filter(
+                      (
+                        item
+                      ) =>
+                        [
+                          "completed",
+                          "cancelled",
+                          "declined",
+                        ].includes(
+                          item.status
+                        )
+                    ).length;
+
                   return (
-                    <article
+                    <div
                       key={
                         request.id
                       }
                       style={
-                        styles.requestCard
+                        styles.requestGroupItem
                       }
+                    >
+                      {isNewParticipant ? (
+                        <div
+                          style={
+                            styles.participantGroupHeader
+                          }
+                        >
+                          <div>
+                            <p
+                              style={
+                                styles.participantGroupEyebrow
+                              }
+                            >
+                              PARTICIPANT APPOINTMENTS
+                            </p>
+
+                            <h3
+                              style={
+                                styles.participantGroupName
+                              }
+                            >
+                              {request.participant_name ||
+                                request.participant_email ||
+                                "Participant"}
+                            </h3>
+
+                            <p
+                              style={
+                                styles.participantGroupEmail
+                              }
+                            >
+                              {request.participant_email ||
+                                "No email"}
+                            </p>
+                          </div>
+
+                          <div
+                            style={
+                              styles.participantGroupStats
+                            }
+                          >
+                            {confirmedCount >
+                            0 ? (
+                              <span
+                                style={
+                                  styles.groupConfirmedBadge
+                                }
+                              >
+                                {confirmedCount} Confirmed
+                              </span>
+                            ) : null}
+
+                            {activeCount >
+                            0 ? (
+                              <span
+                                style={
+                                  styles.groupActiveBadge
+                                }
+                              >
+                                {activeCount} Needs Attention
+                              </span>
+                            ) : null}
+
+                            {closedCount >
+                            0 ? (
+                              <span
+                                style={
+                                  styles.groupClosedBadge
+                                }
+                              >
+                                {closedCount} Closed
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <article
+                      key={
+                        request.id
+                      }
+                      style={{
+                        ...styles.requestCard,
+                        ...requestCardStatusStyle(
+                          request.status
+                        ),
+                      }}
                     >
                       <div
                         style={
@@ -5547,7 +6111,9 @@ export default function PartnerDashboardPage() {
                                 ),
                               }}
                             >
-                              {request.status.toUpperCase()}
+                              {requestStatusLabel(
+                                request.status
+                              )}
                             </span>
                           </div>
 
@@ -5701,6 +6267,22 @@ export default function PartnerDashboardPage() {
 
                           <p>
                             {request.notes}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {request.admin_notes ? (
+                        <div
+                          style={
+                            styles.adminNotesBox
+                          }
+                        >
+                          <strong>
+                            Admin Notes
+                          </strong>
+
+                          <p>
+                            {request.admin_notes}
                           </p>
                         </div>
                       ) : null}
@@ -6086,6 +6668,22 @@ export default function PartnerDashboardPage() {
                       >
                         <button
                           type="button"
+                          onClick={() =>
+                            editAdminNotes(
+                              request
+                            )
+                          }
+                          style={
+                            styles.actionButtonBlue
+                          }
+                        >
+                          {request.admin_notes
+                            ? "Edit Admin Notes"
+                            : "Add Admin Notes"}
+                        </button>
+
+                        <button
+                          type="button"
                           onClick={() => {
                             const confirmed =
                               window.confirm(
@@ -6198,11 +6796,12 @@ export default function PartnerDashboardPage() {
                         </button>
                       </div>
                     </article>
+                    </div>
                   );
                 }
               )}
 
-              {filteredMeetingRequests.length ===
+              {sortedMeetingRequests.length ===
               0 ? (
                 <div
                   style={
@@ -6602,9 +7201,9 @@ export default function PartnerDashboardPage() {
                     }
                   >
                     Available appointment times can be edited, hidden,
-                    activated, or deleted. Booked times remain locked
-                    until the confirmed meeting is cancelled or
-                    rescheduled.
+                    activated, or deleted. Booked appointments remain manageable:
+                    you can open the request, edit the appointment time, add notes,
+                    reschedule, or cancel without losing admin access.
                   </p>
                 </div>
               </div>
@@ -6749,67 +7348,87 @@ export default function PartnerDashboardPage() {
                           </span>
                         ) : null}
 
-                        {!booked ? (
-                          <div
+                        <div
+                          style={
+                            styles.availabilityActions
+                          }
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              editAvailability(
+                                slot
+                              )
+                            }
                             style={
-                              styles.availabilityActions
+                              styles.editButtonSmall
                             }
                           >
-                            <button
-                              type="button"
-                              onClick={() =>
-                                editAvailability(
-                                  slot
-                                )
-                              }
-                              style={
-                                styles.editButtonSmall
-                              }
-                            >
-                              Edit
-                            </button>
+                            {booked
+                              ? "Edit Time"
+                              : "Edit"}
+                          </button>
 
+                          {booked ? (
                             <button
                               type="button"
                               onClick={() =>
-                                toggleAvailability(
-                                  slot
+                                openBookedRequest(
+                                  slot.booked_request_id
                                 )
                               }
                               style={
                                 styles.secondaryButtonSmall
                               }
                             >
-                              {slot.is_active
-                                ? "Hide"
-                                : "Activate"}
+                              Open Appointment
                             </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toggleAvailability(
+                                    slot
+                                  )
+                                }
+                                style={
+                                  styles.secondaryButtonSmall
+                                }
+                              >
+                                {slot.is_active
+                                  ? "Hide"
+                                  : "Activate"}
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deleteAvailability(
-                                  slot.id
-                                )
-                              }
-                              style={
-                                styles.deleteButtonSmall
-                              }
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  deleteAvailability(
+                                    slot.id
+                                  )
+                                }
+                                style={
+                                  styles.deleteButtonSmall
+                                }
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {booked ? (
                           <div
                             style={
                               styles.bookedMessage
                             }
                           >
-                            🔒 This appointment time is booked. Cancel or
-                            reschedule the confirmed request before
-                            changing this time.
+                            This time is booked, but you can still edit the
+                            appointment or open the participant request to add
+                            notes, reschedule, complete, or cancel it.
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     );
                   }
@@ -9155,6 +9774,165 @@ const styles: Record<
       22,
   },
 
+  requestGroupItem: {
+    display:
+      "grid",
+
+    gap:
+      12,
+  },
+
+  participantGroupHeader: {
+    marginTop:
+      8,
+
+    padding:
+      "16px 18px",
+
+    borderRadius:
+      16,
+
+    background:
+      "linear-gradient(90deg, rgba(22,119,255,.13), rgba(22,119,255,.035))",
+
+    border:
+      "1px solid rgba(22,119,255,.28)",
+
+    display:
+      "flex",
+
+    justifyContent:
+      "space-between",
+
+    alignItems:
+      "center",
+
+    gap:
+      16,
+
+    flexWrap:
+      "wrap",
+  },
+
+  participantGroupEyebrow: {
+    margin:
+      0,
+
+    color:
+      "#60a5fa",
+
+    fontSize:
+      9,
+
+    fontWeight:
+      900,
+
+    letterSpacing:
+      ".14em",
+  },
+
+  participantGroupName: {
+    margin:
+      "4px 0 0",
+
+    color:
+      "#ffffff",
+
+    fontSize:
+      21,
+  },
+
+  participantGroupEmail: {
+    margin:
+      "5px 0 0",
+
+    color:
+      "#9ca3af",
+
+    fontSize:
+      12,
+  },
+
+  participantGroupStats: {
+    display:
+      "flex",
+
+    gap:
+      8,
+
+    flexWrap:
+      "wrap",
+  },
+
+  groupConfirmedBadge: {
+    padding:
+      "6px 10px",
+
+    borderRadius:
+      999,
+
+    background:
+      "rgba(34,197,94,.12)",
+
+    border:
+      "1px solid rgba(34,197,94,.28)",
+
+    color:
+      "#86efac",
+
+    fontSize:
+      10,
+
+    fontWeight:
+      900,
+  },
+
+  groupActiveBadge: {
+    padding:
+      "6px 10px",
+
+    borderRadius:
+      999,
+
+    background:
+      "rgba(250,204,21,.10)",
+
+    border:
+      "1px solid rgba(250,204,21,.24)",
+
+    color:
+      "#fde68a",
+
+    fontSize:
+      10,
+
+    fontWeight:
+      900,
+  },
+
+  groupClosedBadge: {
+    padding:
+      "6px 10px",
+
+    borderRadius:
+      999,
+
+    background:
+      "rgba(113,113,122,.14)",
+
+    border:
+      "1px solid rgba(113,113,122,.25)",
+
+    color:
+      "#d4d4d8",
+
+    fontSize:
+      10,
+
+    fontWeight:
+      900,
+  },
+
   requestCard: {
     padding:
       22,
@@ -9409,6 +10187,29 @@ const styles: Record<
 
     color:
       "#d4d4d8",
+
+    fontSize:
+      13,
+
+    lineHeight:
+      1.6,
+  },
+
+  adminNotesBox: {
+    padding:
+      14,
+
+    borderRadius:
+      14,
+
+    background:
+      "rgba(22,119,255,.07)",
+
+    border:
+      "1px solid rgba(22,119,255,.25)",
+
+    color:
+      "#dbeafe",
 
     fontSize:
       13,
