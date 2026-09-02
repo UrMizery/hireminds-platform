@@ -429,57 +429,35 @@ function ToolCard({ tool }: { tool: Tool }) {
       className="hm-tool-card"
       style={{
         ...styles.toolCard,
-        borderTopColor: accent.border,
+        borderLeftColor: accent.border,
       }}
     >
       <div style={styles.toolTop}>
-        <div
-          style={{
-            ...styles.toolMark,
-            background: accent.soft,
-            color: accent.text,
-          }}
-        >
-          {getToolInitials(tool.title)}
+        <div style={styles.toolHeadingWrap}>
+          <h3 style={styles.toolTitle}>{tool.title}</h3>
+
+          {tool.label ? (
+            <span
+              style={{
+                ...styles.toolLabel,
+                color: accent.text,
+                background: accent.soft,
+                borderColor: accent.border,
+              }}
+            >
+              {tool.label}
+            </span>
+          ) : null}
         </div>
-
-        {tool.label ? (
-          <span
-            style={{
-              ...styles.toolLabel,
-              color: accent.text,
-              background: accent.soft,
-              borderColor: accent.border,
-            }}
-          >
-            {tool.label}
-          </span>
-        ) : null}
       </div>
 
-      <div>
-        <h3 style={styles.toolTitle}>{tool.title}</h3>
-        <p style={styles.toolDescription}>{tool.description}</p>
-      </div>
+      <p style={styles.toolDescription}>{tool.description}</p>
 
       <div style={styles.toolFooter}>
         <span>Open tool</span>
-        <span>→</span>
+        <span style={styles.toolArrow}>→</span>
       </div>
     </a>
-  );
-}
-
-function getToolInitials(title: string) {
-  const ignored = new Set(["the", "of", "and", "&"]);
-
-  return (
-    title
-      .split(" ")
-      .filter((word) => word && !ignored.has(word.toLowerCase()))
-      .slice(0, 2)
-      .map((word) => word[0]?.toUpperCase())
-      .join("") || "HM"
   );
 }
 
@@ -525,7 +503,7 @@ const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at 9% 0%, rgba(22,119,255,.09), transparent 26%), radial-gradient(circle at 96% 18%, rgba(8,31,67,.055), transparent 24%), linear-gradient(180deg, #F4F7FB 0%, #EEF3F8 100%)",
+      "radial-gradient(circle at 8% 0%, rgba(22,119,255,.13), transparent 28%), radial-gradient(circle at 96% 14%, rgba(12,47,91,.09), transparent 24%), linear-gradient(180deg, #EEF4FB 0%, #E9F0F7 48%, #F3F6FA 100%)",
     color: "#0F172A",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -632,10 +610,10 @@ const styles: Record<string, CSSProperties> = {
     overflow: "hidden",
     minHeight: "100%",
     background:
-      "linear-gradient(145deg, #0A1B32 0%, #0D2C53 52%, #1677FF 140%)",
-    padding: "34px",
+      "linear-gradient(145deg, #0A1B32 0%, #0D2C53 58%, #145FAF 100%)",
+    padding: "40px 34px",
     display: "flex",
-    alignItems: "flex-end",
+    alignItems: "center",
   },
 
   heroSideGlow: {
@@ -652,6 +630,7 @@ const styles: Record<string, CSSProperties> = {
   heroSideContent: {
     position: "relative",
     zIndex: 1,
+    maxWidth: "320px",
   },
 
   heroSideKicker: {
@@ -673,7 +652,7 @@ const styles: Record<string, CSSProperties> = {
     margin: 0,
     color: "#E6EEF8",
     fontSize: "13px",
-    lineHeight: 1.72,
+    lineHeight: 1.62,
   },
 
   quickSection: {
@@ -863,12 +842,12 @@ const styles: Record<string, CSSProperties> = {
   categoryPanel: {
     position: "relative",
     overflow: "hidden",
-    padding: "28px",
-    borderRadius: "21px",
+    padding: "26px",
+    borderRadius: "20px",
     background:
-      "linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(249,251,253,.96) 100%)",
-    border: "1px solid #DDE6F0",
-    boxShadow: "0 14px 34px rgba(15,23,42,.045)",
+      "linear-gradient(180deg, rgba(250,252,255,.98) 0%, rgba(244,248,252,.98) 100%)",
+    border: "1px solid #D7E2EE",
+    boxShadow: "0 12px 30px rgba(15,23,42,.04)",
   },
 
   categoryHeader: {
@@ -917,13 +896,13 @@ const styles: Record<string, CSSProperties> = {
   },
 
   toolCard: {
-    minHeight: "170px",
-    padding: "19px",
-    borderRadius: "15px",
-    border: "1px solid #E0E7EF",
-    borderTop: "3px solid",
+    minHeight: "150px",
+    padding: "19px 20px",
+    borderRadius: "14px",
+    border: "1px solid #DCE5EE",
+    borderLeft: "4px solid",
     background:
-      "linear-gradient(180deg, #FFFFFF 0%, #FBFCFE 100%)",
+      "linear-gradient(135deg, rgba(255,255,255,.98) 0%, rgba(247,250,253,.98) 100%)",
     textDecoration: "none",
     color: "inherit",
     display: "flex",
@@ -934,57 +913,60 @@ const styles: Record<string, CSSProperties> = {
   toolTop: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: "12px",
-    marginBottom: "15px",
+    marginBottom: "8px",
   },
 
-  toolMark: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "11px",
-    display: "grid",
-    placeItems: "center",
-    fontSize: "10px",
-    fontWeight: 900,
-    letterSpacing: ".03em",
+  toolHeadingWrap: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "14px",
   },
 
   toolLabel: {
+    flexShrink: 0,
     padding: "5px 8px",
     borderRadius: "999px",
     border: "1px solid",
     fontSize: "8px",
     fontWeight: 900,
-    letterSpacing: ".075em",
+    letterSpacing: ".07em",
     textTransform: "uppercase",
   },
 
   toolTitle: {
-    margin: "0 0 7px",
+    margin: 0,
     color: "#102038",
     fontSize: "17px",
-    lineHeight: 1.25,
+    lineHeight: 1.28,
     letterSpacing: "-.024em",
     fontWeight: 810,
   },
 
   toolDescription: {
-    margin: 0,
-    color: "#69788C",
+    margin: "0 0 14px",
+    color: "#66768A",
     fontSize: "12px",
     lineHeight: 1.58,
   },
 
   toolFooter: {
-    marginTop: "16px",
-    paddingTop: "12px",
-    borderTop: "1px solid #E7EDF3",
+    marginTop: "auto",
+    paddingTop: "11px",
+    borderTop: "1px solid #E4EAF1",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     color: "#1677FF",
     fontSize: "11px",
     fontWeight: 800,
+  },
+
+  toolArrow: {
+    fontSize: "17px",
+    lineHeight: 1,
   },
 };
