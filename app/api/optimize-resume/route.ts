@@ -12,7 +12,7 @@ async function claude(prompt: string, maxTokens = 800) {
     method: "POST",
     headers: ANTHROPIC_HEADERS(),
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: maxTokens,
       messages: [{ role: "user", content: prompt }],
     }),
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: ANTHROPIC_HEADERS(),
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6",
           max_tokens: 1000,
           messages: [{
             role: "user",
