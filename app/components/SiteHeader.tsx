@@ -10,8 +10,6 @@ type NavItem = {
   href: string;
 };
 
-const CAREER_PATHWAY_ACCESS_CODES = ["TWP2026", "NHP2026"];
-
 const partnerNavItems: NavItem[] = [
   { label: "Messages", href: "/messages" },
   { label: "Career Map", href: "/partner-dashboard/career-map" },
@@ -30,19 +28,6 @@ const skillsQuestNavItems: NavItem[] = [
   { label: "Skill Builder Lab", href: "/skill-builder-lab" },
   { label: "Apply Knowledge Lab", href: "/applied-learning-lab" },
   { label: "Simulation Lab", href: "/simulation-lab" },
-];
-
-const nhpCareerPathwayNavItems: NavItem[] = [
-  { label: "Program Overview", href: "/nhp/program-overview" },
-  { label: "Study Guides", href: "/nhp/study-guides" },
-  { label: "Assigned Training", href: "/nhp/assigned-training" },
-  { label: "Career Media Library", href: "/nhp/career-media-library" },
-];
-
-const nhpSkillsQuestNavItems: NavItem[] = [
-  { label: "Skill Builder Lab", href: "/nhp/skill-builder-lab" },
-  { label: "Apply Knowledge", href: "/nhp/apply-knowledge" },
-  { label: "Simulation Lab", href: "/nhp/simulation-lab" },
 ];
 
 function normalizeRole(rawRole: unknown): UserRole {
@@ -274,18 +259,11 @@ export default function SiteHeader() {
   const isPartner = role === "partner";
   const isAdmin = role === "admin";
   const isEmployer = role === "employer";
-  const isNHP = referralCode === "NHP2026";
 
-  const hasCareerPathwayAccess =
-    isAdmin || CAREER_PATHWAY_ACCESS_CODES.includes(referralCode);
+  const hasCareerPathwayAccess = isAdmin;
 
-  const activeCareerPathwayNavItems = isNHP
-    ? nhpCareerPathwayNavItems
-    : careerPathwayNavItems;
-
-  const activeSkillsQuestNavItems = isNHP
-    ? nhpSkillsQuestNavItems
-    : skillsQuestNavItems;
+  const activeCareerPathwayNavItems = careerPathwayNavItems;
+  const activeSkillsQuestNavItems = skillsQuestNavItems;
 
   const showMyProfile =
     isLoggedIn && (isCandidate || isPartner || isAdmin);
@@ -357,15 +335,21 @@ export default function SiteHeader() {
               ) : null}
 
               {showCareerPathway ? (
-                <div style={styles.dropdownWrap} ref={careerPathwayDropdownRef}>
+                <div
+                  style={styles.dropdownWrap}
+                  ref={careerPathwayDropdownRef}
+                >
                   <button
                     type="button"
-                    onClick={() => setCareerPathwayOpen((prev) => !prev)}
+                    onClick={() =>
+                      setCareerPathwayOpen((prev) => !prev)
+                    }
                     style={styles.dropdownTrigger}
                     aria-haspopup="menu"
                     aria-expanded={careerPathwayOpen}
                   >
                     Career Pathway
+
                     <span
                       style={{
                         ...styles.dropdownChevron,
@@ -385,7 +369,9 @@ export default function SiteHeader() {
                           key={item.href}
                           href={item.href}
                           style={styles.dropdownItem}
-                          onClick={() => setCareerPathwayOpen(false)}
+                          onClick={() =>
+                            setCareerPathwayOpen(false)
+                          }
                         >
                           {item.label}
                         </a>
@@ -396,15 +382,21 @@ export default function SiteHeader() {
               ) : null}
 
               {showSkillsQuest ? (
-                <div style={styles.dropdownWrap} ref={skillsQuestDropdownRef}>
+                <div
+                  style={styles.dropdownWrap}
+                  ref={skillsQuestDropdownRef}
+                >
                   <button
                     type="button"
-                    onClick={() => setSkillsQuestOpen((prev) => !prev)}
+                    onClick={() =>
+                      setSkillsQuestOpen((prev) => !prev)
+                    }
                     style={styles.dropdownTrigger}
                     aria-haspopup="menu"
                     aria-expanded={skillsQuestOpen}
                   >
                     SkillsQuest
+
                     <span
                       style={{
                         ...styles.dropdownChevron,
@@ -424,7 +416,9 @@ export default function SiteHeader() {
                           key={item.href}
                           href={item.href}
                           style={styles.dropdownItem}
-                          onClick={() => setSkillsQuestOpen(false)}
+                          onClick={() =>
+                            setSkillsQuestOpen(false)
+                          }
                         >
                           {item.label}
                         </a>
@@ -441,15 +435,21 @@ export default function SiteHeader() {
               ) : null}
 
               {showPartnerTools ? (
-                <div style={styles.dropdownWrap} ref={partnerDropdownRef}>
+                <div
+                  style={styles.dropdownWrap}
+                  ref={partnerDropdownRef}
+                >
                   <button
                     type="button"
-                    onClick={() => setPartnersOpen((prev) => !prev)}
+                    onClick={() =>
+                      setPartnersOpen((prev) => !prev)
+                    }
                     style={styles.dropdownTrigger}
                     aria-haspopup="menu"
                     aria-expanded={partnersOpen}
                   >
                     Tools
+
                     <span
                       style={{
                         ...styles.dropdownChevron,
@@ -469,7 +469,9 @@ export default function SiteHeader() {
                           key={item.href}
                           href={item.href}
                           style={styles.dropdownItem}
-                          onClick={() => setPartnersOpen(false)}
+                          onClick={() =>
+                            setPartnersOpen(false)
+                          }
                         >
                           {item.label}
                         </a>
@@ -489,7 +491,9 @@ export default function SiteHeader() {
                 <button
                   type="button"
                   onClick={() =>
-                    window.dispatchEvent(new Event("toggle-notes-panel"))
+                    window.dispatchEvent(
+                      new Event("toggle-notes-panel")
+                    )
                   }
                   style={styles.notesButtonLike}
                 >
@@ -509,7 +513,10 @@ export default function SiteHeader() {
           ) : null}
 
           {!checkingAuth && !isLoggedIn ? (
-            <a href="/employer-partner-login" style={styles.link}>
+            <a
+              href="/employer-partner-login"
+              style={styles.link}
+            >
               Employer/Partner Sign In
             </a>
           ) : null}
