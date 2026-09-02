@@ -24,11 +24,11 @@ const REFERRAL_CODES: Record<string, ReferralCodeConfig> = {
     expiresAt: "2026-12-31T23:59:59-05:00",
   },
 
-  COHORT1Y: {
-    active: true,
-    label: "HireMinds Cohort Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
+ COHORT1Y: {
+  active: false,
+  label: "HireMinds Cohort Referral Access",
+  expiresAt: "2026-12-31T23:59:59-05:00",
+},
 
   COHORT2Y: {
     active: true,
