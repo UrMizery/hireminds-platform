@@ -259,8 +259,10 @@ presentLabel: string
 ) {
 const from = [startMonth, startYear].filter(Boolean).join(" ");
 const to = isPresent ? presentLabel : [endMonth, endYear].filter(Boolean).join(" ");
-if (!from && !to) return "";
-return `${from || "Start"} - ${to || "End"}`;
+if (from && to) return `${from} - ${to}`;
+if (from) return from;
+if (to) return to;
+return "";
 }
 
 function splitSkillsIntoColumns(skills: string[]) {
@@ -1017,7 +1019,7 @@ printWindow.document.write(`
 <style>
 @page {
 size: letter;
-margin: 1.12in 0.55in 0.55in;
+margin: 0.48in 0.55in 0.5in;
 }
 
 html, body {
@@ -1044,11 +1046,7 @@ color: #111827;
 }
 
 .resumeHeader {
-position: fixed;
-top: -0.86in;
-left: 0;
-right: 0;
-z-index: 10;
+position: static;
 background: white;
 margin: 0;
 padding: 0 0 8px;
@@ -1088,7 +1086,7 @@ word-break: break-word;
 }
 
 .resumeSection {
-margin-bottom: 20px;
+margin-bottom: 11px;
 break-inside: auto;
 page-break-inside: auto;
 }
@@ -1103,8 +1101,8 @@ color: #111827;
 
 .resumeParagraph {
 margin: 0;
-font-size: 11pt;
-line-height: 1.35;
+font-size: 10pt;
+line-height: 1.24;
 color: #111827;
 white-space: pre-wrap;
 word-break: break-word;
@@ -1129,7 +1127,7 @@ word-break: break-word;
 }
 
 .resumeEntry {
-margin-bottom: 16px;
+margin-bottom: 9px;
 break-inside: avoid;
 page-break-inside: avoid;
 }
@@ -1164,9 +1162,9 @@ white-space: nowrap;
 }
 
 .resumeBullet {
-margin: 4px 0;
-font-size: 11pt;
-line-height: 1.35;
+margin: 2px 0;
+font-size: 10pt;
+line-height: 1.24;
 color: #111827;
 white-space: pre-wrap;
 word-break: break-word;
@@ -1397,7 +1395,7 @@ return (
 @media print {
 @page {
 size: letter;
-margin: 1.12in 0.55in 0.55in;
+margin: 0.48in 0.55in 0.5in;
 }
 
 html,
@@ -1478,11 +1476,7 @@ overflow: visible !important;
 }
 
 .resumeHeader {
-position: fixed !important;
-top: -0.86in !important;
-left: 0 !important;
-right: 0 !important;
-z-index: 10 !important;
+position: static !important;
 background: white !important;
 margin: 0 !important;
 padding: 0 0 8px !important;
