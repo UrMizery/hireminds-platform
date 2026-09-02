@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
-import { useLanguage } from "../lib/language-context";
 import { supabase } from "../lib/supabase";
 
 type UserRole = "guest" | "candidate" | "partner" | "employer" | "admin";
@@ -69,7 +68,6 @@ function normalizeRole(rawRole: unknown): UserRole {
 }
 
 export default function SiteHeader() {
-  const { t } = useLanguage();
   const pathname = usePathname();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -197,6 +195,7 @@ export default function SiteHeader() {
     }
 
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -274,28 +273,21 @@ export default function SiteHeader() {
           <a href="/" style={styles.logo}>
             HireMinds
           </a>
-
         </div>
 
         <div style={styles.centerNav}>
           <a href="/" style={styles.link}>
-            {t.home}
+            Home
           </a>
 
           {!checkingAuth && !isLoggedIn ? (
             <a href="/sign-in" style={styles.link}>
-              {t.signIn}
-            </a>
-          ) : null}
-
-          {!checkingAuth && !isLoggedIn ? (
-            <a href="/partner-with-hireminds" style={styles.link}>
-              {t.partner}
+              Sign In
             </a>
           ) : null}
 
           <a href="/contact" style={styles.link}>
-            {t.contact}
+            Contact
           </a>
         </div>
 
@@ -466,11 +458,11 @@ export default function SiteHeader() {
             </>
           ) : null}
 
-          <span style={styles.lockedLink}>{t.jobBoard} 🔒</span>
+          <span style={styles.lockedLink}>Job Board 🔒</span>
 
           {!checkingAuth && !isLoggedIn ? (
             <a href="/employer-partner-login" style={styles.link}>
-              {t.employerPartnerSignIn}
+              Employer/Partner Sign In
             </a>
           ) : null}
         </div>
