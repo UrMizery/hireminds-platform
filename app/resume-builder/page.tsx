@@ -115,6 +115,7 @@ previewHelp: string;
 header: string;
 summary: string;
 summaryAndSkills: string;
+skills: string;
 experience: string;
 education: string;
 certifications: string;
@@ -127,6 +128,7 @@ currentlyWorkHere: string;
 currentlyAttendHere: string;
 currentlyCompletingCert: string;
 currentlyVolunteerHere: string;
+present: string;
 backToProfile: string;
 }
 > = {
@@ -140,6 +142,7 @@ previewHelp: "Live resume preview — it stays visible while you work.",
 header: "Resume Header",
 summary: "Summary",
 summaryAndSkills: "Summary + Skills",
+skills: "Skills",
 experience: "Work Experience",
 education: "Education (optional)",
 certifications: "Certifications (optional)",
@@ -152,6 +155,7 @@ currentlyWorkHere: "I currently work here",
 currentlyAttendHere: "I currently attend here",
 currentlyCompletingCert: "I am currently completing this certification",
 currentlyVolunteerHere: "I currently volunteer here",
+present: "Present",
 backToProfile: "Back to Profile",
 },
 Spanish: {
@@ -165,6 +169,7 @@ previewHelp:
 header: "Encabezado del currículum",
 summary: "Resumen",
 summaryAndSkills: "Resumen + Habilidades",
+skills: "Habilidades",
 experience: "Experiencia laboral",
 education: "Educación (opcional)",
 certifications: "Certificaciones (opcional)",
@@ -177,6 +182,7 @@ currentlyWorkHere: "Actualmente trabajo aquí",
 currentlyAttendHere: "Actualmente estudio aquí",
 currentlyCompletingCert: "Actualmente estoy completando esta certificación",
 currentlyVolunteerHere: "Actualmente hago voluntariado aquí",
+present: "Actualidad",
 backToProfile: "Volver al perfil",
 },
 Hindi: {
@@ -190,6 +196,7 @@ previewHelp:
 header: "रिज़्यूमे हेडर",
 summary: "सारांश",
 summaryAndSkills: "सारांश + कौशल",
+skills: "कौशल",
 experience: "कार्य अनुभव",
 education: "शिक्षा (वैकल्पिक)",
 certifications: "प्रमाणपत्र (वैकल्पिक)",
@@ -202,6 +209,7 @@ currentlyWorkHere: "मैं वर्तमान में यहाँ क�
 currentlyAttendHere: "मैं वर्तमान में यहाँ पढ़ता/पढ़ती हूँ",
 currentlyCompletingCert: "मैं वर्तमान में यह प्रमाणपत्र पूरा कर रहा/रही हूँ",
 currentlyVolunteerHere: "मैं वर्तमान में यहाँ स्वयंसेवा करता/करती हूँ",
+present: "वर्तमान",
 backToProfile: "प्रोफ़ाइल पर वापस जाएँ",
 },
 Polish: {
@@ -215,6 +223,7 @@ previewHelp:
 header: "Nagłówek CV",
 summary: "Podsumowanie",
 summaryAndSkills: "Podsumowanie + Umiejętności",
+skills: "Umiejętności",
 experience: "Doświadczenie zawodowe",
 education: "Wykształcenie (opcjonalnie)",
 certifications: "Certyfikaty (opcjonalnie)",
@@ -227,6 +236,7 @@ currentlyWorkHere: "Obecnie tu pracuję",
 currentlyAttendHere: "Obecnie tu się uczę",
 currentlyCompletingCert: "Obecnie kończę ten certyfikat",
 currentlyVolunteerHere: "Obecnie jestem tu wolontariuszem",
+present: "Obecnie",
 backToProfile: "Wróć do profilu",
 },
 };
@@ -244,10 +254,11 @@ startMonth: string,
 startYear: string,
 endMonth: string,
 endYear: string,
-isPresent: boolean
+isPresent: boolean,
+presentLabel: string
 ) {
 const from = [startMonth, startYear].filter(Boolean).join(" ");
-const to = isPresent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ");
+const to = isPresent ? presentLabel : [endMonth, endYear].filter(Boolean).join(" ");
 if (!from && !to) return "";
 return `${from || "Start"} - ${to || "End"}`;
 }
@@ -922,7 +933,7 @@ printWindow.document.write(`
 <style>
 @page {
 size: letter;
-margin: 0.5in;
+margin: 1.12in 0.55in 0.55in;
 }
 
 html, body {
@@ -949,8 +960,13 @@ color: #111827;
 }
 
 .resumeHeader {
-position: static;
+position: fixed;
+top: -0.86in;
+left: 0;
+right: 0;
+z-index: 10;
 background: white;
+margin: 0;
 padding: 0 0 8px;
 break-inside: avoid;
 page-break-inside: avoid;
@@ -1094,7 +1110,7 @@ case "summary":
 if (!summaryText && !summaryHeading) return null;
 return (
 <section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
-<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{summaryHeading || ui.summary}</h3>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{summaryHeading.trim() && summaryHeading.trim().toLowerCase() !== "summary" ? summaryHeading : ui.summary}</h3>
 <p style={{ ...styles.resumeParagraph, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setSummaryText(e.currentTarget.textContent?.trim() || "")}>{summaryText || "Click here to add your professional summary."}</p>
 </section>
 );
@@ -1103,7 +1119,7 @@ case "skills":
 if (!skills.length) return null;
 return (
 <section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
-<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>SKILLS</h3>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{ui.skills}</h3>
 <div className="skillsGrid" style={{ ...styles.skillsGrid, ...formatVisuals.skillsGrid }}>
 {skillColumns.map((column, index) => (
 <div key={index} className="skillColumn" style={styles.skillColumn}>
@@ -1122,7 +1138,7 @@ case "experience":
 if (!activeExperiences.length) return null;
 return (
 <section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
-<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>WORK EXPERIENCE</h3>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{ui.experience.replace(" (optional)", "")}</h3>
 {activeExperiences.map((item, index) => (
 <div key={index} className="resumeEntry" style={styles.resumeEntry}>
 <div className="resumeEntryTop" style={{ ...styles.resumeEntryTop, ...formatVisuals.entryTop }}>
@@ -1141,7 +1157,8 @@ item.startMonth,
 item.startYear,
 item.endMonth,
 item.endYear,
-item.isPresent
+item.isPresent,
+ui.present
 )}
 </p>
 </div>
@@ -1159,7 +1176,7 @@ case "education":
 if (!activeEducation.length) return null;
 return (
 <section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
-<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>EDUCATION</h3>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{ui.education.replace(" (optional)", "").replace(" (opcional)", "").replace(" (वैकल्पिक)", "").replace(" (opcjonalnie)", "")}</h3>
 {activeEducation.map((item, index) => (
 <div key={index} className="resumeEntry" style={styles.resumeEntry}>
 <div className="resumeEntryTop" style={{ ...styles.resumeEntryTop, ...formatVisuals.entryTop }}>
@@ -1181,7 +1198,8 @@ item.startMonth,
 item.startYear,
 item.endMonth,
 item.endYear,
-item.isPresent
+item.isPresent,
+ui.present
 )}
 </p>
 </div>
@@ -1194,7 +1212,7 @@ case "certifications":
 if (!activeCertificates.length) return null;
 return (
 <section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
-<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>CERTIFICATIONS</h3>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{ui.certifications.replace(" (optional)", "").replace(" (opcional)", "").replace(" (वैकल्पिक)", "").replace(" (opcjonalnie)", "")}</h3>
 {activeCertificates.map((item, index) => (
 <div key={index} className="resumeEntry" style={styles.resumeEntry}>
 <div className="resumeEntryTop" style={{ ...styles.resumeEntryTop, ...formatVisuals.entryTop }}>
@@ -1215,7 +1233,8 @@ item.startMonth,
 item.startYear,
 item.endMonth,
 item.endYear,
-item.isPresent
+item.isPresent,
+ui.present
 )}
 </p>
 </div>
@@ -1228,7 +1247,7 @@ case "volunteer":
 if (!activeVolunteer.length) return null;
 return (
 <section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
-<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>VOLUNTEER WORK</h3>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{ui.volunteer.replace(" (optional)", "").replace(" (opcional)", "").replace(" (वैकल्पिक)", "").replace(" (opcjonalnie)", "")}</h3>
 {activeVolunteer.map((item, index) => (
 <div key={index} className="resumeEntry" style={styles.resumeEntry}>
 <div className="resumeEntryTop" style={{ ...styles.resumeEntryTop, ...formatVisuals.entryTop }}>
@@ -1249,7 +1268,8 @@ item.startMonth,
 item.startYear,
 item.endMonth,
 item.endYear,
-item.isPresent
+item.isPresent,
+ui.present
 )}
 </p>
 </div>
@@ -1269,7 +1289,7 @@ case "accomplishments":
 if (!accomplishments.trim()) return null;
 return (
 <section className="resumeSection" style={{ ...styles.resumeSectionBlock, ...formatVisuals.sectionBlock }}>
-<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>ACCOMPLISHMENTS</h3>
+<h3 style={{ ...styles.resumeSectionTitle, ...formatVisuals.sectionTitle }}>{ui.accomplishments.replace(" (optional)", "").replace(" (opcional)", "").replace(" (वैकल्पिक)", "").replace(" (opcjonalnie)", "")}</h3>
 <p style={styles.resumeParagraph}>{accomplishments}</p>
 </section>
 );
@@ -1292,7 +1312,8 @@ return (
 <style>{`
 @media print {
 @page {
-margin: 0.5in;
+size: letter;
+margin: 1.12in 0.55in 0.55in;
 }
 
 html,
@@ -1373,6 +1394,14 @@ overflow: visible !important;
 }
 
 .resumeHeader {
+position: fixed !important;
+top: -0.86in !important;
+left: 0 !important;
+right: 0 !important;
+z-index: 10 !important;
+background: white !important;
+margin: 0 !important;
+padding: 0 0 8px !important;
 break-inside: avoid !important;
 page-break-inside: avoid !important;
 }
@@ -1386,6 +1415,30 @@ page-break-inside: auto !important;
 .siteButtons,
 .flashMessage {
 display: none !important;
+}
+}
+
+@media (max-width: 1050px) {
+.layout {
+grid-template-columns: 1fr !important;
+}
+.rightCol {
+position: static !important;
+max-height: none !important;
+overflow: visible !important;
+padding-right: 0 !important;
+}
+}
+
+@media (max-width: 680px) {
+.twoColForm {
+grid-template-columns: 1fr !important;
+}
+.pageTitle {
+font-size: 34px !important;
+}
+.footerButtons {
+grid-template-columns: 1fr !important;
 }
 }
 `}</style>
@@ -1410,6 +1463,7 @@ style={styles.select}
 <option>Hindi</option>
 <option>Polish</option>
 </select>
+<span style={styles.selectorHint}>Controls the generator labels and resume section headings.</span>
 </div>
 
 <div style={styles.topSelectGroup}>
@@ -2133,9 +2187,6 @@ fontFamily,
 >
 <div className="resumeHeader" style={{ ...styles.resumeHeader, ...formatVisuals.header }}>
 <h1 className="resumeName" style={{ ...styles.resumeName, ...formatVisuals.name, ...styles.editableResumeText }} contentEditable suppressContentEditableWarning onBlur={(e) => setFullName(e.currentTarget.textContent?.trim() || "")}>{fullName || "Your Name"}</h1>
-{targetJobTitle ? (
-<p className="resumeProfessionalTitle" style={{ ...styles.resumeProfessionalTitle, ...formatVisuals.professionalTitle }}>{targetJobTitle}</p>
-) : null}
 <p className="resumeContact" style={{ ...styles.resumeContact, ...formatVisuals.contact }}>
 {[phone, email, [city, stateName].filter(Boolean).join(", ")]
 .filter(Boolean)
@@ -2161,9 +2212,9 @@ const styles: Record<string, CSSProperties> = {
 page: {
 minHeight: "100vh",
 background:
-"radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)",
-color: "#f5f5f5",
-padding: "24px",
+"radial-gradient(ellipse at 12% 8%, rgba(22,119,255,0.12) 0%, transparent 34%), linear-gradient(180deg, #030812 0%, #07111f 52%, #030812 100%)",
+color: "#f5f7fb",
+padding: "28px 24px 56px",
 fontFamily:
 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 },
@@ -2182,9 +2233,11 @@ color: "#e5e7eb",
 topBar: {
 display: "flex",
 justifyContent: "space-between",
-alignItems: "flex-start",
-gap: "20px",
-marginBottom: "20px",
+alignItems: "flex-end",
+gap: "24px",
+marginBottom: "28px",
+paddingBottom: "20px",
+borderBottom: "1px solid rgba(148,163,184,0.18)",
 flexWrap: "wrap",
 },
 topSelectors: {
@@ -2195,34 +2248,41 @@ flexWrap: "wrap",
 topSelectGroup: {
 display: "flex",
 flexDirection: "column",
-gap: "8px",
-minWidth: "180px",
+gap: "7px",
+minWidth: "190px",
 },
 topSelectLabel: {
-fontSize: "13px",
-color: "#d1d5db",
-fontWeight: 600,
+fontSize: "12px",
+color: "#c9d4e2",
+fontWeight: 700,
+},
+selectorHint: {
+maxWidth: "220px",
+color: "#7f8fa3",
+fontSize: "10px",
+lineHeight: 1.35,
 },
 kicker: {
 margin: "0 0 8px",
-color: "#c4b5fd",
-fontSize: "12px",
-letterSpacing: "0.22em",
+color: "#1677FF",
+fontSize: "11px",
+fontWeight: 800,
+letterSpacing: "0.18em",
 textTransform: "uppercase",
 },
 pageTitle: {
 margin: 0,
-fontSize: "44px",
-lineHeight: 1.06,
-letterSpacing: "-0.04em",
-fontWeight: 700,
-color: "#fafafa",
+fontSize: "clamp(34px, 4vw, 48px)",
+lineHeight: 1.04,
+letterSpacing: "-0.045em",
+fontWeight: 760,
+color: "#ffffff",
 maxWidth: "760px",
 },
 layout: {
 display: "grid",
-gridTemplateColumns: "minmax(360px, 0.72fr) minmax(0, 1.28fr)",
-gap: "24px",
+gridTemplateColumns: "minmax(380px, 0.82fr) minmax(0, 1.18fr)",
+gap: "34px",
 alignItems: "start",
 },
 leftCol: {
@@ -2237,34 +2297,38 @@ overflowY: "auto",
 paddingRight: "4px",
 },
 card: {
-background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
-border: "1px solid #262626",
-borderRadius: "28px",
-padding: "20px",
-boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
-marginBottom: "18px",
+background: "transparent",
+border: "none",
+borderBottom: "1px solid rgba(148,163,184,0.16)",
+borderRadius: 0,
+padding: "24px 0 30px",
+boxShadow: "none",
+marginBottom: 0,
 },
 previewCard: {
-background: "rgba(10,12,18,0.92)",
-border: "1px solid #262626",
-borderRadius: "16px",
-padding: "10px 14px",
-boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
-marginBottom: "10px",
+background: "rgba(7,17,31,0.78)",
+border: "1px solid rgba(148,163,184,0.16)",
+borderRadius: "12px",
+padding: "12px 14px",
+boxShadow: "0 12px 34px rgba(0,0,0,0.16)",
+marginBottom: "12px",
+backdropFilter: "blur(12px)",
 },
 cardKicker: {
-margin: "0 0 8px",
-color: "#d4d4d8",
-fontSize: "12px",
-letterSpacing: "0.18em",
+margin: "0 0 7px",
+color: "#1677FF",
+fontSize: "10px",
+fontWeight: 850,
+letterSpacing: "0.16em",
 textTransform: "uppercase",
 },
 cardTitle: {
-margin: "0 0 10px",
-fontSize: "20pt",
-lineHeight: 1.1,
-color: "#fafafa",
-fontWeight: 700,
+margin: "0 0 12px",
+fontSize: "23px",
+lineHeight: 1.15,
+color: "#ffffff",
+fontWeight: 750,
+letterSpacing: "-0.02em",
 },
 previewHelp: {
 margin: 0,
@@ -2279,12 +2343,13 @@ fontSize: "15px",
 lineHeight: 1.6,
 },
 select: {
-background: "#0b0f19",
+background: "rgba(4,10,20,0.72)",
 color: "#fff",
-border: "1px solid rgba(255,255,255,0.18)",
-borderRadius: "16px",
-padding: "12px 14px",
-fontSize: "15px",
+border: "1px solid rgba(148,163,184,0.30)",
+borderRadius: "8px",
+padding: "10px 12px",
+fontSize: "14px",
+outline: "none",
 },
 twoColForm: {
 display: "grid",
@@ -2300,12 +2365,12 @@ fontWeight: 600,
 },
 input: {
 width: "100%",
-background: "#05070c",
+background: "rgba(3,8,18,0.56)",
 color: "#fff",
-border: "1px solid #2f3541",
-borderRadius: "18px",
-padding: "14px 16px",
-fontSize: "16px",
+border: "1px solid rgba(148,163,184,0.28)",
+borderRadius: "8px",
+padding: "11px 12px",
+fontSize: "15px",
 outline: "none",
 boxSizing: "border-box",
 },
@@ -2313,12 +2378,12 @@ textarea: {
 width: "100%",
 minHeight: "110px",
 resize: "vertical",
-background: "#05070c",
+background: "rgba(3,8,18,0.56)",
 color: "#fff",
-border: "1px solid #2f3541",
-borderRadius: "18px",
-padding: "14px 16px",
-fontSize: "16px",
+border: "1px solid rgba(148,163,184,0.28)",
+borderRadius: "8px",
+padding: "11px 12px",
+fontSize: "15px",
 outline: "none",
 boxSizing: "border-box",
 marginBottom: "14px",
@@ -2337,20 +2402,22 @@ color: "#f5f5f5",
 fontSize: "15px",
 },
 sectionGroup: {
-border: "1px solid rgba(255,255,255,0.08)",
-borderRadius: "22px",
-padding: "16px",
-marginBottom: "14px",
+border: "none",
+borderTop: "1px solid rgba(148,163,184,0.14)",
+borderRadius: 0,
+padding: "20px 0 4px",
+marginTop: "18px",
+marginBottom: "12px",
 },
 smallButton: {
 marginTop: "12px",
-background: "linear-gradient(180deg, #5b84c7 0%, #456aa8 100%)",
-color: "#fff",
-border: "1px solid rgba(255,255,255,0.16)",
-borderRadius: "14px",
-padding: "10px 14px",
-fontSize: "11pt",
-fontWeight: 600,
+background: "transparent",
+color: "#8FC1FF",
+border: "1px solid rgba(22,119,255,0.42)",
+borderRadius: "8px",
+padding: "9px 12px",
+fontSize: "13px",
+fontWeight: 750,
 cursor: "pointer",
 },
 orderRow: {
@@ -2387,33 +2454,33 @@ marginTop: "12px",
 marginBottom: "32px",
 },
 saveButton: {
-background: "linear-gradient(180deg, #f5f5f5 0%, #d4d4d8 100%)",
-color: "#09090b",
-border: "none",
-borderRadius: "18px",
-padding: "16px",
-fontSize: "20px",
-fontWeight: 700,
+background: "#f8fafc",
+color: "#08111f",
+border: "1px solid #f8fafc",
+borderRadius: "9px",
+padding: "13px",
+fontSize: "15px",
+fontWeight: 800,
 cursor: "pointer",
 },
 printButton: {
-background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
+background: "#1677FF",
 color: "#fff",
-border: "1px solid rgba(148,163,184,0.28)",
-borderRadius: "18px",
-padding: "16px",
-fontSize: "20px",
-fontWeight: 700,
+border: "1px solid #1677FF",
+borderRadius: "9px",
+padding: "13px",
+fontSize: "15px",
+fontWeight: 800,
 cursor: "pointer",
 },
 backButton: {
 background: "transparent",
-color: "#fff",
-border: "1px solid rgba(148,163,184,0.28)",
-borderRadius: "18px",
-padding: "16px",
-fontSize: "20px",
-fontWeight: 700,
+color: "#dbe7f5",
+border: "1px solid rgba(148,163,184,0.30)",
+borderRadius: "9px",
+padding: "13px",
+fontSize: "15px",
+fontWeight: 750,
 textAlign: "center",
 textDecoration: "none",
 display: "flex",
@@ -2436,9 +2503,9 @@ minHeight: "11in",
 height: "auto",
 overflow: "visible",
 background: "#fff",
-borderRadius: "18px",
-border: "1px solid #e5e7eb",
-boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
+borderRadius: "6px",
+border: "1px solid #dfe5ec",
+boxShadow: "0 18px 54px rgba(0,0,0,0.26)",
 padding: "0.5in",
 color: "#111827",
 boxSizing: "border-box",
@@ -2554,12 +2621,12 @@ marginTop: "16px",
 },
 formatHelpBox: {
 flex: "1 1 320px",
-border: "1px solid rgba(23,232,255,0.18)",
-background: "rgba(23,232,255,0.055)",
-borderRadius: "18px",
-padding: "14px 16px",
-color: "#dffcff",
-fontSize: "14px",
+borderLeft: "2px solid #1677FF",
+background: "transparent",
+borderRadius: 0,
+padding: "4px 0 4px 14px",
+color: "#dbe7f5",
+fontSize: "13px",
 lineHeight: 1.55,
 },
 aiActionRow: {
@@ -2570,31 +2637,32 @@ flexWrap: "wrap",
 margin: "10px 0 14px",
 },
 aiButton: {
-background: "linear-gradient(135deg, rgba(126,106,255,0.22), rgba(23,232,255,0.12))",
-color: "#ffffff",
-border: "1px solid rgba(126,106,255,0.34)",
-borderRadius: "14px",
-padding: "10px 13px",
-fontSize: "13px",
+background: "rgba(22,119,255,0.12)",
+color: "#dcecff",
+border: "1px solid rgba(22,119,255,0.34)",
+borderRadius: "8px",
+padding: "9px 11px",
+fontSize: "12px",
 fontWeight: 800,
 cursor: "pointer",
 },
 inlineAiButton: {
 marginTop: "7px",
-background: "rgba(126,106,255,0.09)",
-color: "#d8d2ff",
-border: "1px solid rgba(126,106,255,0.22)",
-borderRadius: "12px",
-padding: "8px 10px",
+background: "transparent",
+color: "#8FC1FF",
+border: "none",
+borderBottom: "1px solid rgba(22,119,255,0.35)",
+borderRadius: 0,
+padding: "6px 0",
 fontSize: "12px",
 fontWeight: 750,
 cursor: "pointer",
 },
-aiSafetyText: { color: "#9ca3af", fontSize: "12px", lineHeight: 1.45 },
-aiSuggestionBox: { margin: "10px 0 16px", border: "1px solid rgba(126,106,255,0.18)", background: "rgba(126,106,255,0.045)", borderRadius: "16px", padding: "12px", display: "grid", gap: "8px" },
-aiSuggestionTitle: { margin: 0, color: "#ede9fe", fontSize: "13px", fontWeight: 850 },
-aiSuggestionButton: { width: "100%", display: "flex", justifyContent: "space-between", gap: "14px", textAlign: "left", background: "#090b12", color: "#f3f4f6", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "13px", padding: "11px 12px", fontSize: "12px", lineHeight: 1.5, cursor: "pointer" },
-rolePromptBox: { margin: "10px 0 14px", border: "1px solid rgba(23,232,255,0.14)", background: "rgba(23,232,255,0.035)", borderRadius: "16px", padding: "12px 14px" },
+aiSafetyText: { color: "#8fa0b5", fontSize: "12px", lineHeight: 1.45 },
+aiSuggestionBox: { margin: "10px 0 16px", borderTop: "1px solid rgba(22,119,255,0.22)", borderBottom: "1px solid rgba(22,119,255,0.16)", background: "transparent", borderRadius: 0, padding: "12px 0", display: "grid", gap: "8px" },
+aiSuggestionTitle: { margin: 0, color: "#e5eef9", fontSize: "13px", fontWeight: 850 },
+aiSuggestionButton: { width: "100%", display: "flex", justifyContent: "space-between", gap: "14px", textAlign: "left", background: "rgba(3,8,18,0.42)", color: "#f3f4f6", border: "1px solid rgba(148,163,184,0.14)", borderRadius: "8px", padding: "10px 11px", fontSize: "12px", lineHeight: 1.5, cursor: "pointer" },
+rolePromptBox: { margin: "10px 0 14px", borderLeft: "2px solid rgba(22,119,255,0.55)", background: "transparent", borderRadius: 0, padding: "8px 0 8px 12px" },
 rolePromptItem: { margin: "5px 0", color: "#d1d5db", fontSize: "12px", lineHeight: 1.45 },
 editableResumeText: { outline: "none", borderRadius: "3px", cursor: "text" },
 
