@@ -9,18 +9,31 @@ export default function EmployerPartnerLoginPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showContactLink, setShowContactLink] = useState(false);
+
+  async function denyAccess(messageText: string) {
+    await supabase.auth.signOut();
+
+    localStorage.removeItem("hireminds_referral_code");
+
+    setMessage(messageText);
+    setShowContactLink(true);
+    setLoading(false);
+  }
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     setLoading(true);
     setMessage("");
+    setShowContactLink(false);
+
+    const normalizedEmail = email.trim().toLowerCase();
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: normalizedEmail,
       password,
     });
-
-    console.log("signIn result", { data, error });
 
     if (error || !data.user) {
       setMessage(error?.message || "Unable to sign in.");
@@ -30,44 +43,51 @@ export default function EmployerPartnerLoginPage() {
 
     const { data: partnerRow, error: partnerError } = await supabase
       .from("partners")
-      .select("account_type")
-      .eq("contact_email", email)
+      .select("account_type, contact_email")
+      .eq("contact_email", normalizedEmail)
       .maybeSingle();
 
     if (partnerError) {
-      setMessage(partnerError.message);
-      setLoading(false);
+      await denyAccess(
+        "We could not verify your employer or partner access. Please contact HireMinds."
+      );
       return;
     }
 
     if (!partnerRow) {
-      setMessage("Your account does not have employer or partner access.");
-      setLoading(false);
+      await denyAccess(
+        "Your account does not have employer or partner access."
+      );
       return;
     }
 
-    if (partnerRow.account_type === "partner") {
+    const accountType = String(partnerRow.account_type || "")
+      .trim()
+      .toLowerCase();
+
+    if (accountType === "partner") {
       window.location.href = "/partner-dashboard";
       return;
     }
 
-    if (partnerRow.account_type === "super_admin") {
+    if (accountType === "super_admin") {
       window.location.href = "/partner-dashboard";
       return;
     }
 
-    if (partnerRow.account_type === "employer") {
+    if (accountType === "employer") {
       window.location.href = "/employer-dashboard";
       return;
     }
 
-    if (partnerRow.account_type === "admin") {
+    if (accountType === "admin") {
       window.location.href = "/admin-dashboard";
       return;
     }
 
-    setMessage("Your account type is not recognized.");
-    setLoading(false);
+    await denyAccess(
+      "Your account type is not recognized. Please contact HireMinds."
+    );
   }
 
   return (
@@ -92,6 +112,7 @@ export default function EmployerPartnerLoginPage() {
               placeholder="name@email.com"
               style={styles.input}
               required
+              autoComplete="email"
             />
           </div>
 
@@ -106,6 +127,7 @@ export default function EmployerPartnerLoginPage() {
                 placeholder="Enter password"
                 style={styles.passwordInput}
                 required
+                autoComplete="current-password"
               />
 
               <button
@@ -119,9 +141,30 @@ export default function EmployerPartnerLoginPage() {
             </div>
           </div>
 
-          {message ? <p style={styles.message}>{message}</p> : null}
+          {message ? (
+            <div style={styles.messageWrap}>
+              <p style={styles.message}>{message}</p>
 
-          <button type="submit" style={styles.button} disabled={loading}>
+              {showContactLink ? (
+                <p style={styles.contactText}>
+                  If you believe you should have access,{" "}
+                  <a href="/contact" style={styles.contactLink}>
+                    contact HireMinds
+                  </a>
+                  .
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            style={{
+              ...styles.button,
+              ...(loading ? styles.buttonDisabled : {}),
+            }}
+            disabled={loading}
+          >
             {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
@@ -242,10 +285,33 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginTop: "6px",
   },
 
+  buttonDisabled: {
+    opacity: 0.6,
+    cursor: "not-allowed",
+  },
+
+  messageWrap: {
+    display: "grid",
+    gap: "6px",
+  },
+
   message: {
     margin: 0,
     color: "#fca5a5",
     fontSize: "14px",
     lineHeight: 1.6,
+  },
+
+  contactText: {
+    margin: 0,
+    color: "#d4d4d8",
+    fontSize: "13px",
+    lineHeight: 1.6,
+  },
+
+  contactLink: {
+    color: "#1677ff",
+    fontWeight: 700,
+    textDecoration: "none",
   },
 };
