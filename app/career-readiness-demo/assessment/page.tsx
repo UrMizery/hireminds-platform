@@ -4,6 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
+const PLACEHOLDER_REFERRAL_CODES = [
+  "PATHWAY2026",
+  "SKILLSQUEST2026",
+];
+
+const REQUIRED_MODULES = [
+  "twp_career_readiness_module_1",
+  "twp_career_readiness_module_2",
+  "twp_career_readiness_module_3",
+];
+
 const questions = [
   {
     question: "What should a healthcare-focused resume highlight?",
@@ -58,29 +69,102 @@ export default function CareerReadinessAssessmentPage() {
   const [passed, setPassed] = useState(false);
   const [participantName, setParticipantName] = useState("Participant");
   const [resumeCompleted, setResumeCompleted] = useState(false);
+  const [allowed, setAllowed] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [modulesComplete, setModulesComplete] = useState(false);
 
   useEffect(() => {
-    async function loadUserName() {
+    async function checkAccessAndLoadUser() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
+      const user = session?.user;
+
+      if (!user?.email) {
+        setAllowed(false);
+        setModulesComplete(false);
+        setChecked(true);
+        return;
+      }
+
+      const normalizedEmail = user.email.trim().toLowerCase();
+
+      const [partnerResult, candidateResult] = await Promise.all([
+        supabase
+          .from("partners")
+          .select("account_type, contact_email")
+          .eq("contact_email", normalizedEmail)
+          .maybeSingle(),
+
+        supabase
+          .from("candidate_profiles")
+          .select("referral_code")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+
+      if (partnerResult.error) {
+        console.error(
+          "Career Readiness Assessment partner access check failed:",
+          partnerResult.error
+        );
+      }
+
+      if (candidateResult.error) {
+        console.error(
+          "Career Readiness Assessment candidate access check failed:",
+          candidateResult.error
+        );
+      }
+
+      const accountType = String(
+        partnerResult.data?.account_type || ""
+      )
+        .trim()
+        .toLowerCase();
+
+      const isSuperAdmin = accountType === "super_admin";
+
+      const userReferralCode = String(
+        candidateResult.data?.referral_code ||
+          user.app_metadata?.referral_code ||
+          user.user_metadata?.referral_code ||
+          user.user_metadata?.referralCode ||
+          user.user_metadata?.access_code ||
+          ""
+      )
+        .trim()
+        .toUpperCase();
+
+      const hasProgramAccess =
+        isSuperAdmin ||
+        PLACEHOLDER_REFERRAL_CODES.includes(userReferralCode);
+
+      const completedAllModules = REQUIRED_MODULES.every(
+        (key) => localStorage.getItem(key) === "true"
+      );
+
       const fullName =
-        session?.user?.user_metadata?.full_name ||
-        session?.user?.user_metadata?.fullName ||
-        session?.user?.user_metadata?.name ||
+        user.user_metadata?.full_name ||
+        user.user_metadata?.fullName ||
+        user.user_metadata?.name ||
         "";
 
       if (fullName) {
         setParticipantName(String(fullName));
       }
+
+      setResumeCompleted(
+        localStorage.getItem("twp_resume_completed") === "true"
+      );
+
+      setAllowed(hasProgramAccess);
+      setModulesComplete(isSuperAdmin || completedAllModules);
+      setChecked(true);
     }
 
-    loadUserName();
-
-    setResumeCompleted(
-      localStorage.getItem("twp_resume_completed") === "true"
-    );
+    checkAccessAndLoadUser();
   }, []);
 
   const answeredAll = questions.every((_, index) => answers[index] !== undefined);
@@ -128,6 +212,51 @@ export default function CareerReadinessAssessmentPage() {
     resetCareerReadinessDemo();
   }
 
+  if (!checked) {
+    return (
+      <main style={styles.main}>
+        Loading Career Readiness Assessment...
+      </main>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <main style={styles.main}>
+        <section style={styles.lockCard}>
+          <p style={styles.kicker}>Restricted Learning Area</p>
+          <h1 style={styles.title}>Assessment Locked</h1>
+          <p style={styles.subtitle}>
+            This assessment is currently available only to approved Career
+            Pathway and SkillsQuest participants.
+          </p>
+          <Link href="/" style={styles.lockButton}>
+            Return Home
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
+  if (!modulesComplete) {
+    return (
+      <main style={styles.main}>
+        <section style={styles.lockCard}>
+          <p style={styles.kicker}>Career Pathway • Career Readiness</p>
+          <h1 style={styles.title}>Complete All 3 Guides First</h1>
+          <p style={styles.subtitle}>
+            The Career Readiness Assessment remains locked until Resume Basics,
+            Job Description + Cover Letter Preparation, and Interview +
+            Professionalism have all been completed.
+          </p>
+          <Link href="/career-readiness-demo" style={styles.lockButton}>
+            Back to Career Readiness
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main style={styles.main}>
       <style>{`
@@ -156,7 +285,7 @@ export default function CareerReadinessAssessmentPage() {
 
       <section style={styles.card}>
         <div className="no-print">
-          <p style={styles.kicker}>TWP2026 • Career Readiness</p>
+          <p style={styles.kicker}>Career Pathway • Career Readiness</p>
 
           <h1 style={styles.title}>Career Readiness Assessment</h1>
 
@@ -515,5 +644,24 @@ const styles: Record<string, React.CSSProperties> = {
   signature: {
     fontSize: 22,
     fontStyle: "italic",
+  },
+
+  lockCard: {
+    maxWidth: 650,
+    margin: "100px auto",
+    padding: 30,
+    borderRadius: 22,
+    background: "rgba(255,255,255,.06)",
+    border: "1px solid rgba(255,255,255,.12)",
+  },
+  lockButton: {
+    display: "inline-block",
+    marginTop: 18,
+    background: "#ffffff",
+    color: "#000000",
+    padding: "12px 18px",
+    borderRadius: 12,
+    textDecoration: "none",
+    fontWeight: 900,
   },
 };
