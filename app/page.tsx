@@ -4,18 +4,6 @@ export default function HomePage() {
   return (
     <main className="page">
       <section className="hero">
-        <div className="wave waveLeft" aria-hidden="true">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <span key={i} style={{ ["--i" as string]: i }} />
-          ))}
-        </div>
-
-        <div className="wave waveRight" aria-hidden="true">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <span key={i} style={{ ["--i" as string]: i }} />
-          ))}
-        </div>
-
         <div className="heroContent">
           <p className="eyebrow">WORKFORCE INFRASTRUCTURE PLATFORM</p>
 
@@ -66,6 +54,7 @@ export default function HomePage() {
                 <path d="M29 35l8-8 4 4-8 8-6 2z" />
               </svg>
             </div>
+
             <p>
               Create
               <br />
@@ -85,6 +74,7 @@ export default function HomePage() {
                 <path d="M32 9h6v6" />
               </svg>
             </div>
+
             <p>
               Match Your Skills
               <br />
@@ -103,6 +93,7 @@ export default function HomePage() {
                 <rect x="21" y="22" width="6" height="5" rx="1" />
               </svg>
             </div>
+
             <p>
               Track Your Search
               <br />
@@ -120,6 +111,7 @@ export default function HomePage() {
                 <rect x="32" y="9" width="7" height="29" rx="1" />
               </svg>
             </div>
+
             <p>
               Make Smarter
               <br />
@@ -137,6 +129,7 @@ export default function HomePage() {
                 <path d="M34 11l3 3 5-6" />
               </svg>
             </div>
+
             <p>
               Build a Stronger
               <br />
@@ -173,21 +166,88 @@ export default function HomePage() {
 
           background:
             radial-gradient(
-              circle at 8% 18%,
-              rgba(22, 119, 255, 0.24),
-              transparent 31%
+              ellipse at 14% 16%,
+              rgba(42, 121, 230, 0.2) 0%,
+              rgba(10, 54, 112, 0.1) 30%,
+              transparent 55%
             ),
             radial-gradient(
-              circle at 91% 38%,
-              rgba(22, 119, 255, 0.16),
-              transparent 28%
+              ellipse at 86% 70%,
+              rgba(25, 104, 214, 0.18) 0%,
+              rgba(8, 43, 92, 0.08) 32%,
+              transparent 58%
+            ),
+            radial-gradient(
+              ellipse at 52% -8%,
+              rgba(90, 162, 255, 0.11) 0%,
+              transparent 40%
             ),
             linear-gradient(
               135deg,
-              #061525 0%,
-              #020914 46%,
-              #07182b 100%
+              #020812 0%,
+              #05172a 28%,
+              #03101f 50%,
+              #08213d 72%,
+              #020914 100%
             );
+        }
+
+        .hero::before {
+          content: "";
+          position: absolute;
+          inset: -34%;
+          z-index: 0;
+          pointer-events: none;
+
+          background:
+            radial-gradient(
+              ellipse at 27% 48%,
+              transparent 0%,
+              transparent 34%,
+              rgba(24, 108, 224, 0.11) 40%,
+              rgba(72, 150, 255, 0.05) 44%,
+              transparent 52%
+            ),
+            radial-gradient(
+              ellipse at 72% 56%,
+              transparent 0%,
+              transparent 36%,
+              rgba(14, 88, 190, 0.12) 42%,
+              rgba(74, 155, 255, 0.05) 46%,
+              transparent 54%
+            ),
+            radial-gradient(
+              ellipse at 52% 28%,
+              transparent 0%,
+              transparent 42%,
+              rgba(97, 166, 255, 0.055) 48%,
+              transparent 56%
+            );
+
+          transform: rotate(-7deg) scale(1.15);
+          filter: blur(20px);
+        }
+
+        .hero::after {
+          content: "";
+          position: absolute;
+          top: -24%;
+          left: 13%;
+          width: 74%;
+          height: 58%;
+          z-index: 0;
+          pointer-events: none;
+
+          background:
+            radial-gradient(
+              ellipse at center,
+              rgba(125, 188, 255, 0.1) 0%,
+              rgba(48, 128, 225, 0.045) 36%,
+              transparent 72%
+            );
+
+          filter: blur(30px);
+          transform: rotate(-5deg);
         }
 
         .heroContent {
@@ -292,64 +352,6 @@ export default function HomePage() {
             rgba(22, 119, 255, 0.3);
         }
 
-        .wave {
-          position: absolute;
-
-          z-index: 1;
-
-          width: 45%;
-          height: 230px;
-
-          pointer-events: none;
-
-          opacity: 0.72;
-        }
-
-        .waveLeft {
-          left: -7%;
-          bottom: 58px;
-        }
-
-        .waveRight {
-          right: -7%;
-          bottom: 58px;
-
-          transform: scaleX(-1);
-        }
-
-        .wave span {
-          --i: 0;
-
-          position: absolute;
-
-          left: 0;
-
-          top: calc(30px + var(--i) * 14px);
-
-          width: 112%;
-          height: 1px;
-
-          transform:
-            rotate(
-              calc(-9deg + var(--i) * 2.1deg)
-            );
-
-          transform-origin: left center;
-
-          background:
-            linear-gradient(
-              90deg,
-              transparent 0%,
-              rgba(22, 119, 255, 0.14) 18%,
-              rgba(22, 119, 255, 0.7) 60%,
-              rgba(22, 119, 255, 0.1) 100%
-            );
-
-          box-shadow:
-            0 0 4px
-            rgba(22, 119, 255, 0.2);
-        }
-
         .smileCurve {
           position: absolute;
 
@@ -371,12 +373,12 @@ export default function HomePage() {
         .platformSection {
           margin-top: -1px;
 
-          padding: 10px 32px 38px;
+          padding: 8px 32px 38px;
 
           background:
             radial-gradient(
-              circle at 92% 72%,
-              rgba(22, 119, 255, 0.06),
+              circle at 91% 75%,
+              rgba(22, 119, 255, 0.055),
               transparent 28%
             ),
             linear-gradient(
@@ -549,20 +551,6 @@ export default function HomePage() {
             min-width: 0;
 
             font-size: 16px;
-          }
-
-          .wave {
-            width: 72%;
-
-            opacity: 0.55;
-          }
-
-          .waveLeft {
-            left: -35%;
-          }
-
-          .waveRight {
-            right: -35%;
           }
 
           .platformSection {
