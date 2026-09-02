@@ -127,7 +127,13 @@ export default function HomePage() {
             delay="0s"
             icon={
               <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="11" y="7" width="24" height="31" rx="2" />
+                <rect
+                  x="11"
+                  y="7"
+                  width="24"
+                  height="31"
+                  rx="2"
+                />
                 <path d="M16 15h13" />
                 <path d="M16 21h10" />
                 <path d="M16 27h8" />
@@ -165,10 +171,22 @@ export default function HomePage() {
             delay=".3s"
             icon={
               <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="8" y="15" width="32" height="23" rx="2" />
+                <rect
+                  x="8"
+                  y="15"
+                  width="32"
+                  height="23"
+                  rx="2"
+                />
                 <path d="M17 15v-5h14v5" />
                 <path d="M8 24h32" />
-                <rect x="21" y="22" width="6" height="5" rx="1" />
+                <rect
+                  x="21"
+                  y="22"
+                  width="6"
+                  height="5"
+                  rx="1"
+                />
               </svg>
             }
           >
@@ -183,9 +201,27 @@ export default function HomePage() {
             delay=".45s"
             icon={
               <svg viewBox="0 0 48 48" aria-hidden="true">
-                <rect x="8" y="27" width="7" height="11" rx="1" />
-                <rect x="20" y="19" width="7" height="19" rx="1" />
-                <rect x="32" y="9" width="7" height="29" rx="1" />
+                <rect
+                  x="8"
+                  y="27"
+                  width="7"
+                  height="11"
+                  rx="1"
+                />
+                <rect
+                  x="20"
+                  y="19"
+                  width="7"
+                  height="19"
+                  rx="1"
+                />
+                <rect
+                  x="32"
+                  y="9"
+                  width="7"
+                  height="29"
+                  rx="1"
+                />
               </svg>
             }
           >
@@ -281,7 +317,6 @@ export default function HomePage() {
           position: absolute;
           inset: -34%;
           z-index: 0;
-
           pointer-events: none;
 
           background:
@@ -310,7 +345,6 @@ export default function HomePage() {
             );
 
           transform: rotate(-7deg) scale(1.15);
-
           filter: blur(20px);
 
           animation:
@@ -320,17 +354,12 @@ export default function HomePage() {
 
         .hero::after {
           content: "";
-
           position: absolute;
-
           top: -24%;
           left: 13%;
-
           width: 74%;
           height: 58%;
-
           z-index: 0;
-
           pointer-events: none;
 
           background:
@@ -342,7 +371,6 @@ export default function HomePage() {
             );
 
           filter: blur(30px);
-
           transform: rotate(-5deg);
 
           animation:
@@ -352,25 +380,18 @@ export default function HomePage() {
 
         .heroGlow {
           position: absolute;
-
           border-radius: 50%;
-
           pointer-events: none;
-
           filter: blur(100px);
-
           z-index: 1;
         }
 
         .glowOne {
           width: 340px;
           height: 340px;
-
           top: -170px;
           left: 8%;
-
-          background:
-            rgba(22, 119, 255, 0.11);
+          background: rgba(22, 119, 255, 0.11);
 
           animation:
             glowMoveOne
@@ -380,12 +401,9 @@ export default function HomePage() {
         .glowTwo {
           width: 420px;
           height: 420px;
-
           right: 4%;
           bottom: -220px;
-
-          background:
-            rgba(22, 119, 255, 0.1);
+          background: rgba(22, 119, 255, 0.1);
 
           animation:
             glowMoveTwo
@@ -395,12 +413,9 @@ export default function HomePage() {
         .glowThree {
           width: 260px;
           height: 260px;
-
           left: 47%;
           top: 22%;
-
-          background:
-            rgba(92, 156, 255, 0.055);
+          background: rgba(92, 156, 255, 0.055);
 
           animation:
             glowPulse
@@ -409,32 +424,24 @@ export default function HomePage() {
 
         .heroContent {
           position: relative;
-
           z-index: 4;
-
           width: 100%;
           max-width: 980px;
-
           text-align: center;
         }
 
         .eyebrow {
           margin: 0;
-
           color: #1677ff;
-
           font-size: 12px;
           font-weight: 800;
-
           letter-spacing: 0.25em;
         }
 
         .eyebrowLine {
           width: 62px;
           height: 2px;
-
           margin: 18px auto 24px;
-
           background: #1677ff;
 
           box-shadow:
@@ -444,7 +451,6 @@ export default function HomePage() {
 
         h1 {
           margin: 0;
-
           min-height: 150px;
 
           font-family:
@@ -460,17 +466,13 @@ export default function HomePage() {
             );
 
           line-height: 1.04;
-
           font-weight: 400;
-
           letter-spacing: -0.035em;
-
           color: #f7f7f5;
         }
 
         .changingWord {
           display: inline-block;
-
           color: #1677ff;
 
           animation:
@@ -480,49 +482,36 @@ export default function HomePage() {
 
         .heroCopy {
           margin: 24px auto 0;
-
           color: #eef2f7;
-
           font-size: 17px;
-
           line-height: 1.65;
-
           font-weight: 400;
         }
 
         .heroActions {
           display: flex;
-
           justify-content: center;
           align-items: center;
-
           gap: 24px;
-
           flex-wrap: wrap;
         }
 
         .cta {
           position: relative;
-
           display: inline-flex;
-
           justify-content: center;
           align-items: center;
 
           min-width: 340px;
 
           margin-top: 28px;
-
           padding: 16px 30px;
 
           border-radius: 7px;
-
           overflow: hidden;
 
           color: #ffffff;
-
           text-decoration: none;
-
           font-size: 17px;
           font-weight: 700;
 
@@ -539,23 +528,18 @@ export default function HomePage() {
 
         .cta::before {
           content: "";
-
           position: absolute;
-
           top: -40%;
           left: -35%;
-
           width: 24%;
           height: 180%;
-
-          transform:
-            rotate(18deg);
+          transform: rotate(18deg);
 
           background:
             linear-gradient(
               90deg,
               transparent,
-              rgba(255,255,255,.32),
+              rgba(255, 255, 255, 0.32),
               transparent
             );
 
@@ -566,13 +550,11 @@ export default function HomePage() {
 
         .cta span {
           position: relative;
-
           z-index: 2;
         }
 
         .cta:hover {
-          transform:
-            translateY(-2px);
+          transform: translateY(-2px);
 
           box-shadow:
             0 16px 38px
@@ -581,23 +563,16 @@ export default function HomePage() {
 
         .exploreLink {
           margin-top: 28px;
-
           display: inline-flex;
-
           align-items: center;
-
           gap: 9px;
 
           color: #dce7f3;
-
           text-decoration: none;
-
           font-size: 14px;
-
           font-weight: 700;
 
-          transition:
-            color .2s ease;
+          transition: color 0.2s ease;
         }
 
         .exploreLink:hover {
@@ -606,72 +581,50 @@ export default function HomePage() {
 
         .arrow {
           color: #1677ff;
-
           font-size: 18px;
 
           transition:
-            transform .2s ease;
+            transform 0.2s ease;
         }
 
         .exploreLink:hover .arrow {
-          transform:
-            translateX(4px);
+          transform: translateX(4px);
         }
 
         .heroMicro {
           margin-top: 34px;
 
           display: flex;
-
           justify-content: center;
           align-items: center;
 
           gap: 13px;
 
-          color:
-            rgba(
-              221,
-              231,
-              241,
-              .55
-            );
+          color: rgba(221, 231, 241, 0.55);
 
           font-size: 9px;
-
           font-weight: 800;
-
-          letter-spacing: .18em;
+          letter-spacing: 0.18em;
         }
 
         .heroMicro i {
           width: 3px;
           height: 3px;
-
           border-radius: 50%;
-
           background: #1677ff;
 
           box-shadow:
             0 0 10px
-            rgba(
-              22,
-              119,
-              255,
-              .75
-            );
+            rgba(22, 119, 255, 0.75);
         }
 
         .smileCurve {
           position: absolute;
-
           left: 0;
           bottom: -1px;
-
           z-index: 3;
-
           width: 100%;
           height: 82px;
-
           display: block;
         }
 
@@ -681,18 +634,12 @@ export default function HomePage() {
 
         .platformSection {
           margin-top: -1px;
-
           padding: 8px 32px 42px;
 
           background:
             radial-gradient(
               circle at 91% 75%,
-              rgba(
-                22,
-                119,
-                255,
-                0.055
-              ),
+              rgba(22, 119, 255, 0.055),
               transparent 28%
             ),
             linear-gradient(
@@ -702,7 +649,6 @@ export default function HomePage() {
             );
 
           text-align: center;
-
           color: #081224;
         }
 
@@ -721,18 +667,14 @@ export default function HomePage() {
             );
 
           font-weight: 400;
-
           line-height: 1.1;
-
-          letter-spacing:
-            -0.025em;
+          letter-spacing: -0.025em;
         }
 
         .platformChangingWrap {
           min-height: 43px;
 
           display: flex;
-
           justify-content: center;
           align-items: center;
         }
@@ -748,12 +690,8 @@ export default function HomePage() {
             );
 
           line-height: 1.1;
-
           font-weight: 700;
-
-          letter-spacing:
-            -0.03em;
-
+          letter-spacing: -0.03em;
           color: #1677ff;
 
           animation:
@@ -764,25 +702,17 @@ export default function HomePage() {
         .platformLine {
           width: 62px;
           height: 2px;
-
           margin: 17px auto 20px;
-
           background: #1677ff;
 
           box-shadow:
             0 0 16px
-            rgba(
-              22,
-              119,
-              255,
-              .22
-            );
+            rgba(22, 119, 255, 0.22);
         }
 
         .featureRow {
           width: 100%;
           max-width: 1050px;
-
           margin: 0 auto;
 
           display: grid;
@@ -801,21 +731,18 @@ export default function HomePage() {
           position: relative;
 
           display: flex;
-
           flex-direction: column;
-
           align-items: center;
           justify-content: flex-start;
 
           padding: 4px 18px 8px;
 
           transition:
-            transform .25s ease;
+            transform 0.25s ease;
         }
 
         .featureItem:hover {
-          transform:
-            translateY(-5px);
+          transform: translateY(-5px);
         }
 
         .featureIcon {
@@ -823,7 +750,6 @@ export default function HomePage() {
           height: 44px;
 
           display: flex;
-
           align-items: center;
           justify-content: center;
 
@@ -837,46 +763,49 @@ export default function HomePage() {
             var(--delay);
         }
 
-        .featureIcon svg {
+        /*
+          IMPORTANT:
+          FeatureItem is a child component, so these SVG rules
+          need :global() in styled-jsx. This keeps the icons
+          blue outlines instead of black filled shapes.
+        */
+
+        .featureIcon :global(svg) {
           width: 40px;
           height: 40px;
 
-          fill: none;
-
-          stroke: currentColor;
+          fill: none !important;
+          stroke: #1677ff !important;
 
           stroke-width: 2;
-
           stroke-linecap: round;
           stroke-linejoin: round;
 
           filter:
             drop-shadow(
               0 4px 9px
-              rgba(
-                22,
-                119,
-                255,
-                .09
-              )
+              rgba(22, 119, 255, 0.12)
             );
+        }
+
+        .featureIcon :global(svg *) {
+          fill: none !important;
+          stroke: #1677ff !important;
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-linejoin: round;
         }
 
         .featureItem p {
           margin: 8px 0 0;
-
           color: #0b1422;
-
           font-size: 13px;
-
           line-height: 1.4;
-
           font-weight: 700;
         }
 
         .divider {
           width: 1px;
-
           margin: 1px 0;
 
           background:
@@ -890,13 +819,10 @@ export default function HomePage() {
 
         .closingWrap {
           min-height: 50px;
-
           margin-top: 23px;
 
           display: flex;
-
           flex-direction: column;
-
           justify-content: center;
           align-items: center;
 
@@ -912,7 +838,6 @@ export default function HomePage() {
             serif;
 
           font-size: 17px;
-
           font-weight: 500;
 
           animation:
@@ -922,49 +847,33 @@ export default function HomePage() {
 
         .closingStatic {
           color: #1677ff;
-
           font-size: 11px;
-
           font-weight: 800;
-
-          letter-spacing:
-            0.27em;
+          letter-spacing: 0.27em;
         }
 
         @keyframes wordReveal {
           0% {
             opacity: 0;
-
-            transform:
-              translateY(10px);
-
+            transform: translateY(10px);
             filter: blur(4px);
           }
 
           18% {
             opacity: 1;
-
-            transform:
-              translateY(0);
-
+            transform: translateY(0);
             filter: blur(0);
           }
 
           80% {
             opacity: 1;
-
-            transform:
-              translateY(0);
-
+            transform: translateY(0);
             filter: blur(0);
           }
 
           100% {
             opacity: 0;
-
-            transform:
-              translateY(-8px);
-
+            transform: translateY(-8px);
             filter: blur(3px);
           }
         }
@@ -972,66 +881,46 @@ export default function HomePage() {
         @keyframes platformReveal {
           0% {
             opacity: 0;
-
-            transform:
-              translateY(8px);
+            transform: translateY(8px);
           }
 
           22% {
             opacity: 1;
-
-            transform:
-              translateY(0);
+            transform: translateY(0);
           }
 
           82% {
             opacity: 1;
-
-            transform:
-              translateY(0);
+            transform: translateY(0);
           }
 
           100% {
             opacity: 0;
-
-            transform:
-              translateY(-7px);
+            transform: translateY(-7px);
           }
         }
 
         @keyframes closingReveal {
           0% {
             opacity: 0;
-
-            letter-spacing:
-              .12em;
-
-            transform:
-              translateY(5px);
+            letter-spacing: 0.12em;
+            transform: translateY(5px);
           }
 
           25% {
             opacity: 1;
-
-            letter-spacing:
-              .03em;
-
-            transform:
-              translateY(0);
+            letter-spacing: 0.03em;
+            transform: translateY(0);
           }
 
           80% {
             opacity: 1;
-
-            transform:
-              translateY(0);
+            transform: translateY(0);
           }
 
           100% {
             opacity: 0;
-
-            transform:
-              translateY(-4px);
+            transform: translateY(-4px);
           }
         }
 
@@ -1053,13 +942,11 @@ export default function HomePage() {
         @keyframes iconFloat {
           0%,
           100% {
-            transform:
-              translateY(0);
+            transform: translateY(0);
           }
 
           50% {
-            transform:
-              translateY(-4px);
+            transform: translateY(-4px);
           }
         }
 
@@ -1068,24 +955,20 @@ export default function HomePage() {
             transform:
               rotate(-7deg)
               scale(1.15)
-              translate3d(0,0,0);
+              translate3d(0, 0, 0);
           }
 
           100% {
             transform:
               rotate(-5deg)
               scale(1.2)
-              translate3d(
-                2%,
-                -1%,
-                0
-              );
+              translate3d(2%, -1%, 0);
           }
         }
 
         @keyframes upperGlow {
           from {
-            opacity: .7;
+            opacity: 0.7;
 
             transform:
               rotate(-5deg)
@@ -1104,82 +987,53 @@ export default function HomePage() {
         @keyframes glowMoveOne {
           from {
             transform:
-              translate3d(
-                -15px,
-                0,
-                0
-              );
+              translate3d(-15px, 0, 0);
           }
 
           to {
             transform:
-              translate3d(
-                55px,
-                22px,
-                0
-              );
+              translate3d(55px, 22px, 0);
           }
         }
 
         @keyframes glowMoveTwo {
           from {
             transform:
-              translate3d(
-                0,
-                0,
-                0
-              );
+              translate3d(0, 0, 0);
           }
 
           to {
             transform:
-              translate3d(
-                -70px,
-                -18px,
-                0
-              );
+              translate3d(-70px, -18px, 0);
           }
         }
 
         @keyframes glowPulse {
           0%,
           100% {
-            opacity: .45;
-
-            transform:
-              scale(.94);
+            opacity: 0.45;
+            transform: scale(0.94);
           }
 
           50% {
-            opacity: .8;
-
-            transform:
-              scale(1.08);
+            opacity: 0.8;
+            transform: scale(1.08);
           }
         }
 
-        @media (
-          prefers-reduced-motion:
-          reduce
-        ) {
+        @media (prefers-reduced-motion: reduce) {
           *,
           *::before,
           *::after {
-            animation:
-              none !important;
-
-            transition:
-              none !important;
+            animation: none !important;
+            transition: none !important;
           }
         }
 
         @media (max-width: 900px) {
           .hero {
             min-height: 510px;
-
-            padding:
-              44px 20px
-              94px;
+            padding: 44px 20px 94px;
           }
 
           h1 {
@@ -1204,15 +1058,12 @@ export default function HomePage() {
           .cta {
             width: 100%;
             max-width: 340px;
-
             min-width: 0;
-
             font-size: 16px;
           }
 
           .heroActions {
             gap: 5px;
-
             flex-direction: column;
           }
 
@@ -1222,12 +1073,9 @@ export default function HomePage() {
 
           .heroMicro {
             margin-top: 27px;
-
             gap: 9px;
-
             font-size: 8px;
-
-            letter-spacing: .12em;
+            letter-spacing: 0.12em;
           }
 
           .platformSection {
@@ -1259,7 +1107,6 @@ export default function HomePage() {
         @media (max-width: 520px) {
           .hero {
             min-height: 500px;
-
             padding-top: 40px;
           }
 
@@ -1269,15 +1116,12 @@ export default function HomePage() {
 
           h1 {
             min-height: 121px;
-
             font-size: 41px;
           }
 
           .heroMicro {
             flex-wrap: wrap;
-
             max-width: 300px;
-
             margin-left: auto;
             margin-right: auto;
           }
@@ -1288,8 +1132,7 @@ export default function HomePage() {
           }
 
           .featureRow {
-            grid-template-columns:
-              1fr;
+            grid-template-columns: 1fr;
           }
 
           .featureItem:last-child {
