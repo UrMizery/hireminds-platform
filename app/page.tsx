@@ -1,33 +1,116 @@
 "use client";
 
+import type { ReactNode } from "react";
+
+type FeatureProps = {
+  icon: ReactNode;
+  children: ReactNode;
+};
+
+function Feature({ icon, children }: FeatureProps) {
+  return (
+    <div className="feature">
+      <div className="featureIcon">{icon}</div>
+      <div className="featureText">{children}</div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
-    <main className="homePage">
-
+    <main className="page">
       {/* HERO */}
       <section className="hero">
+        {/* LEFT ABSTRACT WAVE */}
+        <svg
+          className="wave waveLeft"
+          viewBox="0 0 760 420"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="leftStroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#0058d8" stopOpacity="0" />
+              <stop offset="45%" stopColor="#087dff" stopOpacity=".45" />
+              <stop offset="64%" stopColor="#1499ff" stopOpacity=".95" />
+              <stop offset="100%" stopColor="#0e59d8" stopOpacity=".08" />
+            </linearGradient>
 
-        {/* ABSTRACT BLUE LINES */}
-        <div className="wave waveLeft">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <span key={i} style={{ "--i": i } as React.CSSProperties} />
-          ))}
-          <div className="glowDot leftDot" />
-        </div>
+            <filter id="leftGlow">
+              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
 
-        <div className="wave waveRight">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <span key={i} style={{ "--i": i } as React.CSSProperties} />
-          ))}
-          <div className="glowDot rightDot" />
-        </div>
+          <path d="M-40 90 C160 85 265 260 760 335" />
+          <path d="M-40 120 C170 110 275 260 760 320" />
+          <path d="M-40 150 C180 135 285 260 760 305" />
+          <path d="M-40 180 C190 160 295 260 760 290" />
+          <path d="M-40 210 C200 185 305 260 760 275" />
+          <path d="M-40 240 C210 210 315 260 760 260" />
+          <path d="M-40 270 C220 235 325 260 760 245" />
+          <path d="M-40 300 C230 260 335 260 760 230" />
+
+          <circle
+            cx="315"
+            cy="255"
+            r="4"
+            fill="#58baff"
+            filter="url(#leftGlow)"
+          />
+        </svg>
+
+        {/* RIGHT ABSTRACT WAVE */}
+        <svg
+          className="wave waveRight"
+          viewBox="0 0 760 420"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="rightStroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#0e59d8" stopOpacity=".08" />
+              <stop offset="36%" stopColor="#1499ff" stopOpacity=".95" />
+              <stop offset="58%" stopColor="#087dff" stopOpacity=".45" />
+              <stop offset="100%" stopColor="#0058d8" stopOpacity="0" />
+            </linearGradient>
+
+            <filter id="rightGlow">
+              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <path d="M0 335 C495 260 600 85 800 90" />
+          <path d="M0 320 C485 260 590 110 800 120" />
+          <path d="M0 305 C475 260 580 135 800 150" />
+          <path d="M0 290 C465 260 570 160 800 180" />
+          <path d="M0 275 C455 260 560 185 800 210" />
+          <path d="M0 260 C445 260 550 210 800 240" />
+          <path d="M0 245 C435 260 540 235 800 270" />
+          <path d="M0 230 C425 260 530 260 800 300" />
+
+          <circle
+            cx="445"
+            cy="255"
+            r="4"
+            fill="#58baff"
+            filter="url(#rightGlow)"
+          />
+        </svg>
 
         <div className="heroContent">
-          <p className="eyebrow">
+          <div className="eyebrow">
             WORKFORCE INFRASTRUCTURE PLATFORM
-          </p>
+          </div>
 
-          <div className="smallLine" />
+          <div className="eyebrowLine" />
 
           <h1>
             Infrastructure that
@@ -35,837 +118,566 @@ export default function HomePage() {
             powers your <span>career.</span>
           </h1>
 
-          <p className="heroCopy">
+          <p className="heroDescription">
             All the tools you need to build, market, and manage
-            <br className="desktopBreak" />
+            <br className="desktopOnly" />
             your career — all in one intelligent platform.
           </p>
 
-          <a href="/sign-up" className="primaryButton">
+          <a href="/sign-up" className="cta">
             Create Career Passport
           </a>
         </div>
 
-        <div className="curve" />
+        {/* SMILE CURVE */}
+        <svg
+          className="heroCurve"
+          viewBox="0 0 1440 120"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M0,20 Q720,115 1440,20 L1440,120 L0,120 Z"
+            fill="#f8fafc"
+          />
+        </svg>
       </section>
 
+      {/* LIGHT SECTION */}
+      <section className="platform">
+        <div className="platformHeading">
+          <div>The all-in-one platform to</div>
 
-      {/* PLATFORM SUMMARY */}
-      <section className="platformSection">
+          <strong>build. stand out. land.</strong>
 
-        <div className="summary">
-          <h2>
-            The all-in-one platform to
-            <br />
-            <span>build. stand out. land.</span>
-          </h2>
-
-          <div className="blueLine" />
+          <span className="headingLine" />
         </div>
 
-
-        {/* PLATFORM FEATURES */}
         <div className="features">
+          <Feature
+            icon={
+              <svg viewBox="0 0 48 48">
+                <rect x="10" y="6" width="25" height="32" rx="2" />
+                <path d="M16 14h13M16 20h10M16 26h7" />
+                <path d="M29 34l8-8 4 4-8 8-6 2z" />
+              </svg>
+            }
+          >
+            Create
+            <br />
+            Standout Materials
+          </Feature>
 
-          <div className="feature">
-            <div className="icon documentIcon">
-              <div className="paper" />
-              <div className="pen">／</div>
-            </div>
+          <span className="divider" />
 
-            <p>
-              Create
-              <br />
-              Standout Materials
-            </p>
-          </div>
+          <Feature
+            icon={
+              <svg viewBox="0 0 48 48">
+                <circle cx="23" cy="24" r="15" />
+                <circle cx="23" cy="24" r="9" />
+                <circle cx="23" cy="24" r="3" />
+                <path d="M26 21l12-12M33 9h7v7" />
+              </svg>
+            }
+          >
+            Match Your Skills
+            <br />
+            to the Right Roles
+          </Feature>
 
+          <span className="divider" />
 
-          <div className="divider" />
+          <Feature
+            icon={
+              <svg viewBox="0 0 48 48">
+                <rect x="8" y="14" width="32" height="24" rx="2" />
+                <path d="M17 14v-4h14v4M8 23h32" />
+                <path d="M21 21h6v5h-6z" />
+              </svg>
+            }
+          >
+            Track Your Search
+            <br />
+            and Applications
+          </Feature>
 
+          <span className="divider" />
 
-          <div className="feature">
-            <div className="icon targetIcon">
-              ◎
-            </div>
+          <Feature
+            icon={
+              <svg viewBox="0 0 48 48">
+                <path d="M8 38V27h7v11z" />
+                <path d="M20 38V19h7v19z" />
+                <path d="M32 38V9h7v29z" />
+              </svg>
+            }
+          >
+            Make Smarter
+            <br />
+            Career Moves
+          </Feature>
 
-            <p>
-              Match Your Skills
-              <br />
-              to the Right Roles
-            </p>
-          </div>
+          <span className="divider" />
 
-
-          <div className="divider" />
-
-
-          <div className="feature">
-            <div className="icon briefcaseIcon">
-              ▣
-            </div>
-
-            <p>
-              Track Your Search
-              <br />
-              and Applications
-            </p>
-          </div>
-
-
-          <div className="divider" />
-
-
-          <div className="feature">
-            <div className="icon chartIcon">
-              ▥
-            </div>
-
-            <p>
-              Make Smarter
-              <br />
-              Career Moves
-            </p>
-          </div>
-
-
-          <div className="divider" />
-
-
-          <div className="feature">
-            <div className="icon shieldIcon">
-              ◇
-            </div>
-
-            <p>
-              Your Data.
-              <br />
-              Your Control.
-            </p>
-          </div>
-
+          <Feature
+            icon={
+              <svg viewBox="0 0 48 48">
+                <path d="M24 5l15 6v11c0 9-6 16-15 21C15 38 9 31 9 22V11z" />
+                <path d="M17 24l5 5 10-11" />
+              </svg>
+            }
+          >
+            Your Data.
+            <br />
+            Your Control.
+          </Feature>
         </div>
 
-
-        <p className="closingLine">
+        <div className="closing">
           ONE ACCOUNT. EVERY TOOL. REAL RESULTS.
-        </p>
-
+        </div>
       </section>
-
 
       <style jsx>{`
-
-        .homePage {
+        .page {
           width: 100%;
           min-height: 100vh;
-          background: #f8fafc;
           overflow: hidden;
-          font-family: Inter, Arial, Helvetica, sans-serif;
+          background: #f8fafc;
+          font-family: Arial, Helvetica, sans-serif;
         }
 
-
-        /* ================================
-           HERO
-        ================================= */
+        /* HERO */
 
         .hero {
           position: relative;
-          min-height: 590px;
+          min-height: 620px;
 
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
+
+          padding: 55px 24px 130px;
 
           overflow: hidden;
 
           background:
             radial-gradient(
-              circle at 8% 5%,
-              rgba(20, 88, 190, 0.38),
-              transparent 32%
+              ellipse at 7% 12%,
+              rgba(16, 91, 184, 0.42) 0%,
+              rgba(8, 49, 103, 0.18) 27%,
+              transparent 47%
             ),
             radial-gradient(
-              circle at 93% 70%,
-              rgba(0, 82, 190, 0.18),
-              transparent 27%
+              ellipse at 94% 45%,
+              rgba(11, 73, 160, 0.28) 0%,
+              transparent 39%
+            ),
+            radial-gradient(
+              circle at 50% 40%,
+              rgba(2, 22, 49, 0.25),
+              transparent 38%
             ),
             linear-gradient(
               135deg,
-              #051323 0%,
-              #020914 48%,
-              #071526 100%
+              #07182c 0%,
+              #020914 44%,
+              #07172a 100%
             );
-
-          color: white;
-
-          padding:
-            65px 30px
-            120px;
         }
-
 
         .heroContent {
           position: relative;
-          z-index: 5;
-          text-align: center;
+          z-index: 4;
 
           width: 100%;
-          max-width: 1000px;
+          max-width: 1050px;
 
-          margin-top: -20px;
+          text-align: center;
         }
 
-
         .eyebrow {
-          margin: 0;
-
-          color: #1492ff;
+          margin-top: 4px;
 
           font-size: 13px;
           font-weight: 700;
 
+          color: #1599ff;
+
           letter-spacing: 0.24em;
         }
 
-
-        .smallLine {
-          width: 90px;
+        .eyebrowLine {
+          width: 64px;
           height: 2px;
 
-          margin:
-            24px auto
-            28px;
+          margin: 22px auto 28px;
 
-          background: #1492ff;
+          background: #189cff;
         }
-
 
         h1 {
           margin: 0;
 
-          color: #f7f7f5;
+          font-family: Georgia, "Times New Roman", serif;
 
-          font-family:
-            Georgia,
-            "Times New Roman",
-            serif;
+          font-size: clamp(52px, 5vw, 78px);
 
           font-weight: 400;
-
-          font-size:
-            clamp(
-              52px,
-              5vw,
-              78px
-            );
-
           line-height: 1.04;
 
           letter-spacing: -0.035em;
-        }
 
+          color: #f8f8f6;
+        }
 
         h1 span {
-          color: #0675f5;
+          color: #087cff;
         }
 
+        .heroDescription {
+          margin: 30px auto 0;
 
-        .heroCopy {
-          margin:
-            30px auto
-            0;
+          font-size: 19px;
+          line-height: 1.7;
 
-          color: #f0f3f7;
-
-          font-size:
-            clamp(
-              17px,
-              1.35vw,
-              21px
-            );
+          color: #f1f4f8;
 
           font-weight: 400;
-
-          line-height: 1.7;
         }
 
-
-        .primaryButton {
+        .cta {
           display: inline-flex;
 
           align-items: center;
           justify-content: center;
 
-          margin-top: 42px;
+          min-width: 390px;
 
-          min-width: 380px;
+          margin-top: 36px;
 
-          padding:
-            19px
-            42px;
+          padding: 19px 36px;
 
-          border-radius: 8px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #146ee8,
-              #003cff
-            );
-
-          color: white;
+          border-radius: 7px;
 
           text-decoration: none;
+
+          color: #ffffff;
 
           font-size: 20px;
           font-weight: 700;
 
+          background:
+            linear-gradient(
+              135deg,
+              #1678ef 0%,
+              #0049ff 100%
+            );
+
           box-shadow:
-            0 12px 30px
-            rgba(0, 73, 255, 0.19);
+            0 12px 34px rgba(0, 79, 255, 0.2);
 
           transition:
-            transform 180ms ease,
-            box-shadow 180ms ease;
+            transform 0.18s ease,
+            box-shadow 0.18s ease;
         }
 
-
-        .primaryButton:hover {
-          transform:
-            translateY(-2px);
+        .cta:hover {
+          transform: translateY(-2px);
 
           box-shadow:
-            0 18px 35px
-            rgba(0, 73, 255, 0.26);
+            0 16px 40px rgba(0, 95, 255, 0.3);
         }
 
-
-        /* ================================
-           ABSTRACT WAVES
-        ================================= */
+        /* ABSTRACT WAVES */
 
         .wave {
           position: absolute;
 
           z-index: 1;
 
-          width: 47%;
-          height: 330px;
+          width: 50%;
+          height: 420px;
 
           pointer-events: none;
-
-          opacity: 0.75;
         }
 
+        .wave path {
+          fill: none;
+          stroke-width: 1.1;
+        }
 
         .waveLeft {
-          left: -11%;
+          left: -7%;
           bottom: 20px;
         }
 
+        .waveLeft path {
+          stroke: url(#leftStroke);
+        }
 
         .waveRight {
-          right: -12%;
-          top: 45px;
-
-          transform:
-            rotate(180deg)
-            scaleY(-1);
+          right: -7%;
+          bottom: 20px;
         }
 
-
-        .wave span {
-          --i: 0;
-
-          position: absolute;
-
-          left: 0;
-          top: calc(
-            40px +
-            (var(--i) * 11px)
-          );
-
-          width: 110%;
-          height: 1px;
-
-          transform:
-            rotate(
-              calc(
-                -16deg +
-                (var(--i) * 2.5deg)
-              )
-            );
-
-          transform-origin: left center;
-
-          background:
-            linear-gradient(
-              90deg,
-              transparent 0%,
-              rgba(0, 120, 255, .25) 10%,
-              rgba(0, 145, 255, .9) 50%,
-              rgba(0, 100, 255, .12) 100%
-            );
-
-          box-shadow:
-            0 0 5px
-            rgba(0, 130, 255, .35);
+        .waveRight path {
+          stroke: url(#rightStroke);
         }
 
+        /* SMILE CURVE */
 
-        .glowDot {
-          position: absolute;
-
-          width: 5px;
-          height: 5px;
-
-          border-radius: 50%;
-
-          background: #50b8ff;
-
-          box-shadow:
-            0 0 10px #239cff,
-            0 0 24px #006eff;
-        }
-
-
-        .leftDot {
-          left: 48%;
-          top: 49%;
-        }
-
-
-        .rightDot {
-          left: 51%;
-          top: 50%;
-        }
-
-
-        /* ================================
-           CURVED TRANSITION
-        ================================= */
-
-        .curve {
+        .heroCurve {
           position: absolute;
 
           z-index: 3;
 
-          left: -5%;
-          bottom: -66px;
+          left: 0;
+          bottom: -1px;
 
-          width: 110%;
-          height: 115px;
+          width: 100%;
+          height: 96px;
 
-          background: #f8fafc;
-
-          border-radius:
-            50% 50%
-            0 0 /
-            100% 100%
-            0 0;
+          display: block;
         }
 
+        /* LIGHT PLATFORM AREA */
 
-        /* ================================
-           LIGHT PLATFORM AREA
-        ================================= */
-
-        .platformSection {
+        .platform {
           position: relative;
 
-          background:
-            radial-gradient(
-              circle at 90% 75%,
-              rgba(33, 113, 255, 0.10),
-              transparent 27%
-            ),
-            #f8fafc;
+          margin-top: -1px;
 
-          color: #081326;
+          padding: 34px 32px 54px;
 
           text-align: center;
 
-          padding:
-            80px 40px
-            55px;
+          color: #071020;
+
+          background:
+            radial-gradient(
+              circle at 92% 72%,
+              rgba(60, 128, 255, 0.1),
+              transparent 27%
+            ),
+            linear-gradient(
+              180deg,
+              #f8fafc 0%,
+              #eef4fc 100%
+            );
         }
 
-
-        .summary h2 {
-          margin: 0;
-
-          font-size:
-            clamp(
-              28px,
-              2.5vw,
-              40px
-            );
+        .platformHeading {
+          font-size: clamp(29px, 2.4vw, 38px);
 
           line-height: 1.15;
 
-          font-weight: 500;
+          font-weight: 400;
 
           letter-spacing: -0.025em;
         }
 
+        .platformHeading strong {
+          display: block;
 
-        .summary h2 span {
-          color: #145ada;
+          margin-top: 2px;
+
+          color: #155bd8;
 
           font-weight: 700;
         }
 
+        .headingLine {
+          display: block;
 
-        .blueLine {
-          width: 86px;
-          height: 3px;
+          width: 62px;
+          height: 2px;
 
-          margin:
-            24px auto
-            24px;
+          margin: 21px auto 20px;
 
-          background: #156fea;
+          background: #146fe8;
         }
 
-
-        /* ================================
-           FEATURES
-        ================================= */
+        /* FEATURES */
 
         .features {
           width: 100%;
           max-width: 1100px;
 
-          margin:
-            10px auto
-            26px;
+          margin: 0 auto;
 
           display: flex;
 
-          align-items: stretch;
           justify-content: center;
+          align-items: stretch;
         }
-
 
         .feature {
           flex: 1;
 
-          min-width: 0;
-
-          padding:
-            6px
-            22px;
-
           display: flex;
+
           flex-direction: column;
 
           align-items: center;
-          justify-content: flex-start;
+
+          padding: 0 22px;
         }
 
+        .featureIcon {
+          width: 54px;
+          height: 54px;
 
-        .feature p {
-          margin:
-            10px 0
-            0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
 
-          font-size: 15px;
+          color: #0d63e8;
+        }
+
+        .featureIcon svg {
+          width: 45px;
+          height: 45px;
+
+          fill: none;
+
+          stroke: currentColor;
+
+          stroke-width: 2.2;
+
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+
+        .featureText {
+          margin-top: 8px;
+
+          font-size: 14px;
+
           line-height: 1.45;
 
-          font-weight: 600;
+          font-weight: 700;
 
-          color: #0e1520;
+          color: #0b1320;
         }
-
 
         .divider {
           width: 1px;
 
-          margin:
-            4px 0
-            0;
+          background: #cbd3df;
 
-          background: #ccd3dd;
+          margin: 4px 0 0;
         }
 
+        .closing {
+          margin-top: 28px;
 
-        /* ================================
-           SIMPLE BLUE ICONS
-        ================================= */
+          color: #0754d9;
 
-        .icon {
-          width: 48px;
-          height: 48px;
-
-          display: flex;
-
-          align-items: center;
-          justify-content: center;
-
-          color: #145bdb;
-
-          font-size: 40px;
-          font-weight: 400;
-
-          line-height: 1;
-        }
-
-
-        .documentIcon {
-          position: relative;
-        }
-
-
-        .paper {
-          width: 27px;
-          height: 34px;
-
-          border:
-            2px solid
-            #145bdb;
-
-          border-radius: 3px;
-
-          position: relative;
-        }
-
-
-        .paper::before,
-        .paper::after {
-          content: "";
-
-          position: absolute;
-
-          left: 5px;
-
-          height: 2px;
-
-          background: #145bdb;
-        }
-
-
-        .paper::before {
-          top: 9px;
-          width: 15px;
-        }
-
-
-        .paper::after {
-          top: 16px;
-          width: 11px;
-        }
-
-
-        .pen {
-          position: absolute;
-
-          right: 4px;
-          bottom: 5px;
-
-          font-size: 23px;
-          font-weight: 700;
-
-          transform:
-            rotate(-14deg);
-
-          color: #145bdb;
-        }
-
-
-        .targetIcon {
-          font-size: 48px;
-        }
-
-
-        .briefcaseIcon {
-          font-size: 45px;
-        }
-
-
-        .chartIcon {
-          font-size: 43px;
-        }
-
-
-        .shieldIcon {
-          font-size: 48px;
-        }
-
-
-        /* ================================
-           CLOSING LINE
-        ================================= */
-
-        .closingLine {
-          margin:
-            28px 0
-            0;
-
-          color: #0d53cf;
-
-          font-size: 13px;
+          font-size: 12px;
 
           font-weight: 800;
 
-          letter-spacing: 0.25em;
+          letter-spacing: 0.28em;
         }
 
+        /* TABLET */
 
-        /* ================================
-           MOBILE
-        ================================= */
-
-        @media (
-          max-width: 900px
-        ) {
-
+        @media (max-width: 900px) {
           .hero {
-            min-height: 570px;
+            min-height: 580px;
 
             padding:
-              60px 22px
-              110px;
+              50px 20px
+              120px;
           }
-
-
-          .heroContent {
-            margin-top: 0;
-          }
-
-
-          .eyebrow {
-            font-size: 10px;
-          }
-
 
           h1 {
-            font-size:
-              clamp(
-                43px,
-                11vw,
-                61px
-              );
+            font-size: clamp(43px, 10vw, 62px);
           }
 
-
-          .heroCopy {
+          .heroDescription {
             font-size: 16px;
           }
 
-
-          .desktopBreak {
+          .desktopOnly {
             display: none;
           }
 
-
-          .primaryButton {
+          .cta {
             min-width: 0;
+
             width: 100%;
             max-width: 360px;
 
             font-size: 18px;
           }
 
-
           .wave {
-            width: 80%;
-            opacity: 0.5;
+            width: 77%;
+            opacity: 0.75;
           }
-
 
           .waveLeft {
-            left: -35%;
+            left: -37%;
           }
-
 
           .waveRight {
-            right: -40%;
+            right: -37%;
           }
-
-
-          .platformSection {
-            padding:
-              65px 20px
-              45px;
-          }
-
 
           .features {
-            flex-wrap: wrap;
-            gap: 20px;
+            display: grid;
+
+            grid-template-columns: repeat(2, 1fr);
+
+            gap: 30px 10px;
           }
-
-
-          .feature {
-            flex:
-              1 1
-              42%;
-
-            padding: 15px 10px;
-          }
-
 
           .divider {
             display: none;
           }
 
+          .feature:last-child {
+            grid-column: 1 / -1;
+          }
 
-          .closingLine {
-            font-size: 11px;
-
+          .closing {
             line-height: 1.8;
           }
-
         }
 
+        /* MOBILE */
 
-        @media (
-          max-width: 520px
-        ) {
-
+        @media (max-width: 520px) {
           .hero {
-            min-height: 540px;
+            min-height: 560px;
+
+            padding-top: 44px;
           }
 
+          .eyebrow {
+            font-size: 10px;
+          }
 
           h1 {
             font-size: 43px;
           }
 
-
-          .heroCopy {
-            margin-top: 24px;
+          .platform {
+            padding-left: 18px;
+            padding-right: 18px;
           }
-
-
-          .primaryButton {
-            margin-top: 32px;
-          }
-
-
-          .summary h2 {
-            font-size: 28px;
-          }
-
 
           .features {
-            display: grid;
-
-            grid-template-columns:
-              1fr 1fr;
+            grid-template-columns: 1fr;
           }
-
 
           .feature:last-child {
-            grid-column:
-              1 / -1;
+            grid-column: auto;
           }
-
         }
-
       `}</style>
-
     </main>
   );
 }
