@@ -4,2459 +4,2396 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { supabase } from "../../lib/supabase";
 
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
-type ResumeType = "Chronological" | "Functional" | "Combination" | "Hybrid";
 type OpportunityPath =
-| "veteran"
-| "caregiver"
-| "career-restart"
-| "reentry"
-| "little-no-experience";
+  | "reentry"
+  | "little-no-experience"
+  | "career-restart"
+  | "caregiver"
+  | "veteran";
+
+type ResumeLayout = "Skills First" | "Balanced" | "Experience First";
+
+type ExperienceSource =
+  | "Paid Job"
+  | "Institutional Work Assignment"
+  | "Volunteer / Community"
+  | "Caregiving / Home"
+  | "Training / Project"
+  | "Other";
 
 type Bullet = { text: string };
 
 type ExperienceItem = {
-companyName: string;
-city: string;
-state: string;
-roleTitle: string;
-startMonth: string;
-startYear: string;
-endMonth: string;
-endYear: string;
-isPresent: boolean;
-bullets: Bullet[];
+  sourceType: ExperienceSource;
+  organizationName: string;
+  city: string;
+  state: string;
+  roleTitle: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
+  bullets: Bullet[];
 };
 
 type CredentialItem = {
-organizationName: string;
-city: string;
-state: string;
-credentialName: string;
-details: string;
-startMonth: string;
-startYear: string;
-endMonth: string;
-endYear: string;
-isPresent: boolean;
+  organizationName: string;
+  city: string;
+  state: string;
+  credentialName: string;
+  details: string;
+  year: string;
 };
-
-type VolunteerItem = {
-organizationName: string;
-city: string;
-state: string;
-roleTitle: string;
-startMonth: string;
-startYear: string;
-endMonth: string;
-endYear: string;
-isPresent: boolean;
-bullets: Bullet[];
-};
-
-type ResumeSectionKey =
-| "summary"
-| "skills"
-| "experience"
-| "credentials"
-| "volunteer"
-| "accomplishments";
 
 const BULLET_LIMIT = 5;
 const SKILL_LIMIT = 9;
-const RESUME_DRAFT_STORAGE_KEY = "hireminds-new-opportunities-resume-draft-v1";
+const STORAGE_KEY = "hireminds-new-opportunities-resume-draft-v2";
 
 const MONTHS = [
-"",
-"Jan",
-"Feb",
-"Mar",
-"Apr",
-"May",
-"Jun",
-"Jul",
-"Aug",
-"Sep",
-"Oct",
-"Nov",
-"Dec",
+  "",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
-function moveItem<T>(arr: T[], index: number, direction: "up" | "down") {
-const updated = [...arr];
-const nextIndex = direction === "up" ? index - 1 : index + 1;
-if (nextIndex < 0 || nextIndex >= arr.length) return arr;
-[updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
-return updated;
-}
+const LAYOUTS: Array<{
+  name: ResumeLayout;
+  kicker: string;
+  description: string;
+}> = [
+  {
+    name: "Skills First",
+    kicker: "BEST FOR LITTLE EXPERIENCE",
+    description:
+      "Leads with strengths and job-ready skills before work history.",
+  },
+  {
+    name: "Balanced",
+    kicker: "BEST ALL-AROUND",
+    description:
+      "Gives skills and experience equal weight in a clean, flexible format.",
+  },
+  {
+    name: "Experience First",
+    kicker: "BEST WITH SOLID WORK HISTORY",
+    description:
+      "Puts your strongest work history closer to the top.",
+  },
+];
 
-function formatDateRange(
-startMonth: string,
-startYear: string,
-endMonth: string,
-endYear: string,
-isPresent: boolean
-) {
-const from = [startMonth, startYear].filter(Boolean).join(" ");
-const to = isPresent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ");
-if (!from && !to) return "";
-return `${from || "Start"} - ${to || "End"}`;
-}
-
-function splitSkillsIntoColumns(skills: string[]) {
-const safeSkills = skills.slice(0, SKILL_LIMIT);
-const columns = [[], [], []] as string[][];
-
-safeSkills.forEach((skill, index) => {
-columns[index % 3].push(skill);
-});
-
-return columns;
-}
-
-function detectResumeType(sectionOrder: ResumeSectionKey[]): ResumeType {
-const skillsIndex = sectionOrder.indexOf("skills");
-const experienceIndex = sectionOrder.indexOf("experience");
-const credentialsIndex = sectionOrder.indexOf("credentials");
-const volunteerIndex = sectionOrder.indexOf("volunteer");
-
-const educationLikeNearTop =
-(credentialsIndex !== -1 && credentialsIndex < experienceIndex) ||
-(volunteerIndex !== -1 && volunteerIndex < experienceIndex);
-
-const skillsVeryHigh = skillsIndex !== -1 && skillsIndex <= 1;
-const experienceHigh = experienceIndex !== -1 && experienceIndex <= 2;
-
-if (educationLikeNearTop && skillsVeryHigh) return "Hybrid";
-if (skillsVeryHigh && experienceHigh) return "Combination";
-if (skillsVeryHigh && experienceIndex > 2) return "Functional";
-return "Chronological";
-}
-
-function hasExperienceContent(item: ExperienceItem) {
-return Boolean(
-item.companyName ||
-item.roleTitle ||
-item.city ||
-item.state ||
-item.startMonth ||
-item.startYear ||
-item.endMonth ||
-item.endYear ||
-item.isPresent ||
-item.bullets.some((b) => b.text.trim())
-);
-}
-
-function hasCredentialContent(item: CredentialItem) {
-return Boolean(
-item.organizationName ||
-item.credentialName ||
-item.details ||
-item.city ||
-item.state ||
-item.startMonth ||
-item.startYear ||
-item.endMonth ||
-item.endYear ||
-item.isPresent
-);
-}
-
-function hasVolunteerContent(item: VolunteerItem) {
-return Boolean(
-item.organizationName ||
-item.roleTitle ||
-item.city ||
-item.state ||
-item.startMonth ||
-item.startYear ||
-item.endMonth ||
-item.endYear ||
-item.isPresent ||
-item.bullets.some((b) => b.text.trim())
-);
-}
-
-function createDefaultExperience(): ExperienceItem {
-return {
-companyName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-};
-}
-
-function createDefaultCredential(): CredentialItem {
-return {
-organizationName: "",
-city: "",
-state: "",
-credentialName: "",
-details: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-};
-}
-
-function createDefaultVolunteer(): VolunteerItem {
-return {
-organizationName: "",
-city: "",
-state: "",
-roleTitle: "",
-startMonth: "",
-startYear: "",
-endMonth: "",
-endYear: "",
-isPresent: false,
-bullets: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-};
-}
-
-function normalizeSkillLabel(value: string) {
-return value
-.trim()
-.replace(/\s+/g, " ")
-.replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function makeSkillSuggestions(
-pathType: OpportunityPath,
-strengthsText: string,
-supportNeedsText: string
-) {
-const typed = `${strengthsText}, ${supportNeedsText}`
-.split(",")
-.map((item) => normalizeSkillLabel(item))
-.filter(Boolean);
-
-const baseByPath: Record<OpportunityPath, string[]> = {
-veteran: [
-"Leadership",
-"Teamwork",
-"Operations Support",
-"Discipline",
-"Adaptability",
-"Problem Solving",
-"Communication",
-"Accountability",
-"Time Management",
-],
-caregiver: [
-"Scheduling",
-"Organization",
-"Communication",
-"Compassion",
-"Multitasking",
-"Problem Solving",
-"Time Management",
-"Record Keeping",
-"Dependability",
-],
-"career-restart": [
-"Adaptability",
-"Communication",
-"Organization",
-"Problem Solving",
-"Professionalism",
-"Time Management",
-"Teamwork",
-"Dependability",
-"Initiative",
-],
-reentry: [
-"Accountability",
-"Consistency",
-"Adaptability",
-"Communication",
-"Time Management",
-"Problem Solving",
-"Teamwork",
-"Dependability",
-"Professional Growth",
-],
-"little-no-experience": [
-"Willingness To Learn",
-"Communication",
-"Teamwork",
-"Dependability",
-"Adaptability",
-"Time Management",
-"Customer Service",
-"Problem Solving",
-"Professionalism",
-],
+const PATH_LABELS: Record<OpportunityPath, string> = {
+  reentry: "Reentry / Second Chance",
+  "little-no-experience": "Little to No Experience",
+  "career-restart": "Career Restart",
+  caregiver: "Caregiver / Homemaker",
+  veteran: "Veteran / Service Transition",
 };
 
-const merged = [...typed, ...baseByPath[pathType]];
-return Array.from(new Set(merged)).slice(0, SKILL_LIMIT);
+function createExperience(): ExperienceItem {
+  return {
+    sourceType: "Paid Job",
+    organizationName: "",
+    city: "",
+    state: "",
+    roleTitle: "",
+    startMonth: "",
+    startYear: "",
+    endMonth: "",
+    endYear: "",
+    isPresent: false,
+    bullets: [{ text: "" }, { text: "" }, { text: "" }],
+  };
 }
 
-function improveBulletText(
-raw: string,
-pathType: OpportunityPath,
-roleTitle: string,
-targetRole: string
-) {
-const text = raw.trim();
-if (!text) return "";
-
-const lower = text.toLowerCase();
-const target = targetRole.trim() || roleTitle.trim() || "new opportunities";
-
-if (lower === "customer service" || lower.includes("customer service")) {
-return `Delivered responsive customer support while building trust, resolving questions, and creating a positive service experience aligned with ${target}.`;
+function createCredential(): CredentialItem {
+  return {
+    organizationName: "",
+    city: "",
+    state: "",
+    credentialName: "",
+    details: "",
+    year: "",
+  };
 }
 
-if (lower.includes("cash") || lower.includes("register") || lower.includes("money")) {
-return `Handled payments, register activity, and cash-balancing responsibilities with accuracy, attention to detail, and accountability in a fast-paced environment.`;
+function hasExperience(item: ExperienceItem) {
+  return Boolean(
+    item.organizationName ||
+      item.roleTitle ||
+      item.city ||
+      item.state ||
+      item.startMonth ||
+      item.startYear ||
+      item.endMonth ||
+      item.endYear ||
+      item.isPresent ||
+      item.bullets.some((bullet) => bullet.text.trim())
+  );
 }
 
-if (lower.includes("clean") || lower.includes("cleaning") || lower.includes("sanit")) {
-return `Maintained clean, organized, and safe environments while following standards, routines, and quality expectations consistently.`;
+function hasCredential(item: CredentialItem) {
+  return Boolean(
+    item.organizationName ||
+      item.credentialName ||
+      item.details ||
+      item.city ||
+      item.state ||
+      item.year
+  );
 }
 
-if (lower.includes("care") || lower.includes("caregiving") || lower.includes("took care")) {
-return `Provided dependable support and attentive care while managing routines, changing needs, and respectful communication in high-responsibility situations.`;
+function formatDateRange(item: ExperienceItem) {
+  const from = [item.startMonth, item.startYear].filter(Boolean).join(" ");
+  const to = item.isPresent
+    ? "Present"
+    : [item.endMonth, item.endYear].filter(Boolean).join(" ");
+
+  if (!from && !to) return "";
+  if (from && !to) return from;
+  if (!from && to) return to;
+  return `${from} – ${to}`;
 }
 
-if (lower.includes("schedule") || lower.includes("appointment")) {
-return `Coordinated schedules, appointments, and time-sensitive responsibilities while maintaining organization and follow-through across competing priorities.`;
+function normalizeSkills(raw: string) {
+  return Array.from(
+    new Set(
+      raw
+        .split(",")
+        .map((item) => item.trim().replace(/\s+/g, " "))
+        .filter(Boolean)
+        .map((item) =>
+          item.replace(/\b\w/g, (letter) => letter.toUpperCase())
+        )
+    )
+  ).slice(0, SKILL_LIMIT);
 }
 
-if (lower.includes("household") || lower.includes("budget")) {
-return `Managed household logistics, planning, and budgeting responsibilities while demonstrating organization, problem-solving, and consistency.`;
-}
+function buildSectionOrder(layout: ResumeLayout) {
+  if (layout === "Skills First") {
+    return ["skills", "summary", "experience", "education", "accomplishments"] as const;
+  }
 
-if (lower.includes("team") || lower.includes("worked with others")) {
-return `Collaborated effectively with others to complete responsibilities, maintain workflow, and support shared goals in structured environments.`;
-}
+  if (layout === "Experience First") {
+    return ["summary", "experience", "skills", "education", "accomplishments"] as const;
+  }
 
-if (lower.includes("training") || lower.includes("course") || lower.includes("class")) {
-return `Completed structured training and learning activities while building job-ready skills, consistency, and readiness for professional opportunities.`;
-}
-
-switch (pathType) {
-case "veteran":
-return `Applied responsibility, discipline, and teamwork through ${text.toLowerCase()}, strengthening readiness for ${target}.`;
-case "caregiver":
-return `Demonstrated patience, organization, and dependable follow-through through ${text.toLowerCase()}, building transferable strengths for ${target}.`;
-case "career-restart":
-return `Strengthened transferable professional skills through ${text.toLowerCase()}, supporting a confident return toward ${target}.`;
-case "reentry":
-return `Built accountability, consistency, and readiness through ${text.toLowerCase()}, reinforcing preparation for ${target}.`;
-case "little-no-experience":
-return `Developed practical strengths through ${text.toLowerCase()}, demonstrating reliability, willingness to learn, and readiness for ${target}.`;
-default:
-return text;
-}
-}
-
-function createGuidedSummary(
-pathType: OpportunityPath,
-targetRole: string,
-supportNeedsText: string,
-strengthsText: string
-) {
-const role = targetRole.trim() || "new professional opportunities";
-const strengths = strengthsText
-.split(",")
-.map((item) => item.trim())
-.filter(Boolean)
-.slice(0, 4);
-const strengthsLine = strengths.length
-? `Known for ${strengths.join(", ").toLowerCase()}.`
-: "";
-
-const support = supportNeedsText.trim();
-const supportLine = support ? `${support}.` : "";
-
-switch (pathType) {
-case "veteran":
-return `Mission-driven professional pursuing ${role} with transferable strengths in discipline, teamwork, accountability, and adaptability. ${supportLine} ${strengthsLine} Ready to contribute with professionalism, follow-through, and a strong commitment to growth.`
-.replace(/\s+/g, " ")
-.trim();
-
-case "caregiver":
-return `Dependable and organized candidate pursuing ${role} after building transferable strengths through caregiving, household management, scheduling, and daily problem-solving. ${supportLine} ${strengthsLine} Brings compassion, consistency, and a strong ability to manage responsibilities with care and professionalism.`
-.replace(/\s+/g, " ")
-.trim();
-
-case "career-restart":
-return `Adaptable professional pursuing ${role} while restarting a career path with renewed focus, resilience, and determination. ${supportLine} ${strengthsLine} Brings transferable skills, a strong work ethic, and readiness to contribute with confidence in a new chapter.`
-.replace(/\s+/g, " ")
-.trim();
-
-case "reentry":
-return `Motivated candidate pursuing ${role} while reentering the workforce with focus, accountability, and a commitment to forward progress. ${supportLine} ${strengthsLine} Brings resilience, readiness to learn, and a strong determination to contribute in a meaningful professional environment.`
-.replace(/\s+/g, " ")
-.trim();
-
-case "little-no-experience":
-return `Entry-level candidate pursuing ${role} with transferable strengths in reliability, adaptability, communication, and willingness to learn. ${supportLine} ${strengthsLine} Ready to bring energy, consistency, and career-ready momentum into a professional opportunity.`
-.replace(/\s+/g, " ")
-.trim();
-
-default:
-return "";
-}
+  return ["summary", "skills", "experience", "education", "accomplishments"] as const;
 }
 
 export default function NewOpportunitiesResumeGeneratorPage() {
-const [loadingUser, setLoadingUser] = useState(true);
-const [userId, setUserId] = useState("");
-const [message, setMessage] = useState("");
-const [saving, setSaving] = useState(false);
-const [draftLoaded, setDraftLoaded] = useState(false);
-const resumePrintRef = useRef<HTMLDivElement>(null);
-const openTrackedRef = useRef(false);
-
-const [fontFamily, setFontFamily] = useState<ResumeFont>("Times New Roman");
-const [fullName, setFullName] = useState("");
-const [phone, setPhone] = useState("");
-const [city, setCity] = useState("");
-const [stateName, setStateName] = useState("");
-const [email, setEmail] = useState("");
-const [linkedinUrl, setLinkedinUrl] = useState("");
-
-const [pathType, setPathType] = useState<OpportunityPath>("veteran");
-const [targetRole, setTargetRole] = useState("");
-const [supportNeedsText, setSupportNeedsText] = useState("");
-const [strengthsText, setStrengthsText] = useState("");
-
-const [summaryHeading, setSummaryHeading] = useState("Professional Summary");
-const [summaryText, setSummaryText] = useState("");
-const [skillsInput, setSkillsInput] = useState("");
-const [accomplishments, setAccomplishments] = useState("");
-
-const [experiences, setExperiences] = useState<ExperienceItem[]>([createDefaultExperience()]);
-const [credentialItems, setCredentialItems] = useState<CredentialItem[]>([
-createDefaultCredential(),
-]);
-const [volunteerItems, setVolunteerItems] = useState<VolunteerItem[]>([
-createDefaultVolunteer(),
-]);
-
-const [sectionOrder, setSectionOrder] = useState<ResumeSectionKey[]>([
-"summary",
-"skills",
-"experience",
-"credentials",
-"volunteer",
-"accomplishments",
-]);
-
-useEffect(() => {
-async function loadUserAndProfile() {
-const { data, error } = await supabase.auth.getUser();
-
-if (error || !data.user) {
-setLoadingUser(false);
-return;
-}
-
-const currentUserId = data.user.id;
-setUserId(currentUserId);
-
-const { data: profile } = await supabase
-.from("candidate_profiles")
-.select("full_name, phone, city, state, email, linkedin_url, referral_code")
-.eq("user_id", currentUserId)
-.maybeSingle();
-
-if (profile) {
-setFullName(profile.full_name || "");
-setPhone(profile.phone || "");
-setCity(profile.city || "");
-setStateName(profile.state || "");
-setEmail(profile.email || data.user.email || "");
-setLinkedinUrl(profile.linkedin_url || "");
-} else {
-setEmail(data.user.email || "");
-}
-
-if (!openTrackedRef.current) {
-openTrackedRef.current = true;
-
-const { error: activityError } = await supabase.from("user_activity").insert({
-user_id: currentUserId,
-full_name: profile?.full_name || null,
-email: profile?.email || data.user.email || null,
-referral_code: profile?.referral_code || null,
-event_type: "tool_opened",
-tool_name: "new_opportunities_resume_generator",
-page_name: "/career-toolkit/new-opportunities-resume-generator",
-});
-
-if (activityError) {
-console.error("New Opportunities Resume Generator tracking error:", activityError);
-}
-}
-
-setLoadingUser(false);
-}
-
-loadUserAndProfile();
-}, []);
-
-useEffect(() => {
-try {
-const raw = window.localStorage.getItem(RESUME_DRAFT_STORAGE_KEY);
-if (raw) {
-const draft = JSON.parse(raw);
-
-setFontFamily(draft.fontFamily || "Times New Roman");
-setFullName(draft.fullName || "");
-setPhone(draft.phone || "");
-setCity(draft.city || "");
-setStateName(draft.stateName || "");
-setEmail(draft.email || "");
-setLinkedinUrl(draft.linkedinUrl || "");
-setPathType(draft.pathType || "veteran");
-setTargetRole(draft.targetRole || "");
-setSupportNeedsText(draft.supportNeedsText || "");
-setStrengthsText(draft.strengthsText || "");
-setSummaryHeading(draft.summaryHeading || "Professional Summary");
-setSummaryText(draft.summaryText || "");
-setSkillsInput(draft.skillsInput || "");
-setAccomplishments(draft.accomplishments || "");
-setExperiences(
-Array.isArray(draft.experiences) && draft.experiences.length
-? draft.experiences
-: [createDefaultExperience()]
-);
-setCredentialItems(
-Array.isArray(draft.credentialItems) && draft.credentialItems.length
-? draft.credentialItems
-: [createDefaultCredential()]
-);
-setVolunteerItems(
-Array.isArray(draft.volunteerItems) && draft.volunteerItems.length
-? draft.volunteerItems
-: [createDefaultVolunteer()]
-);
-setSectionOrder(
-Array.isArray(draft.sectionOrder) && draft.sectionOrder.length
-? draft.sectionOrder
-: ["summary", "skills", "experience", "credentials", "volunteer", "accomplishments"]
-);
-}
-} catch {
-// ignore bad local draft
-} finally {
-setDraftLoaded(true);
-}
-}, []);
-
-useEffect(() => {
-if (!draftLoaded) return;
-
-const draft = {
-fontFamily,
-fullName,
-phone,
-city,
-stateName,
-email,
-linkedinUrl,
-pathType,
-targetRole,
-supportNeedsText,
-strengthsText,
-summaryHeading,
-summaryText,
-skillsInput,
-accomplishments,
-experiences,
-credentialItems,
-volunteerItems,
-sectionOrder,
-};
-
-window.localStorage.setItem(RESUME_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-}, [
-draftLoaded,
-fontFamily,
-fullName,
-phone,
-city,
-stateName,
-email,
-linkedinUrl,
-pathType,
-targetRole,
-supportNeedsText,
-strengthsText,
-summaryHeading,
-summaryText,
-skillsInput,
-accomplishments,
-experiences,
-credentialItems,
-volunteerItems,
-sectionOrder,
-]);
-
-const suggestedSkills = useMemo(
-() => makeSkillSuggestions(pathType, strengthsText, supportNeedsText),
-[pathType, strengthsText, supportNeedsText]
-);
-
-const skills = useMemo(() => {
-const typed = skillsInput
-.split(",")
-.map((item) => normalizeSkillLabel(item))
-.filter(Boolean);
-
-const merged = [...typed, ...suggestedSkills];
-return Array.from(new Set(merged)).slice(0, SKILL_LIMIT);
-}, [skillsInput, suggestedSkills]);
-
-const skillColumns = useMemo(() => splitSkillsIntoColumns(skills), [skills]);
-const detectedResumeType = useMemo(() => detectResumeType(sectionOrder), [sectionOrder]);
-
-const activeExperiences = useMemo(
-() =>
-experiences
-.filter((item) => hasExperienceContent(item))
-.map((item) => ({
-...item,
-bullets: item.bullets
-.filter((b) => b.text.trim())
-.map((bullet) => ({
-text: improveBulletText(
-bullet.text,
-pathType,
-item.roleTitle,
-targetRole
-),
-})),
-})),
-[experiences, pathType, targetRole]
-);
-
-const activeCredentials = useMemo(
-() => credentialItems.filter((item) => hasCredentialContent(item)),
-[credentialItems]
-);
-
-const activeVolunteer = useMemo(
-() =>
-volunteerItems
-.filter((item) => hasVolunteerContent(item))
-.map((item) => ({
-...item,
-bullets: item.bullets
-.filter((b) => b.text.trim())
-.map((bullet) => ({
-text: improveBulletText(
-bullet.text,
-pathType,
-item.roleTitle,
-targetRole
-),
-})),
-})),
-[volunteerItems, pathType, targetRole]
-);
-
-const guidedSummary = useMemo(() => {
-if (summaryText.trim()) return summaryText.trim();
-
-return createGuidedSummary(pathType, targetRole, supportNeedsText, strengthsText);
-}, [summaryText, pathType, targetRole, supportNeedsText, strengthsText]);
-
-function handleGenerateSummary() {
-const next = createGuidedSummary(pathType, targetRole, supportNeedsText, strengthsText);
-setSummaryText(next);
-}
-
-function handleGenerateSkills() {
-setSkillsInput(suggestedSkills.join(", "));
-}
-
-function addExperience() {
-setExperiences((prev) => [...prev, createDefaultExperience()]);
-}
-
-function updateExperience(index: number, field: keyof ExperienceItem, value: string | boolean) {
-setExperiences((prev) =>
-prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-);
-}
-
-function updateExperienceBullet(index: number, bulletIndex: number, value: string) {
-setExperiences((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-const bullets = item.bullets.map((bullet, j) =>
-j === bulletIndex ? { text: value } : bullet
-);
-return { ...item, bullets };
-})
-);
-}
-
-function addExperienceBullet(index: number) {
-setExperiences((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-if (item.bullets.length >= BULLET_LIMIT) return item;
-return { ...item, bullets: [...item.bullets, { text: "" }] };
-})
-);
-}
-
-function addCredential() {
-setCredentialItems((prev) => [...prev, createDefaultCredential()]);
-}
-
-function updateCredential(index: number, field: keyof CredentialItem, value: string | boolean) {
-setCredentialItems((prev) =>
-prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-);
-}
-
-function addVolunteer() {
-setVolunteerItems((prev) => [...prev, createDefaultVolunteer()]);
-}
-
-function updateVolunteer(index: number, field: keyof VolunteerItem, value: string | boolean) {
-setVolunteerItems((prev) =>
-prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-);
-}
-
-function updateVolunteerBullet(index: number, bulletIndex: number, value: string) {
-setVolunteerItems((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-const bullets = item.bullets.map((bullet, j) =>
-j === bulletIndex ? { text: value } : bullet
-);
-return { ...item, bullets };
-})
-);
-}
-
-function addVolunteerBullet(index: number) {
-setVolunteerItems((prev) =>
-prev.map((item, i) => {
-if (i !== index) return item;
-if (item.bullets.length >= BULLET_LIMIT) return item;
-return { ...item, bullets: [...item.bullets, { text: "" }] };
-})
-);
-}
-
-function moveSection(index: number, direction: "up" | "down") {
-setSectionOrder((prev) => moveItem(prev, index, direction));
-}
-
-async function handleSaveDraft() {
-setMessage("");
-
-try {
-setSaving(true);
-
-const draft = {
-fontFamily,
-fullName,
-phone,
-city,
-stateName,
-email,
-linkedinUrl,
-pathType,
-targetRole,
-supportNeedsText,
-strengthsText,
-summaryHeading,
-summaryText,
-skillsInput,
-accomplishments,
-experiences,
-credentialItems,
-volunteerItems,
-sectionOrder,
-};
-
-window.localStorage.setItem(RESUME_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-
-if (userId) {
-await supabase.from("user_activity").insert({
-user_id: userId,
-full_name: fullName || null,
-email: email || null,
-event_type: "draft_saved",
-tool_name: "new_opportunities_resume_generator",
-page_name: "/career-toolkit/new-opportunities-resume-generator",
-});
-}
-
-setMessage(
-"Resume draft saved locally in this browser. To place a resume on your public profile, upload your final resume from the Profile page."
-);
-} catch {
-setMessage("Unable to save your draft locally.");
-} finally {
-setSaving(false);
-}
-}
-
-function handlePrint() {
-const resumeNode = resumePrintRef.current;
-
-if (!resumeNode) {
-setMessage("Resume preview is not ready to print yet.");
-return;
-}
-
-const printWindow = window.open("", "_blank", "width=900,height=1200");
-
-if (!printWindow) {
-setMessage("Pop-up blocked. Please allow pop-ups and try again.");
-return;
-}
-
-const resumeHtml = resumeNode.innerHTML;
-
-printWindow.document.open();
-printWindow.document.write(`
-<!doctype html>
-<html>
-<head>
-<title>Resume Preview</title>
-<style>
-@page {
-size: letter;
-margin: 0.5in;
-}
-
-html, body {
-margin: 0;
-padding: 0;
-background: white;
-color: #111827;
-font-family: ${fontFamily}, serif;
-}
-
-body {
--webkit-print-color-adjust: exact;
-print-color-adjust: exact;
-}
-
-.print-resume {
-width: 100%;
-max-width: 100%;
-margin: 0 auto;
-padding-top: 90px;
-color: #111827;
-}
-
-.resumeHeader {
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-background: white;
-text-align: center;
-padding: 0 0 8px;
-}
-
-.resumeName {
-margin: 0 0 8px;
-font-size: 28px;
-font-weight: 700;
-color: #111827;
-}
-
-.resumeContact {
-margin: 0 0 6px;
-font-size: 14px;
-line-height: 1.5;
-color: #374151;
-word-break: break-word;
-}
-
-.resumeLinkedin {
-margin: 0;
-font-size: 14px;
-line-height: 1.5;
-color: #1d4ed8;
-word-break: break-word;
-}
-
-.resumeSection {
-margin-bottom: 20px;
-break-inside: auto;
-page-break-inside: auto;
-}
-
-.resumeSectionTitle {
-margin: 0 0 10px;
-text-align: center;
-font-size: 22px;
-font-weight: 700;
-color: #111827;
-}
-
-.resumeParagraph {
-margin: 0;
-font-size: 15px;
-line-height: 1.7;
-color: #111827;
-white-space: pre-wrap;
-word-break: break-word;
-}
-
-.skillsGrid {
-display: grid;
-grid-template-columns: 1fr 1fr 1fr;
-gap: 10px 24px;
-}
-
-.skillColumn {
-min-width: 0;
-}
-
-.skillItem {
-margin: 0 0 8px;
-font-size: 15px;
-line-height: 1.5;
-color: #111827;
-word-break: break-word;
-}
-
-.resumeEntry {
-margin-bottom: 16px;
-break-inside: avoid;
-page-break-inside: avoid;
-}
-
-.resumeEntryTop {
-display: flex;
-justify-content: space-between;
-align-items: flex-start;
-gap: 16px;
-margin-bottom: 6px;
-}
-
-.resumeEntryHeading {
-margin: 0;
-font-size: 16px;
-font-weight: 700;
-color: #111827;
-}
-
-.resumeEntrySubheading {
-margin: 4px 0 0;
-font-size: 15px;
-font-weight: 600;
-color: #111827;
-}
-
-.resumeEntryDates {
-margin: 0;
-font-size: 14px;
-color: #374151;
-white-space: nowrap;
-}
-
-.resumeBullet {
-margin: 4px 0;
-font-size: 15px;
-line-height: 1.65;
-color: #111827;
-white-space: pre-wrap;
-word-break: break-word;
-}
-</style>
-</head>
-<body>
-<div class="print-resume">
-${resumeHtml}
-</div>
-</body>
-</html>
-`);
-printWindow.document.close();
-printWindow.focus();
-
-setTimeout(() => {
-printWindow.print();
-}, 300);
-}
-
-function renderResumeSection(section: ResumeSectionKey) {
-switch (section) {
-case "summary":
-if (!guidedSummary && !summaryHeading) return null;
-return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>
-{summaryHeading || "Professional Summary"}
-</h3>
-<p style={styles.resumeParagraph}>
-{guidedSummary || "Add your professional summary here."}
-</p>
-</section>
-);
-
-case "skills":
-if (!skills.length) return null;
-return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>SKILLS</h3>
-<div className="skillsGrid" style={styles.skillsGrid}>
-{skillColumns.map((column, index) => (
-<div key={index} className="skillColumn" style={styles.skillColumn}>
-{column.map((skill, skillIndex) => (
-<p
-key={`${skill}-${skillIndex}`}
-className="skillItem"
-style={styles.skillItem}
->
-• {skill}
-</p>
-))}
-</div>
-))}
-</div>
-</section>
-);
-
-case "experience":
-if (!activeExperiences.length) return null;
-return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>EXPERIENCE / TRANSFERABLE EXPERIENCE</h3>
-{activeExperiences.map((item, index) => (
-<div key={index} className="resumeEntry" style={styles.resumeEntry}>
-<div className="resumeEntryTop" style={styles.resumeEntryTop}>
-<div>
-<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
-{item.companyName || "Organization / Setting"}{" "}
-{item.city || item.state
-? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
-: ""}
-</p>
-<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
-{item.roleTitle || "Role / Experience Title"}
-</p>
-</div>
-<p className="resumeEntryDates" style={styles.resumeEntryDates}>
-{formatDateRange(
-item.startMonth,
-item.startYear,
-item.endMonth,
-item.endYear,
-item.isPresent
-)}
-</p>
-</div>
-{item.bullets.map((bullet, bulletIndex) => (
-<p
-key={bulletIndex}
-className="resumeBullet"
-style={styles.resumeBullet}
->
-• {bullet.text}
-</p>
-))}
-</div>
-))}
-</section>
-);
-
-case "credentials":
-if (!activeCredentials.length) return null;
-return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>EDUCATION + CERTIFICATIONS</h3>
-{activeCredentials.map((item, index) => (
-<div key={index} className="resumeEntry" style={styles.resumeEntry}>
-<div className="resumeEntryTop" style={styles.resumeEntryTop}>
-<div>
-<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
-{item.organizationName || "School / Program / Organization"}{" "}
-{item.city || item.state
-? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
-: ""}
-</p>
-<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
-{item.credentialName || "Credential / Degree / Training"}
-{item.details ? ` | ${item.details}` : ""}
-</p>
-</div>
-<p className="resumeEntryDates" style={styles.resumeEntryDates}>
-{formatDateRange(
-item.startMonth,
-item.startYear,
-item.endMonth,
-item.endYear,
-item.isPresent
-)}
-</p>
-</div>
-</div>
-))}
-</section>
-);
-
-case "volunteer":
-if (!activeVolunteer.length) return null;
-return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>VOLUNTEER WORK</h3>
-{activeVolunteer.map((item, index) => (
-<div key={index} className="resumeEntry" style={styles.resumeEntry}>
-<div className="resumeEntryTop" style={styles.resumeEntryTop}>
-<div>
-<p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
-{item.organizationName || "Organization"}{" "}
-{item.city || item.state
-? `— ${[item.city, item.state].filter(Boolean).join(", ")}`
-: ""}
-</p>
-<p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
-{item.roleTitle || "Role Title"}
-</p>
-</div>
-<p className="resumeEntryDates" style={styles.resumeEntryDates}>
-{formatDateRange(
-item.startMonth,
-item.startYear,
-item.endMonth,
-item.endYear,
-item.isPresent
-)}
-</p>
-</div>
-{item.bullets.map((bullet, bulletIndex) => (
-<p
-key={bulletIndex}
-className="resumeBullet"
-style={styles.resumeBullet}
->
-• {bullet.text}
-</p>
-))}
-</div>
-))}
-</section>
-);
-
-case "accomplishments":
-if (!accomplishments.trim()) return null;
-return (
-<section className="resumeSection" style={styles.resumeSectionBlock}>
-<h3 style={styles.resumeSectionTitle}>ACCOMPLISHMENTS</h3>
-<p style={styles.resumeParagraph}>{accomplishments}</p>
-</section>
-);
-
-default:
-return null;
-}
-}
-
-if (loadingUser) {
-return (
-<main style={styles.page}>
-<div style={styles.centerWrap}>Loading...</div>
-</main>
-);
-}
-
-return (
-<main style={styles.page}>
-<style>{`
-@media print {
-@page {
-margin: 0.5in;
-}
-
-html,
-body {
-margin: 0 !important;
-padding: 0 !important;
-background: white !important;
-}
-
-body * {
-visibility: hidden !important;
-}
-
-.resumePrintWrap,
-.resumePrintWrap * {
-visibility: visible !important;
-}
-
-.resumePrintWrap {
-position: static !important;
-width: 100% !important;
-margin: 0 !important;
-padding: 0 !important;
-background: white !important;
-}
-
-.topBar {
-display: none !important;
-}
-
-.container {
-max-width: none !important;
-margin: 0 !important;
-padding: 0 !important;
-}
-
-main {
-min-height: auto !important;
-padding: 0 !important;
-margin: 0 !important;
-}
-
-.layout {
-display: block !important;
-}
-
-.rightCol {
-position: static !important;
-top: 0 !important;
-align-self: auto !important;
-margin: 0 !important;
-padding: 0 !important;
-}
-
-.previewCard {
-display: none !important;
-}
-
-.builderShell {
-display: block !important;
-}
-
-.builderLeft {
-display: none !important;
-}
-
-.resumePaper {
-width: 100% !important;
-max-width: none !important;
-min-height: auto !important;
-margin: 0 !important;
-padding: 0 !important;
-border: none !important;
-border-radius: 0 !important;
-box-shadow: none !important;
-background: white !important;
-overflow: visible !important;
-}
-
-.resumeHeader {
-break-inside: avoid !important;
-page-break-inside: avoid !important;
-}
-
-.resumeSection {
-break-inside: auto !important;
-page-break-inside: auto !important;
-}
-
-.builderTopRow,
-.siteButtons,
-.flashMessage {
-display: none !important;
-}
-}
-`}</style>
-
-<div className="container" style={styles.container}>
-<div className="topBar" style={styles.topBar}>
-<div>
-<p style={styles.kicker}>NEW OPPORTUNITIES RESUME GENERATOR</p>
-<h1 style={styles.pageTitle}>Create a fully guided resume draft.</h1>
-</div>
-
-<div style={styles.topSelectors}>
-<div style={styles.topSelectGroup}>
-<label style={styles.topSelectLabel}>Resume Font</label>
-<select
-value={fontFamily}
-onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
-style={styles.select}
->
-<option>Times New Roman</option>
-<option>Arial</option>
-<option>Calibri</option>
-</select>
-</div>
-</div>
-</div>
-
-<div className="builderShell layout" style={styles.layout}>
-<div className="builderLeft" style={styles.leftCol}>
-<section style={styles.card}>
-<p style={styles.cardKicker}>NEW OPPORTUNITIES</p>
-<h2 style={styles.cardTitle}>Build a stronger resume with guidance</h2>
-<p style={styles.previewHelp}>
-This builder is designed for veterans, stay-at-home parents /
-homemakers / caregivers, career restarts, reentry, and people building
-from little to no experience. It helps strengthen wording, generate a
-guided summary, and turn simple bullet points into more professional
-resume language.
-</p>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>PATH</p>
-<h2 style={styles.cardTitle}>Choose the background that fits you best</h2>
-
-<div style={styles.fieldWrap}>
-<label style={styles.inputLabel}>
-Which path best reflects your current experience?
-</label>
-<select
-value={pathType}
-onChange={(e) => setPathType(e.target.value as OpportunityPath)}
-style={styles.input}
->
-<option value="veteran">Veteran</option>
-<option value="caregiver">
-Stay-at-Home Parent / Homemaker / Caregiver
-</option>
-<option value="career-restart">Career Restart</option>
-<option value="reentry">Reentry</option>
-<option value="little-no-experience">Little to No Experience</option>
-</select>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.inputLabel}>Target Role</label>
-<input
-value={targetRole}
-onChange={(e) => setTargetRole(e.target.value)}
-style={styles.input}
-placeholder="Example: Customer Service Representative"
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.inputLabel}>What are you moving toward?</label>
-<textarea
-value={supportNeedsText}
-onChange={(e) => setSupportNeedsText(e.target.value)}
-style={styles.textarea}
-placeholder="Example: Looking for a stable role with growth potential where I can use communication, organization, and reliability."
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.inputLabel}>Your strengths or qualities</label>
-<textarea
-value={strengthsText}
-onChange={(e) => setStrengthsText(e.target.value)}
-style={styles.textarea}
-placeholder="Example: dependable, organized, patient, good communicator, quick learner"
-/>
-</div>
-
-<div style={styles.guidanceActions}>
-<button type="button" onClick={handleGenerateSummary} style={styles.smallButton}>
-Generate Guided Summary
-</button>
-<button type="button" onClick={handleGenerateSkills} style={styles.smallButton}>
-Generate Suggested Skills
-</button>
-</div>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>RESUME TYPE</p>
-<h2 style={styles.cardTitle}>
-You’re currently building a {detectedResumeType} Resume
-</h2>
-<p style={styles.previewHelp}>
-This updates automatically based on how you move your sections around.
-</p>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>HEADER</p>
-<h2 style={styles.cardTitle}>Resume Header</h2>
-
-<div style={styles.twoColForm}>
-<div>
-<label style={styles.inputLabel}>Full Name</label>
-<input
-value={fullName}
-onChange={(e) => setFullName(e.target.value)}
-style={styles.input}
-placeholder="Full Name"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>Phone Number</label>
-<input
-value={phone}
-onChange={(e) => setPhone(e.target.value)}
-style={styles.input}
-placeholder="Phone Number"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>City (optional)</label>
-<input
-value={city}
-onChange={(e) => setCity(e.target.value)}
-style={styles.input}
-placeholder="City"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>State (optional)</label>
-<input
-value={stateName}
-onChange={(e) => setStateName(e.target.value)}
-style={styles.input}
-placeholder="State"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>Email</label>
-<input
-value={email}
-onChange={(e) => setEmail(e.target.value)}
-style={styles.input}
-placeholder="Email"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>LinkedIn (optional)</label>
-<input
-value={linkedinUrl}
-onChange={(e) => setLinkedinUrl(e.target.value)}
-style={styles.input}
-placeholder="LinkedIn URL"
-/>
-</div>
-</div>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>SUMMARY</p>
-<h2 style={styles.cardTitle}>Guided Summary + Skills</h2>
-
-<label style={styles.inputLabel}>
-Summary Heading (optional, can be blank or "Professional Summary")
-</label>
-<input
-value={summaryHeading}
-onChange={(e) => setSummaryHeading(e.target.value)}
-style={styles.input}
-placeholder="Professional Summary"
-/>
-
-<p style={styles.helper}>
-Leave this blank if you want the tool to guide the summary for you. You
-can also edit the generated version after it fills in.
-</p>
-
-<label style={styles.inputLabel}>Summary</label>
-<textarea
-value={summaryText}
-onChange={(e) => setSummaryText(e.target.value)}
-style={styles.textarea}
-placeholder="Example: Dependable and adaptable candidate with strong transferable skills, communication strengths, and readiness for a new opportunity."
-/>
-
-<label style={styles.inputLabel}>Skills (comma separated, up to 9)</label>
-<input
-value={skillsInput}
-onChange={(e) => setSkillsInput(e.target.value)}
-style={styles.input}
-placeholder="Communication, Time Management, Dependability"
-/>
-
-<p style={styles.helper}>
-Tip: if you are not sure what to enter, use the “Generate Suggested
-Skills” button above.
-</p>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>EXPERIENCE</p>
-<h2 style={styles.cardTitle}>Experience / Transferable Experience</h2>
-
-{experiences.map((item, index) => (
-<div key={index} style={styles.sectionGroup}>
-<div style={styles.twoColForm}>
-<div>
-<label style={styles.inputLabel}>Organization / Setting</label>
-<input
-value={item.companyName}
-onChange={(e) =>
-updateExperience(index, "companyName", e.target.value)
-}
-style={styles.input}
-placeholder="Example: Home-Based Care, Community Program, Volunteer Setting"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>Role / Experience Title</label>
-<input
-value={item.roleTitle}
-onChange={(e) => updateExperience(index, "roleTitle", e.target.value)}
-style={styles.input}
-placeholder="Example: Caregiver, Household Manager, Volunteer Support"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>City</label>
-<input
-value={item.city}
-onChange={(e) => updateExperience(index, "city", e.target.value)}
-style={styles.input}
-placeholder="City"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>State</label>
-<input
-value={item.state}
-onChange={(e) => updateExperience(index, "state", e.target.value)}
-style={styles.input}
-placeholder="State"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>From Month</label>
-<select
-value={item.startMonth}
-onChange={(e) =>
-updateExperience(index, "startMonth", e.target.value)
-}
-style={styles.input}
->
-{MONTHS.map((month) => (
-<option key={month} value={month}>
-{month || "Select"}
-</option>
-))}
-</select>
-</div>
-<div>
-<label style={styles.inputLabel}>From Year</label>
-<input
-value={item.startYear}
-onChange={(e) =>
-updateExperience(index, "startYear", e.target.value)
-}
-style={styles.input}
-placeholder="2022"
-/>
-</div>
-</div>
-
-<label style={styles.checkboxRow}>
-<input
-type="checkbox"
-checked={item.isPresent}
-onChange={(e) => updateExperience(index, "isPresent", e.target.checked)}
-/>
-<span>I currently do this</span>
-</label>
-
-{!item.isPresent && (
-<div style={styles.twoColForm}>
-<div>
-<label style={styles.inputLabel}>To Month</label>
-<select
-value={item.endMonth}
-onChange={(e) =>
-updateExperience(index, "endMonth", e.target.value)
-}
-style={styles.input}
->
-{MONTHS.map((month) => (
-<option key={month} value={month}>
-{month || "Select"}
-</option>
-))}
-</select>
-</div>
-<div>
-<label style={styles.inputLabel}>To Year</label>
-<input
-value={item.endYear}
-onChange={(e) =>
-updateExperience(index, "endYear", e.target.value)
-}
-style={styles.input}
-placeholder="2024"
-/>
-</div>
-</div>
-)}
-
-<p style={styles.helper}>
-Add simple bullet points. This tool will strengthen the wording in the
-live preview and printed resume. Example: customer service, scheduled
-appointments, took care of family member, handled cash.
-</p>
-
-{item.bullets.map((bullet, bulletIndex) => (
-<div key={bulletIndex}>
-<label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
-<input
-value={bullet.text}
-onChange={(e) =>
-updateExperienceBullet(index, bulletIndex, e.target.value)
-}
-style={styles.input}
-placeholder="Describe what you did in simple words"
-/>
-{bullet.text.trim() ? (
-<p style={styles.guidedPreviewText}>
-Guided version:{" "}
-{improveBulletText(
-bullet.text,
-pathType,
-item.roleTitle,
-targetRole
-)}
-</p>
-) : null}
-</div>
-))}
-
-<button
-type="button"
-onClick={() => addExperienceBullet(index)}
-style={styles.smallButton}
->
-+ Add Bullet
-</button>
-</div>
-))}
-
-<button type="button" onClick={addExperience} style={styles.smallButton}>
-+ Add Experience
-</button>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>EDUCATION + CERTIFICATIONS</p>
-<h2 style={styles.cardTitle}>Education, training, and credentials</h2>
-
-{credentialItems.map((item, index) => (
-<div key={index} style={styles.sectionGroup}>
-<div style={styles.twoColForm}>
-<div>
-<label style={styles.inputLabel}>School / Program / Organization</label>
-<input
-value={item.organizationName}
-onChange={(e) =>
-updateCredential(index, "organizationName", e.target.value)
-}
-style={styles.input}
-placeholder="School, training program, certification provider"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>Credential / Degree / Certificate</label>
-<input
-value={item.credentialName}
-onChange={(e) =>
-updateCredential(index, "credentialName", e.target.value)
-}
-style={styles.input}
-placeholder="CNA Training, GED, Certificate, Degree"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>City</label>
-<input
-value={item.city}
-onChange={(e) => updateCredential(index, "city", e.target.value)}
-style={styles.input}
-placeholder="City"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>State</label>
-<input
-value={item.state}
-onChange={(e) => updateCredential(index, "state", e.target.value)}
-style={styles.input}
-placeholder="State"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>From Month</label>
-<select
-value={item.startMonth}
-onChange={(e) =>
-updateCredential(index, "startMonth", e.target.value)
-}
-style={styles.input}
->
-{MONTHS.map((month) => (
-<option key={month} value={month}>
-{month || "Select"}
-</option>
-))}
-</select>
-</div>
-<div>
-<label style={styles.inputLabel}>From Year</label>
-<input
-value={item.startYear}
-onChange={(e) =>
-updateCredential(index, "startYear", e.target.value)
-}
-style={styles.input}
-placeholder="2022"
-/>
-</div>
-</div>
-
-<label style={styles.checkboxRow}>
-<input
-type="checkbox"
-checked={item.isPresent}
-onChange={(e) => updateCredential(index, "isPresent", e.target.checked)}
-/>
-<span>I am currently completing this</span>
-</label>
-
-{!item.isPresent && (
-<div style={styles.twoColForm}>
-<div>
-<label style={styles.inputLabel}>To Month</label>
-<select
-value={item.endMonth}
-onChange={(e) =>
-updateCredential(index, "endMonth", e.target.value)
-}
-style={styles.input}
->
-{MONTHS.map((month) => (
-<option key={month} value={month}>
-{month || "Select"}
-</option>
-))}
-</select>
-</div>
-<div>
-<label style={styles.inputLabel}>To Year</label>
-<input
-value={item.endYear}
-onChange={(e) =>
-updateCredential(index, "endYear", e.target.value)
-}
-style={styles.input}
-placeholder="2024"
-/>
-</div>
-</div>
-)}
-
-<label style={styles.inputLabel}>Extra Details (optional)</label>
-<input
-value={item.details}
-onChange={(e) => updateCredential(index, "details", e.target.value)}
-style={styles.input}
-placeholder="Example: clinical practice, coursework, workforce readiness program"
-/>
-</div>
-))}
-
-<button type="button" onClick={addCredential} style={styles.smallButton}>
-+ Add Education / Certification
-</button>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>VOLUNTEER</p>
-<h2 style={styles.cardTitle}>Volunteer Work</h2>
-
-{volunteerItems.map((item, index) => (
-<div key={index} style={styles.sectionGroup}>
-<div style={styles.twoColForm}>
-<div>
-<label style={styles.inputLabel}>Organization</label>
-<input
-value={item.organizationName}
-onChange={(e) =>
-updateVolunteer(index, "organizationName", e.target.value)
-}
-style={styles.input}
-placeholder="Organization Name"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>Role</label>
-<input
-value={item.roleTitle}
-onChange={(e) => updateVolunteer(index, "roleTitle", e.target.value)}
-style={styles.input}
-placeholder="Role Title"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>City</label>
-<input
-value={item.city}
-onChange={(e) => updateVolunteer(index, "city", e.target.value)}
-style={styles.input}
-placeholder="City"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>State</label>
-<input
-value={item.state}
-onChange={(e) => updateVolunteer(index, "state", e.target.value)}
-style={styles.input}
-placeholder="State"
-/>
-</div>
-<div>
-<label style={styles.inputLabel}>From Month</label>
-<select
-value={item.startMonth}
-onChange={(e) =>
-updateVolunteer(index, "startMonth", e.target.value)
-}
-style={styles.input}
->
-{MONTHS.map((month) => (
-<option key={month} value={month}>
-{month || "Select"}
-</option>
-))}
-</select>
-</div>
-<div>
-<label style={styles.inputLabel}>From Year</label>
-<input
-value={item.startYear}
-onChange={(e) =>
-updateVolunteer(index, "startYear", e.target.value)
-}
-style={styles.input}
-placeholder="2020"
-/>
-</div>
-</div>
-
-<label style={styles.checkboxRow}>
-<input
-type="checkbox"
-checked={item.isPresent}
-onChange={(e) => updateVolunteer(index, "isPresent", e.target.checked)}
-/>
-<span>I currently volunteer here</span>
-</label>
-
-{!item.isPresent && (
-<div style={styles.twoColForm}>
-<div>
-<label style={styles.inputLabel}>To Month</label>
-<select
-value={item.endMonth}
-onChange={(e) =>
-updateVolunteer(index, "endMonth", e.target.value)
-}
-style={styles.input}
->
-{MONTHS.map((month) => (
-<option key={month} value={month}>
-{month || "Select"}
-</option>
-))}
-</select>
-</div>
-<div>
-<label style={styles.inputLabel}>To Year</label>
-<input
-value={item.endYear}
-onChange={(e) =>
-updateVolunteer(index, "endYear", e.target.value)
-}
-style={styles.input}
-placeholder="2022"
-/>
-</div>
-</div>
-)}
-
-<p style={styles.helper}>
-Add simple bullets here too. This tool will strengthen the wording in
-the preview.
-</p>
-
-{item.bullets.map((bullet, bulletIndex) => (
-<div key={bulletIndex}>
-<label style={styles.inputLabel}>Bullet {bulletIndex + 1}</label>
-<input
-value={bullet.text}
-onChange={(e) =>
-updateVolunteerBullet(index, bulletIndex, e.target.value)
-}
-style={styles.input}
-placeholder="Describe your volunteer work"
-/>
-{bullet.text.trim() ? (
-<p style={styles.guidedPreviewText}>
-Guided version:{" "}
-{improveBulletText(
-bullet.text,
-pathType,
-item.roleTitle,
-targetRole
-)}
-</p>
-) : null}
-</div>
-))}
-
-<button
-type="button"
-onClick={() => addVolunteerBullet(index)}
-style={styles.smallButton}
->
-+ Add Bullet
-</button>
-</div>
-))}
-
-<button type="button" onClick={addVolunteer} style={styles.smallButton}>
-+ Add Volunteer Work
-</button>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>ACCOMPLISHMENTS</p>
-<h2 style={styles.cardTitle}>Accomplishments</h2>
-<label style={styles.inputLabel}>Accomplishments</label>
-<textarea
-value={accomplishments}
-onChange={(e) => setAccomplishments(e.target.value)}
-style={styles.textarea}
-placeholder="Awards, recognitions, milestones, program completions, achievements, leadership examples"
-/>
-</section>
-
-<section style={styles.card}>
-<p style={styles.cardKicker}>ORDER</p>
-<h2 style={styles.cardTitle}>Move Resume Sections</h2>
-
-{sectionOrder.map((section, index) => (
-<div key={section} style={styles.orderRow}>
-<span style={styles.orderLabel}>
-{section === "summary"
-? "Summary"
-: section === "skills"
-? "Skills"
-: section === "experience"
-? "Experience / Transferable Experience"
-: section === "credentials"
-? "Education + Certifications"
-: section === "volunteer"
-? "Volunteer"
-: "Accomplishments"}
-</span>
-<div style={styles.orderButtons}>
-<button
-type="button"
-onClick={() => moveSection(index, "up")}
-style={styles.orderButton}
->
-Up
-</button>
-<button
-type="button"
-onClick={() => moveSection(index, "down")}
-style={styles.orderButton}
->
-Down
-</button>
-</div>
-</div>
-))}
-</section>
-
-{message ? (
-<div className="flashMessage" style={styles.messageBox}>
-{message}
-</div>
-) : null}
-
-<div className="siteButtons" style={styles.footerButtons}>
-<button
-type="button"
-onClick={handleSaveDraft}
-disabled={saving}
-style={styles.saveButton}
->
-{saving ? "Saving..." : "Save Draft"}
-</button>
-<button type="button" onClick={handlePrint} style={styles.printButton}>
-Print Resume
-</button>
-<a href="/career-toolkit" style={styles.backButton}>
-Back to Career ToolKit
-</a>
-</div>
-</div>
-
-<div className="resumePrintWrap rightCol" style={styles.rightCol}>
-<div className="builderTopRow previewCard" style={styles.previewCard}>
-<p style={styles.cardKicker}>LIVE PREVIEW</p>
-<h2 style={styles.cardTitle}>Resume Preview</h2>
-<p style={styles.previewHelp}>
-The preview stays visible while you build and strengthens simple
-summary and bullet language as you type.
-</p>
-<p style={styles.resumeTypePreview}>
-Current layout: <strong>{detectedResumeType}</strong>
-</p>
-</div>
-
-<div
-ref={resumePrintRef}
-className="resumePaper"
-style={{
-...styles.resumePaper,
-fontFamily,
-}}
->
-<div className="resumeHeader" style={styles.resumeHeader}>
-<h1 className="resumeName" style={styles.resumeName}>
-{fullName || "Your Name"}
-</h1>
-<p className="resumeContact" style={styles.resumeContact}>
-{[phone, email, [city, stateName].filter(Boolean).join(", ")]
-.filter(Boolean)
-.join(" • ")}
-</p>
-{linkedinUrl ? (
-<p className="resumeLinkedin" style={styles.resumeLinkedin}>
-{linkedinUrl}
-</p>
-) : null}
-</div>
-
-{sectionOrder.map((section) => (
-<div key={section}>{renderResumeSection(section)}</div>
-))}
-</div>
-</div>
-</div>
-</div>
-</main>
-);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [userId, setUserId] = useState("");
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const openTrackedRef = useRef(false);
+  const resumePrintRef = useRef<HTMLDivElement>(null);
+
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [aiLoading, setAiLoading] = useState<string | null>(null);
+
+  const [fontFamily, setFontFamily] = useState<ResumeFont>("Arial");
+  const [layoutChoice, setLayoutChoice] = useState<ResumeLayout>("Skills First");
+
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [email, setEmail] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+
+  const [pathType, setPathType] = useState<OpportunityPath>("reentry");
+  const [targetRole, setTargetRole] = useState("");
+  const [strengthsText, setStrengthsText] = useState("");
+  const [thingsDoneText, setThingsDoneText] = useState("");
+  const [workPreferences, setWorkPreferences] = useState("");
+
+  const [summaryText, setSummaryText] = useState("");
+  const [skillsInput, setSkillsInput] = useState("");
+  const [accomplishments, setAccomplishments] = useState("");
+
+  const [experiences, setExperiences] = useState<ExperienceItem[]>([
+    createExperience(),
+  ]);
+
+  const [credentials, setCredentials] = useState<CredentialItem[]>([
+    createCredential(),
+  ]);
+
+  useEffect(() => {
+    async function loadUser() {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error || !data.user) {
+        setLoadingUser(false);
+        return;
+      }
+
+      setUserId(data.user.id);
+
+      const { data: profile } = await supabase
+        .from("candidate_profiles")
+        .select("full_name, phone, city, state, email, linkedin_url, referral_code")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      setReferralCode(profile?.referral_code || null);
+
+      if (!draftLoaded) {
+        setFullName(profile?.full_name || "");
+        setPhone(profile?.phone || "");
+        setCity(profile?.city || "");
+        setStateName(profile?.state || "");
+        setEmail(profile?.email || data.user.email || "");
+        setLinkedinUrl(profile?.linkedin_url || "");
+      }
+
+      if (!openTrackedRef.current) {
+        openTrackedRef.current = true;
+
+        const { error: activityError } = await supabase.from("user_activity").insert({
+          user_id: data.user.id,
+          full_name: profile?.full_name || null,
+          email: profile?.email || data.user.email || null,
+          referral_code: profile?.referral_code || null,
+          event_type: "tool_opened",
+          tool_name: "new_opportunities_resume_generator",
+          page_name: "/career-toolkit/new-opportunities-resume-generator",
+        });
+
+        if (activityError) {
+          console.error("New Opportunities Resume Generator tracking error:", activityError);
+        }
+      }
+
+      setLoadingUser(false);
+    }
+
+    void loadUser();
+  }, [draftLoaded]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+
+      if (raw) {
+        const draft = JSON.parse(raw);
+
+        setFontFamily(draft.fontFamily || "Arial");
+        setLayoutChoice(draft.layoutChoice || "Skills First");
+        setFullName(draft.fullName || "");
+        setPhone(draft.phone || "");
+        setCity(draft.city || "");
+        setStateName(draft.stateName || "");
+        setEmail(draft.email || "");
+        setLinkedinUrl(draft.linkedinUrl || "");
+        setPathType(draft.pathType || "reentry");
+        setTargetRole(draft.targetRole || "");
+        setStrengthsText(draft.strengthsText || "");
+        setThingsDoneText(draft.thingsDoneText || "");
+        setWorkPreferences(draft.workPreferences || "");
+        setSummaryText(draft.summaryText || "");
+        setSkillsInput(draft.skillsInput || "");
+        setAccomplishments(draft.accomplishments || "");
+
+        setExperiences(
+          Array.isArray(draft.experiences) && draft.experiences.length
+            ? draft.experiences.map((item: ExperienceItem) => ({
+                ...createExperience(),
+                ...item,
+                sourceType: item.sourceType || "Paid Job",
+                bullets:
+                  Array.isArray(item.bullets) && item.bullets.length
+                    ? item.bullets
+                    : createExperience().bullets,
+              }))
+            : [createExperience()]
+        );
+
+        setCredentials(
+          Array.isArray(draft.credentials) && draft.credentials.length
+            ? draft.credentials
+            : [createCredential()]
+        );
+      }
+    } catch {
+      // Ignore a bad local draft.
+    } finally {
+      setDraftLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!draftLoaded) return;
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        fontFamily,
+        layoutChoice,
+        fullName,
+        phone,
+        city,
+        stateName,
+        email,
+        linkedinUrl,
+        pathType,
+        targetRole,
+        strengthsText,
+        thingsDoneText,
+        workPreferences,
+        summaryText,
+        skillsInput,
+        accomplishments,
+        experiences,
+        credentials,
+      })
+    );
+  }, [
+    draftLoaded,
+    fontFamily,
+    layoutChoice,
+    fullName,
+    phone,
+    city,
+    stateName,
+    email,
+    linkedinUrl,
+    pathType,
+    targetRole,
+    strengthsText,
+    thingsDoneText,
+    workPreferences,
+    summaryText,
+    skillsInput,
+    accomplishments,
+    experiences,
+    credentials,
+  ]);
+
+  const skills = useMemo(() => normalizeSkills(skillsInput), [skillsInput]);
+
+  const activeExperiences = useMemo(
+    () => experiences.filter(hasExperience),
+    [experiences]
+  );
+
+  const activeCredentials = useMemo(
+    () => credentials.filter(hasCredential),
+    [credentials]
+  );
+
+  const sectionOrder = useMemo(
+    () => buildSectionOrder(layoutChoice),
+    [layoutChoice]
+  );
+
+  const progress = useMemo(() => {
+    let points = 0;
+    const total = 7;
+
+    if (fullName.trim() && (phone.trim() || email.trim())) points += 1;
+    if (targetRole.trim()) points += 1;
+    if (strengthsText.trim() || thingsDoneText.trim()) points += 1;
+    if (summaryText.trim()) points += 1;
+    if (skills.length >= 3) points += 1;
+    if (activeExperiences.length) points += 1;
+    if (activeCredentials.length) points += 1;
+
+    return Math.round((points / total) * 100);
+  }, [
+    fullName,
+    phone,
+    email,
+    targetRole,
+    strengthsText,
+    thingsDoneText,
+    summaryText,
+    skills,
+    activeExperiences,
+    activeCredentials,
+  ]);
+
+  function updateExperience(
+    index: number,
+    field: keyof ExperienceItem,
+    value: string | boolean
+  ) {
+    setExperiences((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    );
+  }
+
+  function updateExperienceBullet(
+    index: number,
+    bulletIndex: number,
+    value: string
+  ) {
+    setExperiences((prev) =>
+      prev.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+
+        return {
+          ...item,
+          bullets: item.bullets.map((bullet, currentBulletIndex) =>
+            currentBulletIndex === bulletIndex ? { text: value } : bullet
+          ),
+        };
+      })
+    );
+  }
+
+  function addExperienceBullet(index: number) {
+    setExperiences((prev) =>
+      prev.map((item, itemIndex) => {
+        if (itemIndex !== index || item.bullets.length >= BULLET_LIMIT) return item;
+        return { ...item, bullets: [...item.bullets, { text: "" }] };
+      })
+    );
+  }
+
+  function updateCredential(
+    index: number,
+    field: keyof CredentialItem,
+    value: string
+  ) {
+    setCredentials((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    );
+  }
+
+  async function callAi(action: string, extra: Record<string, unknown> = {}) {
+    const response = await fetch("/api/new-opportunities-resume-ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action,
+        pathType,
+        targetRole,
+        strengthsText,
+        thingsDoneText,
+        workPreferences,
+        summaryText,
+        skillsInput,
+        experiences,
+        credentials,
+        ...extra,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || "AI assistance is unavailable right now.");
+    }
+
+    return data;
+  }
+
+  async function handleFindSkills() {
+    try {
+      setAiLoading("skills");
+      setMessage("");
+
+      const data = await callAi("skills");
+      const nextSkills = Array.isArray(data?.skills)
+        ? data.skills.slice(0, SKILL_LIMIT).join(", ")
+        : "";
+
+      if (!nextSkills) throw new Error("No skill suggestions were returned.");
+
+      setSkillsInput(nextSkills);
+      setMessage("Skills identified. Keep the ones that truly fit you.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to identify skills.");
+    } finally {
+      setAiLoading(null);
+    }
+  }
+
+  async function handleWriteSummary() {
+    try {
+      setAiLoading("summary");
+      setMessage("");
+
+      const data = await callAi("summary");
+
+      if (!data?.summary) throw new Error("No summary was returned.");
+
+      setSummaryText(String(data.summary));
+      setMessage("Summary created. Review it and make sure it sounds like you.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to create summary.");
+    } finally {
+      setAiLoading(null);
+    }
+  }
+
+  async function handleStrengthenBullet(
+    experienceIndex: number,
+    bulletIndex: number
+  ) {
+    const bullet = experiences[experienceIndex]?.bullets[bulletIndex]?.text || "";
+
+    if (!bullet.trim()) {
+      setMessage("Type what you did in simple words first.");
+      return;
+    }
+
+    try {
+      setAiLoading(`bullet-${experienceIndex}-${bulletIndex}`);
+      setMessage("");
+
+      const item = experiences[experienceIndex];
+      const data = await callAi("bullet", {
+        bullet,
+        sourceType: item.sourceType,
+        organizationName: item.organizationName,
+        roleTitle: item.roleTitle,
+      });
+
+      if (!data?.bullet) throw new Error("No stronger bullet was returned.");
+
+      updateExperienceBullet(experienceIndex, bulletIndex, String(data.bullet));
+      setMessage("Bullet strengthened without adding experience you did not provide.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to strengthen bullet.");
+    } finally {
+      setAiLoading(null);
+    }
+  }
+
+  async function handleBuildStarterResume() {
+    try {
+      setAiLoading("starter");
+      setMessage("");
+
+      const data = await callAi("starter");
+
+      if (data?.summary) setSummaryText(String(data.summary));
+
+      if (Array.isArray(data?.skills)) {
+        setSkillsInput(data.skills.slice(0, SKILL_LIMIT).join(", "));
+      }
+
+      if (Array.isArray(data?.experienceBullets)) {
+        setExperiences((prev) =>
+          prev.map((item, experienceIndex) => ({
+            ...item,
+            bullets: item.bullets.map((bullet, bulletIndex) => {
+              const replacement =
+                data.experienceBullets?.[experienceIndex]?.[bulletIndex];
+
+              return replacement?.trim()
+                ? { text: String(replacement).trim() }
+                : bullet;
+            }),
+          }))
+        );
+      }
+
+      setMessage(
+        "Starter resume built. Review every section and keep only what is accurate."
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to build the starter resume right now."
+      );
+    } finally {
+      setAiLoading(null);
+    }
+  }
+
+  async function handleSaveDraft() {
+    try {
+      setSaving(true);
+      setMessage("");
+
+      const draft = {
+        fontFamily,
+        layoutChoice,
+        fullName,
+        phone,
+        city,
+        stateName,
+        email,
+        linkedinUrl,
+        pathType,
+        targetRole,
+        strengthsText,
+        thingsDoneText,
+        workPreferences,
+        summaryText,
+        skillsInput,
+        accomplishments,
+        experiences,
+        credentials,
+      };
+
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+
+      if (userId) {
+        const { error: activityError } = await supabase.from("user_activity").insert({
+          user_id: userId,
+          full_name: fullName || null,
+          email: email || null,
+          referral_code: referralCode,
+          event_type: "draft_saved",
+          tool_name: "new_opportunities_resume_generator",
+          page_name: "/career-toolkit/new-opportunities-resume-generator",
+        });
+
+        if (activityError) {
+          console.error("New Opportunities save tracking error:", activityError);
+        }
+      }
+
+      setMessage("Resume draft saved locally in this browser.");
+    } catch {
+      setMessage("Unable to save your resume draft.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handlePrint() {
+    const node = resumePrintRef.current;
+
+    if (!node) {
+      setMessage("Resume preview is not ready yet.");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=1200");
+
+    if (!printWindow) {
+      setMessage("Pop-up blocked. Please allow pop-ups and try again.");
+      return;
+    }
+
+    const html = node.innerHTML;
+
+    printWindow.document.open();
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${fullName || "Resume"} - Resume</title>
+          <style>
+            @page { size: letter; margin: 0.45in 0.5in; }
+            * { box-sizing: border-box; }
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: white;
+              color: #111827;
+              font-family: ${fontFamily}, Arial, sans-serif;
+            }
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .resumePaper {
+              width: 100%;
+              min-height: 0;
+              padding: 0;
+              margin: 0;
+              border: 0;
+              box-shadow: none;
+            }
+            .resumeHeader {
+              margin: 0 0 18px;
+              padding: 0 0 12px;
+              border-bottom: 2px solid #1677FF;
+            }
+            .resumeName {
+              margin: 0 0 5px;
+              font-size: 25px;
+              line-height: 1.1;
+              font-weight: 800;
+              color: #0F172A;
+            }
+            .resumeContact,
+            .resumeLinkedin {
+              margin: 2px 0;
+              font-size: 10.5pt;
+              line-height: 1.35;
+              color: #475569;
+            }
+            .resumeLinkedin { color: #145fad; }
+            .resumeSection { margin: 0 0 16px; }
+            .resumeSectionTitle {
+              margin: 0 0 7px;
+              font-size: 12pt;
+              line-height: 1.2;
+              font-weight: 800;
+              letter-spacing: .04em;
+              color: #0F172A;
+              border-bottom: 1px solid #CBD5E1;
+              padding-bottom: 4px;
+            }
+            .resumeParagraph {
+              margin: 0;
+              font-size: 10.5pt;
+              line-height: 1.48;
+              color: #1F2937;
+            }
+            .skillsGrid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 4px 16px;
+            }
+            .skillItem {
+              margin: 0;
+              font-size: 10.5pt;
+              line-height: 1.35;
+            }
+            .resumeEntry {
+              margin-bottom: 12px;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .resumeEntryTop {
+              display: flex;
+              justify-content: space-between;
+              gap: 16px;
+              align-items: flex-start;
+              margin-bottom: 4px;
+            }
+            .resumeEntryHeading {
+              margin: 0;
+              font-size: 10.8pt;
+              font-weight: 800;
+            }
+            .resumeEntrySubheading {
+              margin: 2px 0 0;
+              font-size: 10.4pt;
+              font-weight: 600;
+              color: #334155;
+            }
+            .resumeEntryDates {
+              margin: 0;
+              font-size: 9.5pt;
+              color: #64748B;
+              white-space: nowrap;
+            }
+            .resumeBullet {
+              margin: 3px 0 3px 16px;
+              font-size: 10.2pt;
+              line-height: 1.42;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="resumePaper">${html}</div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  }
+
+  function renderSection(section: string) {
+    if (section === "summary") {
+      if (!summaryText.trim()) return null;
+
+      return (
+        <section className="resumeSection" style={styles.resumeSection}>
+          <h3 className="resumeSectionTitle" style={styles.resumeSectionTitle}>
+            PROFESSIONAL SUMMARY
+          </h3>
+          <p className="resumeParagraph" style={styles.resumeParagraph}>
+            {summaryText}
+          </p>
+        </section>
+      );
+    }
+
+    if (section === "skills") {
+      if (!skills.length) return null;
+
+      return (
+        <section className="resumeSection" style={styles.resumeSection}>
+          <h3 className="resumeSectionTitle" style={styles.resumeSectionTitle}>
+            CORE SKILLS
+          </h3>
+
+          <div className="skillsGrid" style={styles.skillsGrid}>
+            {skills.map((skill) => (
+              <p key={skill} className="skillItem" style={styles.skillItem}>
+                • {skill}
+              </p>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (section === "experience") {
+      if (!activeExperiences.length) return null;
+
+      return (
+        <section className="resumeSection" style={styles.resumeSection}>
+          <h3 className="resumeSectionTitle" style={styles.resumeSectionTitle}>
+            EXPERIENCE
+          </h3>
+
+          {activeExperiences.map((item, index) => (
+            <div className="resumeEntry" style={styles.resumeEntry} key={index}>
+              <div className="resumeEntryTop" style={styles.resumeEntryTop}>
+                <div>
+                  <p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+                    {item.organizationName || item.sourceType}
+                    {item.city || item.state
+                      ? ` — ${[item.city, item.state].filter(Boolean).join(", ")}`
+                      : ""}
+                  </p>
+                  <p
+                    className="resumeEntrySubheading"
+                    style={styles.resumeEntrySubheading}
+                  >
+                    {item.roleTitle || item.sourceType}
+                  </p>
+                </div>
+
+                <p className="resumeEntryDates" style={styles.resumeEntryDates}>
+                  {formatDateRange(item)}
+                </p>
+              </div>
+
+              {item.bullets
+                .filter((bullet) => bullet.text.trim())
+                .map((bullet, bulletIndex) => (
+                  <p
+                    key={bulletIndex}
+                    className="resumeBullet"
+                    style={styles.resumeBullet}
+                  >
+                    • {bullet.text}
+                  </p>
+                ))}
+            </div>
+          ))}
+        </section>
+      );
+    }
+
+    if (section === "education") {
+      if (!activeCredentials.length) return null;
+
+      return (
+        <section className="resumeSection" style={styles.resumeSection}>
+          <h3 className="resumeSectionTitle" style={styles.resumeSectionTitle}>
+            EDUCATION + TRAINING
+          </h3>
+
+          {activeCredentials.map((item, index) => (
+            <div className="resumeEntry" style={styles.resumeEntry} key={index}>
+              <div className="resumeEntryTop" style={styles.resumeEntryTop}>
+                <div>
+                  <p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+                    {item.organizationName || "School / Program"}
+                    {item.city || item.state
+                      ? ` — ${[item.city, item.state].filter(Boolean).join(", ")}`
+                      : ""}
+                  </p>
+                  <p
+                    className="resumeEntrySubheading"
+                    style={styles.resumeEntrySubheading}
+                  >
+                    {[item.credentialName, item.details].filter(Boolean).join(" | ")}
+                  </p>
+                </div>
+
+                {item.year ? (
+                  <p className="resumeEntryDates" style={styles.resumeEntryDates}>
+                    {item.year}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </section>
+      );
+    }
+
+    if (section === "accomplishments") {
+      if (!accomplishments.trim()) return null;
+
+      return (
+        <section className="resumeSection" style={styles.resumeSection}>
+          <h3 className="resumeSectionTitle" style={styles.resumeSectionTitle}>
+            ADDITIONAL STRENGTHS
+          </h3>
+          <p className="resumeParagraph" style={styles.resumeParagraph}>
+            {accomplishments}
+          </p>
+        </section>
+      );
+    }
+
+    return null;
+  }
+
+  if (loadingUser) {
+    return (
+      <main style={styles.page}>
+        <div style={styles.loading}>Loading your builder...</div>
+      </main>
+    );
+  }
+
+  return (
+    <main style={styles.page}>
+      <style>{`
+        @media (max-width: 1120px) {
+          .newopp-layout {
+            grid-template-columns: 1fr !important;
+          }
+
+          .newopp-preview {
+            position: static !important;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .newopp-page {
+            padding: 18px 14px 50px !important;
+          }
+
+          .newopp-two-col,
+          .newopp-layout-choices,
+          .newopp-actions {
+            grid-template-columns: 1fr !important;
+          }
+
+          .newopp-hero {
+            grid-template-columns: 1fr !important;
+          }
+
+          .newopp-progress {
+            text-align: left !important;
+          }
+
+          .newopp-ai-row {
+            align-items: flex-start !important;
+            flex-direction: column !important;
+          }
+
+          .newopp-resume-paper {
+            padding: 30px 24px !important;
+          }
+        }
+      `}</style>
+
+      <div className="newopp-page" style={styles.pageInner}>
+        <section className="newopp-hero" style={styles.hero}>
+          <div>
+            <p style={styles.heroKicker}>NEW OPPORTUNITIES RESUME BUILDER</p>
+            <h1 style={styles.heroTitle}>
+              You have more experience than you think.
+            </h1>
+            <p style={styles.heroText}>
+              Start with simple answers. HireMinds helps turn work assignments,
+              caregiving, training, volunteer work, life experience, and traditional
+              jobs into a professional resume without making anything up.
+            </p>
+          </div>
+
+          <div className="newopp-progress" style={styles.progressWrap}>
+            <span style={styles.progressLabel}>RESUME PROGRESS</span>
+            <strong style={styles.progressNumber}>{progress}%</strong>
+            <div style={styles.progressTrack}>
+              <span style={{ ...styles.progressFill, width: `${progress}%` }} />
+            </div>
+            <span style={styles.progressHint}>You do not need to fill in everything.</span>
+          </div>
+        </section>
+
+        <div className="newopp-layout" style={styles.layout}>
+          <div>
+            <section style={styles.panel}>
+              <div style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.stepLabel}>CHOOSE YOUR STARTING POINT</p>
+                  <h2 style={styles.sectionTitle}>What best fits your situation?</h2>
+                </div>
+              </div>
+
+              <div style={styles.pathPills}>
+                {(Object.keys(PATH_LABELS) as OpportunityPath[]).map((path) => (
+                  <button
+                    key={path}
+                    type="button"
+                    onClick={() => setPathType(path)}
+                    style={{
+                      ...styles.pathPill,
+                      ...(pathType === path ? styles.pathPillActive : {}),
+                    }}
+                  >
+                    {PATH_LABELS[path]}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section style={styles.panel}>
+              <div style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.stepLabel}>PICK A RESUME DIRECTION</p>
+                  <h2 style={styles.sectionTitle}>Choose one of 3 simple layouts</h2>
+                  <p style={styles.sectionCopy}>
+                    No moving sections around. Pick the version that best supports your
+                    background and HireMinds handles the order.
+                  </p>
+                </div>
+              </div>
+
+              <div className="newopp-layout-choices" style={styles.layoutChoices}>
+                {LAYOUTS.map((option) => {
+                  const selected = layoutChoice === option.name;
+
+                  return (
+                    <button
+                      key={option.name}
+                      type="button"
+                      onClick={() => setLayoutChoice(option.name)}
+                      style={{
+                        ...styles.layoutChoice,
+                        ...(selected ? styles.layoutChoiceSelected : {}),
+                      }}
+                    >
+                      <span style={styles.layoutKicker}>{option.kicker}</span>
+                      <strong style={styles.layoutName}>{option.name}</strong>
+                      <span style={styles.layoutDescription}>{option.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section style={styles.panel}>
+              <div style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.stepLabel}>QUICK START</p>
+                  <h2 style={styles.sectionTitle}>Tell us where you want to go</h2>
+                  <p style={styles.sectionCopy}>
+                    Plain language is fine. You do not need resume words.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleBuildStarterResume}
+                  disabled={aiLoading !== null}
+                  style={{
+                    ...styles.bigAiButton,
+                    ...(aiLoading !== null ? styles.disabledButton : {}),
+                  }}
+                >
+                  {aiLoading === "starter" ? "Building..." : "✦ Build My Starter Resume"}
+                </button>
+              </div>
+
+              <div className="newopp-two-col" style={styles.twoCol}>
+                <Field
+                  label="Job or type of work you want"
+                  value={targetRole}
+                  onChange={setTargetRole}
+                  placeholder="Example: Warehouse Associate, Customer Service, Maintenance"
+                />
+
+                <Field
+                  label="What kind of work are you looking for?"
+                  value={workPreferences}
+                  onChange={setWorkPreferences}
+                  placeholder="Example: stable schedule, hands-on work, room to grow"
+                />
+              </div>
+
+              <TextArea
+                label="What are you good at?"
+                helper="Use everyday words: good with people, organized, fixing things, cleaning, cooking, following instructions, staying calm..."
+                value={strengthsText}
+                onChange={setStrengthsText}
+                placeholder="Example: dependable, learn fast, good with my hands, patient, organized"
+              />
+
+              <TextArea
+                label="What have you done before?"
+                helper="This can include jobs, jail/prison work assignments, kitchen work, cleaning, maintenance, laundry, programs, caregiving, volunteer work, training, or responsibilities at home."
+                value={thingsDoneText}
+                onChange={setThingsDoneText}
+                placeholder="Example: worked in kitchen, cleaned housing unit, helped train new workers, took GED classes, cared for family..."
+              />
+
+              <div style={styles.aiQuickRow}>
+                <button
+                  type="button"
+                  onClick={handleFindSkills}
+                  disabled={aiLoading !== null}
+                  style={styles.aiChip}
+                >
+                  {aiLoading === "skills" ? "Finding skills..." : "✦ Help Me Find My Skills"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleWriteSummary}
+                  disabled={aiLoading !== null}
+                  style={styles.aiChip}
+                >
+                  {aiLoading === "summary" ? "Writing..." : "✦ Write My Summary"}
+                </button>
+              </div>
+            </section>
+
+            <section style={styles.panel}>
+              <div style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.stepLabel}>BASIC INFO</p>
+                  <h2 style={styles.sectionTitle}>Your resume header</h2>
+                </div>
+
+                <div style={styles.fontControl}>
+                  <label style={styles.smallLabel}>Font</label>
+                  <select
+                    value={fontFamily}
+                    onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
+                    style={styles.select}
+                  >
+                    <option>Arial</option>
+                    <option>Calibri</option>
+                    <option>Times New Roman</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="newopp-two-col" style={styles.twoCol}>
+                <Field label="Full Name" value={fullName} onChange={setFullName} />
+                <Field label="Phone" value={phone} onChange={setPhone} />
+                <Field label="Email" value={email} onChange={setEmail} />
+                <Field label="City" value={city} onChange={setCity} />
+                <Field label="State" value={stateName} onChange={setStateName} />
+                <Field
+                  label="LinkedIn (optional)"
+                  value={linkedinUrl}
+                  onChange={setLinkedinUrl}
+                />
+              </div>
+            </section>
+
+            <section style={styles.panel}>
+              <div className="newopp-ai-row" style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.stepLabel}>SUMMARY</p>
+                  <h2 style={styles.sectionTitle}>Professional summary</h2>
+                  <p style={styles.sectionCopy}>
+                    Keep it short. Focus on what you bring now and where you are going.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleWriteSummary}
+                  disabled={aiLoading !== null}
+                  style={styles.aiChip}
+                >
+                  {aiLoading === "summary"
+                    ? "Writing..."
+                    : summaryText.trim()
+                      ? "✦ Strengthen My Summary"
+                      : "✦ Write My Summary"}
+                </button>
+              </div>
+
+              <textarea
+                value={summaryText}
+                onChange={(e) => setSummaryText(e.target.value)}
+                placeholder="HireMinds can help create this for you."
+                style={styles.textarea}
+              />
+            </section>
+
+            <section style={styles.panel}>
+              <div className="newopp-ai-row" style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.stepLabel}>SKILLS</p>
+                  <h2 style={styles.sectionTitle}>Your strongest job-ready skills</h2>
+                  <p style={styles.sectionCopy}>
+                    Choose skills that are true for you. Up to 9 will appear on the resume.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleFindSkills}
+                  disabled={aiLoading !== null}
+                  style={styles.aiChip}
+                >
+                  {aiLoading === "skills" ? "Finding..." : "✦ Identify My Skills"}
+                </button>
+              </div>
+
+              <input
+                value={skillsInput}
+                onChange={(e) => setSkillsInput(e.target.value)}
+                placeholder="Communication, Dependability, Cleaning, Food Preparation..."
+                style={styles.input}
+              />
+
+              {skills.length ? (
+                <div style={styles.skillChips}>
+                  {skills.map((skill) => (
+                    <span key={skill} style={styles.skillChip}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            <section style={styles.panel}>
+              <div style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.stepLabel}>EXPERIENCE</p>
+                  <h2 style={styles.sectionTitle}>Add anything that shows what you can do</h2>
+                  <p style={styles.sectionCopy}>
+                    A traditional job is not required. Institutional work assignments,
+                    volunteer work, caregiving, training, projects, and other real
+                    responsibilities can count when described accurately.
+                  </p>
+                </div>
+              </div>
+
+              {experiences.map((item, index) => (
+                <div style={styles.experienceBlock} key={index}>
+                  <div className="newopp-two-col" style={styles.twoCol}>
+                    <SelectField
+                      label="What kind of experience was this?"
+                      value={item.sourceType}
+                      onChange={(value) =>
+                        updateExperience(index, "sourceType", value as ExperienceSource)
+                      }
+                      options={[
+                        "Paid Job",
+                        "Institutional Work Assignment",
+                        "Volunteer / Community",
+                        "Caregiving / Home",
+                        "Training / Project",
+                        "Other",
+                      ]}
+                    />
+
+                    <Field
+                      label="Role / Assignment"
+                      value={item.roleTitle}
+                      onChange={(value) =>
+                        updateExperience(index, "roleTitle", value)
+                      }
+                      placeholder="Example: Kitchen Worker, Porter, Laundry Worker"
+                    />
+
+                    <Field
+                      label="Organization / Setting"
+                      value={item.organizationName}
+                      onChange={(value) =>
+                        updateExperience(index, "organizationName", value)
+                      }
+                      placeholder={
+                        item.sourceType === "Institutional Work Assignment"
+                          ? "Example: Institutional Food Service"
+                          : "Organization or setting"
+                      }
+                    />
+
+                    <Field
+                      label="City"
+                      value={item.city}
+                      onChange={(value) => updateExperience(index, "city", value)}
+                    />
+
+                    <Field
+                      label="State"
+                      value={item.state}
+                      onChange={(value) => updateExperience(index, "state", value)}
+                    />
+
+                    <div style={styles.checkboxWrap}>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={item.isPresent}
+                          onChange={(e) =>
+                            updateExperience(index, "isPresent", e.target.checked)
+                          }
+                        />
+                        <span>I currently do this</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="newopp-two-col" style={styles.twoCol}>
+                    <DateFields
+                      prefix="From"
+                      month={item.startMonth}
+                      year={item.startYear}
+                      onMonth={(value) =>
+                        updateExperience(index, "startMonth", value)
+                      }
+                      onYear={(value) =>
+                        updateExperience(index, "startYear", value)
+                      }
+                    />
+
+                    {!item.isPresent ? (
+                      <DateFields
+                        prefix="To"
+                        month={item.endMonth}
+                        year={item.endYear}
+                        onMonth={(value) =>
+                          updateExperience(index, "endMonth", value)
+                        }
+                        onYear={(value) =>
+                          updateExperience(index, "endYear", value)
+                        }
+                      />
+                    ) : (
+                      <div />
+                    )}
+                  </div>
+
+                  <div style={styles.bulletIntro}>
+                    <strong>What did you do?</strong>
+                    <span>
+                      Write it normally. Example: “served food,” “cleaned floors,”
+                      “kept track of supplies,” “helped new workers.”
+                    </span>
+                  </div>
+
+                  {item.bullets.map((bullet, bulletIndex) => (
+                    <div style={styles.bulletRow} key={bulletIndex}>
+                      <input
+                        value={bullet.text}
+                        onChange={(e) =>
+                          updateExperienceBullet(index, bulletIndex, e.target.value)
+                        }
+                        placeholder="Type what you did in simple words"
+                        style={styles.input}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleStrengthenBullet(index, bulletIndex)
+                        }
+                        disabled={aiLoading !== null}
+                        style={styles.bulletAiButton}
+                      >
+                        {aiLoading === `bullet-${index}-${bulletIndex}`
+                          ? "..."
+                          : "✦ Strengthen"}
+                      </button>
+                    </div>
+                  ))}
+
+                  {item.bullets.length < BULLET_LIMIT ? (
+                    <button
+                      type="button"
+                      onClick={() => addExperienceBullet(index)}
+                      style={styles.textButton}
+                    >
+                      + Add another responsibility
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setExperiences((prev) => [...prev, createExperience()])
+                }
+                style={styles.secondaryAddButton}
+              >
+                + Add Another Experience
+              </button>
+            </section>
+
+            <section style={styles.panel}>
+              <div style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.stepLabel}>EDUCATION + TRAINING</p>
+                  <h2 style={styles.sectionTitle}>School, GED, classes, programs & certificates</h2>
+                  <p style={styles.sectionCopy}>
+                    Add only what you have. It is okay if this section is short.
+                  </p>
+                </div>
+              </div>
+
+              {credentials.map((item, index) => (
+                <div style={styles.credentialBlock} key={index}>
+                  <div className="newopp-two-col" style={styles.twoCol}>
+                    <Field
+                      label="School / Program / Organization"
+                      value={item.organizationName}
+                      onChange={(value) =>
+                        updateCredential(index, "organizationName", value)
+                      }
+                    />
+
+                    <Field
+                      label="Credential / Training"
+                      value={item.credentialName}
+                      onChange={(value) =>
+                        updateCredential(index, "credentialName", value)
+                      }
+                      placeholder="GED, OSHA 10, Culinary Training..."
+                    />
+
+                    <Field
+                      label="City"
+                      value={item.city}
+                      onChange={(value) =>
+                        updateCredential(index, "city", value)
+                      }
+                    />
+
+                    <Field
+                      label="State"
+                      value={item.state}
+                      onChange={(value) =>
+                        updateCredential(index, "state", value)
+                      }
+                    />
+
+                    <Field
+                      label="Year"
+                      value={item.year}
+                      onChange={(value) =>
+                        updateCredential(index, "year", value)
+                      }
+                      placeholder="2026"
+                    />
+
+                    <Field
+                      label="Details (optional)"
+                      value={item.details}
+                      onChange={(value) =>
+                        updateCredential(index, "details", value)
+                      }
+                      placeholder="Coursework, hands-on training, program focus"
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setCredentials((prev) => [...prev, createCredential()])
+                }
+                style={styles.secondaryAddButton}
+              >
+                + Add Education / Training
+              </button>
+            </section>
+
+            <section style={styles.panel}>
+              <p style={styles.stepLabel}>OPTIONAL</p>
+              <h2 style={styles.sectionTitle}>Anything else worth showing?</h2>
+              <p style={styles.sectionCopy}>
+                Awards, recognition, licenses, programs completed, community involvement,
+                or other strengths can go here.
+              </p>
+
+              <textarea
+                value={accomplishments}
+                onChange={(e) => setAccomplishments(e.target.value)}
+                placeholder="Optional additional strengths or accomplishments"
+                style={styles.textarea}
+              />
+            </section>
+
+            {message ? <div style={styles.message}>{message}</div> : null}
+
+            <div className="newopp-actions" style={styles.actions}>
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={saving}
+                style={styles.primaryButton}
+              >
+                {saving ? "Saving..." : "Save Draft"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrint}
+                style={styles.printButton}
+              >
+                Print / Save PDF
+              </button>
+
+              <a href="/career-toolkit" style={styles.backButton}>
+                Back to Career ToolKit
+              </a>
+            </div>
+          </div>
+
+          <aside className="newopp-preview" style={styles.previewColumn}>
+            <div style={styles.previewHeader}>
+              <div>
+                <p style={styles.previewKicker}>LIVE PREVIEW</p>
+                <strong style={styles.previewTitle}>{layoutChoice}</strong>
+              </div>
+              <span style={styles.previewBadge}>{PATH_LABELS[pathType]}</span>
+            </div>
+
+            <div
+              ref={resumePrintRef}
+              className="newopp-resume-paper resumePaper"
+              style={{ ...styles.resumePaper, fontFamily }}
+            >
+              <header className="resumeHeader" style={styles.resumeHeader}>
+                <h1 className="resumeName" style={styles.resumeName}>
+                  {fullName || "Your Name"}
+                </h1>
+
+                <p className="resumeContact" style={styles.resumeContact}>
+                  {[phone, email, [city, stateName].filter(Boolean).join(", ")]
+                    .filter(Boolean)
+                    .join(" • ") || "Phone • Email • City, State"}
+                </p>
+
+                {linkedinUrl ? (
+                  <p className="resumeLinkedin" style={styles.resumeLinkedin}>
+                    {linkedinUrl}
+                  </p>
+                ) : null}
+              </header>
+
+              {sectionOrder.map((section) => (
+                <div key={section}>{renderSection(section)}</div>
+              ))}
+
+              {!summaryText.trim() &&
+              !skills.length &&
+              !activeExperiences.length &&
+              !activeCredentials.length ? (
+                <div style={styles.emptyPreview}>
+                  <span>START SIMPLE</span>
+                  <strong>Your resume will build here as you answer.</strong>
+                  <p>
+                    You do not need a traditional work history to get started.
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div style={styles.fieldWrap}>
+      <label style={styles.label}>{label}</label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={styles.input}
+      />
+    </div>
+  );
+}
+
+function TextArea({
+  label,
+  helper,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  helper?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div style={styles.fieldWrap}>
+      <label style={styles.label}>{label}</label>
+      {helper ? <p style={styles.helper}>{helper}</p> : null}
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={styles.textarea}
+      />
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  return (
+    <div style={styles.fieldWrap}>
+      <label style={styles.label}>{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={styles.select}
+      >
+        {options.map((option) => (
+          <option key={option}>{option}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function DateFields({
+  prefix,
+  month,
+  year,
+  onMonth,
+  onYear,
+}: {
+  prefix: string;
+  month: string;
+  year: string;
+  onMonth: (value: string) => void;
+  onYear: (value: string) => void;
+}) {
+  return (
+    <div style={styles.dateGroup}>
+      <div>
+        <label style={styles.smallLabel}>{prefix} Month</label>
+        <select
+          value={month}
+          onChange={(e) => onMonth(e.target.value)}
+          style={styles.select}
+        >
+          {MONTHS.map((item) => (
+            <option key={item} value={item}>
+              {item || "Month"}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label style={styles.smallLabel}>{prefix} Year</label>
+        <input
+          value={year}
+          onChange={(e) => onYear(e.target.value)}
+          placeholder="2024"
+          style={styles.input}
+        />
+      </div>
+    </div>
+  );
 }
 
 const styles: Record<string, CSSProperties> = {
-page: {
-minHeight: "100vh",
-background:
-"radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 20%), linear-gradient(180deg, #040404 0%, #0b0b0d 100%)",
-color: "#f5f5f5",
-padding: "24px",
-fontFamily:
-'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-},
-container: {
-maxWidth: "1380px",
-margin: "0 auto",
-},
-centerWrap: {
-minHeight: "70vh",
-display: "flex",
-alignItems: "center",
-justifyContent: "center",
-fontSize: "18px",
-color: "#e5e7eb",
-},
-topBar: {
-display: "flex",
-justifyContent: "space-between",
-alignItems: "flex-start",
-gap: "20px",
-marginBottom: "20px",
-flexWrap: "wrap",
-},
-topSelectors: {
-display: "flex",
-gap: "16px",
-flexWrap: "wrap",
-},
-topSelectGroup: {
-display: "flex",
-flexDirection: "column",
-gap: "8px",
-minWidth: "180px",
-},
-topSelectLabel: {
-fontSize: "13px",
-color: "#d1d5db",
-fontWeight: 600,
-},
-kicker: {
-margin: "0 0 8px",
-color: "#c4b5fd",
-fontSize: "12px",
-letterSpacing: "0.22em",
-textTransform: "uppercase",
-},
-pageTitle: {
-margin: 0,
-fontSize: "44px",
-lineHeight: 1.06,
-letterSpacing: "-0.04em",
-fontWeight: 700,
-color: "#fafafa",
-maxWidth: "820px",
-},
-layout: {
-display: "grid",
-gridTemplateColumns: "minmax(0, 1fr) 520px",
-gap: "24px",
-alignItems: "start",
-},
-leftCol: {
-minWidth: 0,
-},
-rightCol: {
-position: "sticky",
-top: "20px",
-alignSelf: "start",
-},
-card: {
-background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
-border: "1px solid #262626",
-borderRadius: "28px",
-padding: "20px",
-boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
-marginBottom: "18px",
-},
-previewCard: {
-background: "linear-gradient(180deg, #111111 0%, #171717 100%)",
-border: "1px solid #262626",
-borderRadius: "28px",
-padding: "20px",
-boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
-marginBottom: "18px",
-},
-cardKicker: {
-margin: "0 0 8px",
-color: "#d4d4d8",
-fontSize: "12px",
-letterSpacing: "0.18em",
-textTransform: "uppercase",
-},
-cardTitle: {
-margin: "0 0 10px",
-fontSize: "28px",
-lineHeight: 1.1,
-color: "#fafafa",
-fontWeight: 700,
-},
-previewHelp: {
-margin: 0,
-color: "#d4d4d8",
-fontSize: "15px",
-lineHeight: 1.5,
-},
-resumeTypePreview: {
-margin: "12px 0 0",
-color: "#e5e7eb",
-fontSize: "15px",
-lineHeight: 1.6,
-},
-select: {
-background: "#0b0f19",
-color: "#fff",
-border: "1px solid rgba(255,255,255,0.18)",
-borderRadius: "16px",
-padding: "12px 14px",
-fontSize: "15px",
-},
-twoColForm: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "14px 16px",
-},
-inputLabel: {
-display: "block",
-margin: "0 0 6px",
-fontSize: "15px",
-color: "#f5f5f5",
-fontWeight: 600,
-},
-input: {
-width: "100%",
-background: "#05070c",
-color: "#fff",
-border: "1px solid #2f3541",
-borderRadius: "18px",
-padding: "14px 16px",
-fontSize: "16px",
-outline: "none",
-boxSizing: "border-box",
-},
-textarea: {
-width: "100%",
-minHeight: "110px",
-resize: "vertical",
-background: "#05070c",
-color: "#fff",
-border: "1px solid #2f3541",
-borderRadius: "18px",
-padding: "14px 16px",
-fontSize: "16px",
-outline: "none",
-boxSizing: "border-box",
-marginBottom: "14px",
-},
-helper: {
-margin: "10px 0 12px",
-color: "#cbd5e1",
-fontSize: "14px",
-lineHeight: 1.65,
-},
-checkboxRow: {
-display: "flex",
-alignItems: "center",
-gap: "10px",
-margin: "12px 0",
-color: "#f5f5f5",
-fontSize: "15px",
-},
-sectionGroup: {
-border: "1px solid rgba(255,255,255,0.08)",
-borderRadius: "22px",
-padding: "16px",
-marginBottom: "14px",
-},
-smallButton: {
-marginTop: "12px",
-background: "linear-gradient(180deg, #5b84c7 0%, #456aa8 100%)",
-color: "#fff",
-border: "1px solid rgba(255,255,255,0.16)",
-borderRadius: "14px",
-padding: "10px 14px",
-fontSize: "15px",
-fontWeight: 600,
-cursor: "pointer",
-},
-guidanceActions: {
-display: "flex",
-flexWrap: "wrap",
-gap: "12px",
-marginTop: "6px",
-},
-guidedPreviewText: {
-margin: "8px 0 0",
-color: "#cbd5e1",
-fontSize: "14px",
-lineHeight: 1.65,
-},
-orderRow: {
-display: "flex",
-justifyContent: "space-between",
-alignItems: "center",
-gap: "12px",
-padding: "12px 0",
-borderBottom: "1px solid rgba(255,255,255,0.08)",
-},
-orderLabel: {
-fontSize: "18px",
-color: "#f8fafc",
-fontWeight: 600,
-},
-orderButtons: {
-display: "flex",
-gap: "8px",
-},
-orderButton: {
-background: "#0f244d",
-color: "#fff",
-border: "1px solid rgba(148,163,184,0.35)",
-borderRadius: "12px",
-padding: "8px 12px",
-fontSize: "14px",
-cursor: "pointer",
-},
-footerButtons: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr 1fr",
-gap: "12px",
-marginTop: "12px",
-marginBottom: "32px",
-},
-saveButton: {
-background: "linear-gradient(180deg, #f5f5f5 0%, #d4d4d8 100%)",
-color: "#09090b",
-border: "none",
-borderRadius: "18px",
-padding: "16px",
-fontSize: "20px",
-fontWeight: 700,
-cursor: "pointer",
-},
-printButton: {
-background: "linear-gradient(180deg, #0f244d 0%, #112b5f 100%)",
-color: "#fff",
-border: "1px solid rgba(148,163,184,0.28)",
-borderRadius: "18px",
-padding: "16px",
-fontSize: "20px",
-fontWeight: 700,
-cursor: "pointer",
-},
-backButton: {
-background: "transparent",
-color: "#fff",
-border: "1px solid rgba(148,163,184,0.28)",
-borderRadius: "18px",
-padding: "16px",
-fontSize: "20px",
-fontWeight: 700,
-textAlign: "center",
-textDecoration: "none",
-display: "flex",
-alignItems: "center",
-justifyContent: "center",
-},
-messageBox: {
-background: "rgba(59,130,246,0.12)",
-border: "1px solid rgba(59,130,246,0.28)",
-color: "#dbeafe",
-borderRadius: "18px",
-padding: "14px 16px",
-marginBottom: "16px",
-fontSize: "15px",
-},
-resumePaper: {
-width: "100%",
-minHeight: "1120px",
-height: "auto",
-overflow: "visible",
-background: "#fff",
-borderRadius: "18px",
-border: "1px solid #e5e7eb",
-boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
-padding: "34px 32px 42px",
-color: "#111827",
-boxSizing: "border-box",
-},
-resumeHeader: {
-textAlign: "center",
-marginBottom: "20px",
-paddingBottom: "8px",
-},
-resumeName: {
-margin: "0 0 8px",
-fontSize: "28px",
-fontWeight: 700,
-color: "#111827",
-},
-resumeContact: {
-margin: "0 0 6px",
-fontSize: "14px",
-lineHeight: 1.5,
-color: "#374151",
-wordBreak: "break-word",
-},
-resumeLinkedin: {
-margin: 0,
-fontSize: "14px",
-lineHeight: 1.5,
-color: "#1d4ed8",
-wordBreak: "break-word",
-},
-resumeSectionBlock: {
-marginBottom: "20px",
-},
-resumeSectionTitle: {
-margin: "0 0 10px",
-textAlign: "center",
-fontSize: "22px",
-fontWeight: 700,
-color: "#111827",
-},
-resumeParagraph: {
-margin: 0,
-fontSize: "15px",
-lineHeight: 1.7,
-color: "#111827",
-whiteSpace: "pre-wrap",
-wordBreak: "break-word",
-},
-skillsGrid: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr 1fr",
-gap: "10px 24px",
-},
-skillColumn: {
-minWidth: 0,
-},
-skillItem: {
-margin: "0 0 8px",
-fontSize: "15px",
-lineHeight: 1.5,
-color: "#111827",
-wordBreak: "break-word",
-},
-resumeEntry: {
-marginBottom: "16px",
-},
-resumeEntryTop: {
-display: "flex",
-justifyContent: "space-between",
-alignItems: "flex-start",
-gap: "16px",
-marginBottom: "6px",
-},
-resumeEntryHeading: {
-margin: 0,
-fontSize: "16px",
-fontWeight: 700,
-color: "#111827",
-},
-resumeEntrySubheading: {
-margin: "4px 0 0",
-fontSize: "15px",
-fontWeight: 600,
-color: "#111827",
-},
-resumeEntryDates: {
-margin: 0,
-fontSize: "14px",
-color: "#374151",
-whiteSpace: "nowrap",
-},
-resumeBullet: {
-margin: "4px 0",
-fontSize: "15px",
-lineHeight: 1.65,
-color: "#111827",
-whiteSpace: "pre-wrap",
-wordBreak: "break-word",
-},
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at 7% 0%, rgba(22,119,255,.16), transparent 22%), linear-gradient(180deg, #071522 0%, #0A213B 48%, #071522 100%)",
+    color: "#FFFFFF",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+
+  pageInner: {
+    maxWidth: "1480px",
+    margin: "0 auto",
+    padding: "28px 24px 60px",
+  },
+
+  loading: {
+    minHeight: "70vh",
+    display: "grid",
+    placeItems: "center",
+    color: "#C7D6E7",
+  },
+
+  hero: {
+    marginBottom: "22px",
+    padding: "34px",
+    borderRadius: "22px",
+    display: "grid",
+    gridTemplateColumns: "minmax(0,1fr) 280px",
+    gap: "30px",
+    alignItems: "end",
+    background:
+      "linear-gradient(120deg, rgba(7,31,57,.98), rgba(13,60,111,.96) 68%, rgba(22,119,255,.92) 145%)",
+    border: "1px solid rgba(255,255,255,.10)",
+    boxShadow: "0 22px 54px rgba(0,0,0,.20)",
+  },
+
+  heroKicker: {
+    margin: "0 0 10px",
+    color: "#67AFFF",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: ".16em",
+  },
+
+  heroTitle: {
+    margin: "0 0 14px",
+    maxWidth: "820px",
+    color: "#FFFFFF",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "clamp(42px,5vw,70px)",
+    lineHeight: .98,
+    letterSpacing: "-.045em",
+    fontWeight: 400,
+  },
+
+  heroText: {
+    margin: 0,
+    maxWidth: "830px",
+    color: "#C3D3E4",
+    fontSize: "14px",
+    lineHeight: 1.7,
+  },
+
+  progressWrap: {
+    textAlign: "right",
+  },
+
+  progressLabel: {
+    display: "block",
+    color: "#9BCBFF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".12em",
+  },
+
+  progressNumber: {
+    display: "block",
+    margin: "5px 0 9px",
+    color: "#FFFFFF",
+    fontSize: "40px",
+    lineHeight: 1,
+  },
+
+  progressTrack: {
+    height: "6px",
+    borderRadius: "999px",
+    overflow: "hidden",
+    background: "rgba(255,255,255,.12)",
+  },
+
+  progressFill: {
+    display: "block",
+    height: "100%",
+    borderRadius: "999px",
+    background: "#5EB0FF",
+  },
+
+  progressHint: {
+    display: "block",
+    marginTop: "7px",
+    color: "#B9CCE0",
+    fontSize: "9px",
+  },
+
+  layout: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0,1fr) 520px",
+    gap: "22px",
+    alignItems: "start",
+  },
+
+  panel: {
+    marginBottom: "14px",
+    padding: "22px",
+    borderRadius: "18px",
+    border: "1px solid rgba(255,255,255,.10)",
+    background:
+      "linear-gradient(145deg, rgba(15,39,65,.92), rgba(9,27,46,.92))",
+    boxShadow: "0 14px 30px rgba(0,0,0,.12)",
+  },
+
+  sectionHeading: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    gap: "18px",
+    marginBottom: "17px",
+  },
+
+  stepLabel: {
+    margin: "0 0 6px",
+    color: "#5AA6FF",
+    fontSize: "9px",
+    fontWeight: 900,
+    letterSpacing: ".13em",
+  },
+
+  sectionTitle: {
+    margin: "0 0 7px",
+    color: "#F8FBFF",
+    fontSize: "23px",
+    lineHeight: 1.15,
+    letterSpacing: "-.025em",
+  },
+
+  sectionCopy: {
+    margin: 0,
+    maxWidth: "690px",
+    color: "#AFC0D3",
+    fontSize: "12px",
+    lineHeight: 1.6,
+  },
+
+  pathPills: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+  },
+
+  pathPill: {
+    minHeight: "36px",
+    padding: "0 13px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,.13)",
+    background: "rgba(255,255,255,.04)",
+    color: "#C8D7E7",
+    fontSize: "10px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  pathPillActive: {
+    borderColor: "#1677FF",
+    background: "#1677FF",
+    color: "#FFFFFF",
+  },
+
+  layoutChoices: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+    gap: "10px",
+  },
+
+  layoutChoice: {
+    minHeight: "125px",
+    padding: "16px",
+    textAlign: "left",
+    borderRadius: "14px",
+    border: "1px solid rgba(255,255,255,.10)",
+    background: "rgba(255,255,255,.035)",
+    color: "#FFFFFF",
+    cursor: "pointer",
+  },
+
+  layoutChoiceSelected: {
+    borderColor: "#459EFF",
+    background:
+      "linear-gradient(145deg, rgba(22,119,255,.20), rgba(22,119,255,.07))",
+    boxShadow: "0 0 0 2px rgba(22,119,255,.08)",
+  },
+
+  layoutKicker: {
+    display: "block",
+    marginBottom: "8px",
+    color: "#6EB4FF",
+    fontSize: "7.5px",
+    fontWeight: 900,
+    letterSpacing: ".08em",
+  },
+
+  layoutName: {
+    display: "block",
+    marginBottom: "6px",
+    fontSize: "15px",
+  },
+
+  layoutDescription: {
+    display: "block",
+    color: "#AFC0D3",
+    fontSize: "10px",
+    lineHeight: 1.5,
+  },
+
+  twoCol: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+  },
+
+  fieldWrap: {
+    marginBottom: "12px",
+  },
+
+  label: {
+    display: "block",
+    marginBottom: "6px",
+    color: "#DCE7F3",
+    fontSize: "11px",
+    fontWeight: 750,
+  },
+
+  smallLabel: {
+    display: "block",
+    marginBottom: "5px",
+    color: "#AFC0D3",
+    fontSize: "9px",
+    fontWeight: 750,
+  },
+
+  helper: {
+    margin: "-1px 0 7px",
+    color: "#8FA6BE",
+    fontSize: "10px",
+    lineHeight: 1.5,
+  },
+
+  input: {
+    width: "100%",
+    minHeight: "43px",
+    padding: "10px 12px",
+    borderRadius: "9px",
+    border: "1px solid rgba(173,197,222,.20)",
+    background: "rgba(3,15,27,.72)",
+    color: "#FFFFFF",
+    fontSize: "12px",
+    outline: "none",
+    boxSizing: "border-box",
+  },
+
+  select: {
+    width: "100%",
+    minHeight: "43px",
+    padding: "10px 12px",
+    borderRadius: "9px",
+    border: "1px solid rgba(173,197,222,.20)",
+    background: "#081A2C",
+    color: "#FFFFFF",
+    fontSize: "12px",
+    outline: "none",
+    boxSizing: "border-box",
+  },
+
+  textarea: {
+    width: "100%",
+    minHeight: "105px",
+    padding: "11px 12px",
+    borderRadius: "9px",
+    border: "1px solid rgba(173,197,222,.20)",
+    background: "rgba(3,15,27,.72)",
+    color: "#FFFFFF",
+    fontSize: "12px",
+    lineHeight: 1.55,
+    resize: "vertical",
+    outline: "none",
+    boxSizing: "border-box",
+  },
+
+  fontControl: {
+    minWidth: "160px",
+  },
+
+  bigAiButton: {
+    flexShrink: 0,
+    minHeight: "42px",
+    padding: "0 15px",
+    borderRadius: "999px",
+    border: "1px solid #1677FF",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    fontSize: "10px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  aiQuickRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "3px",
+  },
+
+  aiChip: {
+    minHeight: "34px",
+    padding: "0 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(74,162,255,.28)",
+    background: "rgba(22,119,255,.10)",
+    color: "#89C3FF",
+    fontSize: "9px",
+    fontWeight: 850,
+    cursor: "pointer",
+  },
+
+  disabledButton: {
+    opacity: .55,
+    cursor: "not-allowed",
+  },
+
+  skillChips: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "7px",
+    marginTop: "11px",
+  },
+
+  skillChip: {
+    padding: "6px 9px",
+    borderRadius: "999px",
+    background: "rgba(22,119,255,.12)",
+    border: "1px solid rgba(22,119,255,.24)",
+    color: "#A7D3FF",
+    fontSize: "9px",
+    fontWeight: 750,
+  },
+
+  experienceBlock: {
+    marginBottom: "14px",
+    padding: "16px",
+    borderRadius: "14px",
+    border: "1px solid rgba(255,255,255,.08)",
+    background: "rgba(1,13,24,.38)",
+  },
+
+  credentialBlock: {
+    marginBottom: "12px",
+    padding: "14px",
+    borderRadius: "12px",
+    border: "1px solid rgba(255,255,255,.07)",
+    background: "rgba(1,13,24,.30)",
+  },
+
+  checkboxWrap: {
+    display: "flex",
+    alignItems: "center",
+    paddingTop: "22px",
+  },
+
+  checkboxLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    color: "#C6D5E5",
+    fontSize: "10px",
+  },
+
+  dateGroup: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "8px",
+    marginBottom: "12px",
+  },
+
+  bulletIntro: {
+    margin: "6px 0 10px",
+    display: "grid",
+    gap: "3px",
+    color: "#DCE7F3",
+    fontSize: "10px",
+  },
+
+  bulletRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0,1fr) auto",
+    gap: "8px",
+    marginBottom: "8px",
+  },
+
+  bulletAiButton: {
+    minWidth: "92px",
+    borderRadius: "9px",
+    border: "1px solid rgba(22,119,255,.28)",
+    background: "rgba(22,119,255,.10)",
+    color: "#80BFFF",
+    fontSize: "9px",
+    fontWeight: 850,
+    cursor: "pointer",
+  },
+
+  textButton: {
+    marginTop: "3px",
+    border: "none",
+    background: "transparent",
+    color: "#79B7F8",
+    fontSize: "10px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  secondaryAddButton: {
+    minHeight: "38px",
+    padding: "0 12px",
+    borderRadius: "9px",
+    border: "1px solid rgba(255,255,255,.12)",
+    background: "rgba(255,255,255,.04)",
+    color: "#D7E4F1",
+    fontSize: "10px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  message: {
+    marginBottom: "13px",
+    padding: "12px 14px",
+    borderRadius: "11px",
+    border: "1px solid rgba(22,119,255,.25)",
+    background: "rgba(22,119,255,.10)",
+    color: "#CBE5FF",
+    fontSize: "10.5px",
+    lineHeight: 1.55,
+  },
+
+  actions: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: "9px",
+    marginBottom: "30px",
+  },
+
+  primaryButton: {
+    minHeight: "46px",
+    borderRadius: "10px",
+    border: "1px solid #1677FF",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    fontSize: "11px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  printButton: {
+    minHeight: "46px",
+    borderRadius: "10px",
+    border: "1px solid #31577D",
+    background: "#0D2B4A",
+    color: "#FFFFFF",
+    fontSize: "11px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  backButton: {
+    minHeight: "46px",
+    borderRadius: "10px",
+    border: "1px solid rgba(255,255,255,.12)",
+    background: "rgba(255,255,255,.03)",
+    color: "#C8D7E7",
+    textDecoration: "none",
+    display: "grid",
+    placeItems: "center",
+    fontSize: "11px",
+    fontWeight: 800,
+  },
+
+  previewColumn: {
+    position: "sticky",
+    top: "18px",
+  },
+
+  previewHeader: {
+    marginBottom: "9px",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    background: "linear-gradient(120deg, #0B2D52, #124C89)",
+    border: "1px solid rgba(255,255,255,.10)",
+  },
+
+  previewKicker: {
+    margin: "0 0 3px",
+    color: "#6DB6FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  previewTitle: {
+    color: "#FFFFFF",
+    fontSize: "13px",
+  },
+
+  previewBadge: {
+    maxWidth: "190px",
+    padding: "6px 8px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,.08)",
+    color: "#D7E9FA",
+    fontSize: "8px",
+    fontWeight: 800,
+    textAlign: "center",
+  },
+
+  resumePaper: {
+    width: "100%",
+    minHeight: "900px",
+    padding: "38px 38px 46px",
+    borderRadius: "6px",
+    border: "1px solid #D5DEE8",
+    background: "#FFFFFF",
+    color: "#111827",
+    boxShadow: "0 24px 60px rgba(0,0,0,.22)",
+    boxSizing: "border-box",
+  },
+
+  resumeHeader: {
+    marginBottom: "19px",
+    paddingBottom: "12px",
+    borderBottom: "2px solid #1677FF",
+  },
+
+  resumeName: {
+    margin: "0 0 5px",
+    color: "#0F172A",
+    fontSize: "27px",
+    lineHeight: 1.08,
+    fontWeight: 850,
+  },
+
+  resumeContact: {
+    margin: "0 0 3px",
+    color: "#475569",
+    fontSize: "10px",
+    lineHeight: 1.4,
+  },
+
+  resumeLinkedin: {
+    margin: 0,
+    color: "#145FAD",
+    fontSize: "10px",
+    lineHeight: 1.4,
+  },
+
+  resumeSection: {
+    marginBottom: "16px",
+  },
+
+  resumeSectionTitle: {
+    margin: "0 0 7px",
+    paddingBottom: "4px",
+    borderBottom: "1px solid #CBD5E1",
+    color: "#0F172A",
+    fontSize: "11px",
+    lineHeight: 1.2,
+    fontWeight: 850,
+    letterSpacing: ".04em",
+  },
+
+  resumeParagraph: {
+    margin: 0,
+    color: "#273548",
+    fontSize: "10px",
+    lineHeight: 1.5,
+    whiteSpace: "pre-wrap",
+  },
+
+  skillsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3,1fr)",
+    gap: "5px 12px",
+  },
+
+  skillItem: {
+    margin: 0,
+    color: "#273548",
+    fontSize: "9.5px",
+    lineHeight: 1.35,
+  },
+
+  resumeEntry: {
+    marginBottom: "12px",
+  },
+
+  resumeEntryTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "14px",
+    alignItems: "flex-start",
+    marginBottom: "4px",
+  },
+
+  resumeEntryHeading: {
+    margin: 0,
+    color: "#111827",
+    fontSize: "10px",
+    fontWeight: 850,
+  },
+
+  resumeEntrySubheading: {
+    margin: "2px 0 0",
+    color: "#475569",
+    fontSize: "9.5px",
+    fontWeight: 650,
+  },
+
+  resumeEntryDates: {
+    margin: 0,
+    color: "#64748B",
+    fontSize: "9px",
+    whiteSpace: "nowrap",
+  },
+
+  resumeBullet: {
+    margin: "3px 0 3px 13px",
+    color: "#273548",
+    fontSize: "9.5px",
+    lineHeight: 1.42,
+  },
+
+  emptyPreview: {
+    marginTop: "70px",
+    padding: "24px 0",
+    textAlign: "center",
+    color: "#718096",
+  },
 };
