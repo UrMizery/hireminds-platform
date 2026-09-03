@@ -1288,6 +1288,14 @@ export default function NewOpportunitiesResumeGeneratorPage() {
       <style>{`
         html { scroll-behavior: smooth; }
 
+        .reentry-page section > p[style*="text-transform: uppercase"] + h2 {
+          text-align: center !important;
+        }
+
+        .reentry-page section > p[style*="text-transform: uppercase"] {
+          text-align: center !important;
+        }
+
         @media (max-width: 1120px) {
           .reentry-layout {
             grid-template-columns: 1fr !important;
@@ -1334,7 +1342,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
           <div>
             <p style={styles.kicker}>REENTRY / SECOND CHANCE RESUME GENERATOR</p>
             <h1 style={styles.pageTitle}>
-              Build your reentry resume in a clear, simple order.
+              Build a polished reentry resume with guided support.
             </h1>
             <p style={styles.pageIntro}>
               No moving sections. No complicated setup. Add what you know, describe what
@@ -1363,10 +1371,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               <div className="reentry-section-heading" style={styles.sectionHeading}>
                 <div>
                   <p style={styles.cardKicker}>START</p>
-                  <h2 style={styles.cardTitle}>Start fresh or upload what you already have</h2>
+                  <h2 style={styles.cardTitle}>Contact Information & Existing Resume</h2>
                   <p style={styles.previewHelp}>
-                    If you already have a resume, upload the PDF or DOCX. HireMinds will
-                    pull in the information so you can improve it instead of starting over.
+                    Upload an existing PDF or DOCX resume, or begin with your contact information below.
                   </p>
                 </div>
 
@@ -1415,7 +1422,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               ) : null}
 
               <div style={styles.sectionGroup}>
-                <p style={styles.cardKicker}>CHOOSE YOUR RESUME FORMAT</p>
+                <p style={styles.cardKicker}>RESUME FORMAT</p>
                 <div className="reentry-layout-choices" style={styles.layoutChoices}>
                   {RESUME_FORMATS.map((item) => (
                     <button
@@ -1499,8 +1506,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                   <p style={styles.cardKicker}>SUMMARY</p>
                   <h2 style={styles.cardTitle}>Professional Summary</h2>
                   <p style={styles.previewHelp}>
-                    This should focus on what you can offer now. It does not need to
-                    mention reentry or your past.
+                    Create a concise summary that highlights your strengths, transferable skills, and target role.
                   </p>
                 </div>
 
@@ -1514,7 +1520,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                     ? "Writing..."
                     : summaryText.trim()
                       ? "✦ Strengthen Summary"
-                      : "✦ Write My Summary"}
+                      : "✦ Generate Summary"}
                 </button>
               </div>
 
@@ -1530,10 +1536,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               <div className="reentry-section-heading" style={styles.sectionHeading}>
                 <div>
                   <p style={styles.cardKicker}>SKILLS</p>
-                  <h2 style={styles.cardTitle}>Your Stand-Alone Skills Section</h2>
+                  <h2 style={styles.cardTitle}>Core Skills</h2>
                   <p style={styles.previewHelp}>
-                    Add skills yourself or let HireMinds pull supported skills from the
-                    experience you described above. Up to 9 appear on the resume.
+                    Add up to 9 relevant skills or use AI to identify transferable skills from your experience.
                   </p>
                 </div>
 
@@ -1545,7 +1550,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                 >
                   {aiLoading === "skills"
                     ? "Finding..."
-                    : "✦ Identify Skills From My Experience"}
+                    : "✦ Identify Transferable Skills"}
                 </button>
               </div>
 
@@ -1579,10 +1584,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
             <section id="education" style={styles.card}>
               <p style={styles.cardKicker}>EDUCATION + TRAINING</p>
-              <h2 style={styles.cardTitle}>Add what you have</h2>
+              <h2 style={styles.cardTitle}>Education, Training & Credentials</h2>
               <p style={styles.previewHelp}>
-                GED, high school, college, vocational training, OSHA, ServSafe,
-                workforce programs, certificates, classes, or other completed training.
+                Include education, certifications, vocational training, workforce programs, and completed coursework.
               </p>
 
               {credentials.map((item, index) => (
@@ -1654,10 +1658,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
             <section id="experience" style={styles.card}>
               <p style={styles.cardKicker}>EXPERIENCE</p>
-              <h2 style={styles.cardTitle}>Tell us what you did. We’ll help with the resume words.</h2>
+              <h2 style={styles.cardTitle}>Professional & Work Experience</h2>
               <p style={styles.previewHelp}>
-                This can be a regular job or a work assignment while incarcerated.
-                Type the real title and describe the work in everyday language.
+                Document paid work, institutional assignments, and other professional experience using accurate titles and responsibilities.
               </p>
 
               {experiences.map((item, index) => (
@@ -1742,10 +1745,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                   <div style={styles.aiDescribeBox}>
                     <div>
                       <p style={styles.aiMiniKicker}>AI SKILL + BULLET HELPER</p>
-                      <h3 style={styles.aiDescribeTitle}>Describe what you did</h3>
+                      <h3 style={styles.aiDescribeTitle}>Describe Your Responsibilities</h3>
                       <p style={styles.helper}>
-                        Example: prepared trays, cleaned kitchen areas, counted supplies,
-                        followed sanitation rules, helped newer workers learn the routine.
+                        Describe your responsibilities, tasks, and day-to-day work. AI can identify transferable skills and generate resume-ready bullet points.
                       </p>
                     </div>
 
@@ -1766,7 +1768,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                     >
                       {aiLoading === `experience-${index}`
                         ? "Working..."
-                        : "✦ Find My Skills + Build My Bullets"}
+                        : "✦ Identify Skills + Generate Bullet Points"}
                     </button>
                   </div>
 
@@ -1817,9 +1819,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               <p style={styles.cardKicker}>VOLUNTEER</p>
               <h2 style={styles.cardTitle}>Volunteer Experience</h2>
               <p style={styles.previewHelp}>
-                Add volunteer work if you have it. This is optional. You can describe
-                what you did in plain language and use the same AI helper to identify
-                skills and build up to 5 resume bullets.
+                Include relevant volunteer or community experience and use AI to strengthen the description when helpful.
               </p>
 
               {volunteers.map((item, index) => (
@@ -1902,7 +1902,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
                   <div style={styles.aiDescribeBox}>
                     <p style={styles.aiMiniKicker}>AI SKILL + BULLET HELPER</p>
-                    <h3 style={styles.aiDescribeTitle}>Describe what you did</h3>
+                    <h3 style={styles.aiDescribeTitle}>Describe Your Responsibilities</h3>
                     <p style={styles.helper}>
                       Explain it normally. HireMinds can identify transferable skills
                       and build professional bullet points from your description.
@@ -1925,7 +1925,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                     >
                       {aiLoading === `volunteer-${index}`
                         ? "Working..."
-                        : "✦ Find My Skills + Build My Bullets"}
+                        : "✦ Identify Skills + Generate Bullet Points"}
                     </button>
                   </div>
 
@@ -1973,10 +1973,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
             <section id="accomplishments" style={styles.card}>
               <p style={styles.cardKicker}>ACCOMPLISHMENTS</p>
-              <h2 style={styles.cardTitle}>Accomplishments / Recognition</h2>
+              <h2 style={styles.cardTitle}>Accomplishments & Recognition</h2>
               <p style={styles.previewHelp}>
-                Optional. Add awards, recognition, completed programs, special
-                achievements, or other accomplishments you want an employer to notice.
+                Highlight awards, recognition, completed programs, and other notable achievements.
               </p>
 
               <textarea
@@ -1987,7 +1986,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               />
 
               <div style={styles.sectionGroup}>
-                <p style={styles.cardKicker}>WHERE SHOULD THIS SECTION APPEAR?</p>
+                <p style={styles.cardKicker}>ACCOMPLISHMENTS PLACEMENT</p>
 
                 <div className="reentry-placement-grid" style={styles.placementChoices}>
                   {[
@@ -2202,14 +2201,12 @@ const styles: Record<string, CSSProperties> = {
   },
 
   topBar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: "24px",
+    position: "relative",
+    display: "block",
     marginBottom: "16px",
     paddingBottom: "20px",
     borderBottom: "1px solid rgba(148,163,184,0.18)",
-    flexWrap: "wrap",
+    textAlign: "center",
   },
 
   kicker: {
@@ -2223,7 +2220,9 @@ const styles: Record<string, CSSProperties> = {
 
   pageTitle: {
     margin: 0,
-    maxWidth: "760px",
+    maxWidth: "860px",
+    marginLeft: "auto",
+    marginRight: "auto",
     color: "#ffffff",
     fontSize: "clamp(34px, 4vw, 48px)",
     lineHeight: 1.04,
@@ -2233,13 +2232,18 @@ const styles: Record<string, CSSProperties> = {
 
   pageIntro: {
     margin: "12px 0 0",
-    maxWidth: "760px",
+    maxWidth: "820px",
+    marginLeft: "auto",
+    marginRight: "auto",
     color: "#9aa9bc",
     fontSize: "14px",
     lineHeight: 1.6,
   },
 
   backTop: {
+    position: "absolute",
+    right: 0,
+    top: "4px",
     color: "#8FC1FF",
     textDecoration: "none",
     fontSize: "12px",
@@ -2252,6 +2256,7 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 20,
     display: "flex",
     flexWrap: "wrap",
+    justifyContent: "center",
     gap: "8px",
     marginBottom: "18px",
     padding: "10px 0",
@@ -2304,14 +2309,17 @@ const styles: Record<string, CSSProperties> = {
 
   sectionHeading: {
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
     gap: "18px",
     marginBottom: "16px",
+    textAlign: "center",
+    flexWrap: "wrap",
   },
 
   cardKicker: {
     margin: "0 0 7px",
+    textAlign: "center",
     color: "#1677FF",
     fontSize: "10px",
     fontWeight: 850,
@@ -2321,6 +2329,7 @@ const styles: Record<string, CSSProperties> = {
 
   cardTitle: {
     margin: "0 0 12px",
+    textAlign: "center",
     color: "#ffffff",
     fontSize: "23px",
     lineHeight: 1.15,
@@ -2329,8 +2338,9 @@ const styles: Record<string, CSSProperties> = {
   },
 
   previewHelp: {
-    margin: 0,
-    maxWidth: "720px",
+    margin: "0 auto",
+    maxWidth: "760px",
+    textAlign: "center",
     color: "#cbd5e1",
     fontSize: "13px",
     lineHeight: 1.55,
