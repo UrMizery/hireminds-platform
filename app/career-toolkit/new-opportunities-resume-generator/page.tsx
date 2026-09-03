@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
 type ResumeFormat = "Chronological" | "Functional" | "Combination";
+type OutputStyle = "Polished Professional" | "ATS Structured";
 type AccomplishmentPlacement = "end" | "after-summary" | "after-skills" | "after-education";
 type Bullet = { text: string };
 
@@ -297,6 +298,8 @@ export default function NewOpportunitiesResumeGeneratorPage() {
   const [fontFamily, setFontFamily] = useState<ResumeFont>("Arial");
   const [resumeFormat, setResumeFormat] =
     useState<ResumeFormat>("Functional");
+  const [outputStyle, setOutputStyle] =
+    useState<OutputStyle>("Polished Professional");
   const [accomplishments, setAccomplishments] = useState("");
   const [accomplishmentPlacement, setAccomplishmentPlacement] =
     useState<AccomplishmentPlacement>("end");
@@ -391,6 +394,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
         setFontFamily(draft.fontFamily || "Arial");
         setResumeFormat(draft.resumeFormat || "Functional");
+        setOutputStyle(draft.outputStyle || "Polished Professional");
         setAccomplishments(draft.accomplishments || "");
         setAccomplishmentPlacement(draft.accomplishmentPlacement || "end");
         setFullName(draft.fullName || "");
@@ -452,6 +456,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
       JSON.stringify({
         fontFamily,
         resumeFormat,
+        outputStyle,
         accomplishments,
         accomplishmentPlacement,
         fullName,
@@ -474,6 +479,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
     draftLoaded,
     fontFamily,
     resumeFormat,
+    outputStyle,
     accomplishments,
     accomplishmentPlacement,
     fullName,
@@ -909,6 +915,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
         JSON.stringify({
           fontFamily,
           resumeFormat,
+          outputStyle,
           accomplishments,
           accomplishmentPlacement,
           fullName,
@@ -998,6 +1005,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               margin: 0 0 18px;
               padding: 0 0 11px;
               border-bottom: 2px solid #1677FF;
+              text-align: center;
             }
             .resumeName {
               margin: 0 0 5px;
@@ -1010,6 +1018,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               font-size: 10.5pt;
               line-height: 1.35;
               color: #475569;
+              text-align: center;
             }
             .resumeLinkedin { color: #145fad; }
             .resumeSection { margin-bottom: 15px; }
@@ -1020,6 +1029,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               font-size: 11.5pt;
               font-weight: 800;
               letter-spacing: .03em;
+              text-align: center;
             }
             .resumeParagraph {
               margin: 0;
@@ -1028,8 +1038,8 @@ export default function NewOpportunitiesResumeGeneratorPage() {
             }
             .skillsGrid {
               display: grid;
-              grid-template-columns: repeat(3,1fr);
-              gap: 4px 16px;
+              grid-template-columns: ${outputStyle === "ATS Structured" ? "1fr" : "repeat(3,1fr)"};
+              gap: ${outputStyle === "ATS Structured" ? "3px" : "4px 16px"};
             }
             .skillItem {
               margin: 0;
@@ -1112,7 +1122,13 @@ export default function NewOpportunitiesResumeGeneratorPage() {
           <h3 className="resumeSectionTitle" style={styles.resumeSectionTitle}>
             CORE SKILLS
           </h3>
-          <div className="skillsGrid" style={styles.skillsGrid}>
+          <div
+            className="skillsGrid"
+            style={{
+              ...styles.skillsGrid,
+              ...(outputStyle === "ATS Structured" ? styles.skillsGridAts : {}),
+            }}
+          >
             {skills.map((skill) => (
               <p key={skill} className="skillItem" style={styles.skillItem}>
                 • {skill}
@@ -1314,7 +1330,8 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
           .reentry-two-col,
           .reentry-layout-choices,
-          .reentry-actions {
+          .reentry-actions,
+          .reentry-output-choices {
             grid-template-columns: 1fr !important;
           }
 
@@ -1440,6 +1457,34 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                       <span style={styles.layoutDescription}>{item.description}</span>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div style={styles.sectionGroup}>
+                <p style={styles.cardKicker}>RESUME OUTPUT STYLE</p>
+                <div className="reentry-output-choices" style={styles.outputChoices}>
+                  {(["Polished Professional", "ATS Structured"] as OutputStyle[]).map(
+                    (choice) => (
+                      <button
+                        key={choice}
+                        type="button"
+                        onClick={() => setOutputStyle(choice)}
+                        style={{
+                          ...styles.outputChoice,
+                          ...(outputStyle === choice
+                            ? styles.outputChoiceSelected
+                            : {}),
+                        }}
+                      >
+                        <strong style={styles.outputChoiceTitle}>{choice}</strong>
+                        <span style={styles.outputChoiceCopy}>
+                          {choice === "Polished Professional"
+                            ? "Visually refined for human readers while staying clean and professional."
+                            : "Simplified single-flow structure with stricter ATS-friendly formatting."}
+                        </span>
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -2057,7 +2102,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               <div style={styles.previewCardTop}>
                 <div>
                   <p style={styles.cardKicker}>LIVE PREVIEW</p>
-                  <strong style={styles.previewChoice}>{resumeFormat}</strong>
+                  <strong style={styles.previewChoice}>
+                    {resumeFormat} · {outputStyle}
+                  </strong>
                 </div>
                 <span style={styles.previewTag}>REENTRY / SECOND CHANCE</span>
               </div>
@@ -2066,7 +2113,13 @@ export default function NewOpportunitiesResumeGeneratorPage() {
             <div
               ref={resumePrintRef}
               className="resumePaper"
-              style={{ ...styles.resumePaper, fontFamily }}
+              style={{
+                ...styles.resumePaper,
+                ...(outputStyle === "ATS Structured"
+                  ? styles.resumePaperAts
+                  : styles.resumePaperPolished),
+                fontFamily,
+              }}
             >
               <header className="resumeHeader" style={styles.resumeHeader}>
                 <h1 className="resumeName" style={styles.resumeName}>
@@ -2720,6 +2773,57 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: ".06em",
   },
 
+  outputChoices: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+
+  outputChoice: {
+    minHeight: "92px",
+    padding: "14px",
+    borderRadius: "9px",
+    border: "1px solid rgba(148,163,184,.22)",
+    background: "rgba(3,8,18,.40)",
+    textAlign: "left",
+    cursor: "pointer",
+  },
+
+  outputChoiceSelected: {
+    borderColor: "#1677FF",
+    background: "rgba(22,119,255,.11)",
+    boxShadow: "0 0 0 2px rgba(22,119,255,.06)",
+  },
+
+  outputChoiceTitle: {
+    display: "block",
+    marginBottom: "6px",
+    color: "#ffffff",
+    fontSize: "13px",
+  },
+
+  outputChoiceCopy: {
+    display: "block",
+    color: "#9aa9bc",
+    fontSize: "10px",
+    lineHeight: 1.5,
+  },
+
+  resumePaperPolished: {
+    borderTop: "4px solid #1677FF",
+  },
+
+  resumePaperAts: {
+    borderTop: "1px solid #D5DEE8",
+    borderRadius: "0",
+    boxShadow: "0 14px 36px rgba(0,0,0,.16)",
+  },
+
+  skillsGridAts: {
+    gridTemplateColumns: "1fr",
+    gap: "3px",
+  },
+
   resumePaper: {
     width: "100%",
     minHeight: "900px",
@@ -2735,6 +2839,7 @@ const styles: Record<string, CSSProperties> = {
     marginBottom: "18px",
     paddingBottom: "11px",
     borderBottom: "2px solid #1677FF",
+    textAlign: "center",
   },
 
   resumeName: {
@@ -2749,12 +2854,14 @@ const styles: Record<string, CSSProperties> = {
     color: "#475569",
     fontSize: "10px",
     lineHeight: 1.4,
+    textAlign: "center",
   },
 
   resumeLinkedin: {
     margin: 0,
     color: "#145FAD",
     fontSize: "10px",
+    textAlign: "center",
   },
 
   resumeSection: {
@@ -2769,6 +2876,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "11px",
     fontWeight: 850,
     letterSpacing: ".04em",
+    textAlign: "center",
   },
 
   resumeParagraph: {
