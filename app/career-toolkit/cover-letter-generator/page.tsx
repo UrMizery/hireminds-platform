@@ -53,17 +53,17 @@ const TEMPLATE_OPTIONS: {
   {
     name: "Modern",
     eyebrow: "CLEAN + CURRENT",
-    description: "Blue accent line, strong name header, and a polished contemporary layout.",
+    description: "Contemporary layout with confident, current wording and a polished professional tone.",
   },
   {
     name: "Executive",
     eyebrow: "REFINED + FORMAL",
-    description: "Traditional alignment with elevated typography and restrained navy details.",
+    description: "Refined executive presentation with stronger positioning, richer detail, and elevated language.",
   },
   {
     name: "Minimal",
     eyebrow: "SIMPLE + SHARP",
-    description: "Extra white space, subtle rules, and a crisp editorial-style presentation.",
+    description: "Simple presentation with concise, straightforward wording and no extra flourish.",
   },
 ];
 
@@ -333,6 +333,7 @@ export default function CoverLetterGeneratorPage() {
           currentText,
           jobDescription,
           resumeContext,
+          template,
         }),
       });
 
@@ -365,7 +366,7 @@ export default function CoverLetterGeneratorPage() {
     }
   }
 
-  async function requestAiFullDraft() {
+  async function buildTailoredCoverLetter() {
     try {
       setAiLoading("all");
       setMessage("");
@@ -386,6 +387,7 @@ export default function CoverLetterGeneratorPage() {
           closingLine,
           jobDescription,
           resumeContext,
+          template,
         }),
       });
 
@@ -478,7 +480,7 @@ export default function CoverLetterGeneratorPage() {
         @media print {
           @page {
             size: letter;
-            margin: 0.55in;
+            margin: 0.42in 0.55in 0.5in;
           }
 
           html,
@@ -499,8 +501,12 @@ export default function CoverLetterGeneratorPage() {
 
           .print-wrap {
             position: absolute !important;
-            inset: 0 !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: auto !important;
+            bottom: auto !important;
             width: 100% !important;
+            min-height: 0 !important;
             background: white !important;
             padding: 0 !important;
             margin: 0 !important;
@@ -508,12 +514,18 @@ export default function CoverLetterGeneratorPage() {
 
           .cover-letter-paper {
             width: 100% !important;
-            min-height: auto !important;
+            min-height: 0 !important;
+            height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
             border: 0 !important;
             border-radius: 0 !important;
             box-shadow: none !important;
+          }
+
+          .cover-letter-paper header {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
           }
 
           .hide-on-print {
@@ -545,6 +557,10 @@ export default function CoverLetterGeneratorPage() {
           }
 
           .cover-letter-actions {
+            grid-template-columns: 1fr !important;
+          }
+
+          .cover-letter-structure {
             grid-template-columns: 1fr !important;
           }
 
@@ -743,6 +759,32 @@ export default function CoverLetterGeneratorPage() {
                   </strong>
                 </span>
               </div>
+
+              <div className="cover-letter-structure" style={styles.structurePanel}>
+                <div>
+                  <span style={styles.structureEyebrow}>OPTIONAL AI STEP</span>
+                  <strong style={styles.structureTitle}>Ready to structure the letter?</strong>
+                  <span style={styles.structureCopy}>
+                    HireMinds will use whatever you provided — resume, job description,
+                    company, job title, or your existing paragraphs. You do not need to
+                    complete every field.
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={buildTailoredCoverLetter}
+                  disabled={aiLoading !== null}
+                  style={{
+                    ...styles.structureButton,
+                    ...(aiLoading !== null ? styles.aiButtonDisabled : {}),
+                  }}
+                >
+                  {aiLoading === "all"
+                    ? "Structuring..."
+                    : `✦ Build ${template} Cover Letter`}
+                </button>
+              </div>
             </section>
 
             <section style={styles.controlSection}>
@@ -876,7 +918,7 @@ export default function CoverLetterGeneratorPage() {
 
                 <button
                   type="button"
-                  onClick={requestAiFullDraft}
+                  onClick={buildTailoredCoverLetter}
                   disabled={aiLoading !== null}
                   style={{
                     ...styles.aiDraftAllButton,
@@ -884,8 +926,8 @@ export default function CoverLetterGeneratorPage() {
                   }}
                 >
                   {aiLoading === "all"
-                    ? "Building..."
-                    : "✦ Build Tailored Cover Letter"}
+                    ? "Structuring Cover Letter..."
+                    : "✦ Structure My Cover Letter"}
                 </button>
               </div>
 
@@ -1631,6 +1673,58 @@ const styles: Record<string, CSSProperties> = {
     cursor: "not-allowed",
   },
 
+  structurePanel: {
+    marginTop: "18px",
+    padding: "18px",
+    display: "grid",
+    gridTemplateColumns: "minmax(0,1fr) auto",
+    gap: "20px",
+    alignItems: "center",
+    borderRadius: "14px",
+    border: "1px solid rgba(22,119,255,.22)",
+    background:
+      "linear-gradient(120deg, rgba(8,39,73,.98) 0%, rgba(13,57,104,.97) 66%, rgba(22,119,255,.92) 140%)",
+    boxShadow: "0 14px 30px rgba(13,57,104,.12)",
+  },
+
+  structureEyebrow: {
+    display: "block",
+    marginBottom: "5px",
+    color: "#78B8FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".12em",
+  },
+
+  structureTitle: {
+    display: "block",
+    marginBottom: "5px",
+    color: "#FFFFFF",
+    fontSize: "15px",
+    lineHeight: 1.25,
+  },
+
+  structureCopy: {
+    display: "block",
+    maxWidth: "650px",
+    color: "#C7D8E9",
+    fontSize: "10px",
+    lineHeight: 1.55,
+  },
+
+  structureButton: {
+    minHeight: "42px",
+    padding: "0 16px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,.22)",
+    background: "#FFFFFF",
+    color: "#0B376B",
+    fontSize: "10px",
+    fontWeight: 900,
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+  },
+
   contextIntro: {
     margin: "-2px 0 18px",
     maxWidth: "760px",
@@ -1832,8 +1926,8 @@ const styles: Record<string, CSSProperties> = {
   },
 
   previewPaper: {
-    minHeight: "980px",
-    padding: "58px 62px",
+    minHeight: "860px",
+    padding: "42px 54px 50px",
     background:
       "linear-gradient(180deg, #FCFDFE 0%, #F7FAFC 100%)",
     color: "#111827",
@@ -1872,7 +1966,7 @@ const styles: Record<string, CSSProperties> = {
 
   headerRule: {
     width: "100%",
-    margin: "21px 0 28px",
+    margin: "16px 0 22px",
   },
 
   letterBody: {
@@ -1880,7 +1974,7 @@ const styles: Record<string, CSSProperties> = {
   },
 
   dateText: {
-    margin: "0 0 22px",
+    margin: "0 0 17px",
     color: "#374151",
     fontSize: "11.5pt",
     lineHeight: 1.55,
