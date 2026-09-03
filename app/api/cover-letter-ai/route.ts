@@ -12,13 +12,82 @@ function clean(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function serializeResumeContext(value: unknown) {
+  if (!value || typeof value !== "object") return "No resume uploaded.";
+
+  const resume = value as Record<string, unknown>;
+  const summary = clean(resume.summaryText);
+  const accomplishments = clean(resume.accomplishments);
+
+  const skills = Array.isArray(resume.skills)
+    ? resume.skills
+        .map((item) => clean(item))
+        .filter(Boolean)
+        .slice(0, 12)
+    : [];
+
+  const experiences = Array.isArray(resume.experiences)
+    ? resume.experiences.slice(0, 8).map((item: any) => {
+        const bullets = Array.isArray(item?.bullets)
+          ? item.bullets
+              .map((bullet: any) => clean(bullet?.text))
+              .filter(Boolean)
+              .slice(0, 6)
+          : [];
+
+        return [
+          `Role: ${clean(item?.roleTitle) || "Not stated"}`,
+          `Company: ${clean(item?.companyName) || "Not stated"}`,
+          bullets.length ? `Bullets: ${bullets.join(" | ")}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+      })
+    : [];
+
+  const education = Array.isArray(resume.educationItems)
+    ? resume.educationItems.slice(0, 5).map((item: any) =>
+        [clean(item?.degree), clean(item?.schoolName)].filter(Boolean).join(" — ")
+      )
+    : [];
+
+  const certificates = Array.isArray(resume.certificateItems)
+    ? resume.certificateItems.slice(0, 8).map((item: any) =>
+        [clean(item?.certificateName), clean(item?.organizationName)]
+          .filter(Boolean)
+          .join(" — ")
+      )
+    : [];
+
+  return [
+    summary ? `Professional summary: ${summary}` : "",
+    skills.length ? `Skills: ${skills.join(", ")}` : "",
+    experiences.length ? `Experience:\n${experiences.join("\n\n")}` : "",
+    education.length ? `Education: ${education.join(" | ")}` : "",
+    certificates.length ? `Certifications: ${certificates.join(" | ")}` : "",
+    accomplishments ? `Accomplishments: ${accomplishments}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, 14000);
+}
+
 function buildContext(body: Record<string, unknown>) {
+  const jobDescription = clean(body.jobDescription).slice(0, 12000);
+  const resumeContext = serializeResumeContext(body.resumeContext);
+
   return [
     `Applicant name: ${clean(body.fullName) || "Not provided"}`,
     `Target job title: ${clean(body.jobTitle) || "Not provided"}`,
     `Company: ${clean(body.companyName) || "Not provided"}`,
     `Employer/contact: ${clean(body.employerName) || "Not provided"}`,
     `Hiring manager: ${clean(body.hiringManager) || "Not provided"}`,
+    "",
+    "JOB DESCRIPTION:",
+    jobDescription || "Not provided.",
+    "",
+    "RESUME CONTEXT:",
+    resumeContext,
   ].join("\n");
 }
 
@@ -130,6 +199,10 @@ Create professional cover-letter content for the requested section.
 
 RULES:
 - Never invent work history, employers, dates, education, licenses, certifications, accomplishments, numbers, software, or credentials.
+- Use the uploaded resume as the factual source for the applicant's background.
+- Use the job description to identify the employer's priorities, responsibilities, qualifications, and useful keywords.
+- Connect ONLY real resume evidence to relevant job requirements.
+- Do not claim a skill simply because it appears in the job description.
 - If details are limited, use transferable language without pretending facts exist.
 - Keep the tone sophisticated, natural, concise, and human.
 - Avoid buzzword stuffing, clichés, exaggerated claims, and robotic wording.
@@ -162,6 +235,10 @@ Draft four concise cover-letter paragraphs using ONLY the information provided.
 
 RULES:
 - Never invent work history, employers, dates, education, licenses, certifications, accomplishments, numbers, systems, or credentials.
+- Treat the uploaded resume as the factual source for the applicant's experience and skills.
+- Analyze the job description for the employer's strongest priorities and connect those priorities to actual resume evidence.
+- Do not copy large phrases from the job description.
+- Do not claim qualifications that appear only in the job description and not in the resume or user-entered content.
 - If the applicant has not provided enough experience details, use careful transferable language rather than fake specifics.
 - Tone: sophisticated, professional, warm, concise, modern, and human.
 - Avoid clichés and generic filler.
