@@ -61,7 +61,7 @@ type CredentialItem = {
   year: string;
 };
 
-const STORAGE_KEY = "hireminds-reentry-resume-draft-v3";
+const STORAGE_KEY = "hireminds-reentry-resume-draft-v4";
 const SKILL_LIMIT = 9;
 const BULLET_LIMIT = 5;
 
@@ -83,26 +83,19 @@ const MONTHS = [
 
 const LAYOUTS: Array<{
   name: ResumeLayout;
-  kicker: string;
   description: string;
 }> = [
   {
     name: "Skills First",
-    kicker: "GREAT IF EXPERIENCE IS LIMITED",
-    description:
-      "Puts your strongest transferable skills right near the top.",
+    description: "Best when your transferable skills are stronger than your work history.",
   },
   {
     name: "Balanced",
-    kicker: "A LITTLE OF BOTH",
-    description:
-      "Balances skills, summary, and experience in a simple professional flow.",
+    description: "A simple mix of summary, skills, and experience.",
   },
   {
     name: "Experience First",
-    kicker: "GOOD IF YOU HAVE SOLID WORK ASSIGNMENTS",
-    description:
-      "Shows your strongest experience sooner while still keeping skills visible.",
+    description: "Best when you have work assignments or jobs you want employers to see first.",
   },
 ];
 
@@ -118,7 +111,13 @@ function createExperience(): ExperienceItem {
     endYear: "",
     isPresent: false,
     description: "",
-    bullets: [{ text: "" }, { text: "" }, { text: "" }],
+    bullets: [
+      { text: "" },
+      { text: "" },
+      { text: "" },
+      { text: "" },
+      { text: "" },
+    ],
   };
 }
 
@@ -184,7 +183,7 @@ function hasCredential(item: CredentialItem) {
   );
 }
 
-function sectionOrder(layout: ResumeLayout) {
+function buildSectionOrder(layout: ResumeLayout) {
   if (layout === "Skills First") {
     return ["skills", "summary", "experience", "education"] as const;
   }
@@ -218,8 +217,8 @@ export default function NewOpportunitiesResumeGeneratorPage() {
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
-
   const [targetRole, setTargetRole] = useState("");
+
   const [summaryText, setSummaryText] = useState("");
   const [skillsInput, setSkillsInput] = useState("");
 
@@ -315,10 +314,10 @@ export default function NewOpportunitiesResumeGeneratorPage() {
             ? draft.experiences.map((item: ExperienceItem) => ({
                 ...createExperience(),
                 ...item,
-                bullets:
-                  Array.isArray(item.bullets) && item.bullets.length
-                    ? item.bullets
-                    : createExperience().bullets,
+                bullets: [
+                  ...(Array.isArray(item.bullets) ? item.bullets : []),
+                  ...createExperience().bullets,
+                ].slice(0, BULLET_LIMIT),
               }))
             : [createExperience()]
         );
@@ -388,7 +387,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
     [credentials]
   );
   const orderedSections = useMemo(
-    () => sectionOrder(layoutChoice),
+    () => buildSectionOrder(layoutChoice),
     [layoutChoice]
   );
 
@@ -448,24 +447,31 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
       if (Array.isArray(parsed.experiences) && parsed.experiences.length) {
         setExperiences(
-          parsed.experiences.slice(0, 5).map((item) => ({
-            organizationName: item.companyName || "",
-            city: item.city || "",
-            state: item.state || "",
-            roleTitle: item.roleTitle || "",
-            startMonth: item.startMonth || "",
-            startYear: item.startYear || "",
-            endMonth: item.endMonth || "",
-            endYear: item.endYear || "",
-            isPresent: Boolean(item.isPresent),
-            description: "",
-            bullets:
+          parsed.experiences.slice(0, 5).map((item) => {
+            const importedBullets =
               Array.isArray(item.bullets) && item.bullets.length
                 ? item.bullets
                     .slice(0, BULLET_LIMIT)
                     .map((bullet) => ({ text: bullet.text || "" }))
-                : createExperience().bullets,
-          }))
+                : [];
+
+            return {
+              organizationName: item.companyName || "",
+              city: item.city || "",
+              state: item.state || "",
+              roleTitle: item.roleTitle || "",
+              startMonth: item.startMonth || "",
+              startYear: item.startYear || "",
+              endMonth: item.endMonth || "",
+              endYear: item.endYear || "",
+              isPresent: Boolean(item.isPresent),
+              description: "",
+              bullets: [
+                ...importedBullets,
+                ...createExperience().bullets,
+              ].slice(0, BULLET_LIMIT),
+            };
+          })
         );
       }
 
@@ -496,7 +502,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
       }
 
       setMessage(
-        "Resume imported. Review what came in, then use the AI helpers to strengthen it."
+        "Resume imported. Review it, then use the AI helpers only where you need them."
       );
     } catch (error) {
       setMessage(
@@ -579,7 +585,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
     const item = experiences[index];
 
     if (!item.roleTitle.trim() && !item.description.trim()) {
-      setMessage("Add a title or describe what you did first.");
+      setMessage("Add a title or tell us what you did first.");
       return;
     }
 
@@ -607,9 +613,12 @@ export default function NewOpportunitiesResumeGeneratorPage() {
             itemIndex === index
               ? {
                   ...experience,
-                  bullets: data.bullets
-                    .slice(0, BULLET_LIMIT)
-                    .map((bullet: unknown) => ({ text: String(bullet) })),
+                  bullets: [
+                    ...data.bullets
+                      .slice(0, BULLET_LIMIT)
+                      .map((bullet: unknown) => ({ text: String(bullet) })),
+                    ...createExperience().bullets,
+                  ].slice(0, BULLET_LIMIT),
                 }
               : experience
           )
@@ -617,33 +626,13 @@ export default function NewOpportunitiesResumeGeneratorPage() {
       }
 
       setMessage(
-        "I found transferable skills and created resume bullets from what you described."
+        "Done. I added supported skills and built resume bullets from what you described."
       );
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
           : "Unable to analyze that experience right now."
-      );
-    } finally {
-      setAiLoading(null);
-    }
-  }
-
-  async function handleSummary() {
-    try {
-      setAiLoading("summary");
-      setMessage("");
-
-      const data = await callAi("summary");
-
-      if (!data?.summary) throw new Error("No summary was returned.");
-
-      setSummaryText(String(data.summary));
-      setMessage("Summary created. Review it and keep only what feels accurate.");
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to create summary."
       );
     } finally {
       setAiLoading(null);
@@ -666,6 +655,26 @@ export default function NewOpportunitiesResumeGeneratorPage() {
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Unable to identify skills."
+      );
+    } finally {
+      setAiLoading(null);
+    }
+  }
+
+  async function handleSummary() {
+    try {
+      setAiLoading("summary");
+      setMessage("");
+
+      const data = await callAi("summary");
+
+      if (!data?.summary) throw new Error("No summary was returned.");
+
+      setSummaryText(String(data.summary));
+      setMessage("Summary created. Review it and edit anything you want.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Unable to create summary."
       );
     } finally {
       setAiLoading(null);
@@ -987,7 +996,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
   if (loadingUser) {
     return (
       <main style={styles.page}>
-        <div style={styles.loading}>Loading your resume builder...</div>
+        <div style={styles.centerWrap}>Loading your resume builder...</div>
       </main>
     );
   }
@@ -995,6 +1004,8 @@ export default function NewOpportunitiesResumeGeneratorPage() {
   return (
     <main style={styles.page}>
       <style>{`
+        html { scroll-behavior: smooth; }
+
         @media (max-width: 1120px) {
           .reentry-layout {
             grid-template-columns: 1fr !important;
@@ -1002,12 +1013,13 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
           .reentry-preview {
             position: static !important;
+            max-height: none !important;
           }
         }
 
         @media (max-width: 720px) {
           .reentry-page {
-            padding: 16px 12px 44px !important;
+            padding: 20px 14px 44px !important;
           }
 
           .reentry-two-col,
@@ -1016,48 +1028,57 @@ export default function NewOpportunitiesResumeGeneratorPage() {
             grid-template-columns: 1fr !important;
           }
 
-          .reentry-hero {
-            grid-template-columns: 1fr !important;
+          .reentry-topbar {
+            align-items: flex-start !important;
           }
 
-          .reentry-builder-row {
+          .reentry-section-heading {
             flex-direction: column !important;
             align-items: flex-start !important;
+          }
+
+          .reentry-bullet-row {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
 
-      <div className="reentry-page" style={styles.pageInner}>
-        <section className="reentry-hero" style={styles.hero}>
+      <div className="reentry-page" style={styles.container}>
+        <div className="reentry-topbar" style={styles.topBar}>
           <div>
-            <p style={styles.heroKicker}>REENTRY / SECOND CHANCE RESUME BUILDER</p>
-            <h1 style={styles.heroTitle}>
-              Start with what you’ve done.
-              <span style={styles.heroAccent}> We’ll help turn it into a resume.</span>
+            <p style={styles.kicker}>REENTRY / SECOND CHANCE RESUME GENERATOR</p>
+            <h1 style={styles.pageTitle}>
+              Build your resume one simple section at a time.
             </h1>
-            <p style={styles.heroText}>
-              You do not need a long work history. Work assignments, kitchen work,
-              cleaning, maintenance, laundry, training, programs, volunteer work,
-              and other real responsibilities can all help show what you know how to do.
+            <p style={styles.pageIntro}>
+              No moving sections. No complicated setup. Add what you know, describe what
+              you did, and use AI only when you want help.
             </p>
           </div>
 
-          <div style={styles.heroBubble}>
-            <span style={styles.heroBubbleSmall}>HOW IT WORKS</span>
-            <strong>Describe it → Find the skill → Build the bullet</strong>
-          </div>
-        </section>
+          <a href="/career-toolkit" style={styles.backTop}>
+            ← Career ToolKit
+          </a>
+        </div>
+
+        <nav style={styles.stepNav}>
+          <a href="#start" style={styles.stepLink}>Start</a>
+          <a href="#experience" style={styles.stepLink}>Experience</a>
+          <a href="#skills" style={styles.stepLink}>Skills</a>
+          <a href="#summary" style={styles.stepLink}>Summary</a>
+          <a href="#education" style={styles.stepLink}>Education</a>
+        </nav>
 
         <div className="reentry-layout" style={styles.layout}>
-          <div>
-            <section style={styles.panel}>
-              <div className="reentry-builder-row" style={styles.sectionHeading}>
+          <div style={styles.leftCol}>
+            <section id="start" style={styles.card}>
+              <div className="reentry-section-heading" style={styles.sectionHeading}>
                 <div>
-                  <p style={styles.stepLabel}>START HERE</p>
-                  <h2 style={styles.sectionTitle}>Already have a resume?</h2>
-                  <p style={styles.sectionCopy}>
-                    Upload it and we’ll pull in what is already there. You can clean it up
-                    instead of starting over.
+                  <p style={styles.cardKicker}>START</p>
+                  <h2 style={styles.cardTitle}>Start fresh or upload what you already have</h2>
+                  <p style={styles.previewHelp}>
+                    If you already have a resume, upload the PDF or DOCX. HireMinds will
+                    pull in the information so you can improve it instead of starting over.
                   </p>
                 </div>
 
@@ -1069,7 +1090,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                     }}
                   >
                     {resumeUploadLoading
-                      ? "Reading Resume..."
+                      ? "Reading..."
                       : resumeContext
                         ? "Replace Resume"
                         : "Upload Resume"}
@@ -1093,7 +1114,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                         setResumeContext(null);
                         setResumeFileName("");
                       }}
-                      style={styles.smallGhostButton}
+                      style={styles.smallButton}
                     >
                       Remove
                     </button>
@@ -1102,184 +1123,106 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               </div>
 
               {resumeFileName ? (
-                <div style={styles.uploadSuccess}>
-                  <span>✓</span>
-                  <strong>{resumeFileName}</strong>
-                  <span>imported</span>
-                </div>
+                <p style={styles.importedText}>✓ Imported: {resumeFileName}</p>
               ) : null}
-            </section>
 
-            <section style={styles.panel}>
-              <p style={styles.stepLabel}>CHOOSE YOUR RESUME STYLE</p>
-              <h2 style={styles.sectionTitle}>Pick one. No moving sections around.</h2>
-
-              <div className="reentry-layout-choices" style={styles.layoutChoices}>
-                {LAYOUTS.map((item) => {
-                  const selected = layoutChoice === item.name;
-
-                  return (
+              <div style={styles.sectionGroup}>
+                <p style={styles.cardKicker}>CHOOSE YOUR RESUME STYLE</p>
+                <div className="reentry-layout-choices" style={styles.layoutChoices}>
+                  {LAYOUTS.map((item) => (
                     <button
                       key={item.name}
                       type="button"
                       onClick={() => setLayoutChoice(item.name)}
                       style={{
                         ...styles.layoutCard,
-                        ...(selected ? styles.layoutCardSelected : {}),
+                        ...(layoutChoice === item.name
+                          ? styles.layoutCardSelected
+                          : {}),
                       }}
                     >
-                      <span style={styles.layoutKicker}>{item.kicker}</span>
-                      <strong style={styles.layoutTitle}>{item.name}</strong>
-                      <span style={styles.layoutCopy}>{item.description}</span>
+                      <strong style={styles.layoutName}>{item.name}</strong>
+                      <span style={styles.layoutDescription}>{item.description}</span>
                     </button>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section style={styles.panel}>
-              <div className="reentry-builder-row" style={styles.sectionHeading}>
-                <div>
-                  <p style={styles.stepLabel}>YOUR GOAL</p>
-                  <h2 style={styles.sectionTitle}>What kind of job are you trying to get?</h2>
-                  <p style={styles.sectionCopy}>
-                    This helps HireMinds choose better wording and transferable skills.
-                  </p>
-                </div>
-
-                <div style={styles.fontControl}>
-                  <span style={styles.smallLabel}>Resume Font</span>
-                  <select
-                    value={fontFamily}
-                    onChange={(e) => setFontFamily(e.target.value as ResumeFont)}
-                    style={styles.select}
-                  >
-                    <option>Arial</option>
-                    <option>Calibri</option>
-                    <option>Times New Roman</option>
-                  </select>
-                </div>
-              </div>
-
-              <Field
-                label="Target Job"
-                value={targetRole}
-                onChange={setTargetRole}
-                placeholder="Example: Warehouse Associate, Food Service, Maintenance, Customer Service"
-              />
-            </section>
-
-            <section style={styles.panel}>
-              <p style={styles.stepLabel}>YOUR INFORMATION</p>
-              <h2 style={styles.sectionTitle}>Resume header</h2>
-
-              <div className="reentry-two-col" style={styles.twoCol}>
-                <Field label="Full Name" value={fullName} onChange={setFullName} />
-                <Field label="Phone" value={phone} onChange={setPhone} />
-                <Field label="Email" value={email} onChange={setEmail} />
-                <Field label="City" value={city} onChange={setCity} />
-                <Field label="State" value={stateName} onChange={setStateName} />
-                <Field
-                  label="LinkedIn (optional)"
-                  value={linkedinUrl}
-                  onChange={setLinkedinUrl}
-                />
-              </div>
-            </section>
-
-            <section style={styles.panel}>
-              <div className="reentry-builder-row" style={styles.sectionHeading}>
-                <div>
-                  <p style={styles.stepLabel}>PROFESSIONAL SUMMARY</p>
-                  <h2 style={styles.sectionTitle}>We can help write this part.</h2>
-                  <p style={styles.sectionCopy}>
-                    The summary should focus on what you can offer now — not your past.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSummary}
-                  disabled={aiLoading !== null}
-                  style={styles.aiButton}
-                >
-                  {aiLoading === "summary"
-                    ? "Writing..."
-                    : summaryText.trim()
-                      ? "✦ Strengthen My Summary"
-                      : "✦ Help Write My Summary"}
-                </button>
-              </div>
-
-              <textarea
-                value={summaryText}
-                onChange={(e) => setSummaryText(e.target.value)}
-                placeholder="Leave this blank and use the AI button if you want help."
-                style={styles.textarea}
-              />
-            </section>
-
-            <section style={styles.panel}>
-              <div className="reentry-builder-row" style={styles.sectionHeading}>
-                <div>
-                  <p style={styles.stepLabel}>SKILLS</p>
-                  <h2 style={styles.sectionTitle}>Not sure what your skills are?</h2>
-                  <p style={styles.sectionCopy}>
-                    That’s okay. Describe what you did in the experience section below,
-                    then HireMinds can identify the skills you built from it.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSkills}
-                  disabled={aiLoading !== null}
-                  style={styles.aiButton}
-                >
-                  {aiLoading === "skills"
-                    ? "Finding..."
-                    : "✦ Find Skills From My Experience"}
-                </button>
-              </div>
-
-              <input
-                value={skillsInput}
-                onChange={(e) => setSkillsInput(e.target.value)}
-                placeholder="Communication, Food Preparation, Cleaning, Teamwork..."
-                style={styles.input}
-              />
-
-              {skills.length ? (
-                <div style={styles.skillChips}>
-                  {skills.map((skill) => (
-                    <span key={skill} style={styles.skillChip}>
-                      {skill}
-                    </span>
                   ))}
                 </div>
-              ) : null}
+              </div>
+
+              <div style={styles.sectionGroup}>
+                <div className="reentry-two-col" style={styles.twoColForm}>
+                  <Field
+                    label="Full Name"
+                    value={fullName}
+                    onChange={setFullName}
+                  />
+                  <Field
+                    label="Phone"
+                    value={phone}
+                    onChange={setPhone}
+                  />
+                  <Field
+                    label="Email"
+                    value={email}
+                    onChange={setEmail}
+                  />
+                  <Field
+                    label="Target Job"
+                    value={targetRole}
+                    onChange={setTargetRole}
+                    placeholder="Warehouse Associate, Food Service, Maintenance..."
+                  />
+                  <Field
+                    label="City"
+                    value={city}
+                    onChange={setCity}
+                  />
+                  <Field
+                    label="State"
+                    value={stateName}
+                    onChange={setStateName}
+                  />
+                  <Field
+                    label="LinkedIn (optional)"
+                    value={linkedinUrl}
+                    onChange={setLinkedinUrl}
+                  />
+
+                  <div>
+                    <label style={styles.inputLabel}>Resume Font</label>
+                    <select
+                      value={fontFamily}
+                      onChange={(e) =>
+                        setFontFamily(e.target.value as ResumeFont)
+                      }
+                      style={styles.select}
+                    >
+                      <option>Arial</option>
+                      <option>Calibri</option>
+                      <option>Times New Roman</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </section>
 
-            <section style={styles.panel}>
-              <p style={styles.stepLabel}>EXPERIENCE</p>
-              <h2 style={styles.sectionTitle}>Tell us what you did. Keep it simple.</h2>
-              <p style={styles.sectionCopy}>
-                This can be a regular job or work you did while incarcerated. Use the
-                real title and setting you are comfortable documenting. HireMinds will
-                help translate the duties into professional resume language without
-                inventing anything.
+            <section id="experience" style={styles.card}>
+              <p style={styles.cardKicker}>EXPERIENCE</p>
+              <h2 style={styles.cardTitle}>Tell us what you did. We’ll help with the resume words.</h2>
+              <p style={styles.previewHelp}>
+                This can be a regular job or a work assignment while incarcerated.
+                Type the real title and describe the work in everyday language.
               </p>
 
               {experiences.map((item, index) => (
-                <div style={styles.experienceCard} key={index}>
-                  <div className="reentry-two-col" style={styles.twoCol}>
+                <div key={index} style={styles.experienceGroup}>
+                  <div className="reentry-two-col" style={styles.twoColForm}>
                     <Field
-                      label="Role / Job / Assignment Title"
+                      label="Role / Assignment Title"
                       value={item.roleTitle}
                       onChange={(value) =>
                         updateExperience(index, "roleTitle", value)
                       }
-                      placeholder="Example: Kitchen Worker, Porter, Laundry Worker, Maintenance"
+                      placeholder="Kitchen Worker, Porter, Laundry Worker, Maintenance..."
                     />
 
                     <Field
@@ -1288,23 +1231,27 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                       onChange={(value) =>
                         updateExperience(index, "organizationName", value)
                       }
-                      placeholder="Example: Institutional Food Service or employer name"
+                      placeholder="Employer or institutional work setting"
                     />
 
                     <Field
                       label="City"
                       value={item.city}
-                      onChange={(value) => updateExperience(index, "city", value)}
+                      onChange={(value) =>
+                        updateExperience(index, "city", value)
+                      }
                     />
 
                     <Field
                       label="State"
                       value={item.state}
-                      onChange={(value) => updateExperience(index, "state", value)}
+                      onChange={(value) =>
+                        updateExperience(index, "state", value)
+                      }
                     />
                   </div>
 
-                  <div className="reentry-two-col" style={styles.twoCol}>
+                  <div className="reentry-two-col" style={styles.twoColForm}>
                     <DateFields
                       prefix="From"
                       month={item.startMonth}
@@ -1318,7 +1265,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                     />
 
                     <div>
-                      <label style={styles.checkboxLabel}>
+                      <label style={styles.checkboxRow}>
                         <input
                           type="checkbox"
                           checked={item.isPresent}
@@ -1345,15 +1292,13 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                     </div>
                   </div>
 
-                  <div style={styles.describeBox}>
+                  <div style={styles.aiDescribeBox}>
                     <div>
-                      <span style={styles.describeKicker}>TELL ME WHAT YOU DID</span>
-                      <strong style={styles.describeTitle}>
-                        Describe your work in your own words.
-                      </strong>
-                      <p style={styles.describeCopy}>
-                        Example: “I prepared trays, cleaned the kitchen, counted supplies,
-                        followed sanitation rules, and helped newer workers learn the routine.”
+                      <p style={styles.aiMiniKicker}>AI SKILL + BULLET HELPER</p>
+                      <h3 style={styles.aiDescribeTitle}>Describe what you did</h3>
+                      <p style={styles.helper}>
+                        Example: prepared trays, cleaned kitchen areas, counted supplies,
+                        followed sanitation rules, helped newer workers learn the routine.
                       </p>
                     </div>
 
@@ -1362,35 +1307,48 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                       onChange={(e) =>
                         updateExperience(index, "description", e.target.value)
                       }
-                      placeholder="Just tell me what you did. It does not have to sound professional."
-                      style={{ ...styles.textarea, minHeight: "120px" }}
+                      placeholder="Just explain the work in your own words..."
+                      style={styles.textarea}
                     />
 
                     <button
                       type="button"
                       onClick={() => handleAnalyzeExperience(index)}
                       disabled={aiLoading !== null}
-                      style={styles.bigFunButton}
+                      style={styles.aiPrimaryButton}
                     >
                       {aiLoading === `experience-${index}`
-                        ? "Finding your skills..."
-                        : "✦ Tell Me What Skills I Gained + Build My Bullets"}
+                        ? "Working..."
+                        : "✦ Find My Skills + Build My Bullets"}
                     </button>
                   </div>
 
-                  <div style={styles.bulletSection}>
-                    <span style={styles.smallLabel}>Resume bullet points</span>
+                  <div style={styles.bulletBlock}>
+                    <div style={styles.bulletHeading}>
+                      <strong>Resume Bullet Points</strong>
+                      <span>Up to 5</span>
+                    </div>
 
                     {item.bullets.map((bullet, bulletIndex) => (
-                      <input
+                      <div
+                        className="reentry-bullet-row"
+                        style={styles.bulletRow}
                         key={bulletIndex}
-                        value={bullet.text}
-                        onChange={(e) =>
-                          updateExperienceBullet(index, bulletIndex, e.target.value)
-                        }
-                        placeholder={`Bullet ${bulletIndex + 1}`}
-                        style={styles.input}
-                      />
+                      >
+                        <span style={styles.bulletNumber}>{bulletIndex + 1}</span>
+                        <input
+                          value={bullet.text}
+                          onChange={(e) =>
+                            updateExperienceBullet(
+                              index,
+                              bulletIndex,
+                              e.target.value
+                            )
+                          }
+                          placeholder="Resume bullet"
+                          style={styles.input}
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -1401,23 +1359,107 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                 onClick={() =>
                   setExperiences((prev) => [...prev, createExperience()])
                 }
-                style={styles.addButton}
+                style={styles.smallButton}
               >
                 + Add Another Experience
               </button>
             </section>
 
-            <section style={styles.panel}>
-              <p style={styles.stepLabel}>EDUCATION + TRAINING</p>
-              <h2 style={styles.sectionTitle}>Add what you have.</h2>
-              <p style={styles.sectionCopy}>
-                GED, high school, college, OSHA, ServSafe, vocational training,
-                workforce programs, certificates, classes, and other completed training can go here.
+            <section id="skills" style={styles.card}>
+              <div className="reentry-section-heading" style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.cardKicker}>SKILLS</p>
+                  <h2 style={styles.cardTitle}>Your Stand-Alone Skills Section</h2>
+                  <p style={styles.previewHelp}>
+                    Add skills yourself or let HireMinds pull supported skills from the
+                    experience you described above. Up to 9 appear on the resume.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSkills}
+                  disabled={aiLoading !== null}
+                  style={styles.aiSecondaryButton}
+                >
+                  {aiLoading === "skills"
+                    ? "Finding..."
+                    : "✦ Identify Skills From My Experience"}
+                </button>
+              </div>
+
+              <input
+                value={skillsInput}
+                onChange={(e) => setSkillsInput(e.target.value)}
+                placeholder="Communication, Food Preparation, Cleaning, Teamwork..."
+                style={styles.input}
+              />
+
+              {skills.length ? (
+                <div style={styles.skillChips}>
+                  {skills.map((skill) => (
+                    <button
+                      key={skill}
+                      type="button"
+                      title="Remove skill"
+                      onClick={() =>
+                        setSkillsInput(
+                          skills.filter((item) => item !== skill).join(", ")
+                        )
+                      }
+                      style={styles.skillChip}
+                    >
+                      {skill} ×
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            <section id="summary" style={styles.card}>
+              <div className="reentry-section-heading" style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.cardKicker}>SUMMARY</p>
+                  <h2 style={styles.cardTitle}>Professional Summary</h2>
+                  <p style={styles.previewHelp}>
+                    This should focus on what you can offer now. It does not need to
+                    mention reentry or your past.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSummary}
+                  disabled={aiLoading !== null}
+                  style={styles.aiSecondaryButton}
+                >
+                  {aiLoading === "summary"
+                    ? "Writing..."
+                    : summaryText.trim()
+                      ? "✦ Strengthen Summary"
+                      : "✦ Write My Summary"}
+                </button>
+              </div>
+
+              <textarea
+                value={summaryText}
+                onChange={(e) => setSummaryText(e.target.value)}
+                placeholder="Write your own or use the AI button."
+                style={styles.textarea}
+              />
+            </section>
+
+            <section id="education" style={styles.card}>
+              <p style={styles.cardKicker}>EDUCATION + TRAINING</p>
+              <h2 style={styles.cardTitle}>Add what you have</h2>
+              <p style={styles.previewHelp}>
+                GED, high school, college, vocational training, OSHA, ServSafe,
+                workforce programs, certificates, classes, or other completed training.
               </p>
 
               {credentials.map((item, index) => (
-                <div style={styles.educationCard} key={index}>
-                  <div className="reentry-two-col" style={styles.twoCol}>
+                <div key={index} style={styles.sectionGroup}>
+                  <div className="reentry-two-col" style={styles.twoColForm}>
                     <Field
                       label="School / Program / Organization"
                       value={item.organizationName}
@@ -1425,6 +1467,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                         updateCredential(index, "organizationName", value)
                       }
                     />
+
                     <Field
                       label="Credential / Training"
                       value={item.credentialName}
@@ -1433,6 +1476,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                       }
                       placeholder="GED, OSHA 10, Culinary Training..."
                     />
+
                     <Field
                       label="City"
                       value={item.city}
@@ -1440,6 +1484,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                         updateCredential(index, "city", value)
                       }
                     />
+
                     <Field
                       label="State"
                       value={item.state}
@@ -1447,6 +1492,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                         updateCredential(index, "state", value)
                       }
                     />
+
                     <Field
                       label="Year"
                       value={item.year}
@@ -1455,6 +1501,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                       }
                       placeholder="2026"
                     />
+
                     <Field
                       label="Details (optional)"
                       value={item.details}
@@ -1471,7 +1518,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                 onClick={() =>
                   setCredentials((prev) => [...prev, createCredential()])
                 }
-                style={styles.addButton}
+                style={styles.smallButton}
               >
                 + Add Education / Training
               </button>
@@ -1503,13 +1550,15 @@ export default function NewOpportunitiesResumeGeneratorPage() {
             </div>
           </div>
 
-          <aside className="reentry-preview" style={styles.previewColumn}>
-            <div style={styles.previewTop}>
-              <div>
-                <span style={styles.previewKicker}>LIVE PREVIEW</span>
-                <strong style={styles.previewTitle}>{layoutChoice}</strong>
+          <aside className="reentry-preview" style={styles.rightCol}>
+            <div style={styles.previewCard}>
+              <div style={styles.previewCardTop}>
+                <div>
+                  <p style={styles.cardKicker}>LIVE PREVIEW</p>
+                  <strong style={styles.previewChoice}>{layoutChoice}</strong>
+                </div>
+                <span style={styles.previewTag}>REENTRY / SECOND CHANCE</span>
               </div>
-              <span style={styles.previewPill}>Second Chance Ready</span>
             </div>
 
             <div
@@ -1544,9 +1593,8 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               !activeExperiences.length &&
               !activeCredentials.length ? (
                 <div style={styles.emptyPreview}>
-                  <span>YOU’RE NOT STARTING FROM NOTHING.</span>
                   <strong>Your resume will build here.</strong>
-                  <p>Start by adding one thing you know how to do.</p>
+                  <p>Start with one experience or upload an existing resume.</p>
                 </div>
               ) : null}
             </div>
@@ -1569,8 +1617,8 @@ function Field({
   placeholder?: string;
 }) {
   return (
-    <div style={styles.fieldWrap}>
-      <label style={styles.label}>{label}</label>
+    <div>
+      <label style={styles.inputLabel}>{label}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -1597,7 +1645,7 @@ function DateFields({
   return (
     <div style={styles.dateRow}>
       <div>
-        <span style={styles.smallLabel}>{prefix} Month</span>
+        <label style={styles.inputLabel}>{prefix} Month</label>
         <select
           value={month}
           onChange={(e) => onMonth(e.target.value)}
@@ -1612,7 +1660,7 @@ function DateFields({
       </div>
 
       <div>
-        <span style={styles.smallLabel}>{prefix} Year</span>
+        <label style={styles.inputLabel}>{prefix} Year</label>
         <input
           value={year}
           onChange={(e) => onYear(e.target.value)}
@@ -1628,101 +1676,125 @@ const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at 8% 0%, rgba(22,119,255,.10), transparent 24%), linear-gradient(180deg, #EAF2F9 0%, #F6F8FB 54%, #EAF1F7 100%)",
-    color: "#102238",
+      "radial-gradient(ellipse at 12% 8%, rgba(22,119,255,0.12) 0%, transparent 34%), linear-gradient(180deg, #030812 0%, #07111f 52%, #030812 100%)",
+    color: "#f5f7fb",
+    padding: "28px 24px 56px",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
 
-  pageInner: {
-    maxWidth: "1480px",
+  container: {
+    maxWidth: "1380px",
     margin: "0 auto",
-    padding: "26px 22px 56px",
   },
 
-  loading: {
+  centerWrap: {
     minHeight: "70vh",
-    display: "grid",
-    placeItems: "center",
-    color: "#4D6480",
-  },
-
-  hero: {
-    marginBottom: "22px",
-    padding: "34px",
-    borderRadius: "24px",
-    display: "grid",
-    gridTemplateColumns: "minmax(0,1fr) 320px",
-    gap: "28px",
+    display: "flex",
     alignItems: "center",
-    background:
-      "linear-gradient(120deg, #FFFFFF 0%, #F4F9FF 68%, #E5F1FF 100%)",
-    border: "1px solid #D5E2EF",
-    boxShadow: "0 18px 40px rgba(44,79,115,.09)",
+    justifyContent: "center",
+    color: "#e5e7eb",
   },
 
-  heroKicker: {
-    margin: "0 0 10px",
+  topBar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    gap: "24px",
+    marginBottom: "16px",
+    paddingBottom: "20px",
+    borderBottom: "1px solid rgba(148,163,184,0.18)",
+    flexWrap: "wrap",
+  },
+
+  kicker: {
+    margin: "0 0 8px",
     color: "#1677FF",
-    fontSize: "10px",
-    fontWeight: 900,
-    letterSpacing: ".15em",
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
   },
 
-  heroTitle: {
-    margin: "0 0 12px",
-    maxWidth: "850px",
-    color: "#102238",
-    fontFamily: 'Georgia, "Times New Roman", serif',
-    fontSize: "clamp(42px,5vw,68px)",
-    lineHeight: .98,
-    letterSpacing: "-.045em",
-    fontWeight: 400,
-  },
-
-  heroAccent: {
-    color: "#1677FF",
-  },
-
-  heroText: {
+  pageTitle: {
     margin: 0,
-    maxWidth: "860px",
-    color: "#61758D",
+    maxWidth: "760px",
+    color: "#ffffff",
+    fontSize: "clamp(34px, 4vw, 48px)",
+    lineHeight: 1.04,
+    letterSpacing: "-0.045em",
+    fontWeight: 760,
+  },
+
+  pageIntro: {
+    margin: "12px 0 0",
+    maxWidth: "760px",
+    color: "#9aa9bc",
     fontSize: "14px",
-    lineHeight: 1.7,
+    lineHeight: 1.6,
   },
 
-  heroBubble: {
-    padding: "22px",
-    borderRadius: "22px",
-    background: "#1677FF",
-    color: "#FFFFFF",
-    boxShadow: "0 16px 32px rgba(22,119,255,.16)",
+  backTop: {
+    color: "#8FC1FF",
+    textDecoration: "none",
+    fontSize: "12px",
+    fontWeight: 800,
   },
 
-  heroBubbleSmall: {
-    display: "block",
-    marginBottom: "7px",
-    color: "#D7ECFF",
-    fontSize: "8px",
-    fontWeight: 900,
-    letterSpacing: ".12em",
+  stepNav: {
+    position: "sticky",
+    top: "0",
+    zIndex: 20,
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginBottom: "18px",
+    padding: "10px 0",
+    background:
+      "linear-gradient(180deg, rgba(3,8,18,.98) 0%, rgba(3,8,18,.92) 78%, rgba(3,8,18,0) 100%)",
+    backdropFilter: "blur(10px)",
+  },
+
+  stepLink: {
+    padding: "8px 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(148,163,184,.22)",
+    background: "rgba(255,255,255,.025)",
+    color: "#c9d4e2",
+    textDecoration: "none",
+    fontSize: "10px",
+    fontWeight: 800,
   },
 
   layout: {
     display: "grid",
-    gridTemplateColumns: "minmax(0,1fr) 520px",
-    gap: "22px",
+    gridTemplateColumns: "minmax(380px, 0.82fr) minmax(0, 1.18fr)",
+    gap: "34px",
     alignItems: "start",
   },
 
-  panel: {
-    marginBottom: "14px",
-    padding: "22px",
-    borderRadius: "18px",
-    border: "1px solid #D7E1EB",
-    background: "rgba(255,255,255,.84)",
-    boxShadow: "0 12px 28px rgba(39,73,105,.05)",
+  leftCol: {
+    minWidth: 0,
+  },
+
+  rightCol: {
+    position: "sticky",
+    top: "58px",
+    alignSelf: "start",
+    maxHeight: "calc(100vh - 68px)",
+    overflowY: "auto",
+    paddingRight: "4px",
+  },
+
+  card: {
+    background: "transparent",
+    border: "none",
+    borderBottom: "1px solid rgba(148,163,184,0.16)",
+    borderRadius: 0,
+    padding: "24px 0 30px",
+    boxShadow: "none",
+    marginBottom: 0,
+    scrollMarginTop: "72px",
   },
 
   sectionHeading: {
@@ -1733,288 +1805,161 @@ const styles: Record<string, CSSProperties> = {
     marginBottom: "16px",
   },
 
-  stepLabel: {
-    margin: "0 0 6px",
+  cardKicker: {
+    margin: "0 0 7px",
     color: "#1677FF",
-    fontSize: "9px",
-    fontWeight: 900,
-    letterSpacing: ".13em",
+    fontSize: "10px",
+    fontWeight: 850,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
   },
 
-  sectionTitle: {
-    margin: "0 0 6px",
-    color: "#102238",
+  cardTitle: {
+    margin: "0 0 12px",
+    color: "#ffffff",
     fontSize: "23px",
-    lineHeight: 1.14,
-    letterSpacing: "-.025em",
+    lineHeight: 1.15,
+    fontWeight: 750,
+    letterSpacing: "-0.02em",
   },
 
-  sectionCopy: {
+  previewHelp: {
     margin: 0,
     maxWidth: "720px",
-    color: "#687C92",
-    fontSize: "12px",
-    lineHeight: 1.6,
+    color: "#cbd5e1",
+    fontSize: "13px",
+    lineHeight: 1.55,
   },
 
   uploadActions: {
     display: "flex",
     gap: "8px",
-    alignItems: "center",
+    flexShrink: 0,
   },
 
   uploadButton: {
-    minHeight: "38px",
-    padding: "0 13px",
-    borderRadius: "999px",
-    background: "#1677FF",
-    color: "#FFFFFF",
     display: "inline-flex",
     alignItems: "center",
-    fontSize: "10px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  smallGhostButton: {
-    minHeight: "38px",
-    padding: "0 12px",
-    borderRadius: "999px",
-    border: "1px solid #C8D5E3",
-    background: "#FFFFFF",
-    color: "#5B7188",
-    fontSize: "10px",
+    justifyContent: "center",
+    minHeight: "42px",
+    padding: "0 18px",
+    borderRadius: "8px",
+    background: "#1677FF",
+    color: "#ffffff",
+    fontSize: "13px",
     fontWeight: 800,
     cursor: "pointer",
+    whiteSpace: "nowrap",
   },
 
-  uploadSuccess: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "11px 13px",
-    borderRadius: "11px",
-    background: "#EEF7FF",
-    color: "#315B87",
-    fontSize: "10px",
+  importedText: {
+    margin: "12px 0 0",
+    color: "#8FC1FF",
+    fontSize: "12px",
+  },
+
+  sectionGroup: {
+    borderTop: "1px solid rgba(148,163,184,0.14)",
+    padding: "20px 0 4px",
+    marginTop: "18px",
   },
 
   layoutChoices: {
     display: "grid",
     gridTemplateColumns: "repeat(3,minmax(0,1fr))",
     gap: "10px",
-    marginTop: "15px",
   },
 
   layoutCard: {
-    minHeight: "128px",
-    padding: "15px",
-    borderRadius: "14px",
-    border: "1px solid #D6E1EB",
-    background: "#FAFCFE",
+    minHeight: "105px",
+    padding: "14px",
+    borderRadius: "9px",
+    border: "1px solid rgba(148,163,184,.22)",
+    background: "rgba(3,8,18,.40)",
     textAlign: "left",
     cursor: "pointer",
   },
 
   layoutCardSelected: {
     borderColor: "#1677FF",
-    background: "linear-gradient(145deg, #EDF6FF, #E4F1FF)",
-    boxShadow: "0 0 0 3px rgba(22,119,255,.07)",
+    background: "rgba(22,119,255,.11)",
+    boxShadow: "0 0 0 2px rgba(22,119,255,.06)",
   },
 
-  layoutKicker: {
-    display: "block",
-    marginBottom: "8px",
-    color: "#1677FF",
-    fontSize: "7.5px",
-    fontWeight: 900,
-    letterSpacing: ".08em",
-  },
-
-  layoutTitle: {
+  layoutName: {
     display: "block",
     marginBottom: "6px",
-    color: "#16304B",
-    fontSize: "14px",
+    color: "#ffffff",
+    fontSize: "13px",
   },
 
-  layoutCopy: {
+  layoutDescription: {
     display: "block",
-    color: "#6D8196",
+    color: "#9aa9bc",
     fontSize: "10px",
     lineHeight: 1.5,
   },
 
-  fontControl: {
-    minWidth: "160px",
-  },
-
-  twoCol: {
+  twoColForm: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
+    gap: "14px 16px",
   },
 
-  fieldWrap: {
-    marginBottom: "12px",
-  },
-
-  label: {
+  inputLabel: {
     display: "block",
-    marginBottom: "6px",
-    color: "#405A74",
-    fontSize: "11px",
-    fontWeight: 750,
-  },
-
-  smallLabel: {
-    display: "block",
-    marginBottom: "5px",
-    color: "#70849A",
-    fontSize: "9px",
-    fontWeight: 750,
+    margin: "0 0 6px",
+    color: "#f5f5f5",
+    fontSize: "13px",
+    fontWeight: 600,
   },
 
   input: {
     width: "100%",
-    minHeight: "43px",
-    padding: "10px 12px",
-    borderRadius: "9px",
-    border: "1px solid #C9D7E5",
-    background: "#FBFDFF",
-    color: "#17304A",
-    fontSize: "12px",
-    outline: "none",
-    boxSizing: "border-box",
-  },
-
-  select: {
-    width: "100%",
-    minHeight: "43px",
-    padding: "10px 12px",
-    borderRadius: "9px",
-    border: "1px solid #C9D7E5",
-    background: "#FFFFFF",
-    color: "#17304A",
-    fontSize: "12px",
+    background: "rgba(3,8,18,0.56)",
+    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.28)",
+    borderRadius: "8px",
+    padding: "11px 12px",
+    fontSize: "14px",
     outline: "none",
     boxSizing: "border-box",
   },
 
   textarea: {
     width: "100%",
-    minHeight: "105px",
-    padding: "11px 12px",
-    borderRadius: "10px",
-    border: "1px solid #C9D7E5",
-    background: "#FBFDFF",
-    color: "#17304A",
-    fontSize: "12px",
-    lineHeight: 1.55,
+    minHeight: "108px",
     resize: "vertical",
+    background: "rgba(3,8,18,0.56)",
+    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.28)",
+    borderRadius: "8px",
+    padding: "11px 12px",
+    fontSize: "14px",
+    outline: "none",
+    boxSizing: "border-box",
+    marginBottom: "12px",
+  },
+
+  select: {
+    width: "100%",
+    background: "rgba(4,10,20,0.72)",
+    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.30)",
+    borderRadius: "8px",
+    padding: "10px 12px",
+    fontSize: "14px",
     outline: "none",
     boxSizing: "border-box",
   },
 
-  aiButton: {
-    minHeight: "36px",
-    padding: "0 12px",
-    borderRadius: "999px",
-    border: "1px solid rgba(22,119,255,.24)",
-    background: "#EEF6FF",
-    color: "#145FAD",
-    fontSize: "9px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  describeBox: {
-    marginTop: "8px",
-    padding: "16px",
-    borderRadius: "15px",
-    border: "1px solid #BFD7EF",
-    background:
-      "linear-gradient(145deg, #F5FAFF 0%, #ECF6FF 100%)",
-  },
-
-  describeKicker: {
-    display: "block",
-    marginBottom: "5px",
-    color: "#1677FF",
-    fontSize: "8px",
-    fontWeight: 900,
-    letterSpacing: ".10em",
-  },
-
-  describeTitle: {
-    display: "block",
-    marginBottom: "5px",
-    color: "#16304B",
-    fontSize: "14px",
-  },
-
-  describeCopy: {
-    margin: "0 0 12px",
-    color: "#6A7E94",
-    fontSize: "10px",
-    lineHeight: 1.55,
-  },
-
-  bigFunButton: {
-    width: "100%",
-    minHeight: "43px",
-    marginTop: "9px",
-    borderRadius: "11px",
-    border: "1px solid #1677FF",
-    background:
-      "linear-gradient(120deg, #1677FF 0%, #3C95FF 100%)",
-    color: "#FFFFFF",
-    fontSize: "10px",
-    fontWeight: 900,
-    cursor: "pointer",
-    boxShadow: "0 10px 20px rgba(22,119,255,.12)",
-  },
-
-  skillChips: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "7px",
-    marginTop: "10px",
-  },
-
-  skillChip: {
-    padding: "6px 9px",
-    borderRadius: "999px",
-    background: "#EAF4FF",
-    border: "1px solid #C7DFF8",
-    color: "#245E96",
-    fontSize: "9px",
-    fontWeight: 750,
-  },
-
-  experienceCard: {
-    marginTop: "15px",
-    padding: "16px",
-    borderRadius: "15px",
-    border: "1px solid #D7E1EB",
-    background: "#FCFDFE",
-  },
-
-  educationCard: {
-    marginTop: "13px",
-    padding: "14px",
-    borderRadius: "13px",
-    border: "1px solid #DCE5EE",
-    background: "#FAFCFE",
-  },
-
-  checkboxLabel: {
+  checkboxRow: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    margin: "21px 0 9px",
-    color: "#657A90",
-    fontSize: "10px",
+    gap: "10px",
+    margin: "22px 0 10px",
+    color: "#f5f5f5",
+    fontSize: "13px",
   },
 
   dateRow: {
@@ -2023,22 +1968,127 @@ const styles: Record<string, CSSProperties> = {
     gap: "8px",
   },
 
-  bulletSection: {
-    display: "grid",
-    gap: "7px",
-    marginTop: "12px",
+  experienceGroup: {
+    marginTop: "20px",
+    paddingTop: "18px",
+    borderTop: "1px solid rgba(148,163,184,.14)",
   },
 
-  addButton: {
-    minHeight: "38px",
-    marginTop: "12px",
-    padding: "0 12px",
+  aiDescribeBox: {
+    marginTop: "16px",
+    padding: "16px",
     borderRadius: "10px",
-    border: "1px solid #BFCFDE",
-    background: "#FFFFFF",
-    color: "#365B80",
+    border: "1px solid rgba(22,119,255,.30)",
+    background:
+      "linear-gradient(120deg, rgba(22,119,255,.09), rgba(3,8,18,.38))",
+  },
+
+  aiMiniKicker: {
+    margin: "0 0 5px",
+    color: "#66ACFF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  aiDescribeTitle: {
+    margin: "0 0 4px",
+    color: "#ffffff",
+    fontSize: "15px",
+  },
+
+  helper: {
+    margin: "0 0 11px",
+    color: "#9aa9bc",
+    fontSize: "11px",
+    lineHeight: 1.5,
+  },
+
+  aiPrimaryButton: {
+    minHeight: "40px",
+    borderRadius: "8px",
+    border: "1px solid #1677FF",
+    background: "#1677FF",
+    color: "#ffffff",
+    padding: "0 14px",
+    fontSize: "11px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  aiSecondaryButton: {
+    minHeight: "38px",
+    borderRadius: "8px",
+    border: "1px solid rgba(22,119,255,.42)",
+    background: "transparent",
+    color: "#8FC1FF",
+    padding: "0 13px",
     fontSize: "10px",
+    fontWeight: 850,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+
+  bulletBlock: {
+    marginTop: "16px",
+  },
+
+  bulletHeading: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    marginBottom: "8px",
+    color: "#dfe8f3",
+    fontSize: "11px",
+  },
+
+  bulletRow: {
+    display: "grid",
+    gridTemplateColumns: "28px 1fr",
+    gap: "8px",
+    alignItems: "center",
+    marginBottom: "8px",
+  },
+
+  bulletNumber: {
+    width: "28px",
+    height: "28px",
+    borderRadius: "50%",
+    display: "grid",
+    placeItems: "center",
+    border: "1px solid rgba(148,163,184,.24)",
+    color: "#8FC1FF",
+    fontSize: "9px",
+    fontWeight: 850,
+  },
+
+  skillChips: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "7px",
+    marginTop: "11px",
+  },
+
+  skillChip: {
+    borderRadius: "999px",
+    border: "1px solid rgba(22,119,255,.30)",
+    background: "rgba(22,119,255,.08)",
+    color: "#9CCBFF",
+    padding: "6px 9px",
+    fontSize: "9px",
     fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  smallButton: {
+    marginTop: "12px",
+    background: "transparent",
+    color: "#8FC1FF",
+    border: "1px solid rgba(22,119,255,0.42)",
+    borderRadius: "8px",
+    padding: "9px 12px",
+    fontSize: "13px",
+    fontWeight: 750,
     cursor: "pointer",
   },
 
@@ -2048,108 +2098,96 @@ const styles: Record<string, CSSProperties> = {
   },
 
   message: {
-    marginBottom: "13px",
+    margin: "18px 0 0",
     padding: "12px 14px",
-    borderRadius: "11px",
-    border: "1px solid #C4DCF4",
-    background: "#EEF7FF",
-    color: "#315E8B",
-    fontSize: "10.5px",
-    lineHeight: 1.55,
+    borderRadius: "8px",
+    border: "1px solid rgba(22,119,255,.24)",
+    background: "rgba(22,119,255,.08)",
+    color: "#cfe6ff",
+    fontSize: "11px",
+    lineHeight: 1.5,
   },
 
   actions: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "9px",
-    marginBottom: "28px",
+    gap: "10px",
+    marginTop: "20px",
+    marginBottom: "30px",
   },
 
   primaryButton: {
-    minHeight: "46px",
-    borderRadius: "10px",
+    minHeight: "44px",
+    borderRadius: "8px",
     border: "1px solid #1677FF",
     background: "#1677FF",
-    color: "#FFFFFF",
+    color: "#ffffff",
     fontSize: "11px",
     fontWeight: 900,
     cursor: "pointer",
   },
 
   printButton: {
-    minHeight: "46px",
-    borderRadius: "10px",
-    border: "1px solid #274F78",
-    background: "#163B61",
-    color: "#FFFFFF",
+    minHeight: "44px",
+    borderRadius: "8px",
+    border: "1px solid rgba(148,163,184,.28)",
+    background: "#0F244D",
+    color: "#ffffff",
     fontSize: "11px",
     fontWeight: 900,
     cursor: "pointer",
   },
 
   backButton: {
-    minHeight: "46px",
-    borderRadius: "10px",
-    border: "1px solid #CAD6E2",
-    background: "#FFFFFF",
-    color: "#41617F",
-    textDecoration: "none",
+    minHeight: "44px",
+    borderRadius: "8px",
+    border: "1px solid rgba(148,163,184,.24)",
+    background: "transparent",
+    color: "#dbe6f2",
     display: "grid",
     placeItems: "center",
+    textDecoration: "none",
     fontSize: "11px",
-    fontWeight: 800,
+    fontWeight: 850,
   },
 
-  previewColumn: {
-    position: "sticky",
-    top: "18px",
-  },
-
-  previewTop: {
-    marginBottom: "9px",
-    padding: "12px 14px",
+  previewCard: {
+    background: "rgba(7,17,31,0.78)",
+    border: "1px solid rgba(148,163,184,0.16)",
     borderRadius: "12px",
+    padding: "12px 14px",
+    boxShadow: "0 12px 34px rgba(0,0,0,0.16)",
+    marginBottom: "12px",
+    backdropFilter: "blur(12px)",
+  },
+
+  previewCardTop: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
     gap: "12px",
-    background: "#FFFFFF",
-    border: "1px solid #D3DFEA",
-    boxShadow: "0 10px 22px rgba(50,78,105,.06)",
+    alignItems: "center",
   },
 
-  previewKicker: {
-    display: "block",
-    marginBottom: "3px",
-    color: "#1677FF",
-    fontSize: "8px",
-    fontWeight: 900,
-    letterSpacing: ".11em",
-  },
-
-  previewTitle: {
-    color: "#16304B",
+  previewChoice: {
+    color: "#ffffff",
     fontSize: "13px",
   },
 
-  previewPill: {
-    padding: "6px 8px",
-    borderRadius: "999px",
-    background: "#EAF4FF",
-    color: "#245E96",
+  previewTag: {
+    color: "#8FC1FF",
     fontSize: "8px",
-    fontWeight: 800,
+    fontWeight: 850,
+    letterSpacing: ".06em",
   },
 
   resumePaper: {
     width: "100%",
-    minHeight: "880px",
-    padding: "38px 38px 44px",
-    borderRadius: "7px",
-    border: "1px solid #D5DEE8",
-    background: "#FFFFFF",
+    minHeight: "900px",
+    background: "#ffffff",
     color: "#111827",
-    boxShadow: "0 22px 55px rgba(38,70,101,.12)",
+    borderRadius: "4px",
+    padding: "40px 42px 48px",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
     boxSizing: "border-box",
   },
 
@@ -2161,10 +2199,9 @@ const styles: Record<string, CSSProperties> = {
 
   resumeName: {
     margin: "0 0 5px",
-    color: "#0F172A",
+    color: "#111827",
     fontSize: "27px",
-    lineHeight: 1.08,
-    fontWeight: 850,
+    fontWeight: 800,
   },
 
   resumeContact: {
@@ -2178,7 +2215,6 @@ const styles: Record<string, CSSProperties> = {
     margin: 0,
     color: "#145FAD",
     fontSize: "10px",
-    lineHeight: 1.4,
   },
 
   resumeSection: {
@@ -2189,9 +2225,8 @@ const styles: Record<string, CSSProperties> = {
     margin: "0 0 7px",
     paddingBottom: "4px",
     borderBottom: "1px solid #CBD5E1",
-    color: "#0F172A",
+    color: "#111827",
     fontSize: "11px",
-    lineHeight: 1.2,
     fontWeight: 850,
     letterSpacing: ".04em",
   },
@@ -2201,7 +2236,6 @@ const styles: Record<string, CSSProperties> = {
     color: "#273548",
     fontSize: "10px",
     lineHeight: 1.5,
-    whiteSpace: "pre-wrap",
   },
 
   skillsGrid: {
@@ -2214,7 +2248,6 @@ const styles: Record<string, CSSProperties> = {
     margin: 0,
     color: "#273548",
     fontSize: "9.5px",
-    lineHeight: 1.35,
   },
 
   resumeEntry: {
