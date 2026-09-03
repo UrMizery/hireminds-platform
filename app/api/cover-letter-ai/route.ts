@@ -91,6 +91,38 @@ function buildContext(body: Record<string, unknown>) {
   ].join("\n");
 }
 
+function templateInstruction(template: string) {
+  if (template === "Minimal") {
+    return `
+TEMPLATE STYLE: MINIMAL
+- Keep the letter basic, concise, and direct.
+- Prefer short paragraphs and plain professional language.
+- Do not over-explain, over-sell, or add decorative phrasing.
+- The finished letter should feel efficient and easy to scan.
+- Aim for roughly 220-300 words total when drafting all four sections.
+`.trim();
+  }
+
+  if (template === "Executive") {
+    return `
+TEMPLATE STYLE: EXECUTIVE
+- Use elevated, confident, senior-level professional language.
+- Build a stronger narrative around leadership, business impact, judgment, strategy, stakeholder partnership, and measurable contribution ONLY when supported by the resume.
+- Use richer detail and stronger positioning than the other templates.
+- Make the letter feel polished and persuasive without sounding inflated or theatrical.
+- Aim for roughly 380-500 words total when drafting all four sections.
+`.trim();
+  }
+
+  return `
+TEMPLATE STYLE: MODERN
+- Use current, confident, polished professional language.
+- Keep the tone human, specific, and energetic without becoming casual.
+- Balance concise writing with enough detail to show fit and value.
+- Aim for roughly 300-400 words total when drafting all four sections.
+`.trim();
+}
+
 function sectionInstruction(section: Section) {
   if (section === "opening") {
     return "Write one polished opening paragraph expressing interest in the role and company. Keep it specific, confident, and professional without sounding generic or overly enthusiastic.";
@@ -173,6 +205,8 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>;
     const action = clean(body.action);
     const context = buildContext(body);
+    const template = clean(body.template) || "Modern";
+    const templateStyle = templateInstruction(template);
 
     if (action === "section") {
       const section = clean(body.section) as Section;
@@ -209,6 +243,8 @@ RULES:
 - Do not use placeholders like [Company Name] if the actual company name is provided.
 - Return ONLY the paragraph. No heading, bullets, notes, quotation marks, or explanation.
 - Aim for 2-4 sentences.
+
+${templateStyle}
 
 APPLICANT / ROLE CONTEXT:
 ${context}
@@ -253,6 +289,8 @@ JSON FORMAT:
   "closing": "..."
 }
 
+${templateStyle}
+
 CONTEXT:
 ${context}
 
@@ -283,6 +321,7 @@ Closing: ${clean(body.closingLine) || "Blank"}
       }
 
       return NextResponse.json({
+        template,
         opening: clean(parsed.opening),
         experience: clean(parsed.experience),
         value: clean(parsed.value),
