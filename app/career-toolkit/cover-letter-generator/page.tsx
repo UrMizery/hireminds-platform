@@ -8,6 +8,43 @@ const COVER_LETTER_DRAFT_KEY = "hireminds-cover-letter-draft-v1";
 type CoverLetterTemplate = "Modern" | "Executive" | "Minimal";
 type SignatureStyle = "Elegant Script" | "Modern Script" | "Clean Signature";
 
+type ParsedResume = {
+  fullName?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  stateName?: string;
+  linkedinUrl?: string;
+  summaryText?: string;
+  skills?: string[];
+  experiences?: Array<{
+    companyName?: string;
+    city?: string;
+    state?: string;
+    roleTitle?: string;
+    startMonth?: string;
+    startYear?: string;
+    endMonth?: string;
+    endYear?: string;
+    isPresent?: boolean;
+    bullets?: Array<{ text?: string }>;
+  }>;
+  educationItems?: Array<{
+    schoolName?: string;
+    degree?: string;
+  }>;
+  certificateItems?: Array<{
+    organizationName?: string;
+    certificateName?: string;
+  }>;
+  volunteerItems?: Array<{
+    organizationName?: string;
+    roleTitle?: string;
+    bullets?: Array<{ text?: string }>;
+  }>;
+  accomplishments?: string;
+};
+
 const TEMPLATE_OPTIONS: {
   name: CoverLetterTemplate;
   eyebrow: string;
@@ -57,6 +94,12 @@ export default function CoverLetterGeneratorPage() {
   const [signatureName, setSignatureName] = useState("");
   const [message, setMessage] = useState("");
   const [draftLoaded, setDraftLoaded] = useState(false);
+
+  const [jobDescription, setJobDescription] = useState("");
+  const [resumeContext, setResumeContext] = useState<ParsedResume | null>(null);
+  const [resumeFileName, setResumeFileName] = useState("");
+  const [resumeUploadLoading, setResumeUploadLoading] = useState(false);
+
   const [aiLoading, setAiLoading] = useState<
     "opening" | "experience" | "value" | "closing" | "all" | null
   >(null);
@@ -116,6 +159,9 @@ export default function CoverLetterGeneratorPage() {
         setFontFamily(draft.fontFamily || "Times New Roman");
         setTemplate(draft.template || "Modern");
         setSignatureStyle(draft.signatureStyle || "Elegant Script");
+        setJobDescription(draft.jobDescription || "");
+        setResumeContext(draft.resumeContext || null);
+        setResumeFileName(draft.resumeFileName || "");
         setTodayDate(draft.todayDate || "");
         setFullName(draft.fullName || "");
         setPhone(draft.phone || "");
@@ -144,6 +190,9 @@ export default function CoverLetterGeneratorPage() {
       fontFamily,
       template,
       signatureStyle,
+      jobDescription,
+      resumeContext,
+      resumeFileName,
       todayDate,
       fullName,
       phone,
@@ -165,6 +214,9 @@ export default function CoverLetterGeneratorPage() {
     fontFamily,
     template,
     signatureStyle,
+    jobDescription,
+    resumeContext,
+    resumeFileName,
     todayDate,
     fullName,
     phone,
@@ -179,6 +231,73 @@ export default function CoverLetterGeneratorPage() {
     closingLine,
     signatureName,
   ]);
+
+  async function handleResumeUpload(file: File | null) {
+    if (!file) return;
+
+    const lowerName = file.name.toLowerCase();
+    const validType = lowerName.endsWith(".pdf") || lowerName.endsWith(".docx");
+
+    if (!validType) {
+      setMessage("Please upload a PDF or DOCX resume.");
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      setMessage("Resume file must be 8 MB or smaller.");
+      return;
+    }
+
+    try {
+      setResumeUploadLoading(true);
+      setMessage("");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/resume-parse", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to read this resume.");
+      }
+
+      const parsed = data?.parsedResume as ParsedResume | undefined;
+
+      if (!parsed) {
+        throw new Error("Resume was uploaded, but no usable resume data was returned.");
+      }
+
+      setResumeContext(parsed);
+      setResumeFileName(file.name);
+
+      if (!fullName && parsed.fullName) setFullName(parsed.fullName);
+      if (!phone && parsed.phone) setPhone(parsed.phone);
+      if (!email && parsed.email) setEmail(parsed.email);
+
+      setMessage(
+        "Resume added. HireMinds can now use your actual experience and skills when drafting your cover letter."
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to read this resume right now."
+      );
+    } finally {
+      setResumeUploadLoading(false);
+    }
+  }
+
+  function removeResumeContext() {
+    setResumeContext(null);
+    setResumeFileName("");
+    setMessage("Resume removed from this cover letter draft.");
+  }
 
   async function requestAiSection(
     section: "opening" | "experience" | "value" | "closing"
@@ -212,6 +331,8 @@ export default function CoverLetterGeneratorPage() {
           valueLine,
           closingLine,
           currentText,
+          jobDescription,
+          resumeContext,
         }),
       });
 
@@ -263,6 +384,8 @@ export default function CoverLetterGeneratorPage() {
           experienceLine,
           valueLine,
           closingLine,
+          jobDescription,
+          resumeContext,
         }),
       });
 
@@ -297,6 +420,9 @@ export default function CoverLetterGeneratorPage() {
         fontFamily,
         template,
         signatureStyle,
+        jobDescription,
+        resumeContext,
+        resumeFileName,
         todayDate,
         fullName,
         phone,
@@ -484,6 +610,144 @@ export default function CoverLetterGeneratorPage() {
             <section style={styles.controlSection}>
               <div style={styles.sectionHeadingRow}>
                 <div>
+                  <p style={styles.sectionKicker}>TAILORING CONTEXT</p>
+                  <h2 style={styles.sectionTitle}>Give HireMinds more to work with</h2>
+                </div>
+                <span style={styles.sectionHint}>Use one, two, or all three</span>
+              </div>
+
+              <div style={styles.contextIntro}>
+                Add your resume, the job description, and the company name. The more relevant
+                context you provide, the more targeted the AI can make the letter.
+              </div>
+
+              <div style={styles.resumeUploadArea}>
+                <div>
+                  <span style={styles.contextItemLabel}>1 / RESUME</span>
+                  <strong style={styles.contextItemTitle}>
+                    {resumeFileName || "Upload your resume"}
+                  </strong>
+                  <span style={styles.contextItemCopy}>
+                    PDF or DOCX · up to 8 MB
+                  </span>
+                </div>
+
+                <div style={styles.resumeUploadActions}>
+                  <label
+                    style={{
+                      ...styles.uploadButton,
+                      ...(resumeUploadLoading ? styles.aiButtonDisabled : {}),
+                    }}
+                  >
+                    {resumeUploadLoading
+                      ? "Reading Resume..."
+                      : resumeContext
+                        ? "Replace Resume"
+                        : "Upload Resume"}
+                    <input
+                      type="file"
+                      accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      disabled={resumeUploadLoading}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] || null;
+                        void handleResumeUpload(file);
+                        event.currentTarget.value = "";
+                      }}
+                      style={styles.hiddenFileInput}
+                    />
+                  </label>
+
+                  {resumeContext ? (
+                    <button
+                      type="button"
+                      onClick={removeResumeContext}
+                      style={styles.removeResumeButton}
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              {resumeContext ? (
+                <div style={styles.resumeContextSummary}>
+                  <span>
+                    <strong>{resumeContext.experiences?.length || 0}</strong> work experience
+                    {resumeContext.experiences?.length === 1 ? "" : "s"}
+                  </span>
+                  <span>
+                    <strong>{resumeContext.skills?.length || 0}</strong> skills
+                  </span>
+                  <span>
+                    <strong>{resumeContext.educationItems?.length || 0}</strong> education item
+                    {resumeContext.educationItems?.length === 1 ? "" : "s"}
+                  </span>
+                </div>
+              ) : null}
+
+              <div style={styles.contextDivider} />
+
+              <div style={styles.fieldWrap}>
+                <div style={styles.textAreaLabelRow}>
+                  <label style={{ ...styles.label, marginBottom: 0 }}>
+                    2 / Job Description
+                  </label>
+                  <span style={styles.contextHelper}>Paste the full posting if available</span>
+                </div>
+
+                <textarea
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  placeholder="Paste the job description here. HireMinds will look for responsibilities, qualifications, keywords, and the strongest connections to your resume."
+                  style={{
+                    ...styles.textarea,
+                    minHeight: "180px",
+                  }}
+                />
+              </div>
+
+              <div className="cover-letter-form-grid" style={styles.twoCol}>
+                <div style={styles.fieldWrap}>
+                  <label style={styles.label}>3 / Company Name</label>
+                  <input
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Company Name"
+                    style={styles.input}
+                  />
+                </div>
+
+                <div style={styles.fieldWrap}>
+                  <label style={styles.label}>Target Job Title</label>
+                  <input
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                    placeholder="Job Title"
+                    style={styles.input}
+                  />
+                </div>
+              </div>
+
+              <div style={styles.tailoringStatus}>
+                <span style={styles.tailoringStatusDot} />
+                <span>
+                  AI context:{" "}
+                  <strong>
+                    {[
+                      resumeContext ? "Resume" : "",
+                      jobDescription.trim() ? "Job Description" : "",
+                      companyName.trim() ? "Company" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" + ") || "Basic"}
+                  </strong>
+                </span>
+              </div>
+            </section>
+
+            <section style={styles.controlSection}>
+              <div style={styles.sectionHeadingRow}>
+                <div>
                   <p style={styles.sectionKicker}>DOCUMENT SETTINGS</p>
                   <h2 style={styles.sectionTitle}>Typography & signature</h2>
                 </div>
@@ -619,7 +883,9 @@ export default function CoverLetterGeneratorPage() {
                     ...(aiLoading !== null ? styles.aiButtonDisabled : {}),
                   }}
                 >
-                  {aiLoading === "all" ? "Drafting..." : "✦ Draft All with AI"}
+                  {aiLoading === "all"
+                    ? "Building..."
+                    : "✦ Build Tailored Cover Letter"}
                 </button>
               </div>
 
@@ -872,7 +1138,11 @@ function TextAreaField({
               ...(aiDisabled ? styles.aiButtonDisabled : {}),
             }}
           >
-            {aiLoading ? "Thinking..." : value.trim() ? "✦ Improve with AI" : "✦ Write with AI"}
+            {aiLoading
+              ? "Thinking..."
+              : value.trim()
+                ? "✦ Strengthen with AI"
+                : "✦ Write with AI"}
           </button>
         ) : null}
       </div>
@@ -1359,6 +1629,126 @@ const styles: Record<string, CSSProperties> = {
   aiButtonDisabled: {
     opacity: 0.55,
     cursor: "not-allowed",
+  },
+
+  contextIntro: {
+    margin: "-2px 0 18px",
+    maxWidth: "760px",
+    color: "#60748a",
+    fontSize: "12px",
+    lineHeight: 1.65,
+  },
+
+  resumeUploadArea: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "20px",
+    padding: "17px 18px",
+    borderRadius: "13px",
+    border: "1px dashed #9fb8d3",
+    background: "linear-gradient(120deg, rgba(233,242,252,.92), rgba(219,234,249,.68))",
+  },
+
+  contextItemLabel: {
+    display: "block",
+    marginBottom: "5px",
+    color: "#1677FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  contextItemTitle: {
+    display: "block",
+    maxWidth: "390px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    color: "#102238",
+    fontSize: "13px",
+  },
+
+  contextItemCopy: {
+    display: "block",
+    marginTop: "4px",
+    color: "#7b8b9d",
+    fontSize: "10px",
+  },
+
+  resumeUploadActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexShrink: 0,
+  },
+
+  uploadButton: {
+    minHeight: "36px",
+    padding: "0 13px",
+    borderRadius: "999px",
+    border: "1px solid #1677FF",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "10px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  hiddenFileInput: {
+    display: "none",
+  },
+
+  removeResumeButton: {
+    minHeight: "36px",
+    padding: "0 12px",
+    borderRadius: "999px",
+    border: "1px solid #c4d1df",
+    background: "rgba(255,255,255,.58)",
+    color: "#5e7187",
+    fontSize: "10px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  resumeContextSummary: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px 18px",
+    padding: "10px 3px 0",
+    color: "#58708a",
+    fontSize: "10px",
+  },
+
+  contextDivider: {
+    height: "1px",
+    margin: "20px 0",
+    background: "#d7e2ed",
+  },
+
+  contextHelper: {
+    color: "#8292a4",
+    fontSize: "9px",
+  },
+
+  tailoringStatus: {
+    marginTop: "4px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    color: "#536b84",
+    fontSize: "10px",
+  },
+
+  tailoringStatusDot: {
+    width: "7px",
+    height: "7px",
+    borderRadius: "50%",
+    background: "#1677FF",
+    boxShadow: "0 0 0 4px rgba(22,119,255,.09)",
   },
 
   message: {
