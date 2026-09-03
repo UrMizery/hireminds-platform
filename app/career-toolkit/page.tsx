@@ -8,6 +8,7 @@ type Tool = {
   description: string;
   href: string;
   label: string;
+  cta: string;
 };
 
 const heroWords = ["build.", "match.", "prepare.", "advance."];
@@ -19,6 +20,7 @@ const careerMaterials: Tool[] = [
       "Build, preview, strengthen, and print a professional resume with guided sections and AI assistance.",
     href: "/resume-builder",
     label: "Resume",
+    cta: "BUILD RESUME",
   },
   {
     title: "Reentry / Second Chance Resume Generator",
@@ -26,6 +28,7 @@ const careerMaterials: Tool[] = [
       "Create a professional resume from limited, nontraditional, institutional, volunteer, or reentry experience.",
     href: "/career-toolkit/new-opportunities-resume-generator",
     label: "Resume",
+    cta: "BUILD REENTRY RESUME",
   },
   {
     title: "Cover Letter Generator",
@@ -33,6 +36,7 @@ const careerMaterials: Tool[] = [
       "Build a polished cover letter using your resume, job description, company information, and AI assistance.",
     href: "/career-toolkit/cover-letter-generator",
     label: "Letter",
+    cta: "CREATE LETTER",
   },
   {
     title: "Resume Format Guide",
@@ -40,6 +44,7 @@ const careerMaterials: Tool[] = [
       "Compare Chronological, Functional, and Combination resume formats before you build.",
     href: "/career-toolkit/resume-type-helper",
     label: "Guide",
+    cta: "VIEW GUIDE",
   },
   {
     title: "Skills Explorer",
@@ -47,6 +52,7 @@ const careerMaterials: Tool[] = [
       "Explore transferable, soft, and industry core skills in one place.",
     href: "/career-toolkit/industry-core-skills",
     label: "Skills",
+    cta: "EXPLORE SKILLS",
   },
   {
     title: "The House of Letters",
@@ -54,6 +60,7 @@ const careerMaterials: Tool[] = [
       "Create professional follow-ups, thank-you letters, resignation letters, requests, and workplace communication.",
     href: "/career-toolkit/employer-follow-up-generator",
     label: "Letters",
+    cta: "OPEN LETTERS",
   },
 ];
 
@@ -64,6 +71,7 @@ const jobMatchTools: Tool[] = [
       "Compare your resume against a job posting, identify what the employer is asking for, and see where your application needs attention.",
     href: "/career-toolkit/resume-match-analyzer",
     label: "Analyzer",
+    cta: "START MATCH",
   },
 ];
 
@@ -74,6 +82,7 @@ const interviewTools: Tool[] = [
       "Prepare in one place with role-focused questions, answer guidance, STAR support, employer questions, and interview readiness.",
     href: "/career-toolkit/interview-question-generator",
     label: "Interview",
+    cta: "START PREP",
   },
   {
     title: "Job Search Tips",
@@ -81,6 +90,7 @@ const interviewTools: Tool[] = [
       "Use practical guidance for applications, employer research, job descriptions, follow-up, and smarter job-search strategy.",
     href: "/career-toolkit/job-search-tips",
     label: "Guide",
+    cta: "VIEW TIPS",
   },
 ];
 
@@ -91,6 +101,7 @@ const directionTools: Tool[] = [
       "Explore career paths, choose a direction, set a clear goal, and build practical next steps in one guided experience.",
     href: "/career-toolkit/career-path-generator",
     label: "Career Direction",
+    cta: "EXPLORE DIRECTION",
   },
 ];
 
@@ -210,16 +221,21 @@ export default function CareerToolkitPage() {
         }
 
         .hm-tool-row:hover {
-          transform: translateY(-7px) scale(1.01);
-          filter: brightness(1.035);
+          transform: translateY(-6px);
+          filter: brightness(1.025);
         }
 
         .hm-tool-row:active {
-          transform: translateY(3px) scale(.995);
+          transform: translateY(2px);
         }
 
         .hm-tool-row-dark:hover {
-          filter: brightness(1.08);
+          filter: brightness(1.07);
+        }
+
+        .hm-tool-row:only-child {
+          grid-column: 1 / -1;
+          width: 100%;
         }
 
         .hm-primary-cta {
@@ -255,8 +271,13 @@ export default function CareerToolkitPage() {
             min-height: 500px !important;
           }
 
-          .hm-direction-tools {
+          .hm-direction-tools,
+          .hm-tool-row {
             grid-template-columns: 1fr !important;
+          }
+
+          .hm-tool-row {
+            width: 100% !important;
           }
         }
 
@@ -335,10 +356,6 @@ export default function CareerToolkitPage() {
                 Start with Career Materials
               </span>
             </a>
-
-            <a href="#job-match" style={styles.ghostButton}>
-              Explore the Roadmap →
-            </a>
           </div>
 
           <div style={styles.heroMicro}>
@@ -397,7 +414,6 @@ export default function CareerToolkitPage() {
           </div>
 
           <div style={styles.tagOne}>AI-ASSISTED</div>
-          <div style={styles.tagTwo}>BUILT AROUND YOU</div>
           <div style={styles.sparkOne}>✦</div>
           <div style={styles.sparkTwo}>✦</div>
         </div>
@@ -649,9 +665,8 @@ export default function CareerToolkitPage() {
             <span style={styles.analysisBlue}>Then make the plan.</span>
           </h2>
           <p style={styles.darkText}>
-            Career Path and Career Goal are now presented as one guided Career
-            Direction experience: explore where you could go, choose the direction,
-            set the goal, and build the next steps.
+            Explore where you could go, choose the direction, set the goal,
+            and build the next steps in one guided experience.
           </p>
         </div>
 
@@ -686,17 +701,17 @@ function ToolRows({ tools, dark }: { tools: Tool[]; dark: boolean }) {
           className={`hm-tool-row ${dark ? "hm-tool-row-dark" : ""}`}
           style={{
             ...styles.toolRow,
-            borderColor: dark ? "rgba(89,171,255,.34)" : "rgba(22,119,255,.26)",
+            borderColor: dark ? "rgba(91,173,255,.28)" : "rgba(22,119,255,.22)",
             background: dark
-              ? "linear-gradient(145deg, rgba(11,51,94,.96), rgba(5,24,43,.98))"
-              : "linear-gradient(145deg, #FFFFFF 0%, #EAF3FF 100%)",
+              ? "linear-gradient(145deg, rgba(12,45,80,.98), rgba(6,27,48,.98))"
+              : "linear-gradient(145deg, #FFFFFF 0%, #EEF5FD 100%)",
             boxShadow: dark
-              ? "0 12px 0 #04101D, 0 24px 46px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08)"
-              : "0 12px 0 #C7D9EE, 0 24px 46px rgba(28,75,125,.16), inset 0 1px 0 rgba(255,255,255,.95)",
+              ? "0 10px 0 #03101D, 0 22px 42px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.07)"
+              : "0 10px 0 #D5E3F2, 0 22px 42px rgba(33,72,112,.12), inset 0 1px 0 rgba(255,255,255,.95)",
             color: dark ? "#FFFFFF" : "#0C1B30",
           }}
         >
-          <div style={{ minWidth: 0 }}>
+          <div style={styles.toolContent}>
             <h3 style={styles.toolTitle}>{tool.title}</h3>
             <p
               style={{
@@ -708,15 +723,9 @@ function ToolRows({ tools, dark }: { tools: Tool[]; dark: boolean }) {
             </p>
           </div>
 
-          <span
-            style={{
-              ...styles.bigToolButton,
-              background: dark
-                ? "linear-gradient(180deg, #2C92FF 0%, #0969E8 100%)"
-                : "linear-gradient(180deg, #238AFF 0%, #0869E8 100%)",
-            }}
-          >
-            OPEN TOOL
+          <span style={styles.refinedToolButton}>
+            {tool.cta}
+            <span style={styles.buttonChevron}>›</span>
           </span>
         </a>
       ))}
@@ -1611,6 +1620,11 @@ const styles: Record<string, CSSProperties> = {
 
   directionCopy: {
     maxWidth: "650px",
+  },
+
+  directionWideWrap: {
+    width: "100%",
+    alignSelf: "center",
   },
 
   directionTools: {
