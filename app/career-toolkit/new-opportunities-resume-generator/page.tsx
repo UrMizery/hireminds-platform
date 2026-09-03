@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { supabase } from "../../lib/supabase";
 
 type ResumeFont = "Times New Roman" | "Arial" | "Calibri";
-type ResumeLayout = "Skills First" | "Balanced" | "Experience First";
+type ResumeFormat = "Chronological" | "Functional" | "Combination";
+type AccomplishmentPlacement = "end" | "after-summary" | "after-skills" | "after-education";
 type Bullet = { text: string };
 
 type ParsedResume = {
@@ -52,6 +53,20 @@ type ExperienceItem = {
   bullets: Bullet[];
 };
 
+type VolunteerItem = {
+  organizationName: string;
+  city: string;
+  state: string;
+  roleTitle: string;
+  startMonth: string;
+  startYear: string;
+  endMonth: string;
+  endYear: string;
+  isPresent: boolean;
+  description: string;
+  bullets: Bullet[];
+};
+
 type CredentialItem = {
   organizationName: string;
   credentialName: string;
@@ -81,25 +96,50 @@ const MONTHS = [
   "Dec",
 ];
 
-const LAYOUTS: Array<{
-  name: ResumeLayout;
+const RESUME_FORMATS: Array<{
+  name: ResumeFormat;
   description: string;
 }> = [
   {
-    name: "Skills First",
-    description: "Best when your transferable skills are stronger than your work history.",
+    name: "Chronological",
+    description:
+      "Best when you have a clear work history. Experience is emphasized in date order.",
   },
   {
-    name: "Balanced",
-    description: "A simple mix of summary, skills, and experience.",
+    name: "Functional",
+    description:
+      "Best when traditional work history is limited. Skills and strengths are emphasized first.",
   },
   {
-    name: "Experience First",
-    description: "Best when you have work assignments or jobs you want employers to see first.",
+    name: "Combination",
+    description:
+      "Blends skills and experience so employers can quickly see both.",
   },
 ];
 
 function createExperience(): ExperienceItem {
+  return {
+    organizationName: "",
+    city: "",
+    state: "",
+    roleTitle: "",
+    startMonth: "",
+    startYear: "",
+    endMonth: "",
+    endYear: "",
+    isPresent: false,
+    description: "",
+    bullets: [
+      { text: "" },
+      { text: "" },
+      { text: "" },
+      { text: "" },
+      { text: "" },
+    ],
+  };
+}
+
+function createVolunteer(): VolunteerItem {
   return {
     organizationName: "",
     city: "",
@@ -172,6 +212,22 @@ function hasExperience(item: ExperienceItem) {
   );
 }
 
+function hasVolunteer(item: VolunteerItem) {
+  return Boolean(
+    item.organizationName ||
+      item.roleTitle ||
+      item.description ||
+      item.city ||
+      item.state ||
+      item.startMonth ||
+      item.startYear ||
+      item.endMonth ||
+      item.endYear ||
+      item.isPresent ||
+      item.bullets.some((b) => b.text.trim())
+  );
+}
+
 function hasCredential(item: CredentialItem) {
   return Boolean(
     item.organizationName ||
@@ -183,16 +239,47 @@ function hasCredential(item: CredentialItem) {
   );
 }
 
-function buildSectionOrder(layout: ResumeLayout) {
-  if (layout === "Skills First") {
-    return ["skills", "summary", "experience", "education"] as const;
+function buildSectionOrder(format: ResumeFormat) {
+  if (format === "Chronological") {
+    return ["summary", "experience", "skills", "education", "volunteer"] as const;
   }
 
-  if (layout === "Experience First") {
-    return ["summary", "experience", "skills", "education"] as const;
+  if (format === "Functional") {
+    return ["summary", "skills", "education", "experience", "volunteer"] as const;
   }
 
-  return ["summary", "skills", "experience", "education"] as const;
+  return ["summary", "skills", "experience", "education", "volunteer"] as const;
+}
+
+function insertAccomplishments(
+  sections: readonly string[],
+  placement: AccomplishmentPlacement,
+  hasAccomplishments: boolean
+) {
+  if (!hasAccomplishments) return [...sections];
+
+  const next = [...sections];
+
+  if (placement === "end") {
+    next.push("accomplishments");
+    return next;
+  }
+
+  const anchor =
+    placement === "after-summary"
+      ? "summary"
+      : placement === "after-skills"
+        ? "skills"
+        : "education";
+
+  const index = next.indexOf(anchor);
+  if (index === -1) {
+    next.push("accomplishments");
+    return next;
+  }
+
+  next.splice(index + 1, 0, "accomplishments");
+  return next;
 }
 
 export default function NewOpportunitiesResumeGeneratorPage() {
@@ -208,8 +295,11 @@ export default function NewOpportunitiesResumeGeneratorPage() {
   const [aiLoading, setAiLoading] = useState<string | null>(null);
 
   const [fontFamily, setFontFamily] = useState<ResumeFont>("Arial");
-  const [layoutChoice, setLayoutChoice] =
-    useState<ResumeLayout>("Skills First");
+  const [resumeFormat, setResumeFormat] =
+    useState<ResumeFormat>("Functional");
+  const [accomplishments, setAccomplishments] = useState("");
+  const [accomplishmentPlacement, setAccomplishmentPlacement] =
+    useState<AccomplishmentPlacement>("end");
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -224,6 +314,10 @@ export default function NewOpportunitiesResumeGeneratorPage() {
 
   const [experiences, setExperiences] = useState<ExperienceItem[]>([
     createExperience(),
+  ]);
+
+  const [volunteers, setVolunteers] = useState<VolunteerItem[]>([
+    createVolunteer(),
   ]);
 
   const [credentials, setCredentials] = useState<CredentialItem[]>([
@@ -296,7 +390,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
         const draft = JSON.parse(raw);
 
         setFontFamily(draft.fontFamily || "Arial");
-        setLayoutChoice(draft.layoutChoice || "Skills First");
+        setResumeFormat(draft.resumeFormat || "Functional");
+        setAccomplishments(draft.accomplishments || "");
+        setAccomplishmentPlacement(draft.accomplishmentPlacement || "end");
         setFullName(draft.fullName || "");
         setPhone(draft.phone || "");
         setEmail(draft.email || "");
@@ -322,6 +418,19 @@ export default function NewOpportunitiesResumeGeneratorPage() {
             : [createExperience()]
         );
 
+        setVolunteers(
+          Array.isArray(draft.volunteers) && draft.volunteers.length
+            ? draft.volunteers.map((item: VolunteerItem) => ({
+                ...createVolunteer(),
+                ...item,
+                bullets: [
+                  ...(Array.isArray(item.bullets) ? item.bullets : []),
+                  ...createVolunteer().bullets,
+                ].slice(0, BULLET_LIMIT),
+              }))
+            : [createVolunteer()]
+        );
+
         setCredentials(
           Array.isArray(draft.credentials) && draft.credentials.length
             ? draft.credentials
@@ -342,7 +451,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
       STORAGE_KEY,
       JSON.stringify({
         fontFamily,
-        layoutChoice,
+        resumeFormat,
+        accomplishments,
+        accomplishmentPlacement,
         fullName,
         phone,
         email,
@@ -353,6 +464,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
         summaryText,
         skillsInput,
         experiences,
+        volunteers,
         credentials,
         resumeContext,
         resumeFileName,
@@ -361,7 +473,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
   }, [
     draftLoaded,
     fontFamily,
-    layoutChoice,
+    resumeFormat,
+    accomplishments,
+    accomplishmentPlacement,
     fullName,
     phone,
     email,
@@ -372,6 +486,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
     summaryText,
     skillsInput,
     experiences,
+    volunteers,
     credentials,
     resumeContext,
     resumeFileName,
@@ -382,13 +497,22 @@ export default function NewOpportunitiesResumeGeneratorPage() {
     () => experiences.filter(hasExperience),
     [experiences]
   );
+  const activeVolunteers = useMemo(
+    () => volunteers.filter(hasVolunteer),
+    [volunteers]
+  );
   const activeCredentials = useMemo(
     () => credentials.filter(hasCredential),
     [credentials]
   );
   const orderedSections = useMemo(
-    () => buildSectionOrder(layoutChoice),
-    [layoutChoice]
+    () =>
+      insertAccomplishments(
+        buildSectionOrder(resumeFormat),
+        accomplishmentPlacement,
+        Boolean(accomplishments.trim())
+      ),
+    [resumeFormat, accomplishmentPlacement, accomplishments]
   );
 
   async function handleResumeUpload(file: File | null) {
@@ -544,6 +668,93 @@ export default function NewOpportunitiesResumeGeneratorPage() {
     );
   }
 
+  function updateVolunteer(
+    index: number,
+    field: keyof VolunteerItem,
+    value: string | boolean
+  ) {
+    setVolunteers((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    );
+  }
+
+  function updateVolunteerBullet(
+    index: number,
+    bulletIndex: number,
+    value: string
+  ) {
+    setVolunteers((prev) =>
+      prev.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+
+        return {
+          ...item,
+          bullets: item.bullets.map((bullet, currentBulletIndex) =>
+            currentBulletIndex === bulletIndex ? { text: value } : bullet
+          ),
+        };
+      })
+    );
+  }
+
+  async function handleAnalyzeVolunteer(index: number) {
+    const item = volunteers[index];
+
+    if (!item.roleTitle.trim() && !item.description.trim()) {
+      setMessage("Add a volunteer role or tell us what you did first.");
+      return;
+    }
+
+    try {
+      setAiLoading(`volunteer-${index}`);
+      setMessage("");
+
+      const data = await callAi("experience-helper", {
+        roleTitle: item.roleTitle || "Volunteer",
+        organizationName: item.organizationName,
+        description: item.description,
+      });
+
+      if (Array.isArray(data?.skills)) {
+        const merged = Array.from(
+          new Set([...skills, ...data.skills.map((x: unknown) => String(x))])
+        ).slice(0, SKILL_LIMIT);
+
+        setSkillsInput(merged.join(", "));
+      }
+
+      if (Array.isArray(data?.bullets)) {
+        setVolunteers((prev) =>
+          prev.map((volunteer, itemIndex) =>
+            itemIndex === index
+              ? {
+                  ...volunteer,
+                  bullets: [
+                    ...data.bullets
+                      .slice(0, BULLET_LIMIT)
+                      .map((bullet: unknown) => ({ text: String(bullet) })),
+                    ...createVolunteer().bullets,
+                  ].slice(0, BULLET_LIMIT),
+                }
+              : volunteer
+          )
+        );
+      }
+
+      setMessage("Volunteer skills and bullet points added.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to analyze volunteer work right now."
+      );
+    } finally {
+      setAiLoading(null);
+    }
+  }
+
   function updateCredential(
     index: number,
     field: keyof CredentialItem,
@@ -565,7 +776,14 @@ export default function NewOpportunitiesResumeGeneratorPage() {
         targetRole,
         summaryText,
         skillsInput,
-        experiences,
+        experiences: [
+          ...experiences,
+          ...volunteers.map((item) => ({
+            ...item,
+            organizationName: item.organizationName,
+            roleTitle: item.roleTitle || "Volunteer",
+          })),
+        ],
         credentials,
         resumeContext,
         ...extra,
@@ -690,7 +908,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
         STORAGE_KEY,
         JSON.stringify({
           fontFamily,
-          layoutChoice,
+          resumeFormat,
+          accomplishments,
+          accomplishmentPlacement,
           fullName,
           phone,
           email,
@@ -701,6 +921,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
           summaryText,
           skillsInput,
           experiences,
+          volunteers,
           credentials,
           resumeContext,
           resumeFileName,
@@ -990,6 +1211,67 @@ export default function NewOpportunitiesResumeGeneratorPage() {
       );
     }
 
+    if (section === "volunteer") {
+      if (!activeVolunteers.length) return null;
+
+      return (
+        <section className="resumeSection" style={styles.resumeSection}>
+          <h3 className="resumeSectionTitle" style={styles.resumeSectionTitle}>
+            VOLUNTEER EXPERIENCE
+          </h3>
+
+          {activeVolunteers.map((item, index) => (
+            <div className="resumeEntry" style={styles.resumeEntry} key={index}>
+              <div className="resumeEntryTop" style={styles.resumeEntryTop}>
+                <div>
+                  <p className="resumeEntryHeading" style={styles.resumeEntryHeading}>
+                    {item.organizationName || "Volunteer Organization"}
+                    {item.city || item.state
+                      ? ` — ${[item.city, item.state].filter(Boolean).join(", ")}`
+                      : ""}
+                  </p>
+                  <p className="resumeEntrySubheading" style={styles.resumeEntrySubheading}>
+                    {item.roleTitle || "Volunteer"}
+                  </p>
+                </div>
+
+                <p className="resumeEntryDates" style={styles.resumeEntryDates}>
+                  {formatDateRange(item)}
+                </p>
+              </div>
+
+              {item.bullets
+                .filter((bullet) => bullet.text.trim())
+                .map((bullet, bulletIndex) => (
+                  <p
+                    key={bulletIndex}
+                    className="resumeBullet"
+                    style={styles.resumeBullet}
+                  >
+                    • {bullet.text}
+                  </p>
+                ))}
+            </div>
+          ))}
+        </section>
+      );
+    }
+
+    if (section === "accomplishments") {
+      if (!accomplishments.trim()) return null;
+
+      return (
+        <section className="resumeSection" style={styles.resumeSection}>
+          <h3 className="resumeSectionTitle" style={styles.resumeSectionTitle}>
+            ACCOMPLISHMENTS
+          </h3>
+          <p className="resumeParagraph" style={styles.resumeParagraph}>
+            {accomplishments}
+          </p>
+        </section>
+      );
+    }
+
     return null;
   }
 
@@ -1040,6 +1322,10 @@ export default function NewOpportunitiesResumeGeneratorPage() {
           .reentry-bullet-row {
             grid-template-columns: 1fr !important;
           }
+
+          .reentry-placement-grid {
+            grid-template-columns: 1fr !important;
+          }
         }
       `}</style>
 
@@ -1048,7 +1334,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
           <div>
             <p style={styles.kicker}>REENTRY / SECOND CHANCE RESUME GENERATOR</p>
             <h1 style={styles.pageTitle}>
-              Build your resume one simple section at a time.
+              Build your reentry resume in a clear, simple order.
             </h1>
             <p style={styles.pageIntro}>
               No moving sections. No complicated setup. Add what you know, describe what
@@ -1062,11 +1348,13 @@ export default function NewOpportunitiesResumeGeneratorPage() {
         </div>
 
         <nav style={styles.stepNav}>
-          <a href="#start" style={styles.stepLink}>Start</a>
-          <a href="#experience" style={styles.stepLink}>Experience</a>
-          <a href="#skills" style={styles.stepLink}>Skills</a>
+          <a href="#start" style={styles.stepLink}>Header</a>
           <a href="#summary" style={styles.stepLink}>Summary</a>
+          <a href="#skills" style={styles.stepLink}>Skills</a>
           <a href="#education" style={styles.stepLink}>Education</a>
+          <a href="#experience" style={styles.stepLink}>Experience</a>
+          <a href="#volunteer" style={styles.stepLink}>Volunteer</a>
+          <a href="#accomplishments" style={styles.stepLink}>Accomplishments</a>
         </nav>
 
         <div className="reentry-layout" style={styles.layout}>
@@ -1127,16 +1415,16 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               ) : null}
 
               <div style={styles.sectionGroup}>
-                <p style={styles.cardKicker}>CHOOSE YOUR RESUME STYLE</p>
+                <p style={styles.cardKicker}>CHOOSE YOUR RESUME FORMAT</p>
                 <div className="reentry-layout-choices" style={styles.layoutChoices}>
-                  {LAYOUTS.map((item) => (
+                  {RESUME_FORMATS.map((item) => (
                     <button
                       key={item.name}
                       type="button"
-                      onClick={() => setLayoutChoice(item.name)}
+                      onClick={() => setResumeFormat(item.name)}
                       style={{
                         ...styles.layoutCard,
-                        ...(layoutChoice === item.name
+                        ...(resumeFormat === item.name
                           ? styles.layoutCardSelected
                           : {}),
                       }}
@@ -1203,6 +1491,165 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                   </div>
                 </div>
               </div>
+            </section>
+
+            <section id="summary" style={styles.card}>
+              <div className="reentry-section-heading" style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.cardKicker}>SUMMARY</p>
+                  <h2 style={styles.cardTitle}>Professional Summary</h2>
+                  <p style={styles.previewHelp}>
+                    This should focus on what you can offer now. It does not need to
+                    mention reentry or your past.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSummary}
+                  disabled={aiLoading !== null}
+                  style={styles.aiSecondaryButton}
+                >
+                  {aiLoading === "summary"
+                    ? "Writing..."
+                    : summaryText.trim()
+                      ? "✦ Strengthen Summary"
+                      : "✦ Write My Summary"}
+                </button>
+              </div>
+
+              <textarea
+                value={summaryText}
+                onChange={(e) => setSummaryText(e.target.value)}
+                placeholder="Write your own or use the AI button."
+                style={styles.textarea}
+              />
+            </section>
+
+            <section id="skills" style={styles.card}>
+              <div className="reentry-section-heading" style={styles.sectionHeading}>
+                <div>
+                  <p style={styles.cardKicker}>SKILLS</p>
+                  <h2 style={styles.cardTitle}>Your Stand-Alone Skills Section</h2>
+                  <p style={styles.previewHelp}>
+                    Add skills yourself or let HireMinds pull supported skills from the
+                    experience you described above. Up to 9 appear on the resume.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSkills}
+                  disabled={aiLoading !== null}
+                  style={styles.aiSecondaryButton}
+                >
+                  {aiLoading === "skills"
+                    ? "Finding..."
+                    : "✦ Identify Skills From My Experience"}
+                </button>
+              </div>
+
+              <input
+                value={skillsInput}
+                onChange={(e) => setSkillsInput(e.target.value)}
+                placeholder="Communication, Food Preparation, Cleaning, Teamwork..."
+                style={styles.input}
+              />
+
+              {skills.length ? (
+                <div style={styles.skillChips}>
+                  {skills.map((skill) => (
+                    <button
+                      key={skill}
+                      type="button"
+                      title="Remove skill"
+                      onClick={() =>
+                        setSkillsInput(
+                          skills.filter((item) => item !== skill).join(", ")
+                        )
+                      }
+                      style={styles.skillChip}
+                    >
+                      {skill} ×
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            <section id="education" style={styles.card}>
+              <p style={styles.cardKicker}>EDUCATION + TRAINING</p>
+              <h2 style={styles.cardTitle}>Add what you have</h2>
+              <p style={styles.previewHelp}>
+                GED, high school, college, vocational training, OSHA, ServSafe,
+                workforce programs, certificates, classes, or other completed training.
+              </p>
+
+              {credentials.map((item, index) => (
+                <div key={index} style={styles.sectionGroup}>
+                  <div className="reentry-two-col" style={styles.twoColForm}>
+                    <Field
+                      label="School / Program / Organization"
+                      value={item.organizationName}
+                      onChange={(value) =>
+                        updateCredential(index, "organizationName", value)
+                      }
+                    />
+
+                    <Field
+                      label="Credential / Training"
+                      value={item.credentialName}
+                      onChange={(value) =>
+                        updateCredential(index, "credentialName", value)
+                      }
+                      placeholder="GED, OSHA 10, Culinary Training..."
+                    />
+
+                    <Field
+                      label="City"
+                      value={item.city}
+                      onChange={(value) =>
+                        updateCredential(index, "city", value)
+                      }
+                    />
+
+                    <Field
+                      label="State"
+                      value={item.state}
+                      onChange={(value) =>
+                        updateCredential(index, "state", value)
+                      }
+                    />
+
+                    <Field
+                      label="Year"
+                      value={item.year}
+                      onChange={(value) =>
+                        updateCredential(index, "year", value)
+                      }
+                      placeholder="2026"
+                    />
+
+                    <Field
+                      label="Details (optional)"
+                      value={item.details}
+                      onChange={(value) =>
+                        updateCredential(index, "details", value)
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setCredentials((prev) => [...prev, createCredential()])
+                }
+                style={styles.smallButton}
+              >
+                + Add Education / Training
+              </button>
             </section>
 
             <section id="experience" style={styles.card}>
@@ -1365,123 +1812,41 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               </button>
             </section>
 
-            <section id="skills" style={styles.card}>
-              <div className="reentry-section-heading" style={styles.sectionHeading}>
-                <div>
-                  <p style={styles.cardKicker}>SKILLS</p>
-                  <h2 style={styles.cardTitle}>Your Stand-Alone Skills Section</h2>
-                  <p style={styles.previewHelp}>
-                    Add skills yourself or let HireMinds pull supported skills from the
-                    experience you described above. Up to 9 appear on the resume.
-                  </p>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={handleSkills}
-                  disabled={aiLoading !== null}
-                  style={styles.aiSecondaryButton}
-                >
-                  {aiLoading === "skills"
-                    ? "Finding..."
-                    : "✦ Identify Skills From My Experience"}
-                </button>
-              </div>
-
-              <input
-                value={skillsInput}
-                onChange={(e) => setSkillsInput(e.target.value)}
-                placeholder="Communication, Food Preparation, Cleaning, Teamwork..."
-                style={styles.input}
-              />
-
-              {skills.length ? (
-                <div style={styles.skillChips}>
-                  {skills.map((skill) => (
-                    <button
-                      key={skill}
-                      type="button"
-                      title="Remove skill"
-                      onClick={() =>
-                        setSkillsInput(
-                          skills.filter((item) => item !== skill).join(", ")
-                        )
-                      }
-                      style={styles.skillChip}
-                    >
-                      {skill} ×
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </section>
-
-            <section id="summary" style={styles.card}>
-              <div className="reentry-section-heading" style={styles.sectionHeading}>
-                <div>
-                  <p style={styles.cardKicker}>SUMMARY</p>
-                  <h2 style={styles.cardTitle}>Professional Summary</h2>
-                  <p style={styles.previewHelp}>
-                    This should focus on what you can offer now. It does not need to
-                    mention reentry or your past.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSummary}
-                  disabled={aiLoading !== null}
-                  style={styles.aiSecondaryButton}
-                >
-                  {aiLoading === "summary"
-                    ? "Writing..."
-                    : summaryText.trim()
-                      ? "✦ Strengthen Summary"
-                      : "✦ Write My Summary"}
-                </button>
-              </div>
-
-              <textarea
-                value={summaryText}
-                onChange={(e) => setSummaryText(e.target.value)}
-                placeholder="Write your own or use the AI button."
-                style={styles.textarea}
-              />
-            </section>
-
-            <section id="education" style={styles.card}>
-              <p style={styles.cardKicker}>EDUCATION + TRAINING</p>
-              <h2 style={styles.cardTitle}>Add what you have</h2>
+            <section id="volunteer" style={styles.card}>
+              <p style={styles.cardKicker}>VOLUNTEER</p>
+              <h2 style={styles.cardTitle}>Volunteer Experience</h2>
               <p style={styles.previewHelp}>
-                GED, high school, college, vocational training, OSHA, ServSafe,
-                workforce programs, certificates, classes, or other completed training.
+                Add volunteer work if you have it. This is optional. You can describe
+                what you did in plain language and use the same AI helper to identify
+                skills and build up to 5 resume bullets.
               </p>
 
-              {credentials.map((item, index) => (
-                <div key={index} style={styles.sectionGroup}>
+              {volunteers.map((item, index) => (
+                <div key={index} style={styles.experienceGroup}>
                   <div className="reentry-two-col" style={styles.twoColForm}>
                     <Field
-                      label="School / Program / Organization"
-                      value={item.organizationName}
+                      label="Volunteer Role"
+                      value={item.roleTitle}
                       onChange={(value) =>
-                        updateCredential(index, "organizationName", value)
+                        updateVolunteer(index, "roleTitle", value)
                       }
+                      placeholder="Volunteer, Event Support, Food Pantry Support..."
                     />
 
                     <Field
-                      label="Credential / Training"
-                      value={item.credentialName}
+                      label="Organization"
+                      value={item.organizationName}
                       onChange={(value) =>
-                        updateCredential(index, "credentialName", value)
+                        updateVolunteer(index, "organizationName", value)
                       }
-                      placeholder="GED, OSHA 10, Culinary Training..."
                     />
 
                     <Field
                       label="City"
                       value={item.city}
                       onChange={(value) =>
-                        updateCredential(index, "city", value)
+                        updateVolunteer(index, "city", value)
                       }
                     />
 
@@ -1489,26 +1854,108 @@ export default function NewOpportunitiesResumeGeneratorPage() {
                       label="State"
                       value={item.state}
                       onChange={(value) =>
-                        updateCredential(index, "state", value)
+                        updateVolunteer(index, "state", value)
+                      }
+                    />
+                  </div>
+
+                  <div className="reentry-two-col" style={styles.twoColForm}>
+                    <DateFields
+                      prefix="From"
+                      month={item.startMonth}
+                      year={item.startYear}
+                      onMonth={(value) =>
+                        updateVolunteer(index, "startMonth", value)
+                      }
+                      onYear={(value) =>
+                        updateVolunteer(index, "startYear", value)
                       }
                     />
 
-                    <Field
-                      label="Year"
-                      value={item.year}
-                      onChange={(value) =>
-                        updateCredential(index, "year", value)
+                    <div>
+                      <label style={styles.checkboxRow}>
+                        <input
+                          type="checkbox"
+                          checked={item.isPresent}
+                          onChange={(e) =>
+                            updateVolunteer(index, "isPresent", e.target.checked)
+                          }
+                        />
+                        <span>I currently volunteer here</span>
+                      </label>
+
+                      {!item.isPresent ? (
+                        <DateFields
+                          prefix="To"
+                          month={item.endMonth}
+                          year={item.endYear}
+                          onMonth={(value) =>
+                            updateVolunteer(index, "endMonth", value)
+                          }
+                          onYear={(value) =>
+                            updateVolunteer(index, "endYear", value)
+                          }
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div style={styles.aiDescribeBox}>
+                    <p style={styles.aiMiniKicker}>AI SKILL + BULLET HELPER</p>
+                    <h3 style={styles.aiDescribeTitle}>Describe what you did</h3>
+                    <p style={styles.helper}>
+                      Explain it normally. HireMinds can identify transferable skills
+                      and build professional bullet points from your description.
+                    </p>
+
+                    <textarea
+                      value={item.description}
+                      onChange={(e) =>
+                        updateVolunteer(index, "description", e.target.value)
                       }
-                      placeholder="2026"
+                      placeholder="Describe your volunteer work in your own words..."
+                      style={styles.textarea}
                     />
 
-                    <Field
-                      label="Details (optional)"
-                      value={item.details}
-                      onChange={(value) =>
-                        updateCredential(index, "details", value)
-                      }
-                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAnalyzeVolunteer(index)}
+                      disabled={aiLoading !== null}
+                      style={styles.aiPrimaryButton}
+                    >
+                      {aiLoading === `volunteer-${index}`
+                        ? "Working..."
+                        : "✦ Find My Skills + Build My Bullets"}
+                    </button>
+                  </div>
+
+                  <div style={styles.bulletBlock}>
+                    <div style={styles.bulletHeading}>
+                      <strong>Volunteer Bullet Points</strong>
+                      <span>Up to 5</span>
+                    </div>
+
+                    {item.bullets.map((bullet, bulletIndex) => (
+                      <div
+                        className="reentry-bullet-row"
+                        style={styles.bulletRow}
+                        key={bulletIndex}
+                      >
+                        <span style={styles.bulletNumber}>{bulletIndex + 1}</span>
+                        <input
+                          value={bullet.text}
+                          onChange={(e) =>
+                            updateVolunteerBullet(
+                              index,
+                              bulletIndex,
+                              e.target.value
+                            )
+                          }
+                          placeholder="Resume bullet"
+                          style={styles.input}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -1516,13 +1963,69 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               <button
                 type="button"
                 onClick={() =>
-                  setCredentials((prev) => [...prev, createCredential()])
+                  setVolunteers((prev) => [...prev, createVolunteer()])
                 }
                 style={styles.smallButton}
               >
-                + Add Education / Training
+                + Add Volunteer Experience
               </button>
             </section>
+
+            <section id="accomplishments" style={styles.card}>
+              <p style={styles.cardKicker}>ACCOMPLISHMENTS</p>
+              <h2 style={styles.cardTitle}>Accomplishments / Recognition</h2>
+              <p style={styles.previewHelp}>
+                Optional. Add awards, recognition, completed programs, special
+                achievements, or other accomplishments you want an employer to notice.
+              </p>
+
+              <textarea
+                value={accomplishments}
+                onChange={(e) => setAccomplishments(e.target.value)}
+                placeholder="Example: Completed workforce readiness program; recognized for consistent attendance and leadership..."
+                style={styles.textarea}
+              />
+
+              <div style={styles.sectionGroup}>
+                <p style={styles.cardKicker}>WHERE SHOULD THIS SECTION APPEAR?</p>
+
+                <div className="reentry-placement-grid" style={styles.placementChoices}>
+                  {[
+                    ["end", "At the End of the Resume"],
+                    ["after-summary", "After Summary"],
+                    ["after-skills", "After Skills"],
+                    ["after-education", "After Education"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() =>
+                        setAccomplishmentPlacement(
+                          value as AccomplishmentPlacement
+                        )
+                      }
+                      style={{
+                        ...styles.placementButton,
+                        ...(accomplishmentPlacement === value
+                          ? styles.placementButtonSelected
+                          : {}),
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+
+
+
+
+
+
+
+
 
             {message ? <div style={styles.message}>{message}</div> : null}
 
@@ -1555,7 +2058,7 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               <div style={styles.previewCardTop}>
                 <div>
                   <p style={styles.cardKicker}>LIVE PREVIEW</p>
-                  <strong style={styles.previewChoice}>{layoutChoice}</strong>
+                  <strong style={styles.previewChoice}>{resumeFormat}</strong>
                 </div>
                 <span style={styles.previewTag}>REENTRY / SECOND CHANCE</span>
               </div>
@@ -1591,7 +2094,9 @@ export default function NewOpportunitiesResumeGeneratorPage() {
               {!summaryText.trim() &&
               !skills.length &&
               !activeExperiences.length &&
-              !activeCredentials.length ? (
+              !activeVolunteers.length &&
+              !activeCredentials.length &&
+              !accomplishments.trim() ? (
                 <div style={styles.emptyPreview}>
                   <strong>Your resume will build here.</strong>
                   <p>Start with one experience or upload an existing resume.</p>
@@ -2078,6 +2583,31 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "9px",
     fontWeight: 800,
     cursor: "pointer",
+  },
+
+  placementChoices: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2,minmax(0,1fr))",
+    gap: "8px",
+  },
+
+  placementButton: {
+    minHeight: "40px",
+    padding: "0 12px",
+    borderRadius: "8px",
+    border: "1px solid rgba(148,163,184,.24)",
+    background: "rgba(255,255,255,.025)",
+    color: "#cbd5e1",
+    fontSize: "10px",
+    fontWeight: 800,
+    cursor: "pointer",
+    textAlign: "left",
+  },
+
+  placementButtonSelected: {
+    borderColor: "#1677FF",
+    background: "rgba(22,119,255,.10)",
+    color: "#9CCBFF",
   },
 
   smallButton: {
