@@ -1,1729 +1,1850 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { supabase } from "../lib/supabase";
 
-const heroWords = [
-  "career.",
-  "growth.",
-  "next move.",
-  "potential.",
+type Tool = {
+  title: string;
+  description: string;
+  href: string;
+  label: string;
+};
+
+const heroWords = ["build.", "match.", "prepare.", "advance."];
+
+const careerMaterials: Tool[] = [
+  {
+    title: "Resume Generator",
+    description:
+      "Build, preview, strengthen, and print a professional resume with guided sections and AI assistance.",
+    href: "/resume-builder",
+    label: "Resume",
+  },
+  {
+    title: "Reentry / Second Chance Resume Generator",
+    description:
+      "Create a professional resume from limited, nontraditional, institutional, volunteer, or reentry experience.",
+    href: "/career-toolkit/new-opportunities-resume-generator",
+    label: "Resume",
+  },
+  {
+    title: "Cover Letter Generator",
+    description:
+      "Build a polished cover letter using your resume, job description, company information, and AI assistance.",
+    href: "/career-toolkit/cover-letter-generator",
+    label: "Letter",
+  },
+  {
+    title: "Resume Format Guide",
+    description:
+      "Compare Chronological, Functional, and Combination resume formats before you build.",
+    href: "/career-toolkit/resume-type-helper",
+    label: "Guide",
+  },
+  {
+    title: "Skills Explorer",
+    description:
+      "Explore transferable, soft, and industry core skills in one place.",
+    href: "/career-toolkit/industry-core-skills",
+    label: "Skills",
+  },
+  {
+    title: "The House of Letters",
+    description:
+      "Create professional follow-ups, thank-you letters, resignation letters, requests, and workplace communication.",
+    href: "/career-toolkit/employer-follow-up-generator",
+    label: "Letters",
+  },
 ];
 
-const platformWords = [
-  "build.",
-  "stand out.",
-  "advance.",
+const jobMatchTools: Tool[] = [
+  {
+    title: "Job Match Analyzer",
+    description:
+      "Compare your resume against a job posting, identify what the employer is asking for, and see where your application needs attention.",
+    href: "/career-toolkit/resume-match-analyzer",
+    label: "Analyzer",
+  },
 ];
 
-const closingWords = [
-  "BUILD.",
-  "MATCH.",
-  "ANALYZE.",
-  "ADVANCE.",
+const interviewTools: Tool[] = [
+  {
+    title: "Interview Prep Studio",
+    description:
+      "Prepare for interviews in one place with role-focused questions, answer guidance, STAR support, and employer questions.",
+    href: "/career-toolkit/interview-question-generator",
+    label: "Interview",
+  },
 ];
 
-export default function HomePage() {
+const directionTools: Tool[] = [
+  {
+    title: "Career Path Generator",
+    description:
+      "Explore realistic career paths based on your interests, strengths, work preferences, and goals.",
+    href: "/career-toolkit/career-path-generator",
+    label: "Direction",
+  },
+  {
+    title: "Career Goal Generator",
+    description:
+      "Turn a career direction into a clear goal with practical next steps and an action plan.",
+    href: "/career-toolkit/career-goal-generator",
+    label: "Goal",
+  },
+];
+
+const resources: Tool[] = [
+  {
+    title: "Job Search Tips",
+    description:
+      "Practical guidance for applications, employer research, job descriptions, and job-search strategy.",
+    href: "/career-toolkit/job-search-tips",
+    label: "Guide",
+  },
+  {
+    title: "Career Video Library",
+    description:
+      "Short career videos, quick takes, and practical guidance you can return to anytime.",
+    href: "/career-toolkit/community-feed",
+    label: "Video",
+  },
+];
+
+export default function CareerToolkitPage() {
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [platformIndex, setPlatformIndex] = useState(0);
-  const [closingIndex, setClosingIndex] = useState(0);
 
   useEffect(() => {
-    const heroTimer = window.setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % heroWords.length);
-    }, 2200);
+    let mounted = true;
 
-    const platformTimer = window.setInterval(() => {
-      setPlatformIndex((prev) => (prev + 1) % platformWords.length);
+    async function checkAccess() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        window.location.href = "/sign-in";
+        return;
+      }
+
+      if (mounted) setCheckingAccess(false);
+    }
+
+    void checkAccess();
+
+    const timer = window.setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % heroWords.length);
     }, 1850);
 
-    const closingTimer = window.setInterval(() => {
-      setClosingIndex((prev) => (prev + 1) % closingWords.length);
-    }, 1600);
-
     return () => {
-      window.clearInterval(heroTimer);
-      window.clearInterval(platformTimer);
-      window.clearInterval(closingTimer);
+      mounted = false;
+      window.clearInterval(timer);
     };
   }, []);
 
+  const tickerItems = useMemo(
+    () => [
+      "CAREER MATERIALS",
+      "JOB MATCH",
+      "INTERVIEW PREP STUDIO",
+      "CAREER DIRECTION",
+      "SKILLS EXPLORER",
+      "HOUSE OF LETTERS",
+      "CAREER VIDEO LIBRARY",
+    ],
+    []
+  );
+
+  if (checkingAccess) {
+    return (
+      <main style={styles.loadingPage}>
+        <div style={styles.loadingGlow} />
+      </main>
+    );
+  }
+
   return (
-    <main className="page">
-      <section className="hero">
-        <div className="heroGlow glowOne" />
-        <div className="heroGlow glowTwo" />
-        <div className="heroGlow glowThree" />
+    <main style={styles.page}>
+      <style>{`
+        html { scroll-behavior: smooth; }
 
-        <div className="heroContent">
-          <p className="eyebrow">
-            WORKFORCE INFRASTRUCTURE PLATFORM
-          </p>
+        @keyframes hmWordReveal {
+          0% { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+          18% { opacity: 1; transform: translateY(0); filter: blur(0); }
+          78% { opacity: 1; transform: translateY(0); filter: blur(0); }
+          100% { opacity: 0; transform: translateY(-9px); filter: blur(3px); }
+        }
 
-          <div className="eyebrowLine" />
+        @keyframes hmFloat {
+          0%, 100% { transform: translateY(0) rotate(-2deg); }
+          50% { transform: translateY(-8px) rotate(-1deg); }
+        }
 
-          <h1>
-            Infrastructure that
+        @keyframes hmFloatTwo {
+          0%, 100% { transform: translateY(0) rotate(3deg); }
+          50% { transform: translateY(7px) rotate(2deg); }
+        }
+
+        @keyframes hmPulse {
+          0%, 100% { opacity: .62; transform: scale(.96); }
+          50% { opacity: 1; transform: scale(1.06); }
+        }
+
+        @keyframes hmTicker {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+
+        @keyframes hmShine {
+          0%, 56% { left: -35%; }
+          78%, 100% { left: 125%; }
+        }
+
+        .hm-changing-word {
+          animation: hmWordReveal 1.85s ease-in-out;
+        }
+
+        .hm-float {
+          animation: hmFloat 5.5s ease-in-out infinite;
+        }
+
+        .hm-float-two {
+          animation: hmFloatTwo 6s ease-in-out infinite;
+        }
+
+        .hm-pulse {
+          animation: hmPulse 4.5s ease-in-out infinite;
+        }
+
+        .hm-ticker-track {
+          animation: hmTicker 28s linear infinite;
+        }
+
+        .hm-tool-row {
+          transition: transform .18s ease, background .18s ease, border-color .18s ease;
+        }
+
+        .hm-tool-row:hover {
+          transform: translateX(5px);
+          background: rgba(22,119,255,.045);
+        }
+
+        .hm-tool-row-dark:hover {
+          background: rgba(255,255,255,.035);
+        }
+
+        .hm-tool-row:hover .hm-arrow {
+          transform: translateX(5px);
+        }
+
+        .hm-arrow {
+          transition: transform .18s ease;
+        }
+
+        .hm-primary-cta {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .hm-primary-cta::before {
+          content: "";
+          position: absolute;
+          top: -40%;
+          left: -35%;
+          width: 24%;
+          height: 180%;
+          transform: rotate(18deg);
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.34),
+            transparent
+          );
+          animation: hmShine 4.8s ease-in-out infinite;
+        }
+
+        @media (max-width: 1080px) {
+          .hm-hero-grid,
+          .hm-showcase-grid,
+          .hm-direction-grid {
+            grid-template-columns: 1fr !important;
+          }
+
+          .hm-stage {
+            min-height: 500px !important;
+          }
+
+          .hm-direction-tools {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 760px) {
+          .hm-section {
+            padding: 64px 20px !important;
+          }
+
+          .hm-hero {
+            padding: 56px 20px 70px !important;
+          }
+
+          .hm-display {
+            font-size: 50px !important;
+          }
+
+          .hm-material-stage {
+            min-height: 450px !important;
+          }
+
+          .hm-resume-sheet {
+            width: 82% !important;
+          }
+
+          .hm-letter-sheet {
+            width: 58% !important;
+            right: 0 !important;
+          }
+
+          .hm-match-board {
+            grid-template-columns: 1fr !important;
+          }
+
+          .hm-phone {
+            width: 290px !important;
+          }
+
+          .hm-ticker-text {
+            font-size: 18px !important;
+          }
+        }
+      `}</style>
+
+      <section className="hm-hero hm-hero-grid" style={styles.hero}>
+        <div style={styles.heroGlowOne} className="hm-pulse" />
+        <div style={styles.heroGlowTwo} className="hm-pulse" />
+
+        <div style={styles.heroCopy}>
+          <p style={styles.eyebrow}>CAREER TOOLKIT / HIREMINDS</p>
+
+          <h1 className="hm-display" style={styles.heroTitle}>
+            Your career tools.
             <br />
-            powers your{" "}
+            Built to help you{" "}
             <span
               key={heroIndex}
-              className="changingWord"
+              className="hm-changing-word"
+              style={styles.heroBlue}
             >
               {heroWords[heroIndex]}
             </span>
           </h1>
 
-          <p className="heroCopy">
-            All the tools you need to build, market, and manage
-            <br className="desktopOnly" />
-            your career — all in one intelligent platform.
+          <p style={styles.heroText}>
+            Build your materials, understand the job, prepare for the interview,
+            and make your next move without bouncing between disconnected tools.
           </p>
 
-          <div className="heroActions">
-            <a href="/sign-up" className="cta">
-              <span>Create Career Passport</span>
+          <div style={styles.heroActions}>
+            <a
+              href="#career-materials"
+              className="hm-primary-cta"
+              style={styles.primaryButton}
+            >
+              <span style={{ position: "relative", zIndex: 2 }}>
+                Start with Career Materials
+              </span>
             </a>
 
-            <a
-              href="/explore"
-              className="exploreLink"
-            >
-              Explore HireMinds
-              <span className="arrow">→</span>
+            <a href="#job-match" style={styles.ghostButton}>
+              Explore the Roadmap →
             </a>
           </div>
 
-          <div className="heroMicro">
+          <div style={styles.heroMicro}>
             <span>BUILD</span>
-            <i />
-            <span>ANALYZE</span>
-            <i />
-            <span>OPTIMIZE</span>
-            <i />
+            <i>•</i>
+            <span>MATCH</span>
+            <i>•</i>
+            <span>PREPARE</span>
+            <i>•</i>
             <span>ADVANCE</span>
           </div>
         </div>
 
-        <svg
-          className="smileCurve"
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path d="M0 20 Q720 112 1440 20 L1440 120 L0 120 Z" />
-        </svg>
+        <div className="hm-stage" style={styles.heroStage}>
+          <div style={styles.heroOrbit} className="hm-pulse" />
+
+          <div className="hm-float" style={styles.heroResume}>
+            <div style={styles.heroResumeTop}>
+              <div>
+                <strong style={styles.heroResumeName}>Jordan Taylor</strong>
+                <span style={styles.heroResumeRole}>Operations Professional</span>
+              </div>
+              <span style={styles.heroResumeContact}>
+                Hartford, CT
+                <br />
+                jordan@email.com
+              </span>
+            </div>
+
+            <div style={styles.heroResumeRule} />
+
+            <span style={styles.heroResumeLabel}>PROFESSIONAL SUMMARY</span>
+            <div style={styles.fakeLineWide} />
+            <div style={styles.fakeLineMedium} />
+
+            <span style={styles.heroResumeLabel}>CORE SKILLS</span>
+            <div style={styles.fakeSkillRow}>
+              <span>Teamwork</span>
+              <span>Operations</span>
+              <span>Communication</span>
+            </div>
+
+            <span style={styles.heroResumeLabel}>EXPERIENCE</span>
+            <div style={styles.fakeLineWide} />
+            <div style={styles.fakeLineShort} />
+          </div>
+
+          <div className="hm-float-two" style={styles.heroAnalyzer}>
+            <span style={styles.heroCardKicker}>JOB MATCH</span>
+            <strong style={styles.heroCardTitle}>82% aligned</strong>
+            <div style={styles.matchBar}>
+              <span style={styles.matchBarFill} />
+            </div>
+            <span style={styles.matchSmall}>7 strong matches</span>
+            <span style={styles.matchSmall}>2 areas to strengthen</span>
+          </div>
+
+          <div style={styles.tagOne}>AI-ASSISTED</div>
+          <div style={styles.tagTwo}>BUILT AROUND YOU</div>
+          <div style={styles.sparkOne}>✦</div>
+          <div style={styles.sparkTwo}>✦</div>
+        </div>
       </section>
 
-      <section className="platformSection">
-        <div className="platformIntro">
-          <p>The all-in-one platform to</p>
-
-          <div className="platformChangingWrap">
-            <h2
-              key={platformIndex}
-              className="platformChangingWord"
-            >
-              {platformWords[platformIndex]}
-            </h2>
-          </div>
-
-          <div className="platformLine" />
+      <div style={styles.tickerWrap}>
+        <div className="hm-ticker-track" style={styles.tickerTrack}>
+          {[...Array(2)].flatMap((_, outerIndex) =>
+            tickerItems.flatMap((item, itemIndex) => [
+              <span
+                className="hm-ticker-text"
+                style={styles.tickerText}
+                key={`${outerIndex}-${itemIndex}-text`}
+              >
+                {item}
+              </span>,
+              <span
+                key={`${outerIndex}-${itemIndex}-dot`}
+                style={styles.tickerDot}
+              >
+                ✦
+              </span>,
+            ])
+          )}
         </div>
+      </div>
 
-        <div className="featureRow">
-          {/* CREATE STANDOUT MATERIALS */}
-          <div className="featureItem">
-            <div className="featureIcon iconOne">
-              <svg
-                viewBox="0 0 48 48"
-                aria-hidden="true"
-                width="40"
-                height="40"
-                fill="none"
-                stroke="#1677FF"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect
-                  x="11"
-                  y="7"
-                  width="24"
-                  height="31"
-                  rx="2"
-                  fill="none"
-                />
+      <section
+        id="career-materials"
+        className="hm-section hm-showcase-grid"
+        style={styles.materialsSection}
+      >
+        <div style={styles.sectionCopy}>
+          <p style={styles.sectionEyebrow}>CAREER MATERIALS</p>
+          <h2 className="hm-display" style={styles.lightTitle}>
+            Build the materials.
+            <br />
+            <span style={styles.blueWord}>Strengthen the story.</span>
+          </h2>
+          <p style={styles.lightText}>
+            This is the core HireMinds workspace. Build the resume, identify the
+            right skills, choose the right format, create the cover letter, and
+            handle the professional communication that comes next.
+          </p>
 
-                <path
-                  d="M16 15h13"
-                  fill="none"
-                />
-
-                <path
-                  d="M16 21h10"
-                  fill="none"
-                />
-
-                <path
-                  d="M16 27h8"
-                  fill="none"
-                />
-
-                <path
-                  d="M29 35l8-8 4 4-8 8-6 2z"
-                  fill="none"
-                />
-              </svg>
-            </div>
-
-            <p>
-              Create
-              <br />
-              Standout Materials
-            </p>
-          </div>
-
-          <div className="divider" />
-
-          {/* MATCH SKILLS */}
-          <div className="featureItem">
-            <div className="featureIcon iconTwo">
-              <svg
-                viewBox="0 0 48 48"
-                aria-hidden="true"
-                width="40"
-                height="40"
-                fill="none"
-                stroke="#1677FF"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle
-                  cx="22"
-                  cy="24"
-                  r="15"
-                  fill="none"
-                />
-
-                <circle
-                  cx="22"
-                  cy="24"
-                  r="9"
-                  fill="none"
-                />
-
-                <circle
-                  cx="22"
-                  cy="24"
-                  r="3"
-                  fill="none"
-                />
-
-                <path
-                  d="M26 20l11-11"
-                  fill="none"
-                />
-
-                <path
-                  d="M32 9h6v6"
-                  fill="none"
-                />
-              </svg>
-            </div>
-
-            <p>
-              Match Your Skills
-              <br />
-              to the Right Roles
-            </p>
-          </div>
-
-          <div className="divider" />
-
-          {/* TRACK SEARCH */}
-          <div className="featureItem">
-            <div className="featureIcon iconThree">
-              <svg
-                viewBox="0 0 48 48"
-                aria-hidden="true"
-                width="40"
-                height="40"
-                fill="none"
-                stroke="#1677FF"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect
-                  x="8"
-                  y="15"
-                  width="32"
-                  height="23"
-                  rx="2"
-                  fill="none"
-                />
-
-                <path
-                  d="M17 15v-5h14v5"
-                  fill="none"
-                />
-
-                <path
-                  d="M8 24h32"
-                  fill="none"
-                />
-
-                <rect
-                  x="21"
-                  y="22"
-                  width="6"
-                  height="5"
-                  rx="1"
-                  fill="none"
-                />
-              </svg>
-            </div>
-
-            <p>
-              Track Your Search
-              <br />
-              and Applications
-            </p>
-          </div>
-
-          <div className="divider" />
-
-          {/* SMARTER CAREER MOVES */}
-          <div className="featureItem">
-            <div className="featureIcon iconFour">
-              <svg
-                viewBox="0 0 48 48"
-                aria-hidden="true"
-                width="40"
-                height="40"
-                fill="none"
-                stroke="#1677FF"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect
-                  x="8"
-                  y="27"
-                  width="7"
-                  height="11"
-                  rx="1"
-                  fill="none"
-                />
-
-                <rect
-                  x="20"
-                  y="19"
-                  width="7"
-                  height="19"
-                  rx="1"
-                  fill="none"
-                />
-
-                <rect
-                  x="32"
-                  y="9"
-                  width="7"
-                  height="29"
-                  rx="1"
-                  fill="none"
-                />
-              </svg>
-            </div>
-
-            <p>
-              Make Smarter
-              <br />
-              Career Moves
-            </p>
-          </div>
-
-          <div className="divider" />
-
-          {/* STRONGER CAREER PROFILE */}
-          <div className="featureItem">
-            <div className="featureIcon iconFive">
-              <svg
-                viewBox="0 0 48 48"
-                aria-hidden="true"
-                width="40"
-                height="40"
-                fill="none"
-                stroke="#1677FF"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle
-                  cx="24"
-                  cy="16"
-                  r="7"
-                  fill="none"
-                />
-
-                <path
-                  d="M12 38c1-8 6-12 12-12s11 4 12 12"
-                  fill="none"
-                />
-
-                <path
-                  d="M34 11l3 3 5-6"
-                  fill="none"
-                />
-              </svg>
-            </div>
-
-            <p>
-              Build a Stronger
-              <br />
-              Career Profile
-            </p>
+          <div style={styles.roadmapLine}>
+            <span>FORMAT</span>
+            <i>→</i>
+            <span>RESUME</span>
+            <i>→</i>
+            <span>SKILLS</span>
+            <i>→</i>
+            <span>COVER LETTER</span>
+            <i>→</i>
+            <span>FOLLOW-UP</span>
           </div>
         </div>
 
-        <div className="closingWrap">
-          <span
-            key={closingIndex}
-            className="closingChanging"
+        <div className="hm-material-stage" style={styles.materialStage}>
+          <div style={styles.materialGlow} className="hm-pulse" />
+
+          <div
+            className="hm-resume-sheet hm-float"
+            style={styles.materialResume}
           >
-            {closingWords[closingIndex]}
-          </span>
+            <div style={styles.materialTopLine}>
+              <span>RESUME GENERATOR</span>
+              <strong>LIVE PREVIEW</strong>
+            </div>
 
-          <span className="closingStatic">
-            ONE ACCOUNT. EVERY TOOL. REAL RESULTS.
-          </span>
+            <div style={styles.materialHeadline}>
+              Your experience. Stronger language. Cleaner structure.
+            </div>
+
+            <div style={styles.mockInput}>
+              <span>Professional Summary</span>
+              <strong>AI-assisted writing</strong>
+            </div>
+
+            <div style={styles.mockInput}>
+              <span>Core Skills</span>
+              <strong>9 focused skills</strong>
+            </div>
+
+            <div style={styles.mockFooter}>
+              <span>Polished Professional</span>
+              <span>ATS Structured</span>
+            </div>
+          </div>
+
+          <div
+            className="hm-letter-sheet hm-float-two"
+            style={styles.materialLetter}
+          >
+            <span style={styles.letterKicker}>COVER LETTER</span>
+            <strong style={styles.letterTitle}>Tailored to the role.</strong>
+            <div style={styles.letterLine} />
+            <div style={styles.letterLine} />
+            <div style={{ ...styles.letterLine, width: "72%" }} />
+            <span style={styles.letterSignature}>Your Name</span>
+          </div>
+
+          <div style={styles.materialTagOne}>SKILLS EXPLORER</div>
+          <div style={styles.materialTagTwo}>HOUSE OF LETTERS</div>
+        </div>
+
+        <ToolRows tools={careerMaterials} dark={false} />
+      </section>
+
+      <section
+        id="job-match"
+        className="hm-section hm-showcase-grid"
+        style={styles.matchSection}
+      >
+        <div style={styles.sectionCopy}>
+          <p style={styles.darkEyebrow}>JOB MATCH</p>
+          <h2 className="hm-display" style={styles.darkTitle}>
+            Read the role.
+            <br />
+            <span style={styles.analysisBlue}>See the match.</span>
+          </h2>
+          <p style={styles.darkText}>
+            One place to understand what the employer is asking for and how your
+            resume lines up before you apply.
+          </p>
+
+          <a
+            href="/career-toolkit/resume-match-analyzer"
+            style={styles.darkInlineLink}
+          >
+            Open Job Match Analyzer ↗
+          </a>
+        </div>
+
+        <div style={styles.matchStage}>
+          <div className="hm-match-board" style={styles.matchBoard}>
+            <div style={styles.matchLeft}>
+              <span style={styles.matchKicker}>JOB DESCRIPTION</span>
+              <h3 style={styles.matchTitle}>Operations Coordinator</h3>
+              <p style={styles.matchCopy}>
+                Coordinate daily workflows, maintain records, communicate across
+                teams, and support operational priorities.
+              </p>
+
+              <div style={styles.keywordCloud}>
+                <span>organization</span>
+                <span>communication</span>
+                <span>records</span>
+                <span>operations</span>
+              </div>
+            </div>
+
+            <div style={styles.matchRight}>
+              <span style={styles.matchFound}>YOUR MATCH</span>
+
+              {[
+                ["Communication", "Strong"],
+                ["Organization", "Strong"],
+                ["Records", "Present"],
+                ["Operations", "Strengthen"],
+              ].map(([skill, status]) => (
+                <div key={skill} style={styles.matchRow}>
+                  <span>{skill}</span>
+                  <strong>{status}</strong>
+                </div>
+              ))}
+
+              <div style={styles.focusBox}>
+                <span>APPLICATION FOCUS</span>
+                <p>
+                  Lead with workflow coordination, communication, recordkeeping,
+                  and reliability.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.matchStamp}>MATCH SMARTER</div>
+        </div>
+
+        <ToolRows tools={jobMatchTools} dark />
+      </section>
+
+      <section
+        id="interview"
+        className="hm-section hm-showcase-grid"
+        style={styles.interviewSection}
+      >
+        <div style={styles.interviewStage}>
+          <div style={styles.interviewGlow} className="hm-pulse" />
+
+          <div className="hm-phone" style={styles.phone}>
+            <div style={styles.phoneTop}>
+              <span>HIREMINDS</span>
+              <strong>INTERVIEW PREP</strong>
+            </div>
+
+            <div style={styles.phoneQuestionLabel}>QUESTION</div>
+            <div style={styles.phoneQuestion}>
+              Tell me about a time you had to solve a problem quickly.
+            </div>
+
+            <div style={styles.phoneTip}>BUILD YOUR ANSWER</div>
+
+            <div style={styles.starRow}>
+              <span>S</span>
+              <p>Situation</p>
+            </div>
+            <div style={styles.starRow}>
+              <span>T</span>
+              <p>Task</p>
+            </div>
+            <div style={styles.starRow}>
+              <span>A</span>
+              <p>Action</p>
+            </div>
+            <div style={styles.starRow}>
+              <span>R</span>
+              <p>Result</p>
+            </div>
+
+            <div style={styles.phoneFooter}>
+              <span>Practice. Strengthen. Repeat.</span>
+              <strong>→</strong>
+            </div>
+          </div>
+
+          <div style={styles.interviewTag}>ROLE-FOCUSED QUESTIONS</div>
+        </div>
+
+        <div style={styles.sectionCopy}>
+          <p style={styles.sectionEyebrow}>INTERVIEW PREP STUDIO</p>
+          <h2 className="hm-display" style={styles.lightTitle}>
+            Prepare the answer.
+            <br />
+            <span style={styles.blueWord}>Not just the question.</span>
+          </h2>
+          <p style={styles.lightText}>
+            The interview tools are now presented as one preparation experience:
+            questions, answer guidance, STAR structure, employer questions, and
+            interview readiness.
+          </p>
+
+          <ToolRows tools={interviewTools} dark={false} />
         </div>
       </section>
 
-      <style jsx>{`
-        .page {
-          width: 100%;
-          min-height: 100vh;
-          overflow: hidden;
-
-          background: #f7f9fc;
-
-          font-family:
-            Arial,
-            Helvetica,
-            sans-serif;
-        }
-
-        .hero {
-          position: relative;
-
-          min-height: 520px;
-
-          padding:
-            48px 24px
-            102px;
-
-          display: flex;
-
-          justify-content: center;
-          align-items: flex-start;
-
-          overflow: hidden;
-
-          color: #ffffff;
-
-          background:
-            radial-gradient(
-              ellipse at 14% 16%,
-              rgba(42, 121, 230, 0.2) 0%,
-              rgba(10, 54, 112, 0.1) 30%,
-              transparent 55%
-            ),
-            radial-gradient(
-              ellipse at 86% 70%,
-              rgba(25, 104, 214, 0.18) 0%,
-              rgba(8, 43, 92, 0.08) 32%,
-              transparent 58%
-            ),
-            radial-gradient(
-              ellipse at 52% -8%,
-              rgba(90, 162, 255, 0.11) 0%,
-              transparent 40%
-            ),
-            linear-gradient(
-              135deg,
-              #020812 0%,
-              #05172a 28%,
-              #03101f 50%,
-              #08213d 72%,
-              #020914 100%
-            );
-        }
-
-        .hero::before {
-          content: "";
-
-          position: absolute;
-
-          inset: -34%;
-
-          z-index: 0;
-
-          pointer-events: none;
-
-          background:
-            radial-gradient(
-              ellipse at 27% 48%,
-              transparent 0%,
-              transparent 34%,
-              rgba(24, 108, 224, 0.11) 40%,
-              rgba(72, 150, 255, 0.05) 44%,
-              transparent 52%
-            ),
-            radial-gradient(
-              ellipse at 72% 56%,
-              transparent 0%,
-              transparent 36%,
-              rgba(14, 88, 190, 0.12) 42%,
-              rgba(74, 155, 255, 0.05) 46%,
-              transparent 54%
-            ),
-            radial-gradient(
-              ellipse at 52% 28%,
-              transparent 0%,
-              transparent 42%,
-              rgba(97, 166, 255, 0.055) 48%,
-              transparent 56%
-            );
-
-          transform:
-            rotate(-7deg)
-            scale(1.15);
-
-          filter:
-            blur(20px);
-
-          animation:
-            backgroundDrift
-            15s ease-in-out
-            infinite alternate;
-        }
-
-        .hero::after {
-          content: "";
-
-          position: absolute;
-
-          top: -24%;
-          left: 13%;
-
-          width: 74%;
-          height: 58%;
-
-          z-index: 0;
-
-          pointer-events: none;
-
-          background:
-            radial-gradient(
-              ellipse at center,
-              rgba(125, 188, 255, 0.1) 0%,
-              rgba(48, 128, 225, 0.045) 36%,
-              transparent 72%
-            );
-
-          filter:
-            blur(30px);
-
-          transform:
-            rotate(-5deg);
-
-          animation:
-            upperGlow
-            12s ease-in-out
-            infinite alternate;
-        }
-
-        .heroGlow {
-          position: absolute;
-
-          border-radius: 50%;
-
-          pointer-events: none;
-
-          filter:
-            blur(100px);
-
-          z-index: 1;
-        }
-
-        .glowOne {
-          width: 340px;
-          height: 340px;
-
-          top: -170px;
-          left: 8%;
-
-          background:
-            rgba(22, 119, 255, 0.11);
-
-          animation:
-            glowMoveOne
-            11s ease-in-out
-            infinite alternate;
-        }
-
-        .glowTwo {
-          width: 420px;
-          height: 420px;
-
-          right: 4%;
-          bottom: -220px;
-
-          background:
-            rgba(22, 119, 255, 0.1);
-
-          animation:
-            glowMoveTwo
-            13s ease-in-out
-            infinite alternate;
-        }
-
-        .glowThree {
-          width: 260px;
-          height: 260px;
-
-          left: 47%;
-          top: 22%;
-
-          background:
-            rgba(92, 156, 255, 0.055);
-
-          animation:
-            glowPulse
-            7s ease-in-out
-            infinite;
-        }
-
-        .heroContent {
-          position: relative;
-
-          z-index: 4;
-
-          width: 100%;
-          max-width: 980px;
-
-          text-align: center;
-        }
-
-        .eyebrow {
-          margin: 0;
-
-          color: #1677ff;
-
-          font-size: 12px;
-
-          font-weight: 800;
-
-          letter-spacing:
-            0.25em;
-        }
-
-        .eyebrowLine {
-          width: 62px;
-          height: 2px;
-
-          margin:
-            18px auto
-            24px;
-
-          background:
-            #1677ff;
-
-          box-shadow:
-            0 0 20px
-            rgba(22, 119, 255, 0.42);
-        }
-
-        h1 {
-          margin: 0;
-
-          min-height: 150px;
-
-          font-family:
-            Georgia,
-            "Times New Roman",
-            serif;
-
-          font-size:
-            clamp(
-              48px,
-              4.8vw,
-              72px
-            );
-
-          line-height: 1.04;
-
-          font-weight: 400;
-
-          letter-spacing:
-            -0.035em;
-
-          color:
-            #f7f7f5;
-        }
-
-        .changingWord {
-          display:
-            inline-block;
-
-          color:
-            #1677ff;
-
-          animation:
-            wordReveal
-            2.2s ease-in-out;
-        }
-
-        .heroCopy {
-          margin:
-            24px auto 0;
-
-          color:
-            #eef2f7;
-
-          font-size:
-            17px;
-
-          line-height:
-            1.65;
-
-          font-weight:
-            400;
-        }
-
-        .heroActions {
-          display: flex;
-
-          justify-content:
-            center;
-
-          align-items:
-            center;
-
-          gap: 24px;
-
-          flex-wrap:
-            wrap;
-        }
-
-        .cta {
-          position:
-            relative;
-
-          display:
-            inline-flex;
-
-          justify-content:
-            center;
-
-          align-items:
-            center;
-
-          min-width:
-            340px;
-
-          margin-top:
-            28px;
-
-          padding:
-            16px 30px;
-
-          border-radius:
-            7px;
-
-          overflow:
-            hidden;
-
-          color:
-            #ffffff;
-
-          text-decoration:
-            none;
-
-          font-size:
-            17px;
-
-          font-weight:
-            700;
-
-          background:
-            #1677ff;
-
-          box-shadow:
-            0 10px 28px
-            rgba(22, 119, 255, 0.2);
-
-          transition:
-            transform
-            0.18s ease,
-            box-shadow
-            0.18s ease;
-        }
-
-        .cta::before {
-          content: "";
-
-          position:
-            absolute;
-
-          top: -40%;
-
-          left: -35%;
-
-          width: 24%;
-
-          height: 180%;
-
-          transform:
-            rotate(18deg);
-
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              rgba(
-                255,
-                255,
-                255,
-                0.32
-              ),
-              transparent
-            );
-
-          animation:
-            buttonShine
-            4.8s ease-in-out
-            infinite;
-        }
-
-        .cta span {
-          position:
-            relative;
-
-          z-index:
-            2;
-        }
-
-        .cta:hover {
-          transform:
-            translateY(-2px);
-
-          box-shadow:
-            0 16px 38px
-            rgba(22, 119, 255, 0.32);
-        }
-
-        .exploreLink {
-          margin-top:
-            28px;
-
-          display:
-            inline-flex;
-
-          align-items:
-            center;
-
-          gap:
-            9px;
-
-          color:
-            #dce7f3;
-
-          text-decoration:
-            none;
-
-          font-size:
-            14px;
-
-          font-weight:
-            700;
-
-          transition:
-            color
-            0.2s ease;
-        }
-
-        .exploreLink:hover {
-          color:
-            #ffffff;
-        }
-
-        .arrow {
-          color:
-            #1677ff;
-
-          font-size:
-            18px;
-
-          transition:
-            transform
-            0.2s ease;
-        }
-
-        .exploreLink:hover .arrow {
-          transform:
-            translateX(4px);
-        }
-
-        .heroMicro {
-          margin-top:
-            34px;
-
-          display:
-            flex;
-
-          justify-content:
-            center;
-
-          align-items:
-            center;
-
-          gap:
-            13px;
-
-          color:
-            rgba(
-              221,
-              231,
-              241,
-              0.55
-            );
-
-          font-size:
-            9px;
-
-          font-weight:
-            800;
-
-          letter-spacing:
-            0.18em;
-        }
-
-        .heroMicro i {
-          width:
-            3px;
-
-          height:
-            3px;
-
-          border-radius:
-            50%;
-
-          background:
-            #1677ff;
-
-          box-shadow:
-            0 0 10px
-            rgba(
-              22,
-              119,
-              255,
-              0.75
-            );
-        }
-
-        .smileCurve {
-          position:
-            absolute;
-
-          left:
-            0;
-
-          bottom:
-            -1px;
-
-          z-index:
-            3;
-
-          width:
-            100%;
-
-          height:
-            82px;
-
-          display:
-            block;
-        }
-
-        .smileCurve path {
-          fill:
-            #f7f9fc;
-        }
-
-        .platformSection {
-          margin-top:
-            -1px;
-
-          padding:
-            8px 32px
-            42px;
-
-          background:
-            radial-gradient(
-              circle at
-              91% 75%,
-              rgba(
-                22,
-                119,
-                255,
-                0.055
-              ),
-              transparent
-              28%
-            ),
-            linear-gradient(
-              180deg,
-              #f7f9fc 0%,
-              #eef4fb 100%
-            );
-
-          text-align:
-            center;
-
-          color:
-            #081224;
-        }
-
-        .platformIntro {
-          margin-top:
-            0;
-        }
-
-        .platformIntro p {
-          margin:
-            0;
-
-          font-size:
-            clamp(
-              24px,
-              2vw,
-              32px
-            );
-
-          font-weight:
-            400;
-
-          line-height:
-            1.1;
-
-          letter-spacing:
-            -0.025em;
-        }
-
-        .platformChangingWrap {
-          min-height:
-            43px;
-
-          display:
-            flex;
-
-          justify-content:
-            center;
-
-          align-items:
-            center;
-        }
-
-        .platformChangingWord {
-          margin:
-            2px 0 0;
-
-          font-size:
-            clamp(
-              27px,
-              2.2vw,
-              35px
-            );
-
-          line-height:
-            1.1;
-
-          font-weight:
-            700;
-
-          letter-spacing:
-            -0.03em;
-
-          color:
-            #1677ff;
-
-          animation:
-            platformReveal
-            1.85s ease-in-out;
-        }
-
-        .platformLine {
-          width:
-            62px;
-
-          height:
-            2px;
-
-          margin:
-            17px auto
-            20px;
-
-          background:
-            #1677ff;
-
-          box-shadow:
-            0 0 16px
-            rgba(
-              22,
-              119,
-              255,
-              0.22
-            );
-        }
-
-        .featureRow {
-          width:
-            100%;
-
-          max-width:
-            1050px;
-
-          margin:
-            0 auto;
-
-          display:
-            grid;
-
-          grid-template-columns:
-            1fr 1px
-            1fr 1px
-            1fr 1px
-            1fr 1px
-            1fr;
-
-          align-items:
-            stretch;
-        }
-
-        .featureItem {
-          display:
-            flex;
-
-          flex-direction:
-            column;
-
-          align-items:
-            center;
-
-          justify-content:
-            flex-start;
-
-          padding:
-            4px 18px
-            8px;
-
-          transition:
-            transform
-            0.25s ease;
-        }
-
-        .featureItem:hover {
-          transform:
-            translateY(-5px);
-        }
-
-        .featureIcon {
-          width:
-            48px;
-
-          height:
-            48px;
-
-          display:
-            flex;
-
-          align-items:
-            center;
-
-          justify-content:
-            center;
-
-          color:
-            #1677ff;
-        }
-
-        .featureIcon svg {
-          width:
-            40px;
-
-          height:
-            40px;
-
-          display:
-            block;
-        }
-
-        .iconOne {
-          animation:
-            iconFloat
-            5s ease-in-out
-            infinite;
-        }
-
-        .iconTwo {
-          animation:
-            iconFloat
-            5s ease-in-out
-            .15s infinite;
-        }
-
-        .iconThree {
-          animation:
-            iconFloat
-            5s ease-in-out
-            .3s infinite;
-        }
-
-        .iconFour {
-          animation:
-            iconFloat
-            5s ease-in-out
-            .45s infinite;
-        }
-
-        .iconFive {
-          animation:
-            iconFloat
-            5s ease-in-out
-            .6s infinite;
-        }
-
-        .featureItem p {
-          margin:
-            8px 0 0;
-
-          color:
-            #0b1422;
-
-          font-size:
-            13px;
-
-          line-height:
-            1.4;
-
-          font-weight:
-            700;
-        }
-
-        .divider {
-          width:
-            1px;
-
-          margin:
-            1px 0;
-
-          background:
-            linear-gradient(
-              180deg,
-              transparent,
-              #cbd4df,
-              transparent
-            );
-        }
-
-        .closingWrap {
-          min-height:
-            50px;
-
-          margin-top:
-            23px;
-
-          display:
-            flex;
-
-          flex-direction:
-            column;
-
-          justify-content:
-            center;
-
-          align-items:
-            center;
-
-          gap:
-            7px;
-        }
-
-        .closingChanging {
-          color:
-            #081224;
-
-          font-family:
-            Georgia,
-            "Times New Roman",
-            serif;
-
-          font-size:
-            17px;
-
-          font-weight:
-            500;
-
-          animation:
-            closingReveal
-            1.6s ease-in-out;
-        }
-
-        .closingStatic {
-          color:
-            #1677ff;
-
-          font-size:
-            11px;
-
-          font-weight:
-            800;
-
-          letter-spacing:
-            0.27em;
-        }
-
-        @keyframes wordReveal {
-          0% {
-            opacity:
-              0;
-
-            transform:
-              translateY(10px);
-
-            filter:
-              blur(4px);
-          }
-
-          18% {
-            opacity:
-              1;
-
-            transform:
-              translateY(0);
-
-            filter:
-              blur(0);
-          }
-
-          80% {
-            opacity:
-              1;
-
-            transform:
-              translateY(0);
-
-            filter:
-              blur(0);
-          }
-
-          100% {
-            opacity:
-              0;
-
-            transform:
-              translateY(-8px);
-
-            filter:
-              blur(3px);
-          }
-        }
-
-        @keyframes platformReveal {
-          0% {
-            opacity:
-              0;
-
-            transform:
-              translateY(8px);
-          }
-
-          22% {
-            opacity:
-              1;
-
-            transform:
-              translateY(0);
-          }
-
-          82% {
-            opacity:
-              1;
-
-            transform:
-              translateY(0);
-          }
-
-          100% {
-            opacity:
-              0;
-
-            transform:
-              translateY(-7px);
-          }
-        }
-
-        @keyframes closingReveal {
-          0% {
-            opacity:
-              0;
-
-            letter-spacing:
-              0.12em;
-
-            transform:
-              translateY(5px);
-          }
-
-          25% {
-            opacity:
-              1;
-
-            letter-spacing:
-              0.03em;
-
-            transform:
-              translateY(0);
-          }
-
-          80% {
-            opacity:
-              1;
-
-            transform:
-              translateY(0);
-          }
-
-          100% {
-            opacity:
-              0;
-
-            transform:
-              translateY(-4px);
-          }
-        }
-
-        @keyframes buttonShine {
-          0%,
-          55% {
-            left:
-              -35%;
-          }
-
-          76% {
-            left:
-              120%;
-          }
-
-          100% {
-            left:
-              120%;
-          }
-        }
-
-        @keyframes iconFloat {
-          0%,
-          100% {
-            transform:
-              translateY(0);
-          }
-
-          50% {
-            transform:
-              translateY(-4px);
-          }
-        }
-
-        @keyframes backgroundDrift {
-          0% {
-            transform:
-              rotate(-7deg)
-              scale(1.15)
-              translate3d(
-                0,
-                0,
-                0
-              );
-          }
-
-          100% {
-            transform:
-              rotate(-5deg)
-              scale(1.2)
-              translate3d(
-                2%,
-                -1%,
-                0
-              );
-          }
-        }
-
-        @keyframes upperGlow {
-          from {
-            opacity:
-              0.7;
-
-            transform:
-              rotate(-5deg)
-              translateX(-2%);
-          }
-
-          to {
-            opacity:
-              1;
-
-            transform:
-              rotate(-3deg)
-              translateX(3%);
-          }
-        }
-
-        @keyframes glowMoveOne {
-          from {
-            transform:
-              translate3d(
-                -15px,
-                0,
-                0
-              );
-          }
-
-          to {
-            transform:
-              translate3d(
-                55px,
-                22px,
-                0
-              );
-          }
-        }
-
-        @keyframes glowMoveTwo {
-          from {
-            transform:
-              translate3d(
-                0,
-                0,
-                0
-              );
-          }
-
-          to {
-            transform:
-              translate3d(
-                -70px,
-                -18px,
-                0
-              );
-          }
-        }
-
-        @keyframes glowPulse {
-          0%,
-          100% {
-            opacity:
-              0.45;
-
-            transform:
-              scale(0.94);
-          }
-
-          50% {
-            opacity:
-              0.8;
-
-            transform:
-              scale(1.08);
-          }
-        }
-
-        @media (
-          prefers-reduced-motion:
-          reduce
-        ) {
-          *,
-          *::before,
-          *::after {
-            animation:
-              none !important;
-
-            transition:
-              none !important;
-          }
-        }
-
-        @media (max-width: 900px) {
-          .hero {
-            min-height:
-              510px;
-
-            padding:
-              44px 20px
-              94px;
-          }
-
-          h1 {
-            min-height:
-              130px;
-
-            font-size:
-              clamp(
-                42px,
-                9vw,
-                60px
-              );
-          }
-
-          .heroCopy {
-            font-size:
-              15px;
-          }
-
-          .desktopOnly {
-            display:
-              none;
-          }
-
-          .cta {
-            width:
-              100%;
-
-            max-width:
-              340px;
-
-            min-width:
-              0;
-
-            font-size:
-              16px;
-          }
-
-          .heroActions {
-            gap:
-              5px;
-
-            flex-direction:
-              column;
-          }
-
-          .exploreLink {
-            margin-top:
-              17px;
-          }
-
-          .heroMicro {
-            margin-top:
-              27px;
-
-            gap:
-              9px;
-
-            font-size:
-              8px;
-
-            letter-spacing:
-              0.12em;
-          }
-
-          .platformSection {
-            padding-top:
-              4px;
-          }
-
-          .featureRow {
-            grid-template-columns:
-              repeat(
-                2,
-                1fr
-              );
-
-            gap:
-              24px 10px;
-          }
-
-          .divider {
-            display:
-              none;
-          }
-
-          .featureItem:last-child {
-            grid-column:
-              1 / -1;
-          }
-
-          .closingStatic {
-            line-height:
-              1.8;
-          }
-        }
-
-        @media (max-width: 520px) {
-          .hero {
-            min-height:
-              500px;
-
-            padding-top:
-              40px;
-          }
-
-          .eyebrow {
-            font-size:
-              9px;
-          }
-
-          h1 {
-            min-height:
-              121px;
-
-            font-size:
-              41px;
-          }
-
-          .heroMicro {
-            flex-wrap:
-              wrap;
-
-            max-width:
-              300px;
-
-            margin-left:
-              auto;
-
-            margin-right:
-              auto;
-          }
-
-          .platformSection {
-            padding-left:
-              18px;
-
-            padding-right:
-              18px;
-          }
-
-          .featureRow {
-            grid-template-columns:
-              1fr;
-          }
-
-          .featureItem:last-child {
-            grid-column:
-              auto;
-          }
-        }
-      `}</style>
+      <section
+        id="career-direction"
+        className="hm-section hm-direction-grid"
+        style={styles.directionSection}
+      >
+        <div style={styles.directionCopy}>
+          <p style={styles.darkEyebrow}>CAREER DIRECTION</p>
+          <h2 className="hm-display" style={styles.darkTitle}>
+            Figure out the move.
+            <br />
+            <span style={styles.analysisBlue}>Then make the plan.</span>
+          </h2>
+          <p style={styles.darkText}>
+            Career Path and Career Goal stay together here because they solve
+            different parts of the same question: where could you go, and what
+            should you do next?
+          </p>
+        </div>
+
+        <div className="hm-direction-tools" style={styles.directionTools}>
+          {directionTools.map((tool, index) => (
+            <a
+              key={tool.title}
+              href={tool.href}
+              style={styles.directionTool}
+              className="hm-tool-row hm-tool-row-dark"
+            >
+              <span style={styles.directionNumber}>0{index + 1}</span>
+              <span style={styles.directionToolLabel}>{tool.label}</span>
+              <strong style={styles.directionToolTitle}>{tool.title}</strong>
+              <p style={styles.directionToolCopy}>{tool.description}</p>
+              <span className="hm-arrow" style={styles.directionArrow}>
+                ↗
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="hm-section" style={styles.resourcesSection}>
+        <div style={styles.resourceIntro}>
+          <p style={styles.sectionEyebrow}>RESOURCES</p>
+          <h2 className="hm-display" style={styles.resourceTitle}>
+            Quick guidance.
+            <br />
+            <span style={styles.blueWord}>Useful when you need it.</span>
+          </h2>
+        </div>
+
+        <div style={styles.resourceGrid}>
+          {resources.map((tool) => (
+            <a
+              key={tool.title}
+              href={tool.href}
+              style={styles.resourceLink}
+              className="hm-tool-row"
+            >
+              <span style={styles.resourceLabel}>{tool.label}</span>
+              <strong style={styles.resourceName}>{tool.title}</strong>
+              <p style={styles.resourceCopy}>{tool.description}</p>
+              <span className="hm-arrow" style={styles.resourceArrow}>
+                ↗
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section style={styles.finalSection}>
+        <p style={styles.finalKicker}>ONE ACCOUNT. EVERY TOOL.</p>
+        <h2 style={styles.finalTitle}>Build. Match. Prepare. Advance.</h2>
+        <p style={styles.finalText}>
+          Start where you are. Use the tool you need now. Come back for the next
+          move when you’re ready.
+        </p>
+
+        <a href="/profile" style={styles.finalButton}>
+          Back to Profile →
+        </a>
+      </section>
     </main>
   );
 }
+
+function ToolRows({ tools, dark }: { tools: Tool[]; dark: boolean }) {
+  return (
+    <div style={styles.toolRows}>
+      {tools.map((tool) => (
+        <a
+          key={tool.title}
+          href={tool.href}
+          className={`hm-tool-row ${dark ? "hm-tool-row-dark" : ""}`}
+          style={{
+            ...styles.toolRow,
+            borderColor: dark ? "rgba(255,255,255,.11)" : "#D7E0EA",
+            color: dark ? "#FFFFFF" : "#0C1B30",
+          }}
+        >
+          <div>
+            <span
+              style={{
+                ...styles.toolLabel,
+                color: dark ? "#78B7FF" : "#1677FF",
+              }}
+            >
+              {tool.label}
+            </span>
+            <h3 style={styles.toolTitle}>{tool.title}</h3>
+            <p
+              style={{
+                ...styles.toolDescription,
+                color: dark ? "#AABCD0" : "#68778A",
+              }}
+            >
+              {tool.description}
+            </p>
+          </div>
+
+          <span
+            className="hm-arrow"
+            style={{
+              ...styles.toolArrow,
+              color: dark ? "#78B7FF" : "#1677FF",
+            }}
+          >
+            ↗
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+const styles: Record<string, CSSProperties> = {
+  loadingPage: {
+    minHeight: "100vh",
+    background: "#06172A",
+    display: "grid",
+    placeItems: "center",
+  },
+
+  loadingGlow: {
+    width: "58px",
+    height: "58px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, #1677FF 0%, rgba(22,119,255,0) 72%)",
+  },
+
+  page: {
+    minHeight: "100vh",
+    overflow: "hidden",
+    background: "#F0F4F9",
+    color: "#0F172A",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+
+  hero: {
+    minHeight: "720px",
+    padding: "76px max(6vw,44px)",
+    display: "grid",
+    gridTemplateColumns: "minmax(0,.88fr) minmax(560px,1.12fr)",
+    gap: "58px",
+    alignItems: "center",
+    position: "relative",
+    overflow: "hidden",
+    background:
+      "radial-gradient(circle at 88% 8%, rgba(22,119,255,.34), transparent 24%), radial-gradient(circle at 8% 72%, rgba(68,145,255,.12), transparent 28%), linear-gradient(115deg, #041423 0%, #082846 54%, #0B3E77 115%)",
+  },
+
+  heroGlowOne: {
+    position: "absolute",
+    width: "420px",
+    height: "420px",
+    borderRadius: "50%",
+    right: "-90px",
+    top: "-100px",
+    background:
+      "radial-gradient(circle, rgba(22,119,255,.24), transparent 70%)",
+  },
+
+  heroGlowTwo: {
+    position: "absolute",
+    width: "340px",
+    height: "340px",
+    borderRadius: "50%",
+    left: "30%",
+    bottom: "-150px",
+    background:
+      "radial-gradient(circle, rgba(91,162,255,.14), transparent 70%)",
+  },
+
+  heroCopy: {
+    position: "relative",
+    zIndex: 3,
+    maxWidth: "720px",
+  },
+
+  eyebrow: {
+    margin: "0 0 18px",
+    color: "#5FA9FF",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: ".18em",
+  },
+
+  heroTitle: {
+    margin: "0 0 24px",
+    color: "#FFFFFF",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "clamp(58px,6.7vw,102px)",
+    lineHeight: .94,
+    letterSpacing: "-.055em",
+    fontWeight: 400,
+  },
+
+  heroBlue: {
+    display: "inline-block",
+    color: "#3B95FF",
+  },
+
+  heroText: {
+    margin: 0,
+    maxWidth: "690px",
+    color: "#C5D2E0",
+    fontSize: "18px",
+    lineHeight: 1.72,
+  },
+
+  heroActions: {
+    marginTop: "30px",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "10px",
+  },
+
+  primaryButton: {
+    minHeight: "46px",
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "0 18px",
+    borderRadius: "999px",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    textDecoration: "none",
+    fontSize: "12px",
+    fontWeight: 850,
+    boxShadow: "0 14px 30px rgba(22,119,255,.28)",
+  },
+
+  ghostButton: {
+    minHeight: "46px",
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "0 18px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,.18)",
+    background: "rgba(255,255,255,.04)",
+    color: "#DCE8F5",
+    textDecoration: "none",
+    fontSize: "12px",
+    fontWeight: 850,
+  },
+
+  heroMicro: {
+    marginTop: "28px",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "10px",
+    color: "#79B4F7",
+    fontSize: "9px",
+    fontWeight: 900,
+    letterSpacing: ".14em",
+  },
+
+  heroStage: {
+    minHeight: "600px",
+    position: "relative",
+    display: "grid",
+    placeItems: "center",
+    zIndex: 2,
+  },
+
+  heroOrbit: {
+    position: "absolute",
+    width: "440px",
+    height: "440px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(38,136,255,.28), rgba(38,136,255,.03) 54%, transparent 72%)",
+  },
+
+  heroResume: {
+    position: "relative",
+    zIndex: 2,
+    width: "74%",
+    minHeight: "480px",
+    padding: "42px 40px",
+    background: "#FFFFFF",
+    boxShadow: "0 34px 80px rgba(0,0,0,.30)",
+  },
+
+  heroResumeTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "20px",
+  },
+
+  heroResumeName: {
+    display: "block",
+    color: "#101827",
+    fontSize: "28px",
+  },
+
+  heroResumeRole: {
+    display: "block",
+    marginTop: "6px",
+    color: "#1677FF",
+    fontSize: "11px",
+    fontWeight: 850,
+  },
+
+  heroResumeContact: {
+    color: "#758397",
+    fontSize: "10px",
+    lineHeight: 1.5,
+    textAlign: "right",
+  },
+
+  heroResumeRule: {
+    height: "3px",
+    margin: "25px 0 23px",
+    background: "#1677FF",
+  },
+
+  heroResumeLabel: {
+    display: "block",
+    margin: "18px 0 7px",
+    color: "#111827",
+    fontSize: "9px",
+    fontWeight: 900,
+    letterSpacing: ".07em",
+  },
+
+  fakeLineWide: {
+    width: "100%",
+    height: "7px",
+    borderRadius: "999px",
+    background: "#E4E9EF",
+    marginBottom: "7px",
+  },
+
+  fakeLineMedium: {
+    width: "78%",
+    height: "7px",
+    borderRadius: "999px",
+    background: "#E4E9EF",
+  },
+
+  fakeLineShort: {
+    width: "58%",
+    height: "7px",
+    borderRadius: "999px",
+    background: "#E4E9EF",
+  },
+
+  fakeSkillRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "7px",
+    color: "#607085",
+    fontSize: "9px",
+  },
+
+  heroAnalyzer: {
+    position: "absolute",
+    zIndex: 4,
+    right: "0",
+    bottom: "6%",
+    width: "220px",
+    padding: "18px",
+    borderRadius: "15px",
+    background: "#071727",
+    border: "1px solid rgba(255,255,255,.12)",
+    boxShadow: "0 18px 42px rgba(0,0,0,.28)",
+    color: "#FFFFFF",
+  },
+
+  heroCardKicker: {
+    display: "block",
+    marginBottom: "8px",
+    color: "#67AEFF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  heroCardTitle: {
+    display: "block",
+    fontSize: "24px",
+  },
+
+  matchBar: {
+    height: "5px",
+    margin: "12px 0",
+    borderRadius: "999px",
+    overflow: "hidden",
+    background: "rgba(255,255,255,.12)",
+  },
+
+  matchBarFill: {
+    display: "block",
+    width: "82%",
+    height: "100%",
+    borderRadius: "999px",
+    background: "#1677FF",
+  },
+
+  matchSmall: {
+    display: "block",
+    marginTop: "4px",
+    color: "#B9C9DA",
+    fontSize: "9px",
+  },
+
+  tagOne: {
+    position: "absolute",
+    zIndex: 5,
+    top: "15%",
+    right: "2%",
+    padding: "12px 15px",
+    borderRadius: "999px",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    fontSize: "9px",
+    fontWeight: 900,
+    boxShadow: "0 14px 28px rgba(22,119,255,.24)",
+  },
+
+  tagTwo: {
+    position: "absolute",
+    zIndex: 5,
+    left: "1%",
+    bottom: "10%",
+    padding: "11px 14px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,.15)",
+    background: "#081521",
+    color: "#DCE7F3",
+    fontSize: "9px",
+    fontWeight: 850,
+  },
+
+  sparkOne: {
+    position: "absolute",
+    zIndex: 5,
+    left: "8%",
+    top: "10%",
+    color: "#78B8FF",
+    fontSize: "30px",
+  },
+
+  sparkTwo: {
+    position: "absolute",
+    zIndex: 5,
+    right: "8%",
+    bottom: "13%",
+    color: "#FFFFFF",
+    fontSize: "20px",
+    opacity: .8,
+  },
+
+  tickerWrap: {
+    overflow: "hidden",
+    background: "#1677FF",
+    borderTop: "1px solid rgba(255,255,255,.12)",
+    borderBottom: "1px solid rgba(255,255,255,.12)",
+  },
+
+  tickerTrack: {
+    width: "max-content",
+    display: "flex",
+    alignItems: "center",
+    gap: "24px",
+    padding: "15px 0",
+    color: "#FFFFFF",
+  },
+
+  tickerText: {
+    fontSize: "21px",
+    fontWeight: 900,
+    letterSpacing: ".05em",
+    whiteSpace: "nowrap",
+  },
+
+  tickerDot: {
+    opacity: .7,
+    fontSize: "14px",
+  },
+
+  materialsSection: {
+    padding: "96px max(6vw,44px)",
+    display: "grid",
+    gridTemplateColumns: "minmax(0,.78fr) minmax(520px,1.22fr)",
+    gap: "66px",
+    alignItems: "center",
+    background:
+      "radial-gradient(circle at 10% 10%, rgba(22,119,255,.08), transparent 27%), #EEF3F8",
+  },
+
+  sectionCopy: {
+    maxWidth: "680px",
+  },
+
+  sectionEyebrow: {
+    margin: "0 0 17px",
+    color: "#1677FF",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: ".18em",
+  },
+
+  lightTitle: {
+    margin: "0 0 22px",
+    color: "#0B1728",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "clamp(52px,5.6vw,84px)",
+    lineHeight: .96,
+    letterSpacing: "-.05em",
+    fontWeight: 400,
+  },
+
+  blueWord: {
+    color: "#1677FF",
+  },
+
+  lightText: {
+    margin: 0,
+    color: "#65758A",
+    fontSize: "17px",
+    lineHeight: 1.74,
+  },
+
+  roadmapLine: {
+    marginTop: "25px",
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "8px",
+    color: "#31608F",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".08em",
+  },
+
+  materialStage: {
+    minHeight: "520px",
+    position: "relative",
+    display: "grid",
+    placeItems: "center",
+  },
+
+  materialGlow: {
+    position: "absolute",
+    width: "430px",
+    height: "430px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(22,119,255,.18), transparent 70%)",
+  },
+
+  materialResume: {
+    position: "relative",
+    zIndex: 2,
+    width: "78%",
+    padding: "34px",
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,.98), rgba(242,247,252,.98))",
+    boxShadow: "0 30px 65px rgba(33,57,83,.16)",
+  },
+
+  materialTopLine: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    color: "#1677FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".10em",
+  },
+
+  materialHeadline: {
+    margin: "24px 0",
+    maxWidth: "500px",
+    color: "#0D1C31",
+    fontSize: "29px",
+    lineHeight: 1.1,
+    fontWeight: 820,
+    letterSpacing: "-.035em",
+  },
+
+  mockInput: {
+    padding: "13px 0",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "18px",
+    borderBottom: "1px solid #DCE5EE",
+    color: "#68788C",
+    fontSize: "10px",
+  },
+
+  mockFooter: {
+    paddingTop: "17px",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    color: "#1677FF",
+    fontSize: "9px",
+    fontWeight: 850,
+  },
+
+  materialLetter: {
+    position: "absolute",
+    zIndex: 3,
+    width: "42%",
+    minHeight: "240px",
+    right: "-2%",
+    bottom: "2%",
+    padding: "24px",
+    background: "#081B30",
+    color: "#FFFFFF",
+    boxShadow: "0 24px 48px rgba(12,37,67,.22)",
+  },
+
+  letterKicker: {
+    display: "block",
+    marginBottom: "9px",
+    color: "#67AEFF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  letterTitle: {
+    display: "block",
+    marginBottom: "18px",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "22px",
+    fontWeight: 400,
+  },
+
+  letterLine: {
+    width: "100%",
+    height: "5px",
+    marginBottom: "8px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,.15)",
+  },
+
+  letterSignature: {
+    display: "block",
+    marginTop: "24px",
+    color: "#8CC5FF",
+    fontFamily: '"Segoe Script", "Lucida Handwriting", cursive',
+    fontSize: "18px",
+  },
+
+  materialTagOne: {
+    position: "absolute",
+    zIndex: 5,
+    left: "0",
+    top: "11%",
+    padding: "10px 13px",
+    borderRadius: "999px",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    fontSize: "8px",
+    fontWeight: 900,
+  },
+
+  materialTagTwo: {
+    position: "absolute",
+    zIndex: 5,
+    left: "6%",
+    bottom: "7%",
+    padding: "10px 13px",
+    borderRadius: "999px",
+    background: "#FFFFFF",
+    color: "#214E7A",
+    border: "1px solid #D7E3EF",
+    fontSize: "8px",
+    fontWeight: 900,
+  },
+
+  toolRows: {
+    gridColumn: "1 / -1",
+    display: "grid",
+    gridTemplateColumns: "repeat(2,minmax(0,1fr))",
+    columnGap: "42px",
+    marginTop: "16px",
+  },
+
+  toolRow: {
+    minHeight: "148px",
+    padding: "22px 0",
+    borderTop: "1px solid",
+    textDecoration: "none",
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "20px",
+  },
+
+  toolLabel: {
+    display: "block",
+    marginBottom: "7px",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".12em",
+    textTransform: "uppercase",
+  },
+
+  toolTitle: {
+    margin: "0 0 7px",
+    fontSize: "19px",
+    lineHeight: 1.25,
+    letterSpacing: "-.025em",
+    fontWeight: 820,
+  },
+
+  toolDescription: {
+    margin: 0,
+    maxWidth: "520px",
+    fontSize: "12px",
+    lineHeight: 1.6,
+  },
+
+  toolArrow: {
+    flexShrink: 0,
+    fontSize: "20px",
+  },
+
+  matchSection: {
+    padding: "98px max(6vw,44px)",
+    display: "grid",
+    gridTemplateColumns: "minmax(0,.72fr) minmax(560px,1.28fr)",
+    gap: "68px",
+    alignItems: "center",
+    background:
+      "radial-gradient(circle at 88% 18%, rgba(22,119,255,.18), transparent 25%), linear-gradient(135deg, #061422 0%, #0A213B 100%)",
+  },
+
+  darkEyebrow: {
+    margin: "0 0 18px",
+    color: "#69AEFF",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: ".18em",
+  },
+
+  darkTitle: {
+    margin: "0 0 22px",
+    color: "#FFFFFF",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "clamp(52px,5.6vw,84px)",
+    lineHeight: .96,
+    letterSpacing: "-.05em",
+    fontWeight: 400,
+  },
+
+  analysisBlue: {
+    color: "#4D9FFF",
+  },
+
+  darkText: {
+    margin: 0,
+    color: "#AFC0D3",
+    fontSize: "17px",
+    lineHeight: 1.74,
+  },
+
+  darkInlineLink: {
+    display: "inline-flex",
+    marginTop: "24px",
+    color: "#87C0FF",
+    textDecoration: "none",
+    fontSize: "12px",
+    fontWeight: 850,
+  },
+
+  matchStage: {
+    position: "relative",
+    minHeight: "490px",
+    display: "grid",
+    placeItems: "center",
+  },
+
+  matchBoard: {
+    width: "100%",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    overflow: "hidden",
+    boxShadow: "0 32px 70px rgba(0,0,0,.34)",
+  },
+
+  matchLeft: {
+    padding: "40px 34px",
+    background: "#FFFFFF",
+  },
+
+  matchRight: {
+    padding: "40px 34px",
+    background: "#061221",
+    color: "#FFFFFF",
+  },
+
+  matchKicker: {
+    color: "#78889A",
+    fontSize: "9px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  matchTitle: {
+    margin: "22px 0 20px",
+    color: "#0E1726",
+    fontSize: "27px",
+    lineHeight: 1.18,
+    letterSpacing: "-.03em",
+  },
+
+  matchCopy: {
+    margin: 0,
+    color: "#65758A",
+    fontSize: "12px",
+    lineHeight: 1.72,
+  },
+
+  keywordCloud: {
+    marginTop: "22px",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    color: "#1677FF",
+    fontSize: "9px",
+    fontWeight: 800,
+  },
+
+  matchFound: {
+    display: "block",
+    marginBottom: "17px",
+    color: "#65ADFF",
+    fontSize: "9px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  matchRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    padding: "14px 0",
+    borderBottom: "1px solid rgba(255,255,255,.09)",
+    color: "#D7E2EE",
+    fontSize: "10px",
+  },
+
+  focusBox: {
+    marginTop: "20px",
+    padding: "15px",
+    background: "#0A2A4F",
+    color: "#DDEBFA",
+  },
+
+  matchStamp: {
+    position: "absolute",
+    right: "-8px",
+    bottom: "6%",
+    transform: "rotate(-5deg)",
+    padding: "12px 15px",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+    boxShadow: "0 12px 28px rgba(22,119,255,.24)",
+  },
+
+  interviewSection: {
+    padding: "98px max(6vw,44px)",
+    display: "grid",
+    gridTemplateColumns: "minmax(520px,1fr) minmax(0,.85fr)",
+    gap: "76px",
+    alignItems: "center",
+    background:
+      "radial-gradient(circle at 12% 20%, rgba(22,119,255,.09), transparent 28%), #F3F7FB",
+  },
+
+  interviewStage: {
+    minHeight: "570px",
+    position: "relative",
+    display: "grid",
+    placeItems: "center",
+  },
+
+  interviewGlow: {
+    position: "absolute",
+    width: "420px",
+    height: "420px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(22,119,255,.18), transparent 70%)",
+  },
+
+  phone: {
+    position: "relative",
+    zIndex: 2,
+    width: "330px",
+    minHeight: "540px",
+    padding: "24px",
+    borderRadius: "34px",
+    border: "8px solid #071321",
+    background:
+      "linear-gradient(180deg, #081729 0%, #0B2A4F 56%, #0B417C 120%)",
+    boxShadow: "0 35px 75px rgba(15,23,42,.22)",
+    color: "#FFFFFF",
+  },
+
+  phoneTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    color: "#6EB4FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".10em",
+  },
+
+  phoneQuestionLabel: {
+    marginTop: "65px",
+    color: "#8BC3FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".12em",
+  },
+
+  phoneQuestion: {
+    marginTop: "10px",
+    color: "#FFFFFF",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "30px",
+    lineHeight: 1.05,
+  },
+
+  phoneTip: {
+    marginTop: "30px",
+    color: "#75B8FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  starRow: {
+    marginTop: "9px",
+    padding: "8px 0",
+    display: "grid",
+    gridTemplateColumns: "30px 1fr",
+    gap: "9px",
+    borderBottom: "1px solid rgba(255,255,255,.09)",
+    color: "#DCE7F3",
+    fontSize: "10px",
+  },
+
+  phoneFooter: {
+    position: "absolute",
+    left: "24px",
+    right: "24px",
+    bottom: "24px",
+    paddingTop: "14px",
+    borderTop: "1px solid rgba(255,255,255,.11)",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    color: "#9ECBFF",
+    fontSize: "9px",
+  },
+
+  interviewTag: {
+    position: "absolute",
+    zIndex: 4,
+    right: "2%",
+    top: "14%",
+    padding: "11px 13px",
+    borderRadius: "999px",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    fontSize: "8px",
+    fontWeight: 900,
+  },
+
+  directionSection: {
+    padding: "98px max(6vw,44px)",
+    display: "grid",
+    gridTemplateColumns: "minmax(0,.72fr) minmax(560px,1.28fr)",
+    gap: "68px",
+    alignItems: "start",
+    background:
+      "radial-gradient(circle at 85% 16%, rgba(22,119,255,.17), transparent 24%), linear-gradient(135deg, #061422 0%, #0A213B 100%)",
+  },
+
+  directionCopy: {
+    maxWidth: "650px",
+  },
+
+  directionTools: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "14px",
+  },
+
+  directionTool: {
+    position: "relative",
+    minHeight: "300px",
+    padding: "28px",
+    borderRadius: "18px",
+    border: "1px solid rgba(255,255,255,.10)",
+    background: "rgba(255,255,255,.025)",
+    color: "#FFFFFF",
+    textDecoration: "none",
+  },
+
+  directionNumber: {
+    display: "block",
+    marginBottom: "44px",
+    color: "#1677FF",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "38px",
+  },
+
+  directionToolLabel: {
+    display: "block",
+    marginBottom: "7px",
+    color: "#71B4FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  directionToolTitle: {
+    display: "block",
+    marginBottom: "11px",
+    fontSize: "24px",
+    lineHeight: 1.1,
+  },
+
+  directionToolCopy: {
+    margin: 0,
+    color: "#AFC0D3",
+    fontSize: "11px",
+    lineHeight: 1.6,
+  },
+
+  directionArrow: {
+    position: "absolute",
+    right: "24px",
+    bottom: "22px",
+    color: "#7BB8FF",
+    fontSize: "20px",
+  },
+
+  resourcesSection: {
+    padding: "88px max(6vw,44px)",
+    background: "#F3F6FA",
+  },
+
+  resourceIntro: {
+    maxWidth: "750px",
+    marginBottom: "36px",
+  },
+
+  resourceTitle: {
+    margin: 0,
+    color: "#0C1B2D",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "clamp(48px,5vw,76px)",
+    lineHeight: .98,
+    letterSpacing: "-.045em",
+    fontWeight: 400,
+  },
+
+  resourceGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2,minmax(0,1fr))",
+    gap: "28px",
+  },
+
+  resourceLink: {
+    position: "relative",
+    minHeight: "190px",
+    padding: "22px 0",
+    borderTop: "1px solid #D3DEE9",
+    color: "#0F172A",
+    textDecoration: "none",
+  },
+
+  resourceLabel: {
+    display: "block",
+    marginBottom: "8px",
+    color: "#1677FF",
+    fontSize: "8px",
+    fontWeight: 900,
+    letterSpacing: ".11em",
+  },
+
+  resourceName: {
+    display: "block",
+    marginBottom: "8px",
+    fontSize: "21px",
+  },
+
+  resourceCopy: {
+    margin: 0,
+    maxWidth: "560px",
+    color: "#69798B",
+    fontSize: "12px",
+    lineHeight: 1.6,
+  },
+
+  resourceArrow: {
+    position: "absolute",
+    right: 0,
+    top: "22px",
+    color: "#1677FF",
+    fontSize: "20px",
+  },
+
+  finalSection: {
+    padding: "78px max(6vw,44px)",
+    textAlign: "center",
+    background: "#FFFFFF",
+  },
+
+  finalKicker: {
+    margin: 0,
+    color: "#1677FF",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: ".15em",
+  },
+
+  finalTitle: {
+    margin: "12px 0",
+    color: "#0A1727",
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: "clamp(48px,5vw,74px)",
+    lineHeight: 1,
+    letterSpacing: "-.045em",
+    fontWeight: 400,
+  },
+
+  finalText: {
+    margin: "0 auto",
+    maxWidth: "640px",
+    color: "#68778A",
+    fontSize: "14px",
+    lineHeight: 1.7,
+  },
+
+  finalButton: {
+    marginTop: "24px",
+    minHeight: "44px",
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "0 18px",
+    borderRadius: "999px",
+    background: "#1677FF",
+    color: "#FFFFFF",
+    textDecoration: "none",
+    fontSize: "12px",
+    fontWeight: 850,
+  },
+};
