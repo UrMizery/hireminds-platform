@@ -71,45 +71,29 @@ const interviewTools: Tool[] = [
   {
     title: "Interview Prep Studio",
     description:
-      "Prepare for interviews in one place with role-focused questions, answer guidance, STAR support, and employer questions.",
+      "Prepare in one place with role-focused questions, answer guidance, STAR support, employer questions, and interview readiness.",
     href: "/career-toolkit/interview-question-generator",
     label: "Interview",
+  },
+  {
+    title: "Job Search Tips",
+    description:
+      "Use practical guidance for applications, employer research, job descriptions, follow-up, and smarter job-search strategy.",
+    href: "/career-toolkit/job-search-tips",
+    label: "Guide",
   },
 ];
 
 const directionTools: Tool[] = [
   {
-    title: "Career Path Generator",
+    title: "Career Direction",
     description:
-      "Explore realistic career paths based on your interests, strengths, work preferences, and goals.",
+      "Explore career paths, choose a direction, set a clear goal, and build practical next steps in one guided experience.",
     href: "/career-toolkit/career-path-generator",
-    label: "Direction",
-  },
-  {
-    title: "Career Goal Generator",
-    description:
-      "Turn a career direction into a clear goal with practical next steps and an action plan.",
-    href: "/career-toolkit/career-goal-generator",
-    label: "Goal",
+    label: "Career Direction",
   },
 ];
 
-const resources: Tool[] = [
-  {
-    title: "Job Search Tips",
-    description:
-      "Practical guidance for applications, employer research, job descriptions, and job-search strategy.",
-    href: "/career-toolkit/job-search-tips",
-    label: "Guide",
-  },
-  {
-    title: "Career Video Library",
-    description:
-      "Short career videos, quick takes, and practical guidance you can return to anytime.",
-    href: "/career-toolkit/community-feed",
-    label: "Video",
-  },
-];
 
 export default function CareerToolkitPage() {
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -151,7 +135,7 @@ export default function CareerToolkitPage() {
       "CAREER DIRECTION",
       "SKILLS EXPLORER",
       "HOUSE OF LETTERS",
-      "CAREER VIDEO LIBRARY",
+      "JOB SEARCH TIPS",
     ],
     []
   );
@@ -226,20 +210,16 @@ export default function CareerToolkitPage() {
         }
 
         .hm-tool-row:hover {
-          transform: translateX(5px);
-          background: rgba(22,119,255,.045);
+          transform: translateY(-7px) scale(1.01);
+          filter: brightness(1.035);
+        }
+
+        .hm-tool-row:active {
+          transform: translateY(3px) scale(.995);
         }
 
         .hm-tool-row-dark:hover {
-          background: rgba(255,255,255,.035);
-        }
-
-        .hm-tool-row:hover .hm-arrow {
-          transform: translateX(5px);
-        }
-
-        .hm-arrow {
-          transition: transform .18s ease;
+          filter: brightness(1.08);
         }
 
         .hm-primary-cta {
@@ -543,13 +523,6 @@ export default function CareerToolkitPage() {
             One place to understand what the employer is asking for and how your
             resume lines up before you apply.
           </p>
-
-          <a
-            href="/career-toolkit/resume-match-analyzer"
-            style={styles.darkInlineLink}
-          >
-            Open Job Match Analyzer ↗
-          </a>
         </div>
 
         <div style={styles.matchStage}>
@@ -644,8 +617,6 @@ export default function CareerToolkitPage() {
               <strong>→</strong>
             </div>
           </div>
-
-          <div style={styles.interviewTag}>ROLE-FOCUSED QUESTIONS</div>
         </div>
 
         <div style={styles.sectionCopy}>
@@ -678,58 +649,14 @@ export default function CareerToolkitPage() {
             <span style={styles.analysisBlue}>Then make the plan.</span>
           </h2>
           <p style={styles.darkText}>
-            Career Path and Career Goal stay together here because they solve
-            different parts of the same question: where could you go, and what
-            should you do next?
+            Career Path and Career Goal are now presented as one guided Career
+            Direction experience: explore where you could go, choose the direction,
+            set the goal, and build the next steps.
           </p>
         </div>
 
-        <div className="hm-direction-tools" style={styles.directionTools}>
-          {directionTools.map((tool, index) => (
-            <a
-              key={tool.title}
-              href={tool.href}
-              style={styles.directionTool}
-              className="hm-tool-row hm-tool-row-dark"
-            >
-              <span style={styles.directionNumber}>0{index + 1}</span>
-              <span style={styles.directionToolLabel}>{tool.label}</span>
-              <strong style={styles.directionToolTitle}>{tool.title}</strong>
-              <p style={styles.directionToolCopy}>{tool.description}</p>
-              <span className="hm-arrow" style={styles.directionArrow}>
-                ↗
-              </span>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className="hm-section" style={styles.resourcesSection}>
-        <div style={styles.resourceIntro}>
-          <p style={styles.sectionEyebrow}>RESOURCES</p>
-          <h2 className="hm-display" style={styles.resourceTitle}>
-            Quick guidance.
-            <br />
-            <span style={styles.blueWord}>Useful when you need it.</span>
-          </h2>
-        </div>
-
-        <div style={styles.resourceGrid}>
-          {resources.map((tool) => (
-            <a
-              key={tool.title}
-              href={tool.href}
-              style={styles.resourceLink}
-              className="hm-tool-row"
-            >
-              <span style={styles.resourceLabel}>{tool.label}</span>
-              <strong style={styles.resourceName}>{tool.title}</strong>
-              <p style={styles.resourceCopy}>{tool.description}</p>
-              <span className="hm-arrow" style={styles.resourceArrow}>
-                ↗
-              </span>
-            </a>
-          ))}
+        <div style={{ alignSelf: "center" }}>
+          <ToolRows tools={directionTools} dark />
         </div>
       </section>
 
@@ -759,24 +686,22 @@ function ToolRows({ tools, dark }: { tools: Tool[]; dark: boolean }) {
           className={`hm-tool-row ${dark ? "hm-tool-row-dark" : ""}`}
           style={{
             ...styles.toolRow,
-            borderColor: dark ? "rgba(255,255,255,.11)" : "#D7E0EA",
+            borderColor: dark ? "rgba(89,171,255,.34)" : "rgba(22,119,255,.26)",
+            background: dark
+              ? "linear-gradient(145deg, rgba(11,51,94,.96), rgba(5,24,43,.98))"
+              : "linear-gradient(145deg, #FFFFFF 0%, #EAF3FF 100%)",
+            boxShadow: dark
+              ? "0 12px 0 #04101D, 0 24px 46px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08)"
+              : "0 12px 0 #C7D9EE, 0 24px 46px rgba(28,75,125,.16), inset 0 1px 0 rgba(255,255,255,.95)",
             color: dark ? "#FFFFFF" : "#0C1B30",
           }}
         >
-          <div>
-            <span
-              style={{
-                ...styles.toolLabel,
-                color: dark ? "#78B7FF" : "#1677FF",
-              }}
-            >
-              {tool.label}
-            </span>
+          <div style={{ minWidth: 0 }}>
             <h3 style={styles.toolTitle}>{tool.title}</h3>
             <p
               style={{
                 ...styles.toolDescription,
-                color: dark ? "#AABCD0" : "#68778A",
+                color: dark ? "#C5D5E6" : "#53677E",
               }}
             >
               {tool.description}
@@ -784,13 +709,14 @@ function ToolRows({ tools, dark }: { tools: Tool[]; dark: boolean }) {
           </div>
 
           <span
-            className="hm-arrow"
             style={{
-              ...styles.toolArrow,
-              color: dark ? "#78B7FF" : "#1677FF",
+              ...styles.bigToolButton,
+              background: dark
+                ? "linear-gradient(180deg, #2C92FF 0%, #0969E8 100%)"
+                : "linear-gradient(180deg, #238AFF 0%, #0869E8 100%)",
             }}
           >
-            ↗
+            OPEN TOOL
           </span>
         </a>
       ))}
@@ -1364,48 +1290,55 @@ const styles: Record<string, CSSProperties> = {
     gridColumn: "1 / -1",
     display: "grid",
     gridTemplateColumns: "repeat(2,minmax(0,1fr))",
-    columnGap: "42px",
-    marginTop: "16px",
+    gap: "28px",
+    marginTop: "32px",
   },
 
   toolRow: {
-    minHeight: "148px",
-    padding: "22px 0",
-    borderTop: "1px solid",
+    minHeight: "210px",
+    padding: "30px",
+    border: "1px solid",
+    borderRadius: "22px",
     textDecoration: "none",
     display: "flex",
+    flexDirection: "column",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: "20px",
+    gap: "28px",
+    transform: "translateY(0)",
   },
 
   toolLabel: {
-    display: "block",
-    marginBottom: "7px",
-    fontSize: "8px",
-    fontWeight: 900,
-    letterSpacing: ".12em",
-    textTransform: "uppercase",
+    display: "none",
   },
 
   toolTitle: {
-    margin: "0 0 7px",
-    fontSize: "19px",
-    lineHeight: 1.25,
-    letterSpacing: "-.025em",
-    fontWeight: 820,
+    margin: "0 0 12px",
+    fontSize: "26px",
+    lineHeight: 1.12,
+    letterSpacing: "-.035em",
+    fontWeight: 900,
   },
 
   toolDescription: {
     margin: 0,
-    maxWidth: "520px",
-    fontSize: "12px",
-    lineHeight: 1.6,
+    maxWidth: "600px",
+    fontSize: "15px",
+    lineHeight: 1.65,
   },
 
-  toolArrow: {
-    flexShrink: 0,
-    fontSize: "20px",
+  bigToolButton: {
+    minWidth: "170px",
+    padding: "15px 22px",
+    borderRadius: "13px",
+    color: "#FFFFFF",
+    fontSize: "13px",
+    fontWeight: 950,
+    letterSpacing: ".05em",
+    textAlign: "center",
+    boxShadow:
+      "0 7px 0 #06499F, 0 14px 28px rgba(22,119,255,.28), inset 0 1px 0 rgba(255,255,255,.35)",
+    textShadow: "0 1px 0 rgba(0,0,0,.18)",
   },
 
   matchSection: {
