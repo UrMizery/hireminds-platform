@@ -1,901 +1,409 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-type AnalysisResult = {
-topSkills: string[];
-softSkills: string[];
-toolsAndSystems: string[];
-certifications: string[];
-education: string[];
-qualifications: string[];
-responsibilities: string[];
-keywords: string[];
-resumeFocus: string[];
-coverLetterFocus: string[];
-importantDetails: string[];
-possibleRedFlags: string[];
+type Analysis = {
+  overallMatch: number;
+  matchLabel: string;
+  recommendation: string;
+  recommendationReason: string;
+  breakdown: {
+    requiredQualifications: number;
+    experienceAlignment: number;
+    skillsAlignment: number;
+    preferredQualifications: number;
+    educationCertifications: number;
+    keywordsTerminology: number;
+    resumeAtsStructure: number;
+  };
+  areYouQualified: string;
+  competitivePosition: string;
+  employerFirstImpression: string;
+  strongestEvidence: string[];
+  requiredQualificationsMet: string[];
+  requiredQualificationsUnclear: string[];
+  requiredQualificationsNotFound: string[];
+  preferredQualificationsMet: string[];
+  preferredQualificationsNotFound: string[];
+  matchedSkillsKeywords: string[];
+  missingSkillsKeywords: string[];
+  whatIsWorking: string[];
+  screenOutRisks: string[];
+  resumeQualityFlags: string[];
+  fixFirst: string[];
+  tailoringRecommendations: string[];
+  doNotInvent: string[];
+  coverLetterStrategy: string[];
+  interviewReadiness: string[];
+  likelyInterviewQuestions: string[];
+  concernsToPrepareFor: string[];
+  nextMove: string;
+  coachingSummary: string;
 };
 
-const STOP_WORDS = new Set([
-"the","and","for","with","you","your","will","are","our","from","that","this","have","has","had","was","were","but","not","all","any","can","may","who","what","when","where","why","how","job","role","position","work","working","team","must","required","preferred","should","their","they","them","his","her","she","him","about","into","out","while","than","then","also","other","such","each","per","etc","able","ability","including","include","includes","make","making","more","less","well","good","high","strong","new","use","used","using","through","across","within","both","daily","ensure","support","provide","maintain","help","related","based","under","over","after","before","years","year","month","months","day","days","one","two","three","four","five","six","seven","eight","nine","ten",
-]);
+const DISCLAIMER =
+  "HireMinds Job Match Analyzer is an ATS-style screening and career coaching tool that uses HireMinds' own scoring methodology. It does not replicate or represent the proprietary scoring algorithms used by employer Applicant Tracking Systems (ATS) such as Workday, Greenhouse, iCIMS, or other platforms. ATS configurations and employer screening criteria vary. Match scores, recommendations, and coaching guidance are provided for career development purposes and do not guarantee an interview, job offer, or employment.";
 
-const SKILL_LIBRARY = [
-"customer service",
-"communication",
-"written communication",
-"verbal communication",
-"data entry",
-"scheduling",
-"calendar management",
-"documentation",
-"organization",
-"time management",
-"problem solving",
-"critical thinking",
-"attention to detail",
-"teamwork",
-"leadership",
-"multitasking",
-"inventory control",
-"order picking",
-"packing",
-"shipping",
-"receiving",
-"forklift",
-"quality control",
-"patient care",
-"vital signs",
-"charting",
-"case management",
-"sales",
-"cold calling",
-"account management",
-"bookkeeping",
-"accounts payable",
-"accounts receivable",
-"payroll",
-"cash handling",
-"de-escalation",
-"troubleshooting",
-"technical support",
-"networking",
-"project management",
-"training",
-"coaching",
-"outreach",
-"community engagement",
-"bilingual",
-"translation",
-"interpreting",
-"driving",
-"route planning",
-"dispatch",
-"compliance",
-"reporting",
-"filing",
-"recordkeeping",
-"research",
-"editing",
-"writing",
-"proofreading",
-"social media",
-"marketing",
-"recruiting",
-"sourcing",
-"screening",
-"interviewing",
-];
+const ACKNOWLEDGEMENT =
+  "I understand that HireMinds Job Match Analyzer is an ATS-style screening and career coaching tool and that results do not guarantee an interview, job offer, or employment.";
 
-const SOFTWARE_LIBRARY = [
-"excel",
-"microsoft excel",
-"word",
-"microsoft word",
-"powerpoint",
-"outlook",
-"google docs",
-"google sheets",
-"quickbooks",
-"salesforce",
-"hubspot",
-"adp",
-"sap",
-"oracle",
-"workday",
-"slack",
-"zoom",
-"teams",
-"microsoft teams",
-"epic",
-"cerner",
-"emr",
-"ehr",
-"ats",
-"linkedin recruiter",
-"indeed",
-"canva",
-"photoshop",
-"autocad",
-"jira",
-"servicenow",
-"zendesk",
-];
+export default function JobMatchAnalyzerPage() {
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [resumeText, setResumeText] = useState("");
+  const [resumeFileName, setResumeFileName] = useState("");
+  const [pageCount, setPageCount] = useState<number | null>(null);
+  const [hasImage, setHasImage] = useState<boolean | null>(null);
+  const [imageCount, setImageCount] = useState<number | null>(null);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [loadingResume, setLoadingResume] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [error, setError] = useState("");
+  const [userId, setUserId] = useState("");
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const trackedRef = useRef(false);
 
-const CERT_LIBRARY = [
-"cna",
-"bls",
-"cpr",
-"rn",
-"lpn",
-"medical assistant certification",
-"cdl",
-"forklift certification",
-"phlebotomy",
-"osha",
-"servsafe",
-"pmp",
-"a+",
-"network+",
-"security+",
-"licensed",
-"license",
-"certification",
-"certificate",
-];
+  useEffect(() => {
+    async function trackOpen() {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user || trackedRef.current) return;
+      trackedRef.current = true;
+      setUserId(data.user.id);
 
-const EDUCATION_LIBRARY = [
-"high school diploma",
-"ged",
-"associate degree",
-"bachelor",
-"bachelor's degree",
-"masters",
-"master's degree",
-"degree",
-"college",
-];
+      const { data: profile } = await supabase
+        .from("candidate_profiles")
+        .select("full_name, email, referral_code")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
 
-function normalizeText(value: string) {
-return value
-.replace(/\u2022/g, "\n• ")
-.replace(/\r/g, "")
-.trim();
-}
+      setReferralCode(profile?.referral_code || null);
 
-function uniqueClean(items: string[]) {
-const seen = new Set<string>();
-const result: string[] = [];
+      await supabase.from("user_activity").insert({
+        user_id: data.user.id,
+        full_name: profile?.full_name || null,
+        email: profile?.email || data.user.email || null,
+        referral_code: profile?.referral_code || null,
+        event_type: "tool_opened",
+        tool_name: "job_match_analyzer",
+        page_name: "/career-toolkit/job-description-analyzer",
+      });
+    }
+    trackOpen();
+  }, []);
 
-for (const item of items.map((x) => x.trim()).filter(Boolean)) {
-const key = item.toLowerCase();
-if (!seen.has(key)) {
-seen.add(key);
-result.push(item);
-}
-}
+  async function uploadResume(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-return result;
-}
+    setError("");
+    setAnalysis(null);
+    setLoadingResume(true);
 
-function sentenceCase(value: string) {
-if (!value) return value;
-return value.charAt(0).toUpperCase() + value.slice(1);
-}
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (!ext || !["pdf", "docx"].includes(ext)) {
+        throw new Error("Please upload a PDF or DOCX resume.");
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        throw new Error("Resume files must be 8MB or smaller.");
+      }
 
-function extractMatchingTerms(text: string, library: string[]) {
-const lower = text.toLowerCase();
-return uniqueClean(
-library.filter((term) => {
-const safe = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-return new RegExp(`\\b${safe}\\b`, "i").test(lower);
-}).map(sentenceCase)
-);
-}
+      const formData = new FormData();
+      formData.append("file", file);
 
-function extractResponsibilities(lines: string[]) {
-const hits = lines.filter((line) => {
-const l = line.toLowerCase();
-return (
-l.startsWith("•") ||
-l.startsWith("-") ||
-l.includes("responsib") ||
-l.includes("duties") ||
-l.includes("you will") ||
-l.includes("will be responsible") ||
-l.includes("include:")
-);
-});
+      const response = await fetch("/api/resume-parse", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "Unable to read the resume.");
 
-const cleaned = hits
-.map((line) => line.replace(/^[-•]\s*/, "").trim())
-.filter((line) => line.length > 20);
+      const text = String(data?.text || data?.parsedText || data?.resumeText || "").trim();
+      if (!text) {
+        throw new Error("No readable resume text was found. Try DOCX or paste the resume text below.");
+      }
 
-return uniqueClean(cleaned).slice(0, 10);
-}
+      setResumeText(text);
+      setResumeFileName(data?.fileName || file.name);
+      setPageCount(typeof data?.pageCount === "number" ? data.pageCount : null);
+      setHasImage(typeof data?.hasImage === "boolean" ? data.hasImage : null);
+      setImageCount(typeof data?.imageCount === "number" ? data.imageCount : null);
+    } catch (e: any) {
+      setError(e?.message || "Unable to upload the resume.");
+    } finally {
+      setLoadingResume(false);
+      event.target.value = "";
+    }
+  }
 
-function extractQualifications(lines: string[]) {
-const hits = lines.filter((line) => {
-const l = line.toLowerCase();
-return (
-l.includes("qualification") ||
-l.includes("requirements") ||
-l.includes("required") ||
-l.includes("preferred") ||
-l.includes("experience in") ||
-l.includes("experience with") ||
-/\b\d+\+?\s+years?\b/i.test(l)
-);
-});
+  async function analyze() {
+    if (!acknowledged || !started || jobDescription.trim().length < 80 || resumeText.trim().length < 80) return;
 
-return uniqueClean(
-hits
-.map((line) => line.replace(/^[-•]\s*/, "").trim())
-.filter((line) => line.length > 12)
-).slice(0, 12);
-}
+    setError("");
+    setAnalysis(null);
+    setAnalyzing(true);
 
-function extractSalaryAndSchedule(text: string) {
-const details: string[] = [];
-const lower = text.toLowerCase();
+    try {
+      const response = await fetch("/api/job-match-analyzer-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobTitle,
+          jobDescription,
+          resumeText,
+          resumeMetadata: { fileName: resumeFileName || null, pageCount, hasImage, imageCount },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "The analysis could not be completed.");
+      setAnalysis(data);
 
-const salaryMatches = text.match(
-/(\$?\d{2,3}(?:,\d{3})?(?:\.\d{2})?\s?(?:-|to)\s?\$?\d{2,3}(?:,\d{3})?(?:\.\d{2})?(?:\s?(?:per hour|hourly|annually|year|yr))?|\$\d{2,3}(?:,\d{3})?(?:\.\d{2})?\s?(?:per hour|hourly|annually|year|yr))/gi
-);
-if (salaryMatches) {
-details.push(...salaryMatches.map((x) => `Pay mentioned: ${x}`));
-}
+      if (userId) {
+        await supabase.from("user_activity").insert({
+          user_id: userId,
+          full_name: null,
+          email: null,
+          referral_code: referralCode,
+          event_type: "tool_completed",
+          tool_name: "job_match_analyzer",
+          page_name: "/career-toolkit/job-description-analyzer",
+        });
+      }
+    } catch (e: any) {
+      setError(e?.message || "The analysis could not be completed.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
-if (lower.includes("full-time")) details.push("Schedule mentioned: Full-time");
-if (lower.includes("part-time")) details.push("Schedule mentioned: Part-time");
-if (lower.includes("weekend")) details.push("Schedule mention: Weekend availability");
-if (lower.includes("evening")) details.push("Schedule mention: Evening availability");
-if (lower.includes("night shift") || lower.includes("overnight"))
-details.push("Schedule mention: Overnight / night shift");
-if (lower.includes("hybrid")) details.push("Work arrangement: Hybrid");
-if (lower.includes("remote")) details.push("Work arrangement: Remote");
-if (lower.includes("on-site") || lower.includes("onsite"))
-details.push("Work arrangement: On-site");
-
-return uniqueClean(details);
-}
-
-function extractRedFlags(text: string) {
-const lower = text.toLowerCase();
-const flags: string[] = [];
-
-if (lower.includes("must lift") || lower.includes("lift up to")) {
-flags.push("Physical demand mentioned");
-}
-if (lower.includes("background check")) {
-flags.push("Background check required");
-}
-if (lower.includes("drug test")) {
-flags.push("Drug test required");
-}
-if (lower.includes("weekends") || lower.includes("weekend")) {
-flags.push("Weekend availability may be required");
-}
-if (lower.includes("overtime")) {
-flags.push("Overtime may be required");
-}
-if (lower.includes("valid driver's license") || lower.includes("valid driver’s license")) {
-flags.push("Valid driver's license required");
-}
-if (lower.includes("travel")) {
-flags.push("Travel may be required");
-}
-if (lower.includes("bilingual preferred")) {
-flags.push("Bilingual preferred");
-}
-
-return uniqueClean(flags);
-}
-
-function extractImportantKeywords(text: string) {
-const tokens = text
-.toLowerCase()
-.replace(/[^a-z0-9\s/+.-]/g, " ")
-.split(/\s+/)
-.filter((token) => token.length > 2 && !STOP_WORDS.has(token));
-
-const counts = new Map<string, number>();
-for (const token of tokens) {
-counts.set(token, (counts.get(token) || 0) + 1);
-}
-
-const sorted = [...counts.entries()]
-.filter(([word, count]) => count >= 2 && !/^\d+$/.test(word))
-.sort((a, b) => b[1] - a[1])
-.slice(0, 15)
-.map(([word]) => sentenceCase(word));
-
-return uniqueClean(sorted);
-}
-
-function buildResumeFocus(result: AnalysisResult) {
-const bullets: string[] = [];
-
-if (result.topSkills.length) {
-bullets.push(`Mirror these real skills in the resume if they honestly match: ${result.topSkills.slice(0, 6).join(", ")}.`);
-}
-if (result.toolsAndSystems.length) {
-bullets.push(`Mention tools or systems you actually used, especially: ${result.toolsAndSystems.slice(0, 5).join(", ")}.`);
-}
-if (result.qualifications.some((q) => /years?/i.test(q))) {
-bullets.push("Call out your years of experience clearly near the top of the resume or within recent roles.");
-}
-if (result.responsibilities.length) {
-bullets.push("Show similar responsibilities using measurable bullet points from your past jobs.");
-}
-if (result.certifications.length || result.education.length) {
-bullets.push("Place required education, licenses, or certifications where they are easy to find.");
-}
-
-return uniqueClean(bullets).slice(0, 6);
-}
-
-function buildCoverLetterFocus(result: AnalysisResult) {
-const bullets: string[] = [];
-
-if (result.topSkills.length) {
-bullets.push(`Connect your background to the role using 2 or 3 key skills such as ${result.topSkills.slice(0, 3).join(", ")}.`);
-}
-if (result.softSkills.length) {
-bullets.push(`Reinforce relevant soft skills like ${result.softSkills.slice(0, 3).join(", ")} with a short example.`);
-}
-if (result.responsibilities.length) {
-bullets.push("Mention that you understand the role’s day-to-day responsibilities and why they fit your experience.");
-}
-if (result.importantDetails.some((d) => d.toLowerCase().includes("remote") || d.toLowerCase().includes("hybrid"))) {
-bullets.push("Acknowledge the work arrangement and explain why it suits your work style if true.");
-}
-if (result.certifications.length) {
-bullets.push("Mention the certification or license that best matches the job if you already have it.");
-}
-
-return uniqueClean(bullets).slice(0, 6);
-}
-
-function analyzeJobDescription(text: string): AnalysisResult {
-const normalized = normalizeText(text);
-const lines = normalized.split("\n").map((line) => line.trim()).filter(Boolean);
-
-const topSkills = extractMatchingTerms(normalized, SKILL_LIBRARY);
-const toolsAndSystems = extractMatchingTerms(normalized, SOFTWARE_LIBRARY);
-const certifications = extractMatchingTerms(normalized, CERT_LIBRARY);
-const education = extractMatchingTerms(normalized, EDUCATION_LIBRARY);
-
-const softSkills = uniqueClean(
-[
-...extractMatchingTerms(normalized, [
-"communication",
-"teamwork",
-"leadership",
-"time management",
-"problem solving",
-"attention to detail",
-"organization",
-"multitasking",
-"customer service",
-"critical thinking",
-]),
-]
-);
-
-const responsibilities = extractResponsibilities(lines);
-const qualifications = extractQualifications(lines);
-const keywords = extractImportantKeywords(normalized);
-const importantDetails = extractSalaryAndSchedule(normalized);
-const possibleRedFlags = extractRedFlags(normalized);
-
-const base: AnalysisResult = {
-topSkills,
-softSkills,
-toolsAndSystems,
-certifications,
-education,
-qualifications,
-responsibilities,
-keywords,
-resumeFocus: [],
-coverLetterFocus: [],
-importantDetails,
-possibleRedFlags,
-};
-
-return {
-...base,
-resumeFocus: buildResumeFocus(base),
-coverLetterFocus: buildCoverLetterFocus(base),
-};
-}
-
-export default function JobDescriptionAnalyzerPage() {
-const [jobTitle, setJobTitle] = useState("");
-const [jobDescription, setJobDescription] = useState("");
-const [analyzed, setAnalyzed] = useState(false);
-const [userId, setUserId] = useState("");
-const [referralCode, setReferralCode] = useState<string | null>(null);
-const openTrackedRef = useRef(false);
-
-useEffect(() => {
-async function loadUserAndTrack() {
-const { data, error } = await supabase.auth.getUser();
-
-if (error || !data.user || openTrackedRef.current) return;
-
-openTrackedRef.current = true;
-setUserId(data.user.id);
-
-const { data: profile } = await supabase
-.from("candidate_profiles")
-.select("full_name, email, referral_code")
-.eq("user_id", data.user.id)
-.maybeSingle();
-
-setReferralCode(profile?.referral_code || null);
-
-const { error: activityError } = await supabase
-.from("user_activity")
-.insert({
-user_id: data.user.id,
-full_name: profile?.full_name || null,
-email: profile?.email || data.user.email || null,
-referral_code: profile?.referral_code || null,
-event_type: "tool_opened",
-tool_name: "job_description_analyzer",
-page_name: "/career-toolkit/job-description-analyzer",
-});
-
-if (activityError) {
-console.error("Job description analyzer tracking error:", activityError);
-}
-}
-
-loadUserAndTrack();
-}, []);
-
-const result = useMemo(() => {
-if (!jobDescription.trim()) {
-return null;
-}
-return analyzeJobDescription(jobDescription);
-}, [jobDescription]);
-
-async function handleAnalyze() {
-setAnalyzed(true);
-
-if (!userId) return;
-
-const { error: activityError } = await supabase
-.from("user_activity")
-.insert({
-user_id: userId,
-full_name: null,
-email: null,
-referral_code: referralCode,
-event_type: "tool_completed",
-tool_name: "job_description_analyzer",
-page_name: "/career-toolkit/job-description-analyzer",
-});
-
-if (activityError) {
-console.error("Job description analyze tracking error:", activityError);
-}
-}
-
-function handlePrint() {
-window.print();
-}
-
-function handleSaveText() {
-if (!result) return;
-
-const content = `
-JOB DESCRIPTION ANALYZER
+  function saveAnalysis() {
+    if (!analysis) return;
+    const list = (title: string, items: string[]) => `${title}\n${items.length ? items.map(x => `• ${x}`).join("\n") : "None noted"}`;
+    const b = analysis.breakdown;
+    const text = `
+HIREMINDS JOB MATCH ANALYZER
 ${jobTitle ? `Job Title: ${jobTitle}` : ""}
 
-TOP SKILLS
-${result.topSkills.join("\n") || "None detected"}
+OVERALL MATCH
+${analysis.overallMatch}% — ${analysis.matchLabel}
 
-SOFT SKILLS
-${result.softSkills.join("\n") || "None detected"}
+CAREER COACH RECOMMENDATION
+${analysis.recommendation}
+${analysis.recommendationReason}
 
-TOOLS AND SYSTEMS
-${result.toolsAndSystems.join("\n") || "None detected"}
+SCORE BREAKDOWN
+Required Qualifications: ${b.requiredQualifications}%
+Experience Alignment: ${b.experienceAlignment}%
+Skills Alignment: ${b.skillsAlignment}%
+Preferred Qualifications: ${b.preferredQualifications}%
+Education / Certifications: ${b.educationCertifications}%
+Keywords / Terminology: ${b.keywordsTerminology}%
+Resume / ATS Structure: ${b.resumeAtsStructure}%
 
-CERTIFICATIONS / LICENSES
-${result.certifications.join("\n") || "None detected"}
+ARE YOU QUALIFIED?
+${analysis.areYouQualified}
 
-EDUCATION
-${result.education.join("\n") || "None detected"}
+COMPETITIVE POSITION
+${analysis.competitivePosition}
 
-KEY QUALIFICATIONS
-${result.qualifications.join("\n") || "None detected"}
+WHAT THE EMPLOYER MAY SEE FIRST
+${analysis.employerFirstImpression}
 
-RESPONSIBILITIES
-${result.responsibilities.join("\n") || "None detected"}
+${list("STRONGEST EVIDENCE", analysis.strongestEvidence)}
 
-IMPORTANT KEYWORDS
-${result.keywords.join("\n") || "None detected"}
+${list("REQUIRED QUALIFICATIONS MET", analysis.requiredQualificationsMet)}
 
-WHAT TO HIGHLIGHT IN THE RESUME
-${result.resumeFocus.join("\n") || "None detected"}
+${list("REQUIRED QUALIFICATIONS UNCLEAR", analysis.requiredQualificationsUnclear)}
 
-WHAT TO MENTION IN THE COVER LETTER
-${result.coverLetterFocus.join("\n") || "None detected"}
+${list("REQUIRED QUALIFICATIONS NOT FOUND ON RESUME", analysis.requiredQualificationsNotFound)}
 
-IMPORTANT DETAILS
-${result.importantDetails.join("\n") || "None detected"}
+${list("PREFERRED QUALIFICATIONS MET", analysis.preferredQualificationsMet)}
 
-POSSIBLE RED FLAGS / NOTES
-${result.possibleRedFlags.join("\n") || "None detected"}
+${list("PREFERRED QUALIFICATIONS NOT FOUND", analysis.preferredQualificationsNotFound)}
 
-IMPORTANT:
-Only include skills, qualifications, and keywords that honestly match your real experience.
-`.trim();
+${list("MATCHED SKILLS / KEYWORDS", analysis.matchedSkillsKeywords)}
 
-const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-const url = URL.createObjectURL(blob);
-const link = document.createElement("a");
-link.href = url;
-link.download = "job-description-analysis.txt";
-document.body.appendChild(link);
-link.click();
-document.body.removeChild(link);
-URL.revokeObjectURL(url);
+${list("MISSING / UNDERREPRESENTED SKILLS / KEYWORDS", analysis.missingSkillsKeywords)}
+
+${list("WHAT IS WORKING", analysis.whatIsWorking)}
+
+${list("WHAT MAY GET YOU SCREENED OUT", analysis.screenOutRisks)}
+
+${list("RESUME QUALITY / ATS FLAGS", analysis.resumeQualityFlags)}
+
+${list("WHAT TO FIX FIRST", analysis.fixFirst)}
+
+${list("HOW TO TAILOR THIS RESUME", analysis.tailoringRecommendations)}
+
+${list("DO NOT CHANGE / DO NOT INVENT", analysis.doNotInvent)}
+
+${list("COVER LETTER STRATEGY", analysis.coverLetterStrategy)}
+
+${list("INTERVIEW READINESS", analysis.interviewReadiness)}
+
+${list("LIKELY INTERVIEW QUESTIONS", analysis.likelyInterviewQuestions)}
+
+${list("CONCERNS TO PREPARE FOR", analysis.concernsToPrepareFor)}
+
+CAREER COACH NEXT MOVE
+${analysis.nextMove}
+
+COACHING SUMMARY
+${analysis.coachingSummary}
+
+DISCLAIMER
+${DISCLAIMER}`.trim();
+
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "hireminds-job-match-analysis.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  const canAnalyze = acknowledged && started && jobDescription.trim().length >= 80 && resumeText.trim().length >= 80 && !analyzing && !loadingResume;
+
+  return (
+    <main className="jm-page">
+      <style>{css}</style>
+      <div className="jm-shell">
+        <section className="jm-hero">
+          <p className="jm-kicker">Career ToolKit • HireMinds Career Coach</p>
+          <h1>Job Match <span>Analyzer.</span></h1>
+          <p>Compare your resume to a real job posting, understand how your background may be screened, identify what to strengthen, and get clear career-coach guidance before you apply.</p>
+          <div className="jm-actions no-print">
+            <a href="/career-toolkit">Back to Career ToolKit</a>
+            <button disabled={!analysis} onClick={saveAnalysis}>Save Analysis</button>
+            <button disabled={!analysis} onClick={() => window.print()}>Print / Save PDF</button>
+          </div>
+        </section>
+
+        <section className="jm-disclaimer">
+          <div className="jm-badge">Required acknowledgement</div>
+          <h2>Before you begin</h2>
+          <p>{DISCLAIMER}</p>
+          <label className="jm-check">
+            <input type="checkbox" checked={acknowledged} onChange={e => setAcknowledged(e.target.checked)} />
+            <span>{ACKNOWLEDGEMENT}</span>
+          </label>
+          <button className="jm-primary no-print" disabled={!acknowledged} onClick={() => setStarted(true)}>
+            {acknowledged ? "Continue to Job Match Analyzer" : "Acknowledge to Continue"}
+          </button>
+        </section>
+
+        {!started ? (
+          <section className="jm-intro">
+            <p className="jm-kicker">Career coaching starts with context</p>
+            <h2>One job. One resume. A clearer next move.</h2>
+            <p>The percentage supports the coaching decision. It does not replace it.</p>
+          </section>
+        ) : (
+          <div className="jm-grid">
+            <section className="jm-input no-print">
+              <p className="jm-kicker">Step 1</p>
+              <h2>Add the opportunity</h2>
+              <label>Job Title (optional)</label>
+              <input value={jobTitle} onChange={e => { setJobTitle(e.target.value); setAnalysis(null); }} placeholder="Example: HR Coordinator" />
+              <label>Full Job Description</label>
+              <textarea className="jm-job" value={jobDescription} onChange={e => { setJobDescription(e.target.value); setAnalysis(null); }} placeholder="Paste the complete job description here." />
+
+              <hr />
+              <p className="jm-kicker">Step 2</p>
+              <h2>Add your resume</h2>
+              <p className="jm-muted">Upload PDF or DOCX. Paste text below only as a backup.</p>
+              <input ref={fileRef} type="file" hidden accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={uploadResume} />
+              <button className="jm-upload" onClick={() => fileRef.current?.click()} disabled={loadingResume}>
+                {loadingResume ? "Reading Resume..." : resumeFileName ? "Upload Different Resume" : "Upload Resume — PDF or DOCX"}
+              </button>
+              {resumeFileName && <div className="jm-file"><strong>{resumeFileName}</strong><span>Resume text loaded{pageCount ? ` • ${pageCount} page${pageCount === 1 ? "" : "s"}` : ""}</span></div>}
+              <label>Resume Text</label>
+              <textarea className="jm-resume" value={resumeText} onChange={e => { setResumeText(e.target.value); setAnalysis(null); }} placeholder="Uploaded resume text will appear here. You may also paste resume text manually." />
+              {error && <div className="jm-error">{error}</div>}
+              <button className="jm-primary" disabled={!canAnalyze} onClick={analyze}>
+                {analyzing ? "HireMinds Career Coach is reviewing..." : "Analyze Resume + Job"}
+              </button>
+            </section>
+
+            <section className="jm-results print-wrap">
+              {!analysis ? <EmptyState /> : <Results analysis={analysis} jobTitle={jobTitle} />}
+            </section>
+          </div>
+        )}
+      </div>
+    </main>
+  );
 }
 
-return (
-<main style={styles.page}>
-<style>{`
-@media print {
-body * {
-visibility: hidden !important;
+function EmptyState() {
+  return <div className="jm-paper jm-empty"><p className="jm-kicker">HireMinds Career Coach</p><h2>Your assessment will appear here.</h2><p>ATS-style screening, resume strategy, job-fit analysis, and career coaching will be reviewed together.</p></div>;
 }
 
-.print-wrap,
-.print-wrap * {
-visibility: visible !important;
+function Results({ analysis, jobTitle }: { analysis: Analysis; jobTitle: string }) {
+  const b = analysis.breakdown;
+  const scores = [
+    ["Required Qualifications", b.requiredQualifications],
+    ["Experience Alignment", b.experienceAlignment],
+    ["Skills Alignment", b.skillsAlignment],
+    ["Preferred Qualifications", b.preferredQualifications],
+    ["Education / Certifications", b.educationCertifications],
+    ["Keywords / Terminology", b.keywordsTerminology],
+    ["Resume / ATS Structure", b.resumeAtsStructure],
+  ] as const;
+
+  return <div className="jm-paper">
+    <p className="jm-kicker">HireMinds Career Coach Assessment</p>
+    <h2>{jobTitle || "Job Match Analysis"}</h2>
+    <div className="jm-overall"><div><small>Overall Job Match</small><strong>{analysis.overallMatch}%</strong></div><div><b>{analysis.matchLabel}</b><h3>{analysis.recommendation}</h3><p>{analysis.recommendationReason}</p></div></div>
+    <div className="jm-score-grid">{scores.map(([label, value]) => <Score key={label} label={label} value={value} />)}</div>
+
+    <Narrative title="Are You Qualified?" text={analysis.areYouQualified} />
+    <Narrative title="Your Competitive Position" text={analysis.competitivePosition} />
+    <Narrative title="What the Employer May See First" text={analysis.employerFirstImpression} />
+
+    <List title="Strongest Evidence" items={analysis.strongestEvidence} />
+    <List title="Required Qualifications Met" items={analysis.requiredQualificationsMet} />
+    <List title="Required Qualifications — Unclear" items={analysis.requiredQualificationsUnclear} note="Unclear means the qualification was not demonstrated clearly enough in the resume. It does not automatically mean you do not have it." />
+    <List title="Required Qualifications Not Found on the Resume" items={analysis.requiredQualificationsNotFound} note="Not found on the resume is different from not having the qualification. Verify your actual background before making any change." />
+    <List title="Preferred Qualifications Met" items={analysis.preferredQualificationsMet} />
+    <List title="Preferred Qualifications Not Found" items={analysis.preferredQualificationsNotFound} />
+    <List title="Matched Skills + Keywords" items={analysis.matchedSkillsKeywords} />
+    <List title="Missing / Underrepresented Skills + Keywords" items={analysis.missingSkillsKeywords} />
+    <List title="What's Working" items={analysis.whatIsWorking} />
+    <List title="What May Get You Screened Out" items={analysis.screenOutRisks} />
+    <List title="Resume Quality + ATS Review" items={analysis.resumeQualityFlags} />
+    <List title="What to Fix First" items={analysis.fixFirst} />
+    <List title="How to Tailor This Resume" items={analysis.tailoringRecommendations} />
+    <List title="Do Not Change / Do Not Invent" items={analysis.doNotInvent} />
+    <List title="Cover Letter Strategy" items={analysis.coverLetterStrategy} />
+    <List title="Interview Readiness" items={analysis.interviewReadiness} />
+    <List title="Questions You Should Be Ready to Answer" items={analysis.likelyInterviewQuestions} />
+    <List title="Potential Concerns to Prepare For" items={analysis.concernsToPrepareFor} />
+
+    <div className="jm-next"><small>Career Coach Next Move</small><h3>{analysis.nextMove}</h3><p>{analysis.coachingSummary}</p></div>
+    <div className="jm-final-disclaimer"><strong>Important Disclaimer:</strong> {DISCLAIMER}</div>
+  </div>;
 }
 
-.print-wrap {
-position: absolute !important;
-top: 0 !important;
-left: 0 !important;
-width: 100% !important;
-background: white !important;
-padding: 0 !important;
-margin: 0 !important;
-}
-}
-`}</style>
-
-<div style={styles.shell}>
-<section style={styles.heroCard}>
-<p style={styles.kicker}>Career ToolKit</p>
-<h1 style={styles.title}>Job Description Analyzer</h1>
-<p style={styles.subtitle}>
-Paste a job description and extract the main skills, qualifications, systems, keywords,
-responsibilities, and the best information to reflect in a resume and cover letter.
-</p>
-
-<div style={styles.heroButtons}>
-<a href="/career-toolkit" style={styles.linkButton}>
-Back to Career ToolKit
-</a>
-<button type="button" onClick={handleSaveText} style={styles.actionButton}>
-Save Analysis
-</button>
-<button type="button" onClick={handlePrint} style={styles.actionButton}>
-Print / Save PDF
-</button>
-</div>
-</section>
-
-<div style={styles.noticeBox}>
-Only include skills, qualifications, and keywords that honestly match your real experience.
-This tool should help you tailor, not exaggerate.
-</div>
-
-<div style={styles.layout}>
-<section style={styles.formCard}>
-<p style={styles.sectionKicker}>Paste Job Description</p>
-<h2 style={styles.sectionTitle}>Analyze the posting</h2>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Job Title (optional)</label>
-<input
-value={jobTitle}
-onChange={(e) => setJobTitle(e.target.value)}
-placeholder="Example: Medical Assistant, Dispatcher, Customer Service Rep"
-style={styles.input}
-/>
-</div>
-
-<div style={styles.fieldWrap}>
-<label style={styles.label}>Full Job Description</label>
-<textarea
-value={jobDescription}
-onChange={(e) => setJobDescription(e.target.value)}
-placeholder="Paste the full job description here."
-style={styles.textarea}
-/>
-</div>
-
-<button type="button" onClick={handleAnalyze} style={styles.primaryButton}>
-Analyze Job Description
-</button>
-</section>
-
-<section className="print-wrap" style={styles.resultsCol}>
-<div style={styles.previewPaper}>
-<p style={styles.previewKicker}>Live Analysis</p>
-<h2 style={styles.previewTitle}>
-{jobTitle || "Job Description Analysis"}
-</h2>
-
-{!result || !analyzed ? (
-<p style={styles.emptyText}>
-Paste a job description and click Analyze Job Description.
-</p>
-) : (
-<div style={styles.resultsGrid}>
-<ResultSection title="Top Skills to Include" items={result.topSkills} />
-<ResultSection title="Soft Skills" items={result.softSkills} />
-<ResultSection title="Tools / Systems" items={result.toolsAndSystems} />
-<ResultSection title="Certifications / Licenses" items={result.certifications} />
-<ResultSection title="Education Mentioned" items={result.education} />
-<ResultSection title="Key Qualifications" items={result.qualifications} />
-<ResultSection title="Main Responsibilities" items={result.responsibilities} />
-<ResultSection title="Important Keywords" items={result.keywords} />
-<ResultSection title="What to Highlight in the Resume" items={result.resumeFocus} />
-<ResultSection title="What to Mention in the Cover Letter" items={result.coverLetterFocus} />
-<ResultSection title="Important Details" items={result.importantDetails} />
-<ResultSection title="Possible Red Flags / Notes" items={result.possibleRedFlags} />
-</div>
-)}
-</div>
-</section>
-</div>
-</div>
-</main>
-);
+function Score({ label, value }: { label: string; value: number }) {
+  return <div className="jm-score"><div><span>{label}</span><b>{value}%</b></div><div className="jm-track"><i style={{ width: `${value}%` }} /></div></div>;
 }
 
-function ResultSection({ title, items }: { title: string; items: string[] }) {
-return (
-<div style={styles.resultCard}>
-<p style={styles.resultTitle}>{title}</p>
-{items.length ? (
-<ul style={styles.resultList}>
-{items.map((item) => (
-<li key={`${title}-${item}`} style={styles.resultItem}>
-{item}
-</li>
-))}
-</ul>
-) : (
-<p style={styles.resultEmpty}>Nothing clear detected yet.</p>
-)}
-</div>
-);
+function Narrative({ title, text }: { title: string; text: string }) {
+  return <section className="jm-card"><h3>{title}</h3><p>{text || "No clear coaching note was generated."}</p></section>;
 }
 
-const styles: Record<string, React.CSSProperties> = {
-page: {
-minHeight: "100vh",
-background: "linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
-color: "#e7e7e7",
-padding: "32px 24px",
-fontFamily:
-'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-},
-shell: {
-maxWidth: "1440px",
-margin: "0 auto",
-display: "grid",
-gap: "24px",
-},
-heroCard: {
-background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-border: "1px solid #262626",
-borderRadius: "24px",
-padding: "24px",
-},
-kicker: {
-margin: "0 0 8px",
-color: "#9a9a9a",
-fontSize: "12px",
-letterSpacing: "0.18em",
-textTransform: "uppercase",
-},
-title: {
-margin: "0 0 10px",
-fontSize: "38px",
-fontWeight: 600,
-color: "#f5f5f5",
-},
-subtitle: {
-margin: 0,
-color: "#c8c8c8",
-fontSize: "16px",
-lineHeight: 1.7,
-maxWidth: "980px",
-},
-heroButtons: {
-display: "flex",
-gap: "12px",
-marginTop: "16px",
-flexWrap: "wrap",
-},
-linkButton: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-textDecoration: "none",
-padding: "15px 18px",
-borderRadius: "18px",
-border: "1px solid #3a3a3a",
-background: "#111111",
-color: "#f5f5f5",
-fontWeight: 700,
-},
-actionButton: {
-display: "inline-flex",
-alignItems: "center",
-justifyContent: "center",
-padding: "15px 18px",
-borderRadius: "18px",
-border: "1px solid #3a3a3a",
-background: "#111111",
-color: "#f5f5f5",
-fontWeight: 700,
-cursor: "pointer",
-},
-noticeBox: {
-background: "rgba(255,255,255,0.04)",
-border: "1px solid rgba(255,255,255,0.08)",
-borderRadius: "18px",
-padding: "14px 16px",
-color: "#d4d4d8",
-fontSize: "14px",
-lineHeight: 1.7,
-},
-layout: {
-display: "grid",
-gridTemplateColumns: "0.9fr 1.1fr",
-gap: "24px",
-alignItems: "start",
-},
-formCard: {
-background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-border: "1px solid #262626",
-borderRadius: "24px",
-padding: "24px",
-},
-resultsCol: {
-position: "sticky",
-top: "24px",
-},
-sectionKicker: {
-margin: "0 0 8px",
-color: "#9ca3af",
-fontSize: "12px",
-letterSpacing: "0.18em",
-textTransform: "uppercase",
-},
-sectionTitle: {
-margin: "0 0 18px",
-fontSize: "28px",
-lineHeight: 1.1,
-fontWeight: 700,
-color: "#f5f5f5",
-},
-fieldWrap: {
-marginBottom: "14px",
-},
-label: {
-display: "block",
-marginBottom: "8px",
-color: "#c9c9c9",
-fontSize: "13px",
-fontWeight: 500,
-},
-input: {
-width: "100%",
-padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-boxSizing: "border-box",
-},
-textarea: {
-width: "100%",
-minHeight: "360px",
-padding: "14px 16px",
-borderRadius: "16px",
-border: "1px solid #313131",
-background: "#0f0f10",
-color: "#f4f4f5",
-fontSize: "15px",
-resize: "vertical",
-boxSizing: "border-box",
-},
-primaryButton: {
-width: "100%",
-padding: "15px 18px",
-borderRadius: "18px",
-border: "1px solid #d1d5db",
-background: "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
-color: "#09090b",
-fontSize: "15px",
-fontWeight: 700,
-cursor: "pointer",
-},
-previewPaper: {
-background: "#fff",
-color: "#111827",
-borderRadius: "18px",
-minHeight: "760px",
-padding: "34px 36px",
-boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
-},
-previewKicker: {
-margin: "0 0 8px",
-color: "#6b7280",
-fontSize: "12px",
-letterSpacing: "0.14em",
-textTransform: "uppercase",
-},
-previewTitle: {
-margin: "0 0 18px",
-fontSize: "30px",
-fontWeight: 700,
-color: "#111827",
-},
-emptyText: {
-margin: 0,
-color: "#4b5563",
-fontSize: "15px",
-lineHeight: 1.7,
-},
-resultsGrid: {
-display: "grid",
-gridTemplateColumns: "1fr 1fr",
-gap: "14px",
-},
-resultCard: {
-border: "1px solid #d1d5db",
-borderRadius: "16px",
-padding: "14px",
-background: "#ffffff",
-},
-resultTitle: {
-margin: "0 0 10px",
-color: "#111827",
-fontSize: "14px",
-fontWeight: 700,
-},
-resultList: {
-margin: 0,
-paddingLeft: "18px",
-},
-resultItem: {
-marginBottom: "6px",
-color: "#1f2937",
-fontSize: "14px",
-lineHeight: 1.6,
-},
-resultEmpty: {
-margin: 0,
-color: "#6b7280",
-fontSize: "14px",
-lineHeight: 1.6,
-},
-};
+function List({ title, items, note }: { title: string; items: string[]; note?: string }) {
+  return <section className="jm-card"><h3>{title}</h3>{items?.length ? <ul>{items.map((x, i) => <li key={`${title}-${i}`}>{x}</li>)}</ul> : <p className="jm-muted">Nothing significant was identified in this area.</p>}{note && <div className="jm-note">{note}</div>}</section>;
+}
+
+const css = `
+*{box-sizing:border-box}.jm-page{min-height:100vh;background:radial-gradient(ellipse at 12% 8%,rgba(22,119,255,.12),transparent 34%),linear-gradient(180deg,#030812 0%,#07111f 52%,#030812 100%);color:#f8fafc;padding:28px 22px 70px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.jm-shell{width:min(1500px,100%);margin:auto;display:grid;gap:22px}.jm-hero{border:1px solid rgba(255,255,255,.08);border-radius:30px;padding:54px 52px;background:linear-gradient(135deg,rgba(2,8,23,.98),rgba(8,22,44,.96) 58%,rgba(8,18,35,.98));box-shadow:0 30px 100px rgba(0,0,0,.34)}.jm-kicker{margin:0 0 12px;color:#60a5fa;font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}.jm-hero h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:68px;line-height:.98;font-weight:500;letter-spacing:-.045em}.jm-hero h1 span{color:#60a5fa}.jm-hero>p:not(.jm-kicker){max-width:900px;color:#cbd5e1;font-size:17px;line-height:1.75}.jm-actions{display:flex;flex-wrap:wrap;gap:11px;margin-top:28px}.jm-actions a,.jm-actions button{padding:12px 16px;border-radius:12px;border:1px solid rgba(148,163,184,.28);background:#08111f;color:#f8fafc;text-decoration:none;font-size:13px;font-weight:800;cursor:pointer}.jm-actions button:disabled{opacity:.35;cursor:not-allowed}.jm-disclaimer{border-radius:24px;border:1px solid rgba(96,165,250,.28);background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(8,20,40,.96));padding:26px}.jm-badge{display:inline-flex;padding:6px 10px;border-radius:999px;background:rgba(22,119,255,.13);border:1px solid rgba(96,165,250,.28);color:#bfdbfe;font-size:11px;font-weight:900;text-transform:uppercase}.jm-disclaimer h2,.jm-input h2,.jm-intro h2{margin:14px 0 8px}.jm-disclaimer>p{color:#cbd5e1;line-height:1.75;font-size:14px}.jm-check{display:flex;gap:12px;align-items:flex-start;margin-top:20px;padding:16px;border-radius:16px;background:rgba(2,6,23,.62);border:1px solid rgba(148,163,184,.17);font-size:14px;line-height:1.65;cursor:pointer}.jm-check input{width:19px;height:19px;margin-top:2px;accent-color:#1677FF}.jm-primary{margin-top:16px;width:100%;padding:14px 18px;border-radius:13px;border:1px solid rgba(147,197,253,.5);background:linear-gradient(180deg,#1677FF,#0d5fd7);color:#fff;font-weight:900;cursor:pointer}.jm-primary:disabled{opacity:.35;cursor:not-allowed}.jm-intro{padding:52px;border-radius:26px;border:1px solid rgba(255,255,255,.07);background:rgba(3,8,18,.68)}.jm-intro h2{font-family:Georgia,"Times New Roman",serif;font-size:38px;font-weight:500}.jm-intro>p:not(.jm-kicker){color:#94a3b8}.jm-grid{display:grid;grid-template-columns:.82fr 1.18fr;gap:22px;align-items:start}.jm-input{border-radius:24px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(9,18,33,.96),rgba(4,11,23,.98));padding:24px}.jm-input label{display:block;margin:16px 0 8px;color:#cbd5e1;font-size:13px;font-weight:800}.jm-input input,.jm-input textarea{width:100%;padding:14px 15px;border-radius:14px;border:1px solid rgba(148,163,184,.22);background:#050b15;color:#f8fafc;font-size:14px;line-height:1.6;outline:none}.jm-job{min-height:300px;resize:vertical}.jm-resume{min-height:260px;resize:vertical}.jm-input hr{border:0;border-top:1px solid rgba(148,163,184,.12);margin:26px 0}.jm-muted{color:#64748b!important;font-size:13px}.jm-upload{width:100%;padding:15px;border-radius:14px;border:1px solid rgba(96,165,250,.36);background:rgba(22,119,255,.12);color:#dbeafe;font-weight:900;cursor:pointer}.jm-file{display:flex;flex-direction:column;gap:3px;margin-top:10px;padding:12px 14px;border-radius:12px;border:1px solid rgba(74,222,128,.18);background:rgba(22,101,52,.1)}.jm-file span{font-size:12px;color:#86efac}.jm-error{margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid rgba(248,113,113,.26);background:rgba(127,29,29,.16);color:#fecaca;font-size:13px}.jm-results{position:sticky;top:20px}.jm-paper{border-radius:24px;background:#fff;color:#0f172a;padding:38px;box-shadow:0 28px 80px rgba(0,0,0,.3)}.jm-empty{min-height:720px}.jm-paper>h2{margin:0 0 20px;font-family:Georgia,"Times New Roman",serif;font-size:36px;font-weight:500}.jm-overall{display:grid;grid-template-columns:170px 1fr;gap:22px;padding:22px;border-radius:20px;background:linear-gradient(135deg,#07111f,#0c1e38 65%,#102c52);color:#fff}.jm-overall small{display:block;color:#bfdbfe;font-weight:900;text-transform:uppercase;letter-spacing:.1em}.jm-overall strong{display:block;margin-top:6px;font-size:54px}.jm-overall h3{margin:6px 0}.jm-overall p{margin:0;color:#cbd5e1;line-height:1.6}.jm-score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:14px}.jm-score{padding:13px 14px;border-radius:14px;border:1px solid #e2e8f0;background:#f8fafc}.jm-score>div:first-child{display:flex;justify-content:space-between;gap:10px;font-size:12px}.jm-track{height:6px;margin-top:9px;border-radius:999px;background:#e2e8f0;overflow:hidden}.jm-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#1677FF,#60a5fa)}.jm-card{margin-top:12px;padding:18px;border-radius:16px;border:1px solid #dbe3ee;background:#fff}.jm-card h3{margin:0;color:#0f172a;font-size:17px}.jm-card p,.jm-card li{color:#334155;font-size:13px;line-height:1.7}.jm-card ul{margin:12px 0 0;padding-left:20px}.jm-note{margin-top:12px;padding:10px 12px;border-radius:11px;background:#eff6ff;color:#1e40af;font-size:11px;line-height:1.6}.jm-next{margin-top:14px;padding:22px;border-radius:18px;background:linear-gradient(135deg,#07111f,#0e2648 72%,#143761);color:#fff}.jm-next small{color:#93c5fd;font-weight:900;text-transform:uppercase;letter-spacing:.14em}.jm-next h3{margin:7px 0 8px;font-family:Georgia,"Times New Roman",serif;font-size:25px;font-weight:500}.jm-next p{margin:0;color:#dbeafe;line-height:1.7;font-size:13px}.jm-final-disclaimer{margin-top:18px;padding-top:16px;border-top:1px solid #e2e8f0;color:#64748b;font-size:10px;line-height:1.55}@media(max-width:980px){.jm-grid{grid-template-columns:1fr}.jm-results{position:static}}@media(max-width:620px){.jm-hero{padding:36px 24px}.jm-hero h1{font-size:46px}.jm-score-grid{grid-template-columns:1fr}.jm-overall{grid-template-columns:1fr}}@media print{body *{visibility:hidden!important}.print-wrap,.print-wrap *{visibility:visible!important}.print-wrap{position:absolute!important;top:0!important;left:0!important;width:100%!important;background:white!important}.no-print{display:none!important}}
+`;
