@@ -99,7 +99,7 @@ const directionTools: Tool[] = [
     title: "Career Direction",
     description:
       "Explore career paths, choose a direction, set a clear goal, and build practical next steps in one guided experience.",
-    href: "/career-toolkit/career-path-generator",
+    href: "/career-toolkit/career-direction",
     label: "Career Direction",
     cta: "EXPLORE DIRECTION",
   },
