@@ -115,7 +115,7 @@ export default function JobMatchAnalyzerPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/resume-parse", {
+      const response = await fetch("/api/job-match-resume-parse", {
         method: "POST",
         body: formData,
       });
