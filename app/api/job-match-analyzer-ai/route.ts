@@ -15,31 +15,24 @@ function extractJson(text: string) {
     return JSON.parse(cleaned);
   } catch {}
 
-  const firstBrace = cleaned.indexOf("{");
-  const lastBrace = cleaned.lastIndexOf("}");
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
 
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    return JSON.parse(
-      cleaned.slice(firstBrace, lastBrace + 1)
-    );
+  if (first >= 0 && last > first) {
+    return JSON.parse(cleaned.slice(first, last + 1));
   }
 
-  throw new Error(
-    "The AI response could not be converted into the required analysis format."
-  );
+  throw new Error("Unable to read the career coach response.");
 }
 
-function score(value: unknown) {
+function clamp(value: unknown) {
   const n = Number(value);
 
   if (!Number.isFinite(n)) {
     return 0;
   }
 
-  return Math.max(
-    0,
-    Math.min(100, Math.round(n))
-  );
+  return Math.max(0, Math.min(100, Math.round(n)));
 }
 
 function list(value: unknown) {
@@ -48,80 +41,70 @@ function list(value: unknown) {
   }
 
   return value
-    .map((item) =>
-      String(item ?? "").trim()
-    )
+    .map((item) => String(item ?? "").trim())
     .filter(Boolean)
-    .slice(0, 10);
+    .slice(0, 8);
 }
 
 function normalize(data: any) {
-  const breakdown = data?.breakdown ?? {};
+  const b = data?.breakdown ?? {};
 
   return {
-    overallMatch: score(data?.overallMatch),
+    overallMatch: clamp(data?.overallMatch),
 
-    matchLabel:
-      String(
-        data?.matchLabel ||
-          "Career Coach Assessment"
-      ).trim(),
+    matchLabel: String(
+      data?.matchLabel || "Career Coach Assessment"
+    ).trim(),
 
-    recommendation:
-      String(
-        data?.recommendation ||
-          "REVIEW BEFORE APPLYING"
-      ).trim(),
+    recommendation: String(
+      data?.recommendation || "REVIEW BEFORE APPLYING"
+    ).trim(),
 
-    recommendationReason:
-      String(
-        data?.recommendationReason || ""
-      ).trim(),
+    recommendationReason: String(
+      data?.recommendationReason || ""
+    ).trim(),
 
     breakdown: {
-      requiredQualifications: score(
-        breakdown.requiredQualifications
+      requiredQualifications: clamp(
+        b.requiredQualifications
       ),
 
-      experienceAlignment: score(
-        breakdown.experienceAlignment
+      experienceAlignment: clamp(
+        b.experienceAlignment
       ),
 
-      skillsAlignment: score(
-        breakdown.skillsAlignment
+      skillsAlignment: clamp(
+        b.skillsAlignment
       ),
 
-      preferredQualifications: score(
-        breakdown.preferredQualifications
+      preferredQualifications: clamp(
+        b.preferredQualifications
       ),
 
-      educationCertifications: score(
-        breakdown.educationCertifications
+      educationCertifications: clamp(
+        b.educationCertifications
       ),
 
-      keywordsTerminology: score(
-        breakdown.keywordsTerminology
+      keywordsTerminology: clamp(
+        b.keywordsTerminology
       ),
 
-      resumeAtsStructure: score(
-        breakdown.resumeAtsStructure
+      resumeAtsStructure: clamp(
+        b.resumeAtsStructure
       ),
     },
 
-    areYouQualified:
-      String(
-        data?.areYouQualified || ""
-      ).trim(),
+    areYouQualified: String(
+      data?.areYouQualified || ""
+    ).trim(),
 
-    competitivePosition:
-      String(
-        data?.competitivePosition || ""
-      ).trim(),
+    competitivePosition: String(
+      data?.competitivePosition || ""
+    ).trim(),
 
-    employerFirstImpression:
-      String(
-        data?.employerFirstImpression || ""
-      ).trim(),
+    employerFirstImpression: String(
+      data?.employerFirstImpression || ""
+    ).trim(),
 
     strongestEvidence: list(
       data?.strongestEvidence
@@ -169,7 +152,7 @@ function normalize(data: any) {
 
     fixFirst: list(
       data?.fixFirst
-    ).slice(0, 6),
+    ).slice(0, 5),
 
     tailoringRecommendations: list(
       data?.tailoringRecommendations
@@ -189,21 +172,19 @@ function normalize(data: any) {
 
     likelyInterviewQuestions: list(
       data?.likelyInterviewQuestions
-    ).slice(0, 8),
+    ).slice(0, 6),
 
     concernsToPrepareFor: list(
       data?.concernsToPrepareFor
     ),
 
-    nextMove:
-      String(
-        data?.nextMove || ""
-      ).trim(),
+    nextMove: String(
+      data?.nextMove || ""
+    ).trim(),
 
-    coachingSummary:
-      String(
-        data?.coachingSummary || ""
-      ).trim(),
+    coachingSummary: String(
+      data?.coachingSummary || ""
+    ).trim(),
   };
 }
 
@@ -221,6 +202,16 @@ export async function GET() {
 export async function POST(
   req: NextRequest
 ) {
+  const controller = new AbortController();
+
+  /*
+    Stop our Anthropic request BEFORE
+    Vercel kills the entire function.
+  */
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 45000);
+
   try {
     const apiKey =
       process.env.ANTHROPIC_API_KEY;
@@ -253,7 +244,7 @@ export async function POST(
       ).trim();
 
     const resumeMetadata =
-      body?.resumeMetadata || {};
+      body?.resumeMetadata ?? {};
 
     if (jobDescription.length < 80) {
       return NextResponse.json(
@@ -276,45 +267,67 @@ export async function POST(
     }
 
     /*
-      Keep the request compact.
-
-      Resume + JD are already large.
-      We do NOT need an enormous system prompt
-      or a 6,000-token response.
+      Keep input controlled so a very long
+      resume or posting doesn't slow the route.
     */
+    const trimmedJob =
+      jobDescription.slice(0, 10000);
+
+    const trimmedResume =
+      resumeText.slice(0, 10000);
 
     const prompt = `
-You are HireMinds Job Match Analyzer, an ATS-style screening and career coaching system.
+You are the HireMinds Career Coach.
 
-Analyze ONE resume against ONE job description.
+Compare ONE resume to ONE job description.
 
-IMPORTANT RULES:
+Your job is to provide:
+- ATS-style screening
+- qualification analysis
+- resume strategy
+- job-fit guidance
+- interview preparation
 
-- Never invent candidate experience, skills, certifications, licenses, education, accomplishments, dates, software, or credentials.
-- "Not found on the resume" does NOT mean the candidate does not possess it.
-- Use "not clearly demonstrated on the resume" when appropriate.
-- Required qualifications carry more importance than preferred qualifications.
-- Do not reward keyword stuffing.
-- Recognize legitimate synonyms and transferable experience.
-- Evaluate career-change experience fairly.
-- A missing preferred qualification should not automatically make someone unqualified.
-- A mandatory missing credential can materially affect the recommendation even when keyword overlap is strong.
-- The recommendation must NOT be determined only by the overall percentage.
+TRUTH RULES
 
-SCORING WEIGHTS:
+Never invent:
+experience, skills, certifications, licenses,
+education, job titles, dates, software,
+accomplishments, or qualifications.
 
-Required Qualifications: 30%
-Experience Alignment: 20%
-Skills Alignment: 15%
-Preferred Qualifications: 10%
-Education / Certifications: 10%
-Keywords / Terminology: 5%
-Resume / ATS Structure: 10%
+"Not found on the resume" does NOT mean
+the candidate does not possess it.
 
-Use genuine 0-100 scores.
-Do not artificially force minimum or maximum scores.
+Required qualifications matter more than
+preferred qualifications.
 
-RECOMMENDATION OPTIONS:
+Recognize legitimate transferable experience.
+
+Do not reward keyword stuffing.
+
+A missing preferred qualification should not
+automatically make someone unqualified.
+
+A mandatory missing credential or qualification
+must be treated as a major concern.
+
+SCORING
+
+Required Qualifications = 30%
+Experience Alignment = 20%
+Skills Alignment = 15%
+Preferred Qualifications = 10%
+Education / Certifications = 10%
+Keywords / Terminology = 5%
+Resume / ATS Structure = 10%
+
+Use real 0-100 scores.
+
+Do not artificially inflate or cap scores.
+
+RECOMMENDATION
+
+Choose the most appropriate:
 
 APPLY NOW
 APPLY AFTER REVISING
@@ -323,42 +336,44 @@ RESEARCH / VERIFY REQUIREMENTS FIRST
 SIGNIFICANT GAPS — CONSIDER A DIFFERENT ROLE
 BUILD QUALIFICATIONS BEFORE APPLYING
 
-CAREER COACH REVIEW:
+The recommendation must consider the actual
+importance of missing qualifications, not only
+the overall percentage.
 
-Explain:
-- whether the candidate is reasonably qualified
-- competitive position
-- recruiter first impression
+COACHING
+
+Be specific.
+
+Tell the candidate:
+- whether they are reasonably qualified
+- their competitive position
+- what the employer may notice first
 - strongest evidence of fit
 - required qualifications met
 - required qualifications unclear
-- required qualifications not demonstrated
+- required qualifications not found
 - preferred qualifications met
-- preferred qualifications missing
-- matched skills and terminology
-- missing or underrepresented skills/terminology
+- preferred qualifications not found
+- matched skills and keywords
+- missing or weakly represented skills
 - what is working
-- possible screen-out risks
-- resume quality/ATS concerns
-- what should be fixed FIRST
+- what could screen them out
+- resume / ATS concerns
+- what to fix first
 - how to tailor the resume truthfully
-- what the candidate should NOT invent
+- what NOT to invent
 - cover letter strategy
 - interview readiness
 - likely interview questions
-- concerns the candidate should prepare to discuss
-- the best next move
+- concerns to prepare for
+- best next move
 
-RESUME QUALITY:
-
-Only comment on formatting/structure that can actually be determined from the supplied text or metadata.
-
-Resume metadata:
-${JSON.stringify(resumeMetadata)}
+Keep each list concise.
+Do not generate essays.
 
 Return ONLY valid JSON.
 
-Use exactly:
+Use exactly this structure:
 
 {
   "overallMatch": 0,
@@ -399,21 +414,42 @@ Use exactly:
   "coachingSummary": ""
 }
 
-JOB TITLE:
+JOB TITLE
+
 ${jobTitle || "Not provided"}
 
-JOB DESCRIPTION:
-${jobDescription.slice(0, 16000)}
+JOB DESCRIPTION
 
-RESUME:
-${resumeText.slice(0, 16000)}
+${trimmedJob}
+
+RESUME
+
+${trimmedResume}
+
+RESUME METADATA
+
+${JSON.stringify({
+  fileName:
+    resumeMetadata?.fileName ?? null,
+
+  pageCount:
+    resumeMetadata?.pageCount ?? null,
+
+  hasImage:
+    resumeMetadata?.hasImage ?? null,
+
+  imageCount:
+    resumeMetadata?.imageCount ?? null,
+})}
 `.trim();
 
-    const anthropicResponse =
+    const anthropic =
       await fetch(
         "https://api.anthropic.com/v1/messages",
         {
           method: "POST",
+
+          signal: controller.signal,
 
           headers: {
             "Content-Type":
@@ -430,12 +466,12 @@ ${resumeText.slice(0, 16000)}
             model: MODEL,
 
             /*
-              3,500 is plenty for this report
-              and significantly lighter than 6,000.
+              We do not need a 6000-token answer.
+              Shorter output = faster response.
             */
-            max_tokens: 3500,
+            max_tokens: 2200,
 
-            temperature: 0.15,
+            temperature: 0.1,
 
             messages: [
               {
@@ -447,38 +483,27 @@ ${resumeText.slice(0, 16000)}
         }
       );
 
-    /*
-      IMPORTANT:
-      Read Anthropic as TEXT first.
+    clearTimeout(timeout);
 
-      That prevents another JSON parser crash
-      if the upstream service ever returns
-      something unexpected.
-    */
+    const raw =
+      await anthropic.text();
 
-    const anthropicText =
-      await anthropicResponse.text();
-
-    if (!anthropicResponse.ok) {
+    if (!anthropic.ok) {
       console.error(
-        "Anthropic status:",
-        anthropicResponse.status
-      );
-
-      console.error(
-        "Anthropic response:",
-        anthropicText
+        "Anthropic error:",
+        anthropic.status,
+        raw
       );
 
       let message =
-        "The AI analysis could not be completed.";
+        "The AI career coach could not complete the analysis.";
 
       try {
-        const parsedError =
-          JSON.parse(anthropicText);
+        const parsed =
+          JSON.parse(raw);
 
         message =
-          parsedError?.error?.message ||
+          parsed?.error?.message ||
           message;
       } catch {}
 
@@ -486,41 +511,32 @@ ${resumeText.slice(0, 16000)}
         {
           error: message,
         },
-        {
-          status:
-            anthropicResponse.status >= 400 &&
-            anthropicResponse.status < 600
-              ? anthropicResponse.status
-              : 502,
-        }
+        { status: 502 }
       );
     }
 
-    let anthropicData: any;
+    let data: any;
 
     try {
-      anthropicData =
-        JSON.parse(anthropicText);
+      data = JSON.parse(raw);
     } catch {
       console.error(
-        "Anthropic returned non-JSON:",
-        anthropicText
+        "Unreadable Anthropic response:",
+        raw
       );
 
       return NextResponse.json(
         {
           error:
-            "The AI service returned an unreadable response. Please try again.",
+            "The AI service returned an unreadable response.",
         },
         { status: 502 }
       );
     }
 
-    const aiText =
-      Array.isArray(
-        anthropicData?.content
-      )
-        ? anthropicData.content
+    const output =
+      Array.isArray(data?.content)
+        ? data.content
             .filter(
               (block: any) =>
                 block?.type === "text"
@@ -534,42 +550,43 @@ ${resumeText.slice(0, 16000)}
             .join("\n")
         : "";
 
-    if (!aiText.trim()) {
+    if (!output.trim()) {
       return NextResponse.json(
         {
           error:
-            "The Job Match Analyzer did not return an analysis. Please try again.",
+            "No career coach analysis was returned.",
         },
         { status: 502 }
       );
     }
 
-    let analysis;
-
-    try {
-      analysis =
-        extractJson(aiText);
-    } catch (error) {
-      console.error(
-        "Invalid Job Match JSON:",
-        aiText
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "The career coach completed the review, but the report format could not be read. Please try again.",
-        },
-        { status: 502 }
-      );
-    }
+    const parsed =
+      extractJson(output);
 
     return NextResponse.json(
-      normalize(analysis)
+      normalize(parsed)
     );
   } catch (error: any) {
+    clearTimeout(timeout);
+
+    if (
+      error?.name === "AbortError"
+    ) {
+      console.error(
+        "Job Match Analyzer timed out waiting for Anthropic."
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "The career coach analysis took too long. Please try again.",
+        },
+        { status: 504 }
+      );
+    }
+
     console.error(
-      "Job Match Analyzer API error:",
+      "Job Match Analyzer error:",
       error
     );
 
