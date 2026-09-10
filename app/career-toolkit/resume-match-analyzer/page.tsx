@@ -119,23 +119,7 @@ export default function JobMatchAnalyzerPage() {
         method: "POST",
         body: formData,
       });
-      const responseText = await response.text();
-
-let data: any;
-
-try {
-  data = JSON.parse(responseText);
-} catch {
-  console.error(
-    "Job Match Analyzer returned non-JSON:",
-    responseText
-  );
-
-  throw new Error(
-    responseText?.slice(0, 300) ||
-      "The Job Match Analyzer server returned an unexpected response."
-  );
-}
+      const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Unable to read the resume.");
 
       const text = String(data?.text || data?.parsedText || data?.resumeText || "").trim();
