@@ -19,172 +19,191 @@ function extractJson(text: string) {
   const lastBrace = cleaned.lastIndexOf("}");
 
   if (firstBrace >= 0 && lastBrace > firstBrace) {
-    return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+    return JSON.parse(
+      cleaned.slice(firstBrace, lastBrace + 1)
+    );
   }
 
-  throw new Error("AI response did not contain valid JSON.");
+  throw new Error(
+    "The AI response could not be converted into the required analysis format."
+  );
 }
 
-function clampScore(value: unknown) {
-  const number = Number(value);
+function score(value: unknown) {
+  const n = Number(value);
 
-  if (!Number.isFinite(number)) {
+  if (!Number.isFinite(n)) {
     return 0;
   }
 
-  return Math.max(0, Math.min(100, Math.round(number)));
+  return Math.max(
+    0,
+    Math.min(100, Math.round(n))
+  );
 }
 
-function cleanArray(value: unknown) {
+function list(value: unknown) {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value
-    .map((item) => String(item || "").trim())
+    .map((item) =>
+      String(item ?? "").trim()
+    )
     .filter(Boolean)
-    .slice(0, 12);
+    .slice(0, 10);
 }
 
-function normalizeAnalysis(data: any) {
-  const breakdown = data?.breakdown || {};
+function normalize(data: any) {
+  const breakdown = data?.breakdown ?? {};
 
   return {
-    overallMatch: clampScore(data?.overallMatch),
+    overallMatch: score(data?.overallMatch),
 
-    matchLabel: String(
-      data?.matchLabel || "Career Coach Assessment"
-    ).trim(),
+    matchLabel:
+      String(
+        data?.matchLabel ||
+          "Career Coach Assessment"
+      ).trim(),
 
-    recommendation: String(
-      data?.recommendation || "REVIEW BEFORE APPLYING"
-    ).trim(),
+    recommendation:
+      String(
+        data?.recommendation ||
+          "REVIEW BEFORE APPLYING"
+      ).trim(),
 
-    recommendationReason: String(
-      data?.recommendationReason || ""
-    ).trim(),
+    recommendationReason:
+      String(
+        data?.recommendationReason || ""
+      ).trim(),
 
     breakdown: {
-      requiredQualifications: clampScore(
+      requiredQualifications: score(
         breakdown.requiredQualifications
       ),
 
-      experienceAlignment: clampScore(
+      experienceAlignment: score(
         breakdown.experienceAlignment
       ),
 
-      skillsAlignment: clampScore(
+      skillsAlignment: score(
         breakdown.skillsAlignment
       ),
 
-      preferredQualifications: clampScore(
+      preferredQualifications: score(
         breakdown.preferredQualifications
       ),
 
-      educationCertifications: clampScore(
+      educationCertifications: score(
         breakdown.educationCertifications
       ),
 
-      keywordsTerminology: clampScore(
+      keywordsTerminology: score(
         breakdown.keywordsTerminology
       ),
 
-      resumeAtsStructure: clampScore(
+      resumeAtsStructure: score(
         breakdown.resumeAtsStructure
       ),
     },
 
-    areYouQualified: String(
-      data?.areYouQualified || ""
-    ).trim(),
+    areYouQualified:
+      String(
+        data?.areYouQualified || ""
+      ).trim(),
 
-    competitivePosition: String(
-      data?.competitivePosition || ""
-    ).trim(),
+    competitivePosition:
+      String(
+        data?.competitivePosition || ""
+      ).trim(),
 
-    employerFirstImpression: String(
-      data?.employerFirstImpression || ""
-    ).trim(),
+    employerFirstImpression:
+      String(
+        data?.employerFirstImpression || ""
+      ).trim(),
 
-    strongestEvidence: cleanArray(
+    strongestEvidence: list(
       data?.strongestEvidence
     ),
 
-    requiredQualificationsMet: cleanArray(
+    requiredQualificationsMet: list(
       data?.requiredQualificationsMet
     ),
 
-    requiredQualificationsUnclear: cleanArray(
+    requiredQualificationsUnclear: list(
       data?.requiredQualificationsUnclear
     ),
 
-    requiredQualificationsNotFound: cleanArray(
+    requiredQualificationsNotFound: list(
       data?.requiredQualificationsNotFound
     ),
 
-    preferredQualificationsMet: cleanArray(
+    preferredQualificationsMet: list(
       data?.preferredQualificationsMet
     ),
 
-    preferredQualificationsNotFound: cleanArray(
+    preferredQualificationsNotFound: list(
       data?.preferredQualificationsNotFound
     ),
 
-    matchedSkillsKeywords: cleanArray(
+    matchedSkillsKeywords: list(
       data?.matchedSkillsKeywords
     ),
 
-    missingSkillsKeywords: cleanArray(
+    missingSkillsKeywords: list(
       data?.missingSkillsKeywords
     ),
 
-    whatIsWorking: cleanArray(
+    whatIsWorking: list(
       data?.whatIsWorking
     ),
 
-    screenOutRisks: cleanArray(
+    screenOutRisks: list(
       data?.screenOutRisks
     ),
 
-    resumeQualityFlags: cleanArray(
+    resumeQualityFlags: list(
       data?.resumeQualityFlags
     ),
 
-    fixFirst: cleanArray(
+    fixFirst: list(
       data?.fixFirst
     ).slice(0, 6),
 
-    tailoringRecommendations: cleanArray(
+    tailoringRecommendations: list(
       data?.tailoringRecommendations
     ),
 
-    doNotInvent: cleanArray(
+    doNotInvent: list(
       data?.doNotInvent
     ),
 
-    coverLetterStrategy: cleanArray(
+    coverLetterStrategy: list(
       data?.coverLetterStrategy
     ),
 
-    interviewReadiness: cleanArray(
+    interviewReadiness: list(
       data?.interviewReadiness
     ),
 
-    likelyInterviewQuestions: cleanArray(
+    likelyInterviewQuestions: list(
       data?.likelyInterviewQuestions
     ).slice(0, 8),
 
-    concernsToPrepareFor: cleanArray(
+    concernsToPrepareFor: list(
       data?.concernsToPrepareFor
     ),
 
-    nextMove: String(
-      data?.nextMove || ""
-    ).trim(),
+    nextMove:
+      String(
+        data?.nextMove || ""
+      ).trim(),
 
-    coachingSummary: String(
-      data?.coachingSummary || ""
-    ).trim(),
+    coachingSummary:
+      String(
+        data?.coachingSummary || ""
+      ).trim(),
   };
 }
 
@@ -199,7 +218,9 @@ export async function GET() {
   });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest
+) {
   try {
     const apiKey =
       process.env.ANTHROPIC_API_KEY;
@@ -216,17 +237,20 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    const jobTitle = String(
-      body?.jobTitle || ""
-    ).trim();
+    const jobTitle =
+      String(
+        body?.jobTitle || ""
+      ).trim();
 
-    const jobDescription = String(
-      body?.jobDescription || ""
-    ).trim();
+    const jobDescription =
+      String(
+        body?.jobDescription || ""
+      ).trim();
 
-    const resumeText = String(
-      body?.resumeText || ""
-    ).trim();
+    const resumeText =
+      String(
+        body?.resumeText || ""
+      ).trim();
 
     const resumeMetadata =
       body?.resumeMetadata || {};
@@ -235,7 +259,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Please provide a more complete job description.",
+            "Please provide a complete job description.",
         },
         { status: 400 }
       );
@@ -251,200 +275,90 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = `
-You are HireMinds Job Match Analyzer and Career Coach.
+    /*
+      Keep the request compact.
 
-You are reviewing one real resume against one real job description.
+      Resume + JD are already large.
+      We do NOT need an enormous system prompt
+      or a 6,000-token response.
+    */
 
-You are NOT a generic keyword scanner.
+    const prompt = `
+You are HireMinds Job Match Analyzer, an ATS-style screening and career coaching system.
 
-You combine:
+Analyze ONE resume against ONE job description.
 
-1. ATS-style screening
-2. recruiter judgment
-3. resume strategy
-4. career coaching
-5. interview preparation
+IMPORTANT RULES:
 
-IMPORTANT TRUTH RULES:
+- Never invent candidate experience, skills, certifications, licenses, education, accomplishments, dates, software, or credentials.
+- "Not found on the resume" does NOT mean the candidate does not possess it.
+- Use "not clearly demonstrated on the resume" when appropriate.
+- Required qualifications carry more importance than preferred qualifications.
+- Do not reward keyword stuffing.
+- Recognize legitimate synonyms and transferable experience.
+- Evaluate career-change experience fairly.
+- A missing preferred qualification should not automatically make someone unqualified.
+- A mandatory missing credential can materially affect the recommendation even when keyword overlap is strong.
+- The recommendation must NOT be determined only by the overall percentage.
 
-- Never invent experience.
-- Never invent credentials.
-- Never invent education.
-- Never invent certifications.
-- Never invent licenses.
-- Never invent accomplishments.
-- Never invent dates.
-- Never invent job titles.
-- Never invent software or tools.
-- Never invent skills.
-
-If something is not clearly shown on the resume, say:
-
-"Not clearly demonstrated on the resume"
-
-or
-
-"Not found on the resume"
-
-Do NOT automatically say the candidate does not have it.
-
-Required qualifications matter more than preferred qualifications.
-
-A candidate may still be a strong applicant even if preferred qualifications are missing.
-
-A candidate may still be a weak applicant even with many matching keywords if a mandatory qualification is missing.
-
-Do not reward keyword stuffing.
-
-Recognize reasonable synonyms and transferable experience.
-
-When the candidate appears to be changing careers, evaluate transferable experience rather than automatically treating different job titles as unrelated.
-
-If the candidate appears overqualified, explain whether this may be a concern and how the candidate may prepare to address genuine interest in the role.
-
-Do not infer protected characteristics.
-
---------------------------------------------------
-
-SCORING
-
-Score each category from 0 to 100.
-
-Use approximately these weights:
+SCORING WEIGHTS:
 
 Required Qualifications: 30%
-
 Experience Alignment: 20%
-
 Skills Alignment: 15%
-
 Preferred Qualifications: 10%
-
 Education / Certifications: 10%
-
 Keywords / Terminology: 5%
-
 Resume / ATS Structure: 10%
 
-Overall score must be a real score.
+Use genuine 0-100 scores.
+Do not artificially force minimum or maximum scores.
 
-Do not artificially force a minimum score.
-
-Do not artificially cap a strong candidate below 100.
-
-The overall recommendation must NOT be based only on the percentage.
-
---------------------------------------------------
-
-CRITICAL REQUIREMENT RULE
-
-If the job requires a mandatory:
-
-- license
-- certification
-- degree
-- security clearance
-- legal qualification
-- schedule requirement
-- location requirement
-- physical requirement
-- specific professional credential
-- or another clear hard requirement
-
-and the resume does not demonstrate it, identify it prominently.
-
-Do not allow keyword overlap to hide a major qualification concern.
-
---------------------------------------------------
-
-CAREER COACH RECOMMENDATIONS
-
-Use one of these recommendations when appropriate:
+RECOMMENDATION OPTIONS:
 
 APPLY NOW
-
 APPLY AFTER REVISING
-
 APPLY, BUT PREPARE TO EXPLAIN GAPS
-
 RESEARCH / VERIFY REQUIREMENTS FIRST
-
 SIGNIFICANT GAPS — CONSIDER A DIFFERENT ROLE
-
 BUILD QUALIFICATIONS BEFORE APPLYING
 
---------------------------------------------------
+CAREER COACH REVIEW:
 
-CAREER COACHING QUESTIONS TO ANSWER
+Explain:
+- whether the candidate is reasonably qualified
+- competitive position
+- recruiter first impression
+- strongest evidence of fit
+- required qualifications met
+- required qualifications unclear
+- required qualifications not demonstrated
+- preferred qualifications met
+- preferred qualifications missing
+- matched skills and terminology
+- missing or underrepresented skills/terminology
+- what is working
+- possible screen-out risks
+- resume quality/ATS concerns
+- what should be fixed FIRST
+- how to tailor the resume truthfully
+- what the candidate should NOT invent
+- cover letter strategy
+- interview readiness
+- likely interview questions
+- concerns the candidate should prepare to discuss
+- the best next move
 
-The candidate should understand:
+RESUME QUALITY:
 
-- Am I reasonably qualified?
-- What is my competitive position?
-- What will the recruiter probably notice first?
-- What is working in my resume?
-- What could screen me out?
-- What is actually missing?
-- What is simply not clearly presented?
-- What should I fix first?
-- How should I tailor this resume?
-- What should I NOT add or invent?
-- Is a cover letter worthwhile?
-- What should I prepare for in an interview?
-- What concerns might the employer raise?
-- Should I apply now, revise first, research first, or redirect my search?
+Only comment on formatting/structure that can actually be determined from the supplied text or metadata.
 
---------------------------------------------------
-
-RESUME QUALITY REVIEW
-
-Assess only what the provided resume text and metadata support.
-
-Review:
-
-- page count if supplied
-- detected images if supplied
-- contact information
-- section headings
-- summary length
-- skill section length
-- overly dense writing
-- weak or generic bullets
-- measurable accomplishments
-- chronology clarity
-- repetition
-- obvious missing dates
-- obvious missing employers
-- ATS-friendly organization when reasonably inferable
-
-Do NOT claim you detected visual formatting that is not available in the supplied data.
-
-If metadata does not confirm images, do not claim a photo exists.
-
-If page count is unavailable, do not invent one.
-
---------------------------------------------------
-
-PRIORITY
-
-Do not overwhelm the candidate with a random list.
-
-The "fixFirst" section must contain only the most important 3 to 6 actions.
-
-Prioritize changes that could materially improve screening or recruiter understanding.
-
---------------------------------------------------
-
-OUTPUT
+Resume metadata:
+${JSON.stringify(resumeMetadata)}
 
 Return ONLY valid JSON.
 
-No Markdown.
-
-No explanations outside the JSON.
-
-Use exactly this structure:
+Use exactly:
 
 {
   "overallMatch": 0,
@@ -485,74 +399,14 @@ Use exactly this structure:
   "coachingSummary": ""
 }
 
-Write like a strong professional career coach.
-
-Be specific to the candidate and the actual job.
-
-Do not use generic filler.
-
-Do not be patronizing.
-
-Do not exaggerate certainty.
-`.trim();
-
-    const metadata = {
-      fileName:
-        resumeMetadata?.fileName || null,
-
-      pageCount:
-        typeof resumeMetadata?.pageCount ===
-        "number"
-          ? resumeMetadata.pageCount
-          : null,
-
-      hasImage:
-        typeof resumeMetadata?.hasImage ===
-        "boolean"
-          ? resumeMetadata.hasImage
-          : null,
-
-      imageCount:
-        typeof resumeMetadata?.imageCount ===
-        "number"
-          ? resumeMetadata.imageCount
-          : null,
-    };
-
-    const userPrompt = `
 JOB TITLE:
-
 ${jobTitle || "Not provided"}
 
---------------------------------------------------
-
 JOB DESCRIPTION:
-
-${jobDescription}
-
---------------------------------------------------
+${jobDescription.slice(0, 16000)}
 
 RESUME:
-
-${resumeText}
-
---------------------------------------------------
-
-RESUME METADATA:
-
-${JSON.stringify(metadata)}
-
---------------------------------------------------
-
-Analyze this candidate against this specific job.
-
-Follow all truth rules.
-
-Separate required qualifications from preferred qualifications.
-
-Do not treat "not shown on the resume" as proof the candidate does not possess something.
-
-Return ONLY the required JSON.
+${resumeText.slice(0, 16000)}
 `.trim();
 
     const anthropicResponse =
@@ -565,7 +419,8 @@ Return ONLY the required JSON.
             "Content-Type":
               "application/json",
 
-            "x-api-key": apiKey,
+            "x-api-key":
+              apiKey,
 
             "anthropic-version":
               "2023-06-01",
@@ -574,42 +429,94 @@ Return ONLY the required JSON.
           body: JSON.stringify({
             model: MODEL,
 
-            max_tokens: 6000,
+            /*
+              3,500 is plenty for this report
+              and significantly lighter than 6,000.
+            */
+            max_tokens: 3500,
 
-            temperature: 0.2,
-
-            system: systemPrompt,
+            temperature: 0.15,
 
             messages: [
               {
                 role: "user",
-                content: userPrompt,
+                content: prompt,
               },
             ],
           }),
         }
       );
 
-    const anthropicData =
-      await anthropicResponse.json();
+    /*
+      IMPORTANT:
+      Read Anthropic as TEXT first.
+
+      That prevents another JSON parser crash
+      if the upstream service ever returns
+      something unexpected.
+    */
+
+    const anthropicText =
+      await anthropicResponse.text();
 
     if (!anthropicResponse.ok) {
       console.error(
-        "Job Match Analyzer Anthropic error:",
-        anthropicData
+        "Anthropic status:",
+        anthropicResponse.status
+      );
+
+      console.error(
+        "Anthropic response:",
+        anthropicText
+      );
+
+      let message =
+        "The AI analysis could not be completed.";
+
+      try {
+        const parsedError =
+          JSON.parse(anthropicText);
+
+        message =
+          parsedError?.error?.message ||
+          message;
+      } catch {}
+
+      return NextResponse.json(
+        {
+          error: message,
+        },
+        {
+          status:
+            anthropicResponse.status >= 400 &&
+            anthropicResponse.status < 600
+              ? anthropicResponse.status
+              : 502,
+        }
+      );
+    }
+
+    let anthropicData: any;
+
+    try {
+      anthropicData =
+        JSON.parse(anthropicText);
+    } catch {
+      console.error(
+        "Anthropic returned non-JSON:",
+        anthropicText
       );
 
       return NextResponse.json(
         {
           error:
-            anthropicData?.error?.message ||
-            "The Job Match Analyzer could not complete the analysis.",
+            "The AI service returned an unreadable response. Please try again.",
         },
         { status: 502 }
       );
     }
 
-    const output =
+    const aiText =
       Array.isArray(
         anthropicData?.content
       )
@@ -620,46 +527,49 @@ Return ONLY the required JSON.
             )
             .map(
               (block: any) =>
-                block?.text || ""
+                String(
+                  block?.text || ""
+                )
             )
             .join("\n")
         : "";
 
-    if (!output.trim()) {
+    if (!aiText.trim()) {
       return NextResponse.json(
         {
           error:
-            "The Job Match Analyzer returned an empty response.",
+            "The Job Match Analyzer did not return an analysis. Please try again.",
         },
         { status: 502 }
       );
     }
 
-    let parsed;
+    let analysis;
 
     try {
-      parsed = extractJson(output);
+      analysis =
+        extractJson(aiText);
     } catch (error) {
       console.error(
-        "Job Match Analyzer invalid JSON:",
-        output
+        "Invalid Job Match JSON:",
+        aiText
       );
 
       return NextResponse.json(
         {
           error:
-            "The analysis was generated, but the response format could not be read. Please try again.",
+            "The career coach completed the review, but the report format could not be read. Please try again.",
         },
         { status: 502 }
       );
     }
 
     return NextResponse.json(
-      normalizeAnalysis(parsed)
+      normalize(analysis)
     );
   } catch (error: any) {
     console.error(
-      "Job Match Analyzer route error:",
+      "Job Match Analyzer API error:",
       error
     );
 
@@ -667,7 +577,7 @@ Return ONLY the required JSON.
       {
         error:
           error?.message ||
-          "Something went wrong while analyzing the resume and job description.",
+          "Unable to complete the Job Match analysis.",
       },
       { status: 500 }
     );
