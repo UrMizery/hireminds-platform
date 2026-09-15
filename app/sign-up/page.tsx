@@ -1,44 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type AccessMethod = "subscription" | "referral";
-type PlanKey = "monthly" | "four_month" | "annual";
-
-const PLANS: Array<{
-  key: PlanKey;
-  title: string;
-  price: string;
-  billing: string;
-  equivalent: string;
-  badge?: string;
-}> = [
-  {
-    key: "monthly",
-    title: "Monthly",
-    price: "$24.99",
-    billing: "per month",
-    equivalent: "Flexible monthly access",
-    badge: "START HERE",
-  },
-  {
-    key: "four_month",
-    title: "4-Month",
-    price: "$79.96",
-    billing: "every 4 months",
-    equivalent: "$19.99/mo equivalent",
-    badge: "SAVE 20%",
-  },
-  {
-    key: "annual",
-    title: "Annual",
-    price: "$179.88",
-    billing: "per year • paid in full",
-    equivalent: "$14.99/mo equivalent",
-    badge: "BEST VALUE",
-  },
-];
 
 const IMPACT_ITEMS = [
   {
@@ -70,7 +35,6 @@ export default function SignupPage() {
   const [accessMethod, setAccessMethod] =
     useState<AccessMethod>("subscription");
 
-  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("monthly");
   const [referralCode, setReferralCode] = useState("");
 
   const [ageConfirmed, setAgeConfirmed] = useState(false);
@@ -80,11 +44,6 @@ export default function SignupPage() {
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const selectedPlanDetails = useMemo(
-    () => PLANS.find((plan) => plan.key === selectedPlan),
-    [selectedPlan]
-  );
 
   function clearMessage() {
     setMessage("");
@@ -96,18 +55,6 @@ export default function SignupPage() {
       headers: {
         "Content-Type": "application/json",
       },
-
-      /*
-        IMPORTANT:
-        The server validator expects the property name "code".
-        It returns:
-        {
-          valid: true,
-          code: "...",
-          expiresAt: "...",
-          message: "Referral code verified."
-        }
-      */
       body: JSON.stringify({
         code,
       }),
@@ -131,15 +78,15 @@ export default function SignupPage() {
     if (!response.ok || !data.valid) {
       throw new Error(
         data.message ||
-          "This referral code is not active or recognized. Please check the code and try again."
+          "This referral code is not active or available. Please check the code and try again."
       );
     }
 
     return data;
   }
 
-  async function createAccount(options: {
-    normalizedReferralCode?: string | null;
+  async function createReferralAccount(options: {
+    normalizedReferralCode: string;
   }) {
     const cleanFullName = fullName.trim();
     const cleanPhone = phone.trim();
@@ -148,7 +95,7 @@ export default function SignupPage() {
     const cleanEmail = email.trim().toLowerCase();
 
     const normalizedReferralCode =
-      options.normalizedReferralCode?.trim() || null;
+      options.normalizedReferralCode.trim();
 
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
@@ -160,12 +107,11 @@ export default function SignupPage() {
           city: cleanCity || null,
           state_name: cleanState || null,
           referral_code: normalizedReferralCode,
+
           has_referral_access: false,
           has_paid_access: false,
-          access_tier:
-            accessMethod === "referral"
-              ? "pending_referral_consent"
-              : "pending_payment",
+
+          access_tier: "pending_referral_consent",
         },
       },
     });
@@ -189,10 +135,8 @@ export default function SignupPage() {
       state: cleanState || null,
 
       referral_code: normalizedReferralCode,
-      access_referral_code:
-        accessMethod === "referral" ? normalizedReferralCode : null,
-      access_referral_verified_at:
-        accessMethod === "referral" ? new Date().toISOString() : null,
+      access_referral_code: normalizedReferralCode,
+      access_referral_verified_at: new Date().toISOString(),
 
       referral_consent_accepted: false,
       referral_consent_accepted_at: null,
@@ -200,24 +144,11 @@ export default function SignupPage() {
       has_referral_access: false,
       has_paid_access: false,
 
-      access_tier:
-        accessMethod === "referral"
-          ? "pending_referral_consent"
-          : "pending_payment",
+      access_tier: "pending_referral_consent",
 
-      subscription_status:
-        accessMethod === "subscription" ? "pending_payment" : null,
-
-      subscription_plan:
-        accessMethod === "subscription" ? selectedPlan : null,
-
-      subscription_provider:
-        accessMethod === "subscription" ? "square" : null,
-
-      paid_age_18_confirmed_at:
-        accessMethod === "subscription"
-          ? new Date().toISOString()
-          : null,
+      subscription_status: null,
+      subscription_plan: null,
+      subscription_provider: null,
     };
 
     const { error: profileError } = await supabase
@@ -241,13 +172,18 @@ export default function SignupPage() {
       });
 
     if (activityError) {
-      console.error("Activity tracking error:", activityError);
+      console.error(
+        "Activity tracking error:",
+        activityError
+      );
     }
 
     return user;
   }
 
-  async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSignUp(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
 
     if (loading) return;
@@ -267,7 +203,10 @@ export default function SignupPage() {
       return;
     }
 
-    if (accessMethod === "referral" && !password) {
+    if (
+      accessMethod === "referral" &&
+      !password
+    ) {
       setMessage("Please create a password.");
       return;
     }
@@ -275,19 +214,27 @@ export default function SignupPage() {
     try {
       setLoading(true);
 
+      /*
+        REFERRAL ACCESS
+      */
+
       if (accessMethod === "referral") {
         const code = referralCode.trim();
 
         if (!code) {
-          throw new Error("Please enter your referral code.");
+          throw new Error(
+            "Please enter your referral code."
+          );
         }
 
-        const referral = await validateReferralCode(code);
+        const referral =
+          await validateReferralCode(code);
 
         const normalizedReferralCode =
-          referral.code || code.trim().toUpperCase();
+          referral.code ||
+          code.trim().toUpperCase();
 
-        await createAccount({
+        await createReferralAccount({
           normalizedReferralCode,
         });
 
@@ -296,21 +243,24 @@ export default function SignupPage() {
             "hireminds_pending_referral_code",
             normalizedReferralCode
           );
-          localStorage.setItem(
-            "hireminds_pending_referral_expires_at",
-            referral.expiresAt || "2026-12-31T23:59:59-05:00"
-          );
+
+          if (referral.expiresAt) {
+            localStorage.setItem(
+              "hireminds_pending_referral_expires_at",
+              referral.expiresAt
+            );
+          }
         } catch {
           // Database/server validation remains authoritative.
         }
 
-        /*
-          Referral code was already validated on Signup.
-          /access is the consent + required acknowledgment page.
-        */
         window.location.href = "/access";
         return;
       }
+
+      /*
+        PAID ACCESS
+      */
 
       if (!ageConfirmed) {
         throw new Error(
@@ -320,13 +270,13 @@ export default function SignupPage() {
 
       if (!billingConfirmed) {
         throw new Error(
-          "Please confirm that you understand the price and billing frequency of your selected subscription."
+          "Please confirm that you understand the $2.99 introductory access charge."
         );
       }
 
       if (!renewalConfirmed) {
         throw new Error(
-          "Please confirm that you understand the recurring billing terms."
+          "Please confirm that you understand the automatic $24.99 monthly renewal."
         );
       }
 
@@ -344,7 +294,7 @@ export default function SignupPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            plan: selectedPlan,
+            plan: "monthly",
             fullName: cleanFullName,
             email: cleanEmail,
             phone: phone.trim(),
@@ -354,7 +304,8 @@ export default function SignupPage() {
         }
       );
 
-      const checkoutRaw = await checkoutResponse.text();
+      const checkoutRaw =
+        await checkoutResponse.text();
 
       let checkoutData: {
         ok?: boolean;
@@ -363,12 +314,17 @@ export default function SignupPage() {
       } = {};
 
       try {
-        checkoutData = checkoutRaw ? JSON.parse(checkoutRaw) : {};
+        checkoutData = checkoutRaw
+          ? JSON.parse(checkoutRaw)
+          : {};
       } catch {
         checkoutData = {};
       }
 
-      if (!checkoutResponse.ok || !checkoutData.url) {
+      if (
+        !checkoutResponse.ok ||
+        !checkoutData.url
+      ) {
         throw new Error(
           checkoutData.error ||
             "Stripe checkout could not be started. Please try again."
@@ -381,14 +337,19 @@ export default function SignupPage() {
         error?.message ||
           "We could not complete your signup. Please try again."
       );
+
       setLoading(false);
     }
   }
 
   return (
     <main style={styles.page}>
-      <form onSubmit={handleSignUp} style={styles.shell}>
-        {/* TOP INTRO - KEPT STRONG */}
+      <form
+        onSubmit={handleSignUp}
+        style={styles.shell}
+      >
+        {/* HERO */}
+
         <section style={styles.hero}>
           <div style={styles.heroBlueGlow} />
           <div style={styles.heroSilverGlow} />
@@ -397,43 +358,75 @@ export default function SignupPage() {
             <div style={styles.heroLeft}>
               <div style={styles.brandLine}>
                 <span style={styles.brandDot} />
-                <span style={styles.brandLabel}>HIREMINDS</span>
-                <span style={styles.brandDivider}>/</span>
-                <span style={styles.brandSub}>YOUR CAREER PASSPORT</span>
+
+                <span style={styles.brandLabel}>
+                  HIREMINDS
+                </span>
+
+                <span style={styles.brandDivider}>
+                  /
+                </span>
+
+                <span style={styles.brandSub}>
+                  YOUR CAREER PASSPORT
+                </span>
               </div>
 
               <h1 style={styles.heroTitle}>
                 Don&apos;t just generate a resume.
-                <span style={styles.heroBlueText}> Build your next move.</span>
+                <span style={styles.heroBlueText}>
+                  {" "}
+                  Build your next move.
+                </span>
               </h1>
 
               <p style={styles.heroLead}>
-                HireMinds is more than a resume generator and more than a job
-                board. It is a career-development platform built to help you
-                understand the opportunity, strengthen your application,
-                prepare for the conversation, track your progress, and make
-                smarter career moves.
+                HireMinds is more than a resume
+                generator and more than a job board.
+                It is a career-development platform
+                built to help you understand the
+                opportunity, strengthen your
+                application, prepare for the
+                conversation, track your progress,
+                and make smarter career moves.
               </p>
 
               <div style={styles.heroStatement}>
-                <span style={styles.statementMark}>HM</span>
+                <span style={styles.statementMark}>
+                  HM
+                </span>
+
                 <p style={styles.statementText}>
-                  <strong>A generator gives you a document.</strong>
+                  <strong>
+                    A generator gives you a document.
+                  </strong>
+
                   <br />
-                  HireMinds helps you understand what to do with it.
+
+                  HireMinds helps you understand what
+                  to do with it.
                 </p>
               </div>
             </div>
 
             <aside style={styles.heroRight}>
-              <p style={styles.heroRightEyebrow}>THE HIREMINDS DIFFERENCE</p>
+              <p style={styles.heroRightEyebrow}>
+                THE HIREMINDS DIFFERENCE
+              </p>
 
               <div style={styles.heroRightRow}>
-                <span style={styles.heroRightNumber}>01</span>
+                <span style={styles.heroRightNumber}>
+                  01
+                </span>
+
                 <div>
-                  <strong style={styles.heroRightTitle}>Understand</strong>
+                  <strong style={styles.heroRightTitle}>
+                    Understand
+                  </strong>
+
                   <p style={styles.heroRightText}>
-                    Read the role. Identify what matters. Know where you fit.
+                    Read the role. Identify what
+                    matters. Know where you fit.
                   </p>
                 </div>
               </div>
@@ -441,11 +434,18 @@ export default function SignupPage() {
               <div style={styles.heroRightLine} />
 
               <div style={styles.heroRightRow}>
-                <span style={styles.heroRightNumber}>02</span>
+                <span style={styles.heroRightNumber}>
+                  02
+                </span>
+
                 <div>
-                  <strong style={styles.heroRightTitle}>Position</strong>
+                  <strong style={styles.heroRightTitle}>
+                    Position
+                  </strong>
+
                   <p style={styles.heroRightText}>
-                    Present your experience with intention — not guesswork.
+                    Present your experience with
+                    intention — not guesswork.
                   </p>
                 </div>
               </div>
@@ -453,11 +453,18 @@ export default function SignupPage() {
               <div style={styles.heroRightLine} />
 
               <div style={styles.heroRightRow}>
-                <span style={styles.heroRightNumber}>03</span>
+                <span style={styles.heroRightNumber}>
+                  03
+                </span>
+
                 <div>
-                  <strong style={styles.heroRightTitle}>Move</strong>
+                  <strong style={styles.heroRightTitle}>
+                    Move
+                  </strong>
+
                   <p style={styles.heroRightText}>
-                    Apply smarter, prepare better, and keep building forward.
+                    Apply smarter, prepare better, and
+                    keep building forward.
                   </p>
                 </div>
               </div>
@@ -465,20 +472,32 @@ export default function SignupPage() {
           </div>
         </section>
 
-        {/* SHORTER, STRONGER VALUE SECTION */}
+        {/* VALUE */}
+
         <section style={styles.impactSection}>
           <div style={styles.impactHeader}>
             <div>
-              <p style={styles.eyebrow}>HOW HIREMINDS HELPS</p>
+              <p style={styles.eyebrow}>
+                HOW HIREMINDS HELPS
+              </p>
+
               <h2 style={styles.impactHeadline}>
                 More than tools. A smarter way to move.
               </h2>
             </div>
 
             <div style={styles.startPrice}>
-              <span style={styles.startPriceLabel}>STARTING AT</span>
-              <strong style={styles.startPriceValue}>$24.99</strong>
-              <span style={styles.startPriceSub}>/ month</span>
+              <span style={styles.startPriceLabel}>
+                START FOR
+              </span>
+
+              <strong style={styles.startPriceValue}>
+                $2.99
+              </strong>
+
+              <span style={styles.startPriceSub}>
+                / 5 days
+              </span>
             </div>
           </div>
 
@@ -492,7 +511,9 @@ export default function SignupPage() {
                   : styles.impactSilver;
 
               const textStyle =
-                item.tone === "dark" ? styles.impactTextLight : styles.impactTextDark;
+                item.tone === "dark"
+                  ? styles.impactTextLight
+                  : styles.impactTextDark;
 
               return (
                 <article
@@ -503,10 +524,22 @@ export default function SignupPage() {
                   }}
                 >
                   <div style={styles.impactAccent} />
-                  <h3 style={{ ...styles.impactTitle, ...textStyle }}>
+
+                  <h3
+                    style={{
+                      ...styles.impactTitle,
+                      ...textStyle,
+                    }}
+                  >
                     {item.title}
                   </h3>
-                  <p style={{ ...styles.impactText, ...textStyle }}>
+
+                  <p
+                    style={{
+                      ...styles.impactText,
+                      ...textStyle,
+                    }}
+                  >
                     {item.text}
                   </p>
                 </article>
@@ -515,120 +548,211 @@ export default function SignupPage() {
           </div>
 
           <div style={styles.toolRibbon}>
-            <span style={styles.toolRibbonLabel}>ONE PLATFORM</span>
-            <span style={styles.toolRibbonItem}>Resume Builder</span>
+            <span style={styles.toolRibbonLabel}>
+              ONE PLATFORM
+            </span>
+
+            <span style={styles.toolRibbonItem}>
+              Resume Builder
+            </span>
+
             <span style={styles.toolDot}>•</span>
-            <span style={styles.toolRibbonItem}>Resume Match</span>
+
+            <span style={styles.toolRibbonItem}>
+              Resume Match
+            </span>
+
             <span style={styles.toolDot}>•</span>
-            <span style={styles.toolRibbonItem}>Job Description Analyzer</span>
+
+            <span style={styles.toolRibbonItem}>
+              Job Description Analyzer
+            </span>
+
             <span style={styles.toolDot}>•</span>
-            <span style={styles.toolRibbonItem}>Interview Prep</span>
+
+            <span style={styles.toolRibbonItem}>
+              Interview Prep
+            </span>
+
             <span style={styles.toolDot}>•</span>
-            <span style={styles.toolRibbonItem}>Career Goals</span>
+
+            <span style={styles.toolRibbonItem}>
+              Career Goals
+            </span>
+
             <span style={styles.toolDot}>•</span>
-            <span style={styles.toolRibbonItem}>Job Search Tracking</span>
+
+            <span style={styles.toolRibbonItem}>
+              Job Search Tracking
+            </span>
           </div>
         </section>
 
         {/* ACCOUNT */}
+
         <section style={styles.signupSection}>
           <div style={styles.signupHeader}>
-            <div style={styles.signupNumber}>01</div>
+            <div style={styles.signupNumber}>
+              01
+            </div>
 
             <div>
-              <p style={styles.eyebrow}>CREATE YOUR ACCOUNT</p>
-              <h2 style={styles.signupTitle}>Create Your Career Passport</h2>
+              <p style={styles.eyebrow}>
+                CREATE YOUR ACCOUNT
+              </p>
+
+              <h2 style={styles.signupTitle}>
+                Create Your Career Passport
+              </h2>
+
               <p style={styles.signupText}>
-                Start with your account information, then choose how you will
-                access HireMinds.
+                Start with your information, then
+                choose Paid Access or Referral Access.
               </p>
             </div>
           </div>
 
           <div style={styles.formGrid}>
             <label style={styles.field}>
-              <span style={styles.label}>Full Name *</span>
+              <span style={styles.label}>
+                Full Name *
+              </span>
+
               <input
                 placeholder="Full Name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) =>
+                  setFullName(e.target.value)
+                }
                 style={styles.input}
                 required
               />
             </label>
 
             <label style={styles.field}>
-              <span style={styles.label}>Phone Number</span>
+              <span style={styles.label}>
+                Phone Number
+              </span>
+
               <input
                 placeholder="Phone Number"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) =>
+                  setPhone(e.target.value)
+                }
                 style={styles.input}
               />
             </label>
 
             <label style={styles.field}>
-              <span style={styles.label}>City</span>
+              <span style={styles.label}>
+                City
+              </span>
+
               <input
                 placeholder="City"
                 value={city}
-                onChange={(e) => setCity(e.target.value)}
+                onChange={(e) =>
+                  setCity(e.target.value)
+                }
                 style={styles.input}
               />
             </label>
 
             <label style={styles.field}>
-              <span style={styles.label}>State</span>
+              <span style={styles.label}>
+                State
+              </span>
+
               <input
                 placeholder="State"
                 value={stateName}
-                onChange={(e) => setStateName(e.target.value)}
+                onChange={(e) =>
+                  setStateName(e.target.value)
+                }
                 style={styles.input}
               />
             </label>
 
-            <label style={{ ...styles.field, ...styles.fullWidth }}>
-              <span style={styles.label}>Email *</span>
+            <label
+              style={{
+                ...styles.field,
+                ...styles.fullWidth,
+              }}
+            >
+              <span style={styles.label}>
+                Email *
+              </span>
+
               <input
                 placeholder="Email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
                 style={styles.input}
                 required
               />
             </label>
 
             {accessMethod === "referral" ? (
-              <label style={{ ...styles.field, ...styles.fullWidth }}>
-                <span style={styles.label}>Password *</span>
+              <label
+                style={{
+                  ...styles.field,
+                  ...styles.fullWidth,
+                }}
+              >
+                <span style={styles.label}>
+                  Password *
+                </span>
 
                 <div style={styles.passwordWrap}>
                   <input
                     placeholder="Password"
-                    type={showPassword ? "text" : "password"}
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
                     style={styles.passwordInput}
                     required
                   />
 
                   <button
                     type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
+                    onClick={() =>
+                      setShowPassword(
+                        (prev) => !prev
+                      )
+                    }
                     style={styles.passwordToggle}
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword
+                      ? "Hide"
+                      : "Show"}
                   </button>
                 </div>
               </label>
             ) : (
-              <div style={{ ...styles.field, ...styles.fullWidth }}>
-                <span style={styles.label}>Password</span>
-                <div style={styles.selectedSummary}>
-                  <span style={styles.selectedValue}>
-                    You will create your HireMinds password after Stripe confirms your payment.
-                  </span>
+              <div
+                style={{
+                  ...styles.field,
+                  ...styles.fullWidth,
+                }}
+              >
+                <span style={styles.label}>
+                  Password
+                </span>
+
+                <div style={styles.infoBar}>
+                  You will create your HireMinds
+                  password after Stripe confirms your
+                  payment.
                 </div>
               </div>
             )}
@@ -636,15 +760,27 @@ export default function SignupPage() {
         </section>
 
         {/* ACCESS */}
+
         <section style={styles.signupSection}>
           <div style={styles.signupHeader}>
-            <div style={styles.signupNumberBlue}>02</div>
+            <div style={styles.signupNumberBlue}>
+              02
+            </div>
 
             <div>
-              <p style={styles.eyebrow}>CHOOSE YOUR ACCESS</p>
-              <h2 style={styles.signupTitle}>Choose how you&apos;ll continue.</h2>
+              <p style={styles.eyebrow}>
+                CHOOSE YOUR ACCESS
+              </p>
+
+              <h2 style={styles.signupTitle}>
+                How would you like to access
+                HireMinds?
+              </h2>
+
               <p style={styles.signupText}>
-                Select a subscription or enter an approved referral code.
+                Choose Paid Access or use an active
+                referral code that was provided to
+                you.
               </p>
             </div>
           </div>
@@ -663,7 +799,7 @@ export default function SignupPage() {
                   : {}),
               }}
             >
-              Subscription
+              Paid Access
             </button>
 
             <button
@@ -683,80 +819,94 @@ export default function SignupPage() {
             </button>
           </div>
 
+          {/* PAID ACCESS */}
+
           {accessMethod === "subscription" ? (
             <>
-              <div style={styles.planGrid}>
-                {PLANS.map((plan) => {
-                  const selected = selectedPlan === plan.key;
+              <div style={styles.paidOffer}>
+                <div style={styles.paidOfferTop}>
+                  <div>
+                    <span style={styles.paidBadge}>
+                      5-DAY INTRODUCTORY ACCESS
+                    </span>
 
-                  return (
-                    <button
-                      type="button"
-                      key={plan.key}
-                      onClick={() => {
-                        clearMessage();
-                        setSelectedPlan(plan.key);
-                      }}
-                      style={{
-                        ...styles.planCard,
-                        ...(selected ? styles.planCardSelected : {}),
-                      }}
+                    <h3 style={styles.paidTitle}>
+                      HireMinds All Access
+                    </h3>
+
+                    <p style={styles.paidLead}>
+                      Explore HireMinds and unlock
+                      your career-development tools.
+                    </p>
+                  </div>
+
+                  <div style={styles.paidPriceBlock}>
+                    <span style={styles.paidPrice}>
+                      $2.99
+                    </span>
+
+                    <span style={styles.paidPriceTerm}>
+                      first 5 days
+                    </span>
+                  </div>
+                </div>
+
+                <div style={styles.renewalBar}>
+                  <div>
+                    <span
+                      style={styles.renewalEyebrow}
                     >
-                      <div style={styles.planTop}>
-                        <span style={styles.planTitle}>{plan.title}</span>
-                        {plan.badge ? (
-                          <span
-                            style={{
-                              ...styles.planBadge,
-                              ...(plan.key === "monthly"
-                                ? styles.planBadgeBlue
-                                : {}),
-                            }}
-                          >
-                            {plan.badge}
-                          </span>
-                        ) : null}
-                      </div>
+                      AFTER YOUR FIRST 5 DAYS
+                    </span>
 
-                      <span style={styles.planPrice}>{plan.price}</span>
-                      <span style={styles.planBilling}>{plan.billing}</span>
-                      <span style={styles.planEquivalent}>
-                        {plan.equivalent}
-                      </span>
+                    <strong
+                      style={styles.renewalPrice}
+                    >
+                      $24.99/month
+                    </strong>
+                  </div>
 
-                      <span
-                        style={{
-                          ...styles.planSelect,
-                          ...(selected ? styles.planSelectActive : {}),
-                        }}
-                      >
-                        {selected ? "✓ Selected" : "Select plan"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                  <span style={styles.renewalText}>
+                    Automatically renews unless
+                    canceled.
+                  </span>
+                </div>
 
-              <div style={styles.selectedSummary}>
-                <span style={styles.selectedLabel}>SELECTED PLAN</span>
-                <strong style={styles.selectedValue}>
-                  {selectedPlanDetails?.title} — {selectedPlanDetails?.price}
-                </strong>
+                <div style={styles.offerPoints}>
+                  <span>✓ Full HireMinds access</span>
+
+                  <span>
+                    ✓ Career-development tools
+                  </span>
+
+                  <span>
+                    ✓ Cancel before renewal
+                  </span>
+                </div>
               </div>
 
               <div style={styles.ackPanel}>
-                <p style={styles.ackTitle}>Before continuing</p>
+                <p style={styles.ackTitle}>
+                  Before continuing
+                </p>
 
                 <label style={styles.checkboxRow}>
                   <input
                     type="checkbox"
                     checked={ageConfirmed}
-                    onChange={(e) => setAgeConfirmed(e.target.checked)}
+                    onChange={(e) =>
+                      setAgeConfirmed(
+                        e.target.checked
+                      )
+                    }
                     style={styles.checkbox}
                   />
+
                   <span>
                     I confirm that I am{" "}
-                    <strong>18 years of age or older.</strong>
+                    <strong>
+                      18 years of age or older.
+                    </strong>
                   </span>
                 </label>
 
@@ -764,12 +914,20 @@ export default function SignupPage() {
                   <input
                     type="checkbox"
                     checked={billingConfirmed}
-                    onChange={(e) => setBillingConfirmed(e.target.checked)}
+                    onChange={(e) =>
+                      setBillingConfirmed(
+                        e.target.checked
+                      )
+                    }
                     style={styles.checkbox}
                   />
+
                   <span>
-                    I understand the price and billing frequency of the
-                    subscription plan I selected.
+                    I understand that I will be
+                    charged{" "}
+                    <strong>$2.99 today</strong> for
+                    my first 5 days of HireMinds
+                    access.
                   </span>
                 </label>
 
@@ -777,13 +935,23 @@ export default function SignupPage() {
                   <input
                     type="checkbox"
                     checked={renewalConfirmed}
-                    onChange={(e) => setRenewalConfirmed(e.target.checked)}
+                    onChange={(e) =>
+                      setRenewalConfirmed(
+                        e.target.checked
+                      )
+                    }
                     style={styles.checkbox}
                   />
+
                   <span>
-                    I understand that my subscription will renew according to
-                    the selected billing cycle unless canceled according to the
-                    applicable cancellation terms.
+                    I understand that unless I
+                    cancel, my subscription will
+                    automatically continue at{" "}
+                    <strong>
+                      $24.99 per month
+                    </strong>{" "}
+                    after my 5-day introductory
+                    access period.
                   </span>
                 </label>
 
@@ -791,93 +959,160 @@ export default function SignupPage() {
                   <input
                     type="checkbox"
                     checked={termsConfirmed}
-                    onChange={(e) => setTermsConfirmed(e.target.checked)}
+                    onChange={(e) =>
+                      setTermsConfirmed(
+                        e.target.checked
+                      )
+                    }
                     style={styles.checkbox}
                   />
+
                   <span>
-                    I agree to the HireMinds Terms and Privacy Policy.
+                    I agree to the HireMinds Terms
+                    and Privacy Policy.
                   </span>
                 </label>
 
                 <p style={styles.smallNote}>
-                  Final payment details and authorization are completed during
-                  checkout.
+                  Payment information and final
+                  authorization are completed
+                  securely through Stripe.
                 </p>
               </div>
             </>
           ) : (
+            /* REFERRAL ACCESS */
+
             <div style={styles.referralPanel}>
               <div style={styles.referralIntro}>
-                <div style={styles.referralBadge}>REFERRAL ACCESS</div>
+                <div style={styles.referralBadge}>
+                  REFERRAL ACCESS
+                </div>
 
                 <div>
-                  <h3 style={styles.referralTitle}>Have a Referral Code?</h3>
+                  <h3 style={styles.referralTitle}>
+                    I Have a Referral Code
+                  </h3>
+
                   <p style={styles.referralText}>
-                    Enter the referral code provided to you.
+                    Enter the active referral code
+                    that was provided to you by an
+                    approved program or partner.
                   </p>
                 </div>
               </div>
 
+              <div style={styles.referralAccessBox}>
+                <span
+                  style={styles.referralAccessLabel}
+                >
+                  WHAT REFERRAL ACCESS INCLUDES
+                </span>
+
+                <strong
+                  style={styles.referralAccessTitle}
+                >
+                  One-time 30 days of unlimited
+                  HireMinds access
+                </strong>
+
+                <p
+                  style={styles.referralAccessText}
+                >
+                  Referral access is intended for
+                  eligible participants who have
+                  been provided an active referral
+                  code. Referral access does not
+                  automatically renew and does not
+                  require payment.
+                </p>
+              </div>
+
               <label style={styles.field}>
-                <span style={styles.label}>Referral Code</span>
+                <span style={styles.label}>
+                  Referral Code
+                </span>
+
                 <input
                   placeholder="Enter Referral Code"
                   value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
+                  onChange={(e) =>
+                    setReferralCode(e.target.value)
+                  }
                   style={styles.input}
                   autoComplete="off"
                   spellCheck={false}
                 />
               </label>
 
-              <a
-                href="/contact"
-                style={{
-                  ...styles.referralHelp,
-                  textDecoration: "none",
-                  cursor: "pointer",
-                }}
-              >
-                <span style={styles.referralHelpLabel}>
-                  Need a Referral Code?
-                </span>
-                <strong>Complete the Contact Form →</strong>
-              </a>
+              <div style={styles.previousAccessBox}>
+                <strong>
+                  Previously used referral access?
+                </strong>
 
-              <div style={styles.expirationBox}>
                 <span>
-                  After your referral code is verified, you will continue to
-                  the HireMinds <strong>Consent & Access</strong> page. There
-                  you will review the consent agreement and acknowledge the
-                  referral-access expiration date before access is activated.
+                  If you previously had or used
+                  HireMinds referral access, this
+                  option may no longer be available
+                  for your account. You may choose
+                  Paid Access instead.
                 </span>
               </div>
 
+              <div style={styles.expirationBox}>
+                After your referral code is
+                verified, you will continue to the
+                HireMinds{" "}
+                <strong>
+                  Consent &amp; Access
+                </strong>{" "}
+                page before your referral access is
+                activated.
+              </div>
+
               <p style={styles.smallNote}>
-                Referral access acknowledgment is completed on the next page,
-                so you will not be asked to acknowledge the same term twice.
+                Referral eligibility and access are
+                subject to verification.
               </p>
             </div>
           )}
         </section>
 
-        {message ? <div style={styles.message}>{message}</div> : null}
+        {message ? (
+          <div style={styles.message}>
+            {message}
+          </div>
+        ) : null}
 
-        <button type="submit" style={styles.submitButton} disabled={loading}>
+        <button
+          type="submit"
+          style={styles.submitButton}
+          disabled={loading}
+        >
           <span>
             {loading
               ? "Please wait..."
-              : accessMethod === "subscription"
+              : accessMethod ===
+                "subscription"
               ? "Continue to Secure Payment"
               : "Create Career Passport & Continue to Consent"}
           </span>
-          {!loading ? <span style={styles.buttonArrow}>→</span> : null}
+
+          {!loading ? (
+            <span style={styles.buttonArrow}>
+              →
+            </span>
+          ) : null}
         </button>
 
         <footer style={styles.footer}>
-          <div style={styles.footerBrand}>HIREMINDS</div>
+          <div style={styles.footerBrand}>
+            HIREMINDS
+          </div>
+
           <p style={styles.footerText}>
-            Your career is bigger than one application.
+            Your career is bigger than one
+            application.
           </p>
         </footer>
       </form>
@@ -885,7 +1120,9 @@ export default function SignupPage() {
   );
 }
 
-const styles: { [key: string]: React.CSSProperties } = {
+const styles: {
+  [key: string]: React.CSSProperties;
+} = {
   page: {
     minHeight: "100vh",
     background:
@@ -910,7 +1147,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: "30px",
     backgroundColor: "#ffffff",
     border: "1px solid #cbd2d9",
-    boxShadow: "0 18px 50px rgba(16, 29, 43, 0.11)",
+    boxShadow:
+      "0 18px 50px rgba(16, 29, 43, 0.11)",
   },
 
   heroBlueGlow: {
@@ -941,7 +1179,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     position: "relative",
     zIndex: 1,
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1.45fr) minmax(300px, 0.75fr)",
+    gridTemplateColumns:
+      "minmax(0, 1.45fr) minmax(300px, 0.75fr)",
     gap: "40px",
     alignItems: "stretch",
     padding: "52px",
@@ -966,7 +1205,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: "10px",
     borderRadius: "50%",
     backgroundColor: "#1c79b7",
-    boxShadow: "0 0 0 5px rgba(28, 121, 183, 0.10)",
+    boxShadow:
+      "0 0 0 5px rgba(28, 121, 183, 0.10)",
   },
 
   brandLabel: {
@@ -1054,7 +1294,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: "22px",
     background:
       "linear-gradient(145deg, #111820 0%, #202a34 55%, #174d70 100%)",
-    boxShadow: "0 18px 40px rgba(12, 20, 28, 0.22)",
+    boxShadow:
+      "0 18px 40px rgba(12, 20, 28, 0.22)",
   },
 
   heroRightEyebrow: {
@@ -1103,7 +1344,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     background:
       "linear-gradient(135deg, #ffffff 0%, #f7f9fb 58%, #eef3f7 100%)",
     border: "1px solid #ccd4db",
-    boxShadow: "0 14px 40px rgba(22, 33, 44, 0.07)",
+    boxShadow:
+      "0 14px 40px rgba(22, 33, 44, 0.07)",
   },
 
   impactHeader: {
@@ -1139,7 +1381,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: "15px 18px",
     borderRadius: "16px",
     backgroundColor: "#111820",
-    boxShadow: "0 12px 26px rgba(17, 24, 32, 0.14)",
+    boxShadow:
+      "0 12px 26px rgba(17, 24, 32, 0.14)",
   },
 
   startPriceLabel: {
@@ -1164,7 +1407,8 @@ const styles: { [key: string]: React.CSSProperties } = {
 
   impactGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(250px, 1fr))",
     gap: "14px",
   },
 
@@ -1174,8 +1418,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     minHeight: "175px",
     padding: "24px",
     borderRadius: "20px",
-    border: "1px solid rgba(120, 130, 140, 0.20)",
-    boxShadow: "0 12px 26px rgba(24, 42, 58, 0.08)",
+    border:
+      "1px solid rgba(120, 130, 140, 0.20)",
+    boxShadow:
+      "0 12px 26px rgba(24, 42, 58, 0.08)",
   },
 
   impactBlue: {
@@ -1260,7 +1506,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: "26px",
     backgroundColor: "#ffffff",
     border: "1px solid #cfd5da",
-    boxShadow: "0 14px 40px rgba(21, 32, 43, 0.06)",
+    boxShadow:
+      "0 14px 40px rgba(21, 32, 43, 0.06)",
   },
 
   signupHeader: {
@@ -1282,7 +1529,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#ffffff",
     fontSize: "11px",
     fontWeight: 950,
-    letterSpacing: "0.04em",
   },
 
   signupNumberBlue: {
@@ -1298,8 +1544,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#ffffff",
     fontSize: "11px",
     fontWeight: 950,
-    letterSpacing: "0.04em",
-    boxShadow: "0 8px 18px rgba(23, 111, 174, 0.18)",
   },
 
   signupTitle: {
@@ -1320,7 +1564,8 @@ const styles: { [key: string]: React.CSSProperties } = {
 
   formGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns:
+      "repeat(2, minmax(0, 1fr))",
     gap: "16px",
   },
 
@@ -1381,9 +1626,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 900,
   },
 
+  infoBar: {
+    padding: "14px 16px",
+    borderRadius: "12px",
+    background:
+      "linear-gradient(90deg, #e9edf0 0%, #e6f0f7 100%)",
+    border: "1px solid #cbd6de",
+    color: "#36434e",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
+
   methodTabs: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns:
+      "repeat(2, minmax(0, 1fr))",
     gap: "6px",
     marginBottom: "23px",
     padding: "5px",
@@ -1407,124 +1664,120 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: "#ffffff",
     border: "1px solid #176fae",
     color: "#176fae",
-    boxShadow: "0 5px 14px rgba(23, 111, 174, 0.10)",
+    boxShadow:
+      "0 5px 14px rgba(23, 111, 174, 0.10)",
   },
 
-  planGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))",
-    gap: "14px",
-  },
-
-  planCard: {
-    minHeight: "225px",
-    display: "flex",
-    flexDirection: "column",
-    textAlign: "left",
-    padding: "20px",
-    borderRadius: "18px",
-    border: "1px solid #c7cdd3",
+  paidOffer: {
+    padding: "26px",
+    borderRadius: "20px",
     background:
-      "linear-gradient(180deg, #ffffff 0%, #f0f3f5 100%)",
-    color: "#111820",
-    cursor: "pointer",
+      "linear-gradient(145deg, #101820 0%, #172b3a 65%, #176fae 140%)",
+    boxShadow:
+      "0 16px 36px rgba(15, 29, 41, 0.18)",
   },
 
-  planCardSelected: {
-    border: "2px solid #176fae",
-    background:
-      "linear-gradient(180deg, #ffffff 0%, #eaf5fc 100%)",
-    boxShadow: "0 13px 30px rgba(23, 111, 174, 0.16)",
-  },
-
-  planTop: {
+  paidOfferTop: {
     display: "flex",
-    alignItems: "center",
     justifyContent: "space-between",
-    gap: "10px",
+    alignItems: "flex-start",
+    gap: "24px",
+    flexWrap: "wrap",
   },
 
-  planBadge: {
-    padding: "5px 8px",
+  paidBadge: {
+    display: "inline-flex",
+    padding: "7px 10px",
     borderRadius: "999px",
-    backgroundColor: "#111820",
-    color: "#ffffff",
+    backgroundColor:
+      "rgba(114, 180, 223, 0.14)",
+    border:
+      "1px solid rgba(114, 180, 223, 0.35)",
+    color: "#8dccf2",
     fontSize: "9px",
     fontWeight: 950,
-    letterSpacing: "0.06em",
+    letterSpacing: "0.10em",
   },
 
-  planBadgeBlue: {
-    background:
-      "linear-gradient(90deg, #176fae 0%, #2588c7 100%)",
-  },
-
-  planTitle: {
-    color: "#111820",
-    fontSize: "12px",
+  paidTitle: {
+    margin: "15px 0 0",
+    color: "#ffffff",
+    fontSize: "28px",
     fontWeight: 950,
-    textTransform: "uppercase",
-    letterSpacing: "0.09em",
+    letterSpacing: "-0.025em",
   },
 
-  planPrice: {
-    marginTop: "25px",
-    color: "#111820",
-    fontSize: "34px",
+  paidLead: {
+    margin: "7px 0 0",
+    color: "#c9d3db",
+    fontSize: "13px",
+    lineHeight: 1.6,
+  },
+
+  paidPriceBlock: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+  },
+
+  paidPrice: {
+    color: "#ffffff",
+    fontSize: "50px",
+    lineHeight: 1,
     fontWeight: 950,
-    letterSpacing: "-0.03em",
+    letterSpacing: "-0.05em",
   },
 
-  planBilling: {
-    marginTop: "3px",
-    color: "#707a83",
-    fontSize: "12px",
-  },
-
-  planEquivalent: {
-    marginTop: "8px",
-    color: "#176fae",
+  paidPriceTerm: {
+    marginTop: "5px",
+    color: "#8dccf2",
     fontSize: "12px",
     fontWeight: 850,
   },
 
-  planSelect: {
-    marginTop: "auto",
-    paddingTop: "18px",
-    color: "#78828c",
-    fontSize: "10px",
-    fontWeight: 950,
-    textTransform: "uppercase",
-    letterSpacing: "0.06em",
-  },
-
-  planSelectActive: {
-    color: "#176fae",
-  },
-
-  selectedSummary: {
-    marginTop: "15px",
+  renewalBar: {
+    marginTop: "24px",
     display: "flex",
     justifyContent: "space-between",
-    gap: "14px",
+    gap: "18px",
+    alignItems: "center",
     flexWrap: "wrap",
-    padding: "14px 16px",
-    borderRadius: "12px",
-    background:
-      "linear-gradient(90deg, #e9edf0 0%, #e6f0f7 100%)",
-    border: "1px solid #cbd6de",
+    padding: "16px 18px",
+    borderRadius: "14px",
+    backgroundColor:
+      "rgba(255, 255, 255, 0.08)",
+    border:
+      "1px solid rgba(255, 255, 255, 0.11)",
   },
 
-  selectedLabel: {
-    color: "#68737d",
+  renewalEyebrow: {
+    display: "block",
+    color: "#8dccf2",
     fontSize: "9px",
     fontWeight: 950,
-    letterSpacing: "0.12em",
+    letterSpacing: "0.11em",
+    marginBottom: "4px",
   },
 
-  selectedValue: {
-    color: "#151c23",
-    fontSize: "13px",
+  renewalPrice: {
+    color: "#ffffff",
+    fontSize: "21px",
+    fontWeight: 950,
+  },
+
+  renewalText: {
+    color: "#d5dde3",
+    fontSize: "12px",
+  },
+
+  offerPoints: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "18px",
+    marginTop: "18px",
+    color: "#e6edf2",
+    fontSize: "11px",
+    fontWeight: 750,
   },
 
   ackPanel: {
@@ -1611,32 +1864,53 @@ const styles: { [key: string]: React.CSSProperties } = {
     margin: "4px 0 0",
     color: "#66717b",
     fontSize: "13px",
+    lineHeight: 1.5,
   },
 
-  referralHelp: {
+  referralAccessBox: {
     display: "flex",
     flexDirection: "column",
-    gap: "4px",
-    padding: "13px 15px",
-    borderRadius: "12px",
-    backgroundColor: "#dcecf7",
-    border: "1px solid #bad2e3",
-    color: "#254a64",
-    fontSize: "13px",
+    gap: "7px",
+    padding: "17px",
+    borderRadius: "14px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #bfd1df",
   },
 
-  referralHelpLabel: {
-    color: "#547187",
-    fontSize: "10px",
-    fontWeight: 900,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
+  referralAccessLabel: {
+    color: "#176fae",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.10em",
+  },
+
+  referralAccessTitle: {
+    color: "#111820",
+    fontSize: "16px",
+    fontWeight: 950,
+  },
+
+  referralAccessText: {
+    margin: 0,
+    color: "#5c6872",
+    fontSize: "12px",
+    lineHeight: 1.55,
+  },
+
+  previousAccessBox: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+    padding: "14px 15px",
+    borderRadius: "12px",
+    backgroundColor: "#e7edf2",
+    border: "1px solid #cbd5dc",
+    color: "#44515c",
+    fontSize: "12px",
+    lineHeight: 1.5,
   },
 
   expirationBox: {
-    display: "flex",
-    gap: "10px",
-    alignItems: "flex-start",
     padding: "14px 15px",
     borderRadius: "12px",
     backgroundColor: "#ffffff",
@@ -1644,7 +1918,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#3e4852",
     fontSize: "13px",
     lineHeight: 1.5,
-    cursor: "pointer",
   },
 
   message: {
@@ -1672,7 +1945,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "15px",
     fontWeight: 950,
     cursor: "pointer",
-    boxShadow: "0 12px 28px rgba(23, 111, 174, 0.24)",
+    boxShadow:
+      "0 12px 28px rgba(23, 111, 174, 0.24)",
   },
 
   buttonArrow: {
