@@ -75,34 +75,7 @@ async function stripePost(
   return data;
 }
 
-async function stripeDelete(
-  path: string,
-  secret: string
-) {
-  const response = await fetch(
-    `https://api.stripe.com/v1${path}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${secret}`,
-      },
-      cache: "no-store",
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data?.error?.message ||
-        "Stripe cancellation failed."
-    );
-  }
-
-  return data;
-}
-
-async function deleteSupabaseUser(
+async function getSupabaseUserById(
   supabaseUrl: string,
   serviceKey: string,
   userId: string
@@ -112,16 +85,106 @@ async function deleteSupabaseUser(
       userId
     )}`,
     {
-      method: "DELETE",
       headers: authHeaders(serviceKey),
       cache: "no-store",
     }
   );
 
   if (!response.ok) {
-    console.error(
-      "Could not clean up Supabase user:",
-      await response.text()
+    return null;
+  }
+
+  return await response.json();
+}
+
+async function findProfileByEmail(
+  supabaseUrl: string,
+  serviceKey: string,
+  email: string
+) {
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/candidate_profiles?email=eq.${encodeURIComponent(
+      email
+    )}&select=user_id,email&limit=1`,
+    {
+      headers: authHeaders(serviceKey),
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const rows = await response.json();
+
+  if (
+    !Array.isArray(rows) ||
+    !rows.length
+  ) {
+    return null;
+  }
+
+  return rows[0];
+}
+
+async function upsertProfile(
+  supabaseUrl: string,
+  serviceKey: string,
+  profile: Record<string, unknown>
+) {
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/candidate_profiles?on_conflict=user_id`,
+    {
+      method: "POST",
+
+      headers: {
+        ...authHeaders(serviceKey),
+
+        Prefer:
+          "resolution=merge-duplicates,return=minimal",
+      },
+
+      body: JSON.stringify(profile),
+
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `HireMinds profile could not be saved: ${await response.text()}`
+    );
+  }
+}
+
+async function patchProfile(
+  supabaseUrl: string,
+  serviceKey: string,
+  userId: string,
+  patch: Record<string, unknown>
+) {
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/candidate_profiles?user_id=eq.${encodeURIComponent(
+      userId
+    )}`,
+    {
+      method: "PATCH",
+
+      headers: {
+        ...authHeaders(serviceKey),
+        Prefer: "return=minimal",
+      },
+
+      body: JSON.stringify(patch),
+
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `HireMinds profile could not be activated: ${await response.text()}`
     );
   }
 }
@@ -129,17 +192,10 @@ async function deleteSupabaseUser(
 export async function POST(
   request: NextRequest
 ) {
-  let createdUserId: string | null =
-    null;
-
-  let createdSubscriptionId:
-    | string
-    | null = null;
-
   try {
     /*
       =====================================
-      SERVER CONFIGURATION
+      CONFIGURATION
       =====================================
     */
 
@@ -210,8 +266,10 @@ export async function POST(
 
     /*
       =====================================
-      VERIFY $2.99 STRIPE PAYMENT
+      VERIFY THE EXISTING $2.99 PAYMENT
       =====================================
+
+      THIS DOES NOT CHARGE $2.99 AGAIN.
     */
 
     const session =
@@ -230,7 +288,7 @@ export async function POST(
         {
           ok: false,
           error:
-            "Stripe has not confirmed the $2.99 payment yet.",
+            "Stripe has not confirmed the $2.99 payment.",
         },
         {
           status: 402,
@@ -239,15 +297,14 @@ export async function POST(
     }
 
     if (
-      session?.metadata
-        ?.signup_flow !==
+      session?.metadata?.signup_flow !==
       "post_payment_account_creation"
     ) {
       return NextResponse.json(
         {
           ok: false,
           error:
-            "This checkout session is not a HireMinds signup session.",
+            "This is not a valid HireMinds paid signup session.",
         },
         {
           status: 400,
@@ -256,17 +313,13 @@ export async function POST(
     }
 
     /*
-      This new checkout is PAYMENT mode.
-
-      It should have:
-      - a Stripe Customer
-      - a PaymentIntent
-      - a saved card/payment method
+      =====================================
+      STRIPE CUSTOMER + PAYMENT
+      =====================================
     */
 
     const customerId =
-      typeof session.customer ===
-      "string"
+      typeof session.customer === "string"
         ? session.customer
         : session.customer?.id;
 
@@ -292,11 +345,13 @@ export async function POST(
       );
     }
 
-    /*
-      =====================================
-      GET SAVED PAYMENT METHOD
-      =====================================
-    */
+    const customer =
+      await stripeGet(
+        `/customers/${encodeURIComponent(
+          customerId
+        )}`,
+        stripeSecret
+      );
 
     const paymentIntent =
       await stripeGet(
@@ -308,10 +363,8 @@ export async function POST(
 
     const paymentMethodId =
       typeof paymentIntent
-        ?.payment_method ===
-      "string"
-        ? paymentIntent
-            .payment_method
+        ?.payment_method === "string"
+        ? paymentIntent.payment_method
         : paymentIntent
             ?.payment_method?.id;
 
@@ -320,7 +373,7 @@ export async function POST(
         {
           ok: false,
           error:
-            "Stripe could not locate the saved payment method.",
+            "Stripe could not locate your saved payment method.",
         },
         {
           status: 400,
@@ -330,83 +383,14 @@ export async function POST(
 
     /*
       =====================================
-      DETERMINE WHEN $24.99 STARTS
-      =====================================
-
-      We use the original Stripe payment
-      time as the starting point.
-
-      First $24.99 charge:
-      5 days after the $2.99 payment.
-    */
-
-    let paidAt =
-      Number(
-        paymentIntent?.created ||
-          session?.created ||
-          Math.floor(
-            Date.now() / 1000
-          )
-      );
-
-    if (
-      paymentIntent?.latest_charge
-    ) {
-      try {
-        const chargeId =
-          typeof paymentIntent
-            .latest_charge ===
-          "string"
-            ? paymentIntent
-                .latest_charge
-            : paymentIntent
-                .latest_charge?.id;
-
-        if (chargeId) {
-          const charge =
-            await stripeGet(
-              `/charges/${encodeURIComponent(
-                chargeId
-              )}`,
-              stripeSecret
-            );
-
-          if (
-            charge?.paid &&
-            charge?.created
-          ) {
-            paidAt =
-              Number(
-                charge.created
-              );
-          }
-        }
-      } catch (error) {
-        console.error(
-          "Could not retrieve charge time:",
-          error
-        );
-      }
-    }
-
-    const fiveDaysInSeconds =
-      5 * 24 * 60 * 60;
-
-    const firstMonthlyChargeAt =
-      paidAt +
-      fiveDaysInSeconds;
-
-    /*
-      =====================================
-      READ SIGNUP INFORMATION
+      SIGNUP INFORMATION
       =====================================
     */
 
     const email =
       String(
         session?.metadata?.email ||
-          session
-            ?.customer_details
+          session?.customer_details
             ?.email ||
           session?.customer_email ||
           ""
@@ -417,15 +401,13 @@ export async function POST(
     const firstName =
       String(
         session?.metadata
-          ?.first_name ||
-          ""
+          ?.first_name || ""
       ).trim();
 
     const lastName =
       String(
         session?.metadata
-          ?.last_name ||
-          ""
+          ?.last_name || ""
       ).trim();
 
     const fullName =
@@ -471,194 +453,375 @@ export async function POST(
 
     /*
       =====================================
-      CREATE HIREMINDS LOGIN
+      FIND OR CREATE HIREMINDS USER
       =====================================
+
+      This makes retrying the SAME paid
+      session safe.
     */
 
-    const createUser =
-      await fetch(
-        `${supabaseUrl}/auth/v1/admin/users`,
-        {
-          method: "POST",
+    let userId:
+      | string
+      | null = null;
 
-          headers:
-            authHeaders(
-              serviceKey
-            ),
+    const stripeUserId =
+      String(
+        customer?.metadata
+          ?.user_id || ""
+      ).trim();
 
-          body: JSON.stringify({
-            email,
-            password,
-            email_confirm: true,
+    if (stripeUserId) {
+      const existingUser =
+        await getSupabaseUserById(
+          supabaseUrl,
+          serviceKey,
+          stripeUserId
+        );
 
-            user_metadata: {
-              first_name:
-                firstName ||
-                null,
-
-              last_name:
-                lastName ||
-                null,
-
-              full_name:
-                fullName,
-
-              phone,
-
-              city,
-
-              state_name:
-                state,
-            },
-          }),
-
-          cache: "no-store",
-        }
-      );
-
-    const userData =
-      await createUser.json();
-
-    if (
-      !createUser.ok ||
-      !userData?.id
-    ) {
-      const errorMessage =
-        userData?.msg ||
-        userData?.message ||
-        userData
-          ?.error_description ||
-        "HireMinds account could not be created.";
-
-      return NextResponse.json(
-        {
-          ok: false,
-
-          error:
-            errorMessage
-              .toLowerCase()
-              .includes(
-                "already"
-              )
-              ? "An account with this email already exists. Please sign in or use a different paid signup email."
-              : errorMessage,
-        },
-        {
-          status:
-            createUser.status ||
-            400,
-        }
-      );
+      if (
+        existingUser?.id &&
+        String(
+          existingUser?.email || ""
+        )
+          .trim()
+          .toLowerCase() === email
+      ) {
+        userId =
+          existingUser.id;
+      }
     }
 
-    const userId =
-      userData.id;
+    if (!userId) {
+      const existingProfile =
+        await findProfileByEmail(
+          supabaseUrl,
+          serviceKey,
+          email
+        );
 
-    createdUserId =
-      userId;
+      if (
+        existingProfile?.user_id
+      ) {
+        const existingUser =
+          await getSupabaseUserById(
+            supabaseUrl,
+            serviceKey,
+            existingProfile.user_id
+          );
+
+        if (existingUser?.id) {
+          userId =
+            existingUser.id;
+        }
+      }
+    }
+
+    if (!userId) {
+      const createUser =
+        await fetch(
+          `${supabaseUrl}/auth/v1/admin/users`,
+          {
+            method: "POST",
+
+            headers:
+              authHeaders(
+                serviceKey
+              ),
+
+            body: JSON.stringify({
+              email,
+              password,
+              email_confirm: true,
+
+              user_metadata: {
+                first_name:
+                  firstName || null,
+
+                last_name:
+                  lastName || null,
+
+                full_name:
+                  fullName,
+
+                phone,
+
+                city,
+
+                state_name:
+                  state,
+              },
+            }),
+
+            cache: "no-store",
+          }
+        );
+
+      const userData =
+        await createUser.json();
+
+      if (
+        !createUser.ok ||
+        !userData?.id
+      ) {
+        const errorMessage =
+          userData?.msg ||
+          userData?.message ||
+          userData
+            ?.error_description ||
+          "HireMinds account could not be created.";
+
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              errorMessage,
+          },
+          {
+            status:
+              createUser.status ||
+              400,
+          }
+        );
+      }
+
+      userId =
+        userData.id;
+    }
 
     /*
       =====================================
-      CREATE $24.99 MONTHLY SUBSCRIPTION
+      CREATE / UPDATE PROFILE FIRST
       =====================================
-
-      IMPORTANT:
-
-      There is NO Stripe trial.
-
-      We create the $24.99/month subscription
-      now but set the first billing date
-      for exactly 5 days after the original
-      $2.99 payment.
-
-      proration_behavior = none
-
-      This prevents Stripe from charging
-      any portion of the $24.99 today.
     */
 
-    const subscriptionParams =
-      new URLSearchParams();
+    await upsertProfile(
+      supabaseUrl,
+      serviceKey,
+      {
+        user_id:
+          userId,
 
-    subscriptionParams.set(
-      "customer",
-      customerId
+        full_name:
+          fullName,
+
+        phone,
+
+        email,
+
+        city,
+
+        state,
+
+        referral_code:
+          null,
+
+        access_referral_code:
+          null,
+
+        referral_consent_accepted:
+          false,
+
+        has_referral_access:
+          false,
+
+        has_paid_access:
+          false,
+
+        access_tier:
+          "pending_payment",
+
+        subscription_status:
+          "pending",
+
+        subscription_plan:
+          "monthly",
+
+        subscription_provider:
+          "stripe",
+
+        paid_age_18_confirmed_at:
+          new Date().toISOString(),
+      }
     );
 
-    subscriptionParams.set(
-      "items[0][price]",
-      monthlyPriceId
-    );
+    /*
+      =====================================
+      FIND AN EXISTING GOOD SUBSCRIPTION
+      =====================================
 
-    subscriptionParams.set(
-      "default_payment_method",
-      paymentMethodId
-    );
+      If this same signup is retried, we
+      don't want duplicate subscriptions.
+    */
 
-    subscriptionParams.set(
-      "collection_method",
-      "charge_automatically"
-    );
+    const subscriptionList =
+      await stripeGet(
+        `/subscriptions?customer=${encodeURIComponent(
+          customerId
+        )}&status=all&limit=20`,
+        stripeSecret
+      );
 
-    subscriptionParams.set(
-      "billing_cycle_anchor",
-      String(
-        firstMonthlyChargeAt
+    let subscription =
+      Array.isArray(
+        subscriptionList?.data
       )
-    );
+        ? subscriptionList.data.find(
+            (item: any) =>
+              item?.metadata
+                ?.checkout_session_id ===
+                sessionId &&
+              ![
+                "canceled",
+                "incomplete_expired",
+              ].includes(
+                String(
+                  item?.status || ""
+                )
+              )
+          )
+        : null;
 
-    subscriptionParams.set(
-      "proration_behavior",
-      "none"
-    );
+    /*
+      =====================================
+      FIRST $24.99 BILLING DATE
+      =====================================
+    */
 
-    subscriptionParams.set(
-      "metadata[user_id]",
-      userId
-    );
-
-    subscriptionParams.set(
-      "metadata[plan]",
-      "monthly"
-    );
-
-    subscriptionParams.set(
-      "metadata[intro_offer]",
-      "5_day_2_99"
-    );
-
-    subscriptionParams.set(
-      "metadata[checkout_session_id]",
-      sessionId
-    );
-
-    subscriptionParams.set(
-      "metadata[email]",
-      email
-    );
-
-    const subscription =
-      await stripePost(
-        "/subscriptions",
-        stripeSecret,
-        subscriptionParams,
-        `hireminds-${sessionId}`
+    const paidAt =
+      Number(
+        paymentIntent?.created ||
+          session?.created ||
+          Math.floor(
+            Date.now() / 1000
+          )
       );
 
-    if (!subscription?.id) {
-      throw new Error(
-        "Stripe subscription could not be created."
+    const fiveDays =
+      5 * 24 * 60 * 60;
+
+    const firstChargeAt =
+      paidAt + fiveDays;
+
+    /*
+      =====================================
+      CREATE $24.99 SUBSCRIPTION
+      =====================================
+
+      Only if a good one does not
+      already exist.
+
+      New idempotency key version fixes
+      the error you just received.
+    */
+
+    if (!subscription) {
+      const params =
+        new URLSearchParams();
+
+      params.set(
+        "customer",
+        customerId
       );
+
+      params.set(
+        "items[0][price]",
+        monthlyPriceId
+      );
+
+      params.set(
+        "default_payment_method",
+        paymentMethodId
+      );
+
+      params.set(
+        "collection_method",
+        "charge_automatically"
+      );
+
+      const now =
+        Math.floor(
+          Date.now() / 1000
+        );
+
+      /*
+        If we're still inside the original
+        5-day period, schedule $24.99 for
+        the correct future date.
+      */
+
+      if (
+        firstChargeAt >
+        now + 60
+      ) {
+        params.set(
+          "billing_cycle_anchor",
+          String(
+            firstChargeAt
+          )
+        );
+
+        params.set(
+          "proration_behavior",
+          "none"
+        );
+      }
+
+      /*
+        If 5 days have already passed,
+        Stripe will start the monthly
+        subscription immediately.
+      */
+
+      params.set(
+        "metadata[user_id]",
+        userId
+      );
+
+      params.set(
+        "metadata[plan]",
+        "monthly"
+      );
+
+      params.set(
+        "metadata[intro_offer]",
+        "5_day_2_99"
+      );
+
+      params.set(
+        "metadata[checkout_session_id]",
+        sessionId
+      );
+
+      params.set(
+        "metadata[email]",
+        email
+      );
+
+      subscription =
+        await stripePost(
+          "/subscriptions",
+          stripeSecret,
+          params,
+
+          /*
+            IMPORTANT:
+            New versioned key.
+            This avoids the Stripe
+            idempotency-key conflict
+            you just encountered.
+          */
+
+          `hm-sub-v2-${sessionId}`
+        );
     }
 
-    createdSubscriptionId =
-      subscription.id;
-
-    const subscriptionStatus =
-      String(
-        subscription?.status ||
-          "active"
+    if (
+      !subscription?.id
+    ) {
+      throw new Error(
+        "The $24.99 monthly subscription could not be created."
       );
+    }
 
     /*
       =====================================
@@ -694,154 +857,37 @@ export async function POST(
 
     /*
       =====================================
-      CREATE HIREMINDS PROFILE
+      ACTIVATE HIREMINDS
       =====================================
-
-      The person already paid $2.99,
-      so HireMinds access begins immediately.
     */
 
-    const profile = {
-      user_id:
-        userId,
+    await patchProfile(
+      supabaseUrl,
+      serviceKey,
+      userId,
+      {
+        has_paid_access:
+          true,
 
-      full_name:
-        fullName,
+        has_referral_access:
+          false,
 
-      phone,
+        access_tier:
+          "paid",
 
-      email,
+        subscription_status:
+          String(
+            subscription?.status ||
+              "active"
+          ),
 
-      city,
+        subscription_plan:
+          "monthly",
 
-      state,
-
-      referral_code:
-        null,
-
-      access_referral_code:
-        null,
-
-      referral_consent_accepted:
-        false,
-
-      has_referral_access:
-        false,
-
-      has_paid_access:
-        true,
-
-      access_tier:
-        "paid",
-
-      subscription_status:
-        subscriptionStatus,
-
-      subscription_plan:
-        "monthly",
-
-      subscription_provider:
-        "stripe",
-
-      paid_age_18_confirmed_at:
-        new Date().toISOString(),
-    };
-
-    const profileResponse =
-      await fetch(
-        `${supabaseUrl}/rest/v1/candidate_profiles?on_conflict=user_id`,
-        {
-          method: "POST",
-
-          headers: {
-            ...authHeaders(
-              serviceKey
-            ),
-
-            Prefer:
-              "resolution=merge-duplicates,return=minimal",
-          },
-
-          body:
-            JSON.stringify(
-              profile
-            ),
-
-          cache: "no-store",
-        }
-      );
-
-    if (
-      !profileResponse.ok
-    ) {
-      const profileError =
-        await profileResponse.text();
-
-      console.error(
-        "Profile create failed:",
-        profileError
-      );
-
-      /*
-        IMPORTANT SAFETY CLEANUP:
-
-        If HireMinds cannot activate the
-        account, cancel the future $24.99
-        subscription so the customer is
-        not charged later for an unusable
-        account.
-      */
-
-      try {
-        if (
-          createdSubscriptionId
-        ) {
-          await stripeDelete(
-            `/subscriptions/${encodeURIComponent(
-              createdSubscriptionId
-            )}`,
-            stripeSecret
-          );
-        }
-      } catch (
-        cleanupError
-      ) {
-        console.error(
-          "Stripe subscription cleanup failed:",
-          cleanupError
-        );
+        subscription_provider:
+          "stripe",
       }
-
-      try {
-        if (
-          createdUserId
-        ) {
-          await deleteSupabaseUser(
-            supabaseUrl,
-            serviceKey,
-            createdUserId
-          );
-        }
-      } catch (
-        cleanupError
-      ) {
-        console.error(
-          "Supabase user cleanup failed:",
-          cleanupError
-        );
-      }
-
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Your $2.99 payment succeeded, but HireMinds could not finish activating your account. The future monthly subscription was not kept. Please contact support.",
-        },
-        {
-          status: 500,
-        }
-      );
-    }
+    );
 
     /*
       =====================================
@@ -857,11 +903,15 @@ export async function POST(
       accessGranted:
         true,
 
-      subscriptionStatus,
+      subscriptionId:
+        subscription.id,
+
+      subscriptionStatus:
+        subscription.status,
 
       firstMonthlyChargeAt:
         new Date(
-          firstMonthlyChargeAt *
+          firstChargeAt *
             1000
         ).toISOString(),
     });
@@ -870,42 +920,6 @@ export async function POST(
       "Complete paid signup error:",
       error
     );
-
-    /*
-      If we created a HireMinds user
-      but failed before completing the
-      subscription/profile setup,
-      remove that partial account.
-    */
-
-    try {
-      const supabaseUrl =
-        process.env
-          .NEXT_PUBLIC_SUPABASE_URL;
-
-      const serviceKey =
-        process.env
-          .SUPABASE_SERVICE_ROLE_KEY;
-
-      if (
-        createdUserId &&
-        supabaseUrl &&
-        serviceKey
-      ) {
-        await deleteSupabaseUser(
-          supabaseUrl,
-          serviceKey,
-          createdUserId
-        );
-      }
-    } catch (
-      cleanupError
-    ) {
-      console.error(
-        "User cleanup error:",
-        cleanupError
-      );
-    }
 
     return NextResponse.json(
       {
