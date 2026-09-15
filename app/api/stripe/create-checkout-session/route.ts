@@ -9,7 +9,11 @@ const STRIPE_PRICE_ENV: Record<PlanKey, string> = {
 };
 
 function isPlanKey(value: unknown): value is PlanKey {
-  return value === "monthly" || value === "four_month" || value === "annual";
+  return (
+    value === "monthly" ||
+    value === "four_month" ||
+    value === "annual"
+  );
 }
 
 function getSiteUrl(request: NextRequest) {
@@ -31,7 +35,9 @@ function getSiteUrl(request: NextRequest) {
     (host?.includes("localhost") ? "http" : "https");
 
   if (!host) {
-    throw new Error("Could not determine the HireMinds site URL.");
+    throw new Error(
+      "Could not determine the HireMinds site URL."
+    );
   }
 
   return `${protocol}://${host}`;
@@ -47,6 +53,9 @@ export async function POST(request: NextRequest) {
   try {
     const stripeSecretKey =
       process.env.STRIPE_SECRET_KEY;
+
+    const trialPriceId =
+      process.env.STRIPE_PRICE_TRIAL_5DAY;
 
     if (!stripeSecretKey) {
       return NextResponse.json(
@@ -77,7 +86,10 @@ export async function POST(request: NextRequest) {
     }
 
     const fullName = clean(body?.fullName, 120);
-    const email = clean(body?.email, 254).toLowerCase();
+    const email = clean(
+      body?.email,
+      254
+    ).toLowerCase();
     const phone = clean(body?.phone, 40);
     const city = clean(body?.city, 100);
     const state = clean(body?.state, 100);
@@ -90,7 +102,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Name and a valid email are required.",
+          error:
+            "Name and a valid email are required.",
         },
         {
           status: 400,
@@ -116,16 +129,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    /*
+      The $2.99 introductory offer applies
+      to the monthly subscription.
+
+      $2.99 is charged immediately.
+
+      The recurring $24.99 monthly price
+      begins after the 5-day trial.
+    */
+
+    if (
+      plan === "monthly" &&
+      !trialPriceId
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "STRIPE_PRICE_TRIAL_5DAY is missing in Vercel.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
     const siteUrl = getSiteUrl(request);
 
     const params = new URLSearchParams();
 
-    params.set("mode", "subscription");
+    params.set(
+      "mode",
+      "subscription"
+    );
 
     params.set(
       "customer_email",
       email
     );
+
+    /*
+      LINE ITEM 0
+
+      Existing recurring subscription.
+
+      For monthly:
+      $24.99/month
+
+      Stripe waits 5 days before charging
+      this recurring price.
+    */
 
     params.set(
       "line_items[0][price]",
@@ -136,6 +190,41 @@ export async function POST(request: NextRequest) {
       "line_items[0][quantity]",
       "1"
     );
+
+    /*
+      MONTHLY INTRODUCTORY OFFER
+
+      Charge $2.99 immediately
+      and begin the recurring monthly
+      subscription after 5 days.
+    */
+
+    if (plan === "monthly") {
+      params.set(
+        "line_items[1][price]",
+        trialPriceId!
+      );
+
+      params.set(
+        "line_items[1][quantity]",
+        "1"
+      );
+
+      params.set(
+        "subscription_data[trial_period_days]",
+        "5"
+      );
+
+      params.set(
+        "metadata[intro_offer]",
+        "5_day_2_99"
+      );
+
+      params.set(
+        "subscription_data[metadata][intro_offer]",
+        "5_day_2_99"
+      );
+    }
 
     params.set(
       "success_url",
@@ -155,15 +244,11 @@ export async function POST(request: NextRequest) {
     );
 
     /*
-      IMPORTANT:
+      Payment happens before the
+      Supabase account is created.
 
-      We are NOT creating a Supabase account here.
-
-      The person is only entering signup information
-      so Stripe can process payment first.
-
-      After Stripe confirms payment, the account
-      creation flow will happen.
+      Account creation occurs after
+      Stripe confirms checkout.
     */
 
     params.set(
@@ -281,9 +366,12 @@ export async function POST(request: NextRequest) {
       }
     );
   }
-}export async function GET() {
+}
+
+export async function GET() {
   try {
-    const secret = process.env.STRIPE_SECRET_KEY;
+    const secret =
+      process.env.STRIPE_SECRET_KEY;
 
     if (!secret) {
       return NextResponse.json({
@@ -296,28 +384,45 @@ export async function POST(request: NextRequest) {
       "https://api.stripe.com/v1/account",
       {
         headers: {
-          Authorization: `Bearer ${secret}`,
+          Authorization:
+            `Bearer ${secret}`,
         },
         cache: "no-store",
       }
     );
 
-    const account = await accountResponse.json();
+    const account =
+      await accountResponse.json();
 
     const prices = {
-      monthly: process.env.STRIPE_PRICE_MONTHLY,
-      four_month: process.env.STRIPE_PRICE_FOUR_MONTH,
-      annual: process.env.STRIPE_PRICE_ANNUAL,
+      monthly:
+        process.env.STRIPE_PRICE_MONTHLY,
+
+      four_month:
+        process.env.STRIPE_PRICE_FOUR_MONTH,
+
+      annual:
+        process.env.STRIPE_PRICE_ANNUAL,
+
+      trial_5day:
+        process.env.STRIPE_PRICE_TRIAL_5DAY,
     };
 
-    const priceChecks: Record<string, any> = {};
+    const priceChecks: Record<
+      string,
+      any
+    > = {};
 
-    for (const [name, priceId] of Object.entries(prices)) {
+    for (
+      const [name, priceId]
+      of Object.entries(prices)
+    ) {
       if (!priceId) {
         priceChecks[name] = {
           configured: false,
           found: false,
         };
+
         continue;
       }
 
@@ -327,13 +432,15 @@ export async function POST(request: NextRequest) {
         )}`,
         {
           headers: {
-            Authorization: `Bearer ${secret}`,
+            Authorization:
+              `Bearer ${secret}`,
           },
           cache: "no-store",
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       priceChecks[name] = {
         configured: true,
@@ -341,26 +448,36 @@ export async function POST(request: NextRequest) {
         status: response.status,
         error: response.ok
           ? null
-          : data?.error?.message || "Unknown Stripe error",
+          : data?.error?.message ||
+            "Unknown Stripe error",
       };
     }
 
     return NextResponse.json({
       ok: accountResponse.ok,
-      stripeAccountId: account?.id || null,
+
+      stripeAccountId:
+        account?.id || null,
+
       businessName:
-        account?.settings?.dashboard?.display_name ||
+        account?.settings?.dashboard
+          ?.display_name ||
         account?.business_profile?.name ||
         null,
+
       prices: priceChecks,
     });
   } catch (error: any) {
     return NextResponse.json(
       {
         ok: false,
-        error: error?.message || "Stripe diagnostic failed",
+        error:
+          error?.message ||
+          "Stripe diagnostic failed",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
