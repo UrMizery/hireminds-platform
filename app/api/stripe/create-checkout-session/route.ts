@@ -1,21 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-type PlanKey = "monthly" | "four_month" | "annual";
-
-const STRIPE_PRICE_ENV: Record<PlanKey, string> = {
-  monthly: "STRIPE_PRICE_MONTHLY",
-  four_month: "STRIPE_PRICE_FOUR_MONTH",
-  annual: "STRIPE_PRICE_ANNUAL",
-};
-
-function isPlanKey(value: unknown): value is PlanKey {
-  return (
-    value === "monthly" ||
-    value === "four_month" ||
-    value === "annual"
-  );
-}
-
 function getSiteUrl(request: NextRequest) {
   const configured =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -32,7 +16,9 @@ function getSiteUrl(request: NextRequest) {
 
   const protocol =
     request.headers.get("x-forwarded-proto") ||
-    (host?.includes("localhost") ? "http" : "https");
+    (host?.includes("localhost")
+      ? "http"
+      : "https");
 
   if (!host) {
     throw new Error(
@@ -43,25 +29,40 @@ function getSiteUrl(request: NextRequest) {
   return `${protocol}://${host}`;
 }
 
-function clean(value: unknown, max = 500) {
+function clean(
+  value: unknown,
+  max = 500
+) {
   return String(value ?? "")
     .trim()
     .slice(0, max);
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest
+) {
   try {
+    /*
+      ==========================
+      STRIPE CONFIGURATION
+      ==========================
+    */
+
     const stripeSecretKey =
       process.env.STRIPE_SECRET_KEY;
 
-    const trialPriceId =
+    const monthlyPriceId =
+      process.env.STRIPE_PRICE_MONTHLY;
+
+    const introPriceId =
       process.env.STRIPE_PRICE_TRIAL_5DAY;
 
     if (!stripeSecretKey) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Stripe is not configured.",
+          error:
+            "STRIPE_SECRET_KEY is missing in Vercel.",
         },
         {
           status: 500,
@@ -69,59 +70,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-
-    const plan = body?.plan;
-
-    if (!isPlanKey(plan)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Invalid subscription plan.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const fullName = clean(body?.fullName, 120);
-    const email = clean(
-      body?.email,
-      254
-    ).toLowerCase();
-    const phone = clean(body?.phone, 40);
-    const city = clean(body?.city, 100);
-    const state = clean(body?.state, 100);
-
-    if (
-      !fullName ||
-      !email ||
-      !email.includes("@")
-    ) {
+    if (!monthlyPriceId) {
       return NextResponse.json(
         {
           ok: false,
           error:
-            "Name and a valid email are required.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const priceEnvName =
-      STRIPE_PRICE_ENV[plan];
-
-    const stripePriceId =
-      process.env[priceEnvName];
-
-    if (!stripePriceId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: `${priceEnvName} is missing in Vercel.`,
+            "STRIPE_PRICE_MONTHLY is missing in Vercel.",
         },
         {
           status: 500,
@@ -129,20 +83,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /*
-      The $2.99 introductory offer applies
-      to the monthly subscription.
-
-      $2.99 is charged immediately.
-
-      The recurring $24.99 monthly price
-      begins after the 5-day trial.
-    */
-
-    if (
-      plan === "monthly" &&
-      !trialPriceId
-    ) {
+    if (!introPriceId) {
       return NextResponse.json(
         {
           ok: false,
@@ -155,9 +96,117 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const siteUrl = getSiteUrl(request);
+    /*
+      ==========================
+      SIGNUP INFORMATION
+      ==========================
+    */
 
-    const params = new URLSearchParams();
+    const body =
+      await request.json();
+
+    const firstName = clean(
+      body?.firstName,
+      80
+    );
+
+    const lastName = clean(
+      body?.lastName,
+      80
+    );
+
+    const fullName =
+      clean(
+        body?.fullName ||
+          `${firstName} ${lastName}`,
+        160
+      );
+
+    const email =
+      clean(
+        body?.email,
+        254
+      ).toLowerCase();
+
+    const phone = clean(
+      body?.phone,
+      40
+    );
+
+    const city = clean(
+      body?.city,
+      100
+    );
+
+    const state = clean(
+      body?.state,
+      100
+    );
+
+    if (!fullName) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "First and last name are required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      !email ||
+      !email.includes("@")
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "A valid email address is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const siteUrl =
+      getSiteUrl(request);
+
+    /*
+      ==========================
+      CREATE STRIPE CHECKOUT
+      ==========================
+
+      LINE ITEM 0
+      $24.99/month recurring subscription.
+
+      Stripe does NOT charge this recurring
+      amount for the first 5 days because
+      the subscription has a 5-day trial.
+
+      LINE ITEM 1
+      $2.99 one-time introductory charge.
+
+      This amount is charged immediately.
+
+      RESULT:
+
+      TODAY:
+      $2.99
+
+      DAYS 1-5:
+      HireMinds access
+
+      AFTER DAY 5:
+      $24.99/month automatically
+      unless canceled.
+    */
+
+    const params =
+      new URLSearchParams();
 
     params.set(
       "mode",
@@ -170,20 +219,12 @@ export async function POST(request: NextRequest) {
     );
 
     /*
-      LINE ITEM 0
-
-      Existing recurring subscription.
-
-      For monthly:
-      $24.99/month
-
-      Stripe waits 5 days before charging
-      this recurring price.
+      Recurring $24.99 monthly price
     */
 
     params.set(
       "line_items[0][price]",
-      stripePriceId
+      monthlyPriceId
     );
 
     params.set(
@@ -192,39 +233,34 @@ export async function POST(request: NextRequest) {
     );
 
     /*
-      MONTHLY INTRODUCTORY OFFER
-
-      Charge $2.99 immediately
-      and begin the recurring monthly
-      subscription after 5 days.
+      One-time $2.99 introductory price
     */
 
-    if (plan === "monthly") {
-      params.set(
-        "line_items[1][price]",
-        trialPriceId!
-      );
+    params.set(
+      "line_items[1][price]",
+      introPriceId
+    );
 
-      params.set(
-        "line_items[1][quantity]",
-        "1"
-      );
+    params.set(
+      "line_items[1][quantity]",
+      "1"
+    );
 
-      params.set(
-        "subscription_data[trial_period_days]",
-        "5"
-      );
+    /*
+      Delay the recurring $24.99
+      subscription charge for 5 days.
+    */
 
-      params.set(
-        "metadata[intro_offer]",
-        "5_day_2_99"
-      );
+    params.set(
+      "subscription_data[trial_period_days]",
+      "5"
+    );
 
-      params.set(
-        "subscription_data[metadata][intro_offer]",
-        "5_day_2_99"
-      );
-    }
+    /*
+      ==========================
+      CHECKOUT REDIRECTS
+      ==========================
+    */
 
     params.set(
       "success_url",
@@ -233,22 +269,13 @@ export async function POST(request: NextRequest) {
 
     params.set(
       "cancel_url",
-      `${siteUrl}/sign-up?plan=${encodeURIComponent(
-        plan
-      )}&checkout=canceled`
-    );
-
-    params.set(
-      "allow_promotion_codes",
-      "true"
+      `${siteUrl}/sign-up?checkout=canceled`
     );
 
     /*
-      Payment happens before the
-      Supabase account is created.
-
-      Account creation occurs after
-      Stripe confirms checkout.
+      ==========================
+      CHECKOUT METADATA
+      ==========================
     */
 
     params.set(
@@ -258,7 +285,12 @@ export async function POST(request: NextRequest) {
 
     params.set(
       "metadata[plan]",
-      plan
+      "monthly"
+    );
+
+    params.set(
+      "metadata[intro_offer]",
+      "5_day_2_99"
     );
 
     params.set(
@@ -270,6 +302,20 @@ export async function POST(request: NextRequest) {
       "metadata[email]",
       email
     );
+
+    if (firstName) {
+      params.set(
+        "metadata[first_name]",
+        firstName
+      );
+    }
+
+    if (lastName) {
+      params.set(
+        "metadata[last_name]",
+        lastName
+      );
+    }
 
     if (phone) {
       params.set(
@@ -292,9 +338,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    /*
+      ==========================
+      SUBSCRIPTION METADATA
+      ==========================
+    */
+
     params.set(
       "subscription_data[metadata][plan]",
-      plan
+      "monthly"
+    );
+
+    params.set(
+      "subscription_data[metadata][intro_offer]",
+      "5_day_2_99"
     );
 
     params.set(
@@ -302,20 +359,56 @@ export async function POST(request: NextRequest) {
       "post_payment_account_creation"
     );
 
-    const stripeResponse = await fetch(
-      "https://api.stripe.com/v1/checkout/sessions",
-      {
-        method: "POST",
-        headers: {
-          Authorization:
-            `Bearer ${stripeSecretKey}`,
-          "Content-Type":
-            "application/x-www-form-urlencoded",
-        },
-        body: params.toString(),
-        cache: "no-store",
-      }
+    params.set(
+      "subscription_data[metadata][full_name]",
+      fullName
     );
+
+    params.set(
+      "subscription_data[metadata][email]",
+      email
+    );
+
+    if (firstName) {
+      params.set(
+        "subscription_data[metadata][first_name]",
+        firstName
+      );
+    }
+
+    if (lastName) {
+      params.set(
+        "subscription_data[metadata][last_name]",
+        lastName
+      );
+    }
+
+    /*
+      ==========================
+      SEND REQUEST TO STRIPE
+      ==========================
+    */
+
+    const stripeResponse =
+      await fetch(
+        "https://api.stripe.com/v1/checkout/sessions",
+        {
+          method: "POST",
+
+          headers: {
+            Authorization:
+              `Bearer ${stripeSecretKey}`,
+
+            "Content-Type":
+              "application/x-www-form-urlencoded",
+          },
+
+          body:
+            params.toString(),
+
+          cache: "no-store",
+        }
+      );
 
     const stripeData =
       await stripeResponse.json();
@@ -332,21 +425,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           ok: false,
+
           error:
             stripeData?.error?.message ||
             "Stripe checkout could not be started.",
         },
         {
           status:
-            stripeResponse.status || 500,
+            stripeResponse.status ||
+            500,
         }
       );
     }
 
+    /*
+      ==========================
+      SUCCESS
+      ==========================
+    */
+
     return NextResponse.json({
       ok: true,
       url: stripeData.url,
-      sessionId: stripeData.id,
+      sessionId:
+        stripeData.id,
     });
   } catch (error: any) {
     console.error(
@@ -357,6 +459,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
+
         error:
           error?.message ||
           "Stripe checkout could not be started.",
@@ -368,6 +471,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/*
+  ==================================================
+  STRIPE DIAGNOSTIC
+  ==================================================
+
+  Visiting this API route with GET checks:
+
+  - Stripe account connection
+  - $24.99 monthly price
+  - $2.99 introductory price
+
+  The old 4-month and annual prices
+  are intentionally no longer checked.
+*/
+
 export async function GET() {
   try {
     const secret =
@@ -376,36 +494,44 @@ export async function GET() {
     if (!secret) {
       return NextResponse.json({
         ok: false,
-        error: "STRIPE_SECRET_KEY missing",
+        error:
+          "STRIPE_SECRET_KEY missing",
       });
     }
 
-    const accountResponse = await fetch(
-      "https://api.stripe.com/v1/account",
-      {
-        headers: {
-          Authorization:
-            `Bearer ${secret}`,
-        },
-        cache: "no-store",
-      }
-    );
+    /*
+      Check Stripe account
+    */
+
+    const accountResponse =
+      await fetch(
+        "https://api.stripe.com/v1/account",
+        {
+          headers: {
+            Authorization:
+              `Bearer ${secret}`,
+          },
+
+          cache: "no-store",
+        }
+      );
 
     const account =
       await accountResponse.json();
 
+    /*
+      Only the two prices
+      HireMinds now uses.
+    */
+
     const prices = {
       monthly:
-        process.env.STRIPE_PRICE_MONTHLY,
+        process.env
+          .STRIPE_PRICE_MONTHLY,
 
-      four_month:
-        process.env.STRIPE_PRICE_FOUR_MONTH,
-
-      annual:
-        process.env.STRIPE_PRICE_ANNUAL,
-
-      trial_5day:
-        process.env.STRIPE_PRICE_TRIAL_5DAY,
+      intro_5day:
+        process.env
+          .STRIPE_PRICE_TRIAL_5DAY,
     };
 
     const priceChecks: Record<
@@ -426,51 +552,66 @@ export async function GET() {
         continue;
       }
 
-      const response = await fetch(
-        `https://api.stripe.com/v1/prices/${encodeURIComponent(
-          priceId.trim()
-        )}`,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${secret}`,
-          },
-          cache: "no-store",
-        }
-      );
+      const response =
+        await fetch(
+          `https://api.stripe.com/v1/prices/${encodeURIComponent(
+            priceId.trim()
+          )}`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${secret}`,
+            },
+
+            cache: "no-store",
+          }
+        );
 
       const data =
         await response.json();
 
       priceChecks[name] = {
         configured: true,
-        found: response.ok,
-        status: response.status,
-        error: response.ok
-          ? null
-          : data?.error?.message ||
-            "Unknown Stripe error",
+
+        found:
+          response.ok,
+
+        status:
+          response.status,
+
+        error:
+          response.ok
+            ? null
+            : data?.error?.message ||
+              "Unknown Stripe error",
       };
     }
 
     return NextResponse.json({
-      ok: accountResponse.ok,
+      ok:
+        accountResponse.ok,
 
       stripeAccountId:
-        account?.id || null,
-
-      businessName:
-        account?.settings?.dashboard
-          ?.display_name ||
-        account?.business_profile?.name ||
+        account?.id ||
         null,
 
-      prices: priceChecks,
+      businessName:
+        account?.settings
+          ?.dashboard
+          ?.display_name ||
+        account
+          ?.business_profile
+          ?.name ||
+        null,
+
+      prices:
+        priceChecks,
     });
   } catch (error: any) {
     return NextResponse.json(
       {
         ok: false,
+
         error:
           error?.message ||
           "Stripe diagnostic failed",
