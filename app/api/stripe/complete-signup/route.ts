@@ -101,10 +101,14 @@ export async function POST(
       await request.json();
 
     const sessionId =
-      String(body?.sessionId || "").trim();
+      String(
+        body?.sessionId || ""
+      ).trim();
 
     const password =
-      String(body?.password || "");
+      String(
+        body?.password || ""
+      );
 
     if (
       !sessionId.startsWith("cs_") ||
@@ -123,12 +127,15 @@ export async function POST(
     }
 
     /*
-      Verify the Stripe Checkout Session DIRECTLY.
+      =====================================
+      VERIFY STRIPE CHECKOUT
+      =====================================
 
-      This is the important security check:
-      no HireMinds account is created unless Stripe
-      confirms checkout was completed and paid.
+      The account is created ONLY after
+      Stripe confirms the $2.99 checkout
+      was successfully completed.
     */
+
     const session =
       await stripeGet(
         `/checkout/sessions/${encodeURIComponent(
@@ -159,7 +166,8 @@ export async function POST(
     }
 
     if (
-      session?.metadata?.signup_flow !==
+      session?.metadata
+        ?.signup_flow !==
       "post_payment_account_creation"
     ) {
       return NextResponse.json(
@@ -174,20 +182,42 @@ export async function POST(
       );
     }
 
+    /*
+      =====================================
+      READ SIGNUP INFORMATION
+      =====================================
+    */
+
     const email =
       String(
         session?.metadata?.email ||
-          session?.customer_details?.email ||
+          session?.customer_details
+            ?.email ||
           session?.customer_email ||
           ""
       )
         .trim()
         .toLowerCase();
 
+    const firstName =
+      String(
+        session?.metadata
+          ?.first_name ||
+          ""
+      ).trim();
+
+    const lastName =
+      String(
+        session?.metadata
+          ?.last_name ||
+          ""
+      ).trim();
+
     const fullName =
       String(
-        session?.metadata?.full_name ||
-          ""
+        session?.metadata
+          ?.full_name ||
+          `${firstName} ${lastName}`
       ).trim();
 
     const phone =
@@ -214,7 +244,10 @@ export async function POST(
           "monthly"
       );
 
-    if (!email || !fullName) {
+    if (
+      !email ||
+      !fullName
+    ) {
       return NextResponse.json(
         {
           ok: false,
@@ -228,27 +261,111 @@ export async function POST(
     }
 
     /*
-      CREATE SUPABASE AUTH USER ONLY NOW —
-      AFTER PAYMENT HAS BEEN VERIFIED.
+      =====================================
+      VERIFY SUBSCRIPTION
+      =====================================
+
+      During the first 5 days Stripe
+      should normally report:
+
+      status = "trialing"
+
+      HireMinds access should STILL be active.
     */
+
+    let stripeSubscription:
+      | Record<string, any>
+      | null = null;
+
+    if (session.subscription) {
+      stripeSubscription =
+        await stripeGet(
+          `/subscriptions/${encodeURIComponent(
+            session.subscription
+          )}`,
+          stripeSecret
+        );
+    }
+
+    const subscriptionStatus =
+      String(
+        stripeSubscription?.status ||
+          "trialing"
+      );
+
+    /*
+      Accept access while Stripe considers
+      the subscription trialing or active.
+    */
+
+    const validAccessStatuses = [
+      "trialing",
+      "active",
+    ];
+
+    if (
+      !validAccessStatuses.includes(
+        subscriptionStatus
+      )
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Your Stripe subscription is not currently eligible for HireMinds access.",
+        },
+        {
+          status: 402,
+        }
+      );
+    }
+
+    /*
+      =====================================
+      CREATE SUPABASE AUTH USER
+      =====================================
+
+      Paid users create their password
+      AFTER Stripe has confirmed payment.
+    */
+
     const createUser =
       await fetch(
         `${supabaseUrl}/auth/v1/admin/users`,
         {
           method: "POST",
+
           headers:
-            authHeaders(serviceKey),
+            authHeaders(
+              serviceKey
+            ),
+
           body: JSON.stringify({
             email,
             password,
             email_confirm: true,
+
             user_metadata: {
-              full_name: fullName,
+              first_name:
+                firstName ||
+                null,
+
+              last_name:
+                lastName ||
+                null,
+
+              full_name:
+                fullName,
+
               phone,
+
               city,
-              state_name: state,
+
+              state_name:
+                state,
             },
           }),
+
           cache: "no-store",
         }
       );
@@ -260,25 +377,30 @@ export async function POST(
       !createUser.ok ||
       !userData?.id
     ) {
-      const message =
+      const errorMessage =
         userData?.msg ||
         userData?.message ||
-        userData?.error_description ||
+        userData
+          ?.error_description ||
         "HireMinds account could not be created.";
 
       return NextResponse.json(
         {
           ok: false,
+
           error:
-            message
+            errorMessage
               .toLowerCase()
-              .includes("already")
+              .includes(
+                "already"
+              )
               ? "An account with this email already exists. Please sign in or use a different paid signup email."
-              : message,
+              : errorMessage,
         },
         {
           status:
-            createUser.status || 400,
+            createUser.status ||
+            400,
         }
       );
     }
@@ -287,30 +409,62 @@ export async function POST(
       userData.id;
 
     /*
-      Create the HireMinds profile as ACTIVE
-      because Stripe payment was already verified.
+      =====================================
+      CREATE / ACTIVATE HIREMINDS PROFILE
+      =====================================
+
+      IMPORTANT:
+
+      has_paid_access = TRUE
+
+      even while Stripe status is "trialing".
+
+      They already paid the $2.99 and
+      should receive HireMinds access
+      immediately.
     */
+
     const profile = {
-      user_id: userId,
-      full_name: fullName,
+      user_id:
+        userId,
+
+      full_name:
+        fullName,
+
       phone,
+
       email,
+
       city,
+
       state,
 
-      referral_code: null,
-      access_referral_code: null,
+      referral_code:
+        null,
 
-      referral_consent_accepted: false,
+      access_referral_code:
+        null,
 
-      has_referral_access: false,
-      has_paid_access: true,
+      referral_consent_accepted:
+        false,
 
-      access_tier: "paid",
+      has_referral_access:
+        false,
 
-      subscription_status: "active",
-      subscription_plan: plan,
-      subscription_provider: "stripe",
+      has_paid_access:
+        true,
+
+      access_tier:
+        "paid",
+
+      subscription_status:
+        subscriptionStatus,
+
+      subscription_plan:
+        "monthly",
+
+      subscription_provider:
+        "stripe",
 
       paid_age_18_confirmed_at:
         new Date().toISOString(),
@@ -321,22 +475,28 @@ export async function POST(
         `${supabaseUrl}/rest/v1/candidate_profiles?on_conflict=user_id`,
         {
           method: "POST",
+
           headers: {
             ...authHeaders(
               serviceKey
             ),
+
             Prefer:
               "resolution=merge-duplicates,return=minimal",
           },
+
           body:
             JSON.stringify(
               profile
             ),
+
           cache: "no-store",
         }
       );
 
-    if (!profileResponse.ok) {
+    if (
+      !profileResponse.ok
+    ) {
       console.error(
         "Profile create failed:",
         await profileResponse.text()
@@ -355,13 +515,23 @@ export async function POST(
     }
 
     /*
-      Add the Supabase user_id to Stripe AFTER
-      the account is created.
+      =====================================
+      ATTACH USER ID TO STRIPE SUBSCRIPTION
+      =====================================
 
-      That lets future renewals/cancellations
-      identify the correct HireMinds account.
+      This is what allows future:
+
+      $24.99 renewals
+      cancellations
+      subscription events
+
+      to identify the correct
+      HireMinds account.
     */
-    if (session.subscription) {
+
+    if (
+      session.subscription
+    ) {
       const params =
         new URLSearchParams();
 
@@ -372,7 +542,12 @@ export async function POST(
 
       params.set(
         "metadata[plan]",
-        plan
+        "monthly"
+      );
+
+      params.set(
+        "metadata[intro_offer]",
+        "5_day_2_99"
       );
 
       await stripePost(
@@ -383,6 +558,12 @@ export async function POST(
         params
       );
     }
+
+    /*
+      =====================================
+      ATTACH USER ID TO STRIPE CUSTOMER
+      =====================================
+    */
 
     if (session.customer) {
       const params =
@@ -402,9 +583,20 @@ export async function POST(
       );
     }
 
+    /*
+      =====================================
+      SUCCESS
+      =====================================
+    */
+
     return NextResponse.json({
       ok: true,
+
       email,
+
+      subscriptionStatus,
+
+      accessGranted: true,
     });
   } catch (error: any) {
     console.error(
@@ -415,6 +607,7 @@ export async function POST(
     return NextResponse.json(
       {
         ok: false,
+
         error:
           error?.message ||
           "Paid signup could not be completed.",
