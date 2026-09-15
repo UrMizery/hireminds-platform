@@ -97,6 +97,133 @@ async function getSupabaseUserById(
   return await response.json();
 }
 
+/*
+  FIX:
+  Look directly in Supabase Auth for an
+  existing user with this email.
+
+  This handles cases where Auth already
+  created the login during an earlier
+  attempt but candidate_profiles was not
+  created yet.
+*/
+
+async function findSupabaseAuthUserByEmail(
+  supabaseUrl: string,
+  serviceKey: string,
+  email: string
+) {
+  const normalizedEmail =
+    email.trim().toLowerCase();
+
+  /*
+    Supabase Auth Admin users are paginated.
+    1000 per page is supported.
+  */
+
+  for (
+    let page = 1;
+    page <= 10;
+    page++
+  ) {
+    const response = await fetch(
+      `${supabaseUrl}/auth/v1/admin/users?page=${page}&per_page=1000`,
+      {
+        headers:
+          authHeaders(serviceKey),
+
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Supabase user lookup failed: ${await response.text()}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    const users =
+      Array.isArray(data?.users)
+        ? data.users
+        : [];
+
+    const found =
+      users.find(
+        (user: any) =>
+          String(
+            user?.email || ""
+          )
+            .trim()
+            .toLowerCase() ===
+          normalizedEmail
+      );
+
+    if (found) {
+      return found;
+    }
+
+    if (users.length < 1000) {
+      break;
+    }
+  }
+
+  return null;
+}
+
+/*
+  If the account already exists because
+  of a previous failed signup attempt,
+  update the password and metadata using
+  the password currently entered by the
+  customer.
+*/
+
+async function updateSupabaseAuthUser(
+  supabaseUrl: string,
+  serviceKey: string,
+  userId: string,
+  password: string,
+  metadata: Record<string, unknown>
+) {
+  const response = await fetch(
+    `${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(
+      userId
+    )}`,
+    {
+      method: "PUT",
+
+      headers:
+        authHeaders(serviceKey),
+
+      body: JSON.stringify({
+        password,
+        email_confirm: true,
+        user_metadata:
+          metadata,
+      }),
+
+      cache: "no-store",
+    }
+  );
+
+  const data =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.msg ||
+        data?.message ||
+        data?.error_description ||
+        "Existing HireMinds login could not be updated."
+    );
+  }
+
+  return data;
+}
+
 async function findProfileByEmail(
   supabaseUrl: string,
   serviceKey: string,
@@ -129,18 +256,15 @@ async function findProfileByEmail(
 }
 
 /*
-  FIXED:
-  We no longer use:
-  ?on_conflict=user_id
-
-  Your candidate_profiles.user_id column
-  is not currently configured with the
-  UNIQUE constraint required for that.
+  We do NOT use on_conflict=user_id
+  because candidate_profiles.user_id
+  does not currently have the UNIQUE
+  constraint Supabase requires for that.
 
   Instead:
-  1. Check whether the profile exists.
-  2. PATCH it if it exists.
-  3. POST it if it does not.
+  - check if profile exists
+  - PATCH existing
+  - POST new
 */
 
 async function upsertProfile(
@@ -158,10 +282,6 @@ async function upsertProfile(
       "HireMinds profile is missing a user ID."
     );
   }
-
-  /*
-    Check for an existing profile.
-  */
 
   const checkResponse =
     await fetch(
@@ -191,12 +311,6 @@ async function upsertProfile(
   const profileExists =
     Array.isArray(existingRows) &&
     existingRows.length > 0;
-
-  /*
-    Update existing profile
-    OR
-    create a new profile.
-  */
 
   const response =
     await fetch(
@@ -345,7 +459,7 @@ export async function POST(
 
     /*
       =====================================
-      VERIFY THE EXISTING $2.99 PAYMENT
+      VERIFY EXISTING $2.99 PAYMENT
       =====================================
 
       THIS DOES NOT CHARGE $2.99 AGAIN.
@@ -376,7 +490,8 @@ export async function POST(
     }
 
     if (
-      session?.metadata?.signup_flow !==
+      session?.metadata
+        ?.signup_flow !==
       "post_payment_account_creation"
     ) {
       return NextResponse.json(
@@ -398,7 +513,8 @@ export async function POST(
     */
 
     const customerId =
-      typeof session.customer === "string"
+      typeof session.customer ===
+      "string"
         ? session.customer
         : session.customer?.id;
 
@@ -406,7 +522,8 @@ export async function POST(
       typeof session.payment_intent ===
       "string"
         ? session.payment_intent
-        : session.payment_intent?.id;
+        : session
+            .payment_intent?.id;
 
     if (
       !customerId ||
@@ -442,10 +559,13 @@ export async function POST(
 
     const paymentMethodId =
       typeof paymentIntent
-        ?.payment_method === "string"
-        ? paymentIntent.payment_method
+        ?.payment_method ===
+      "string"
+        ? paymentIntent
+            .payment_method
         : paymentIntent
-            ?.payment_method?.id;
+            ?.payment_method
+            ?.id;
 
     if (!paymentMethodId) {
       return NextResponse.json(
@@ -469,7 +589,8 @@ export async function POST(
     const email =
       String(
         session?.metadata?.email ||
-          session?.customer_details
+          session
+            ?.customer_details
             ?.email ||
           session?.customer_email ||
           ""
@@ -480,13 +601,15 @@ export async function POST(
     const firstName =
       String(
         session?.metadata
-          ?.first_name || ""
+          ?.first_name ||
+          ""
       ).trim();
 
     const lastName =
       String(
         session?.metadata
-          ?.last_name || ""
+          ?.last_name ||
+          ""
       ).trim();
 
     const fullName =
@@ -535,13 +658,26 @@ export async function POST(
       FIND OR CREATE HIREMINDS USER
       =====================================
 
-      This makes retrying the SAME paid
-      session safe.
+      We now check:
+
+      1. Stripe customer user_id
+      2. Existing candidate profile
+      3. Supabase Auth directly by email
+      4. Only create a new user if none exists
     */
 
     let userId:
       | string
       | null = null;
+
+    let existingAuthUser:
+      | any
+      | null = null;
+
+    /*
+      FIRST:
+      Try Stripe metadata.
+    */
 
     const stripeUserId =
       String(
@@ -560,15 +696,25 @@ export async function POST(
       if (
         existingUser?.id &&
         String(
-          existingUser?.email || ""
+          existingUser
+            ?.email || ""
         )
           .trim()
-          .toLowerCase() === email
+          .toLowerCase() ===
+        email
       ) {
         userId =
           existingUser.id;
+
+        existingAuthUser =
+          existingUser;
       }
     }
+
+    /*
+      SECOND:
+      Try candidate_profiles.
+    */
 
     if (!userId) {
       const existingProfile =
@@ -585,15 +731,95 @@ export async function POST(
           await getSupabaseUserById(
             supabaseUrl,
             serviceKey,
-            existingProfile.user_id
+            existingProfile
+              .user_id
           );
 
-        if (existingUser?.id) {
+        if (
+          existingUser?.id
+        ) {
           userId =
             existingUser.id;
+
+          existingAuthUser =
+            existingUser;
         }
       }
     }
+
+    /*
+      THIRD:
+      Look directly inside Supabase Auth.
+
+      THIS FIXES:
+      "A user with this email address has
+      already been registered"
+    */
+
+    if (!userId) {
+      const authUser =
+        await findSupabaseAuthUserByEmail(
+          supabaseUrl,
+          serviceKey,
+          email
+        );
+
+      if (authUser?.id) {
+        userId =
+          authUser.id;
+
+        existingAuthUser =
+          authUser;
+      }
+    }
+
+    /*
+      If an Auth user already exists,
+      update their password to the password
+      they just entered on this verified
+      paid signup page.
+
+      This safely recovers the account that
+      was partially created during the
+      earlier failed attempt.
+    */
+
+    if (
+      userId &&
+      existingAuthUser
+    ) {
+      await updateSupabaseAuthUser(
+        supabaseUrl,
+        serviceKey,
+        userId,
+        password,
+        {
+          first_name:
+            firstName ||
+            null,
+
+          last_name:
+            lastName ||
+            null,
+
+          full_name:
+            fullName,
+
+          phone,
+
+          city,
+
+          state_name:
+            state,
+        }
+      );
+    }
+
+    /*
+      FOURTH:
+      Only create a brand-new Auth user
+      if one truly does not already exist.
+    */
 
     if (!userId) {
       const createUser =
@@ -607,29 +833,37 @@ export async function POST(
                 serviceKey
               ),
 
-            body: JSON.stringify({
-              email,
-              password,
-              email_confirm: true,
+            body:
+              JSON.stringify(
+                {
+                  email,
 
-              user_metadata: {
-                first_name:
-                  firstName || null,
+                  password,
 
-                last_name:
-                  lastName || null,
+                  email_confirm:
+                    true,
 
-                full_name:
-                  fullName,
+                  user_metadata: {
+                    first_name:
+                      firstName ||
+                      null,
 
-                phone,
+                    last_name:
+                      lastName ||
+                      null,
 
-                city,
+                    full_name:
+                      fullName,
 
-                state_name:
-                  state,
-              },
-            }),
+                    phone,
+
+                    city,
+
+                    state_name:
+                      state,
+                  },
+                }
+              ),
 
             cache: "no-store",
           }
@@ -669,7 +903,7 @@ export async function POST(
 
     /*
       =====================================
-      CREATE / UPDATE PROFILE FIRST
+      CREATE / UPDATE PROFILE
       =====================================
     */
 
@@ -725,11 +959,12 @@ export async function POST(
 
     /*
       =====================================
-      FIND AN EXISTING GOOD SUBSCRIPTION
+      FIND EXISTING GOOD SUBSCRIPTION
       =====================================
 
-      If this same signup is retried, we
-      don't want duplicate subscriptions.
+      We do not create duplicate
+      subscriptions if this same payment
+      session is retried.
     */
 
     const subscriptionList =
@@ -771,7 +1006,8 @@ export async function POST(
         paymentIntent?.created ||
           session?.created ||
           Math.floor(
-            Date.now() / 1000
+            Date.now() /
+              1000
           )
       );
 
@@ -779,18 +1015,13 @@ export async function POST(
       5 * 24 * 60 * 60;
 
     const firstChargeAt =
-      paidAt + fiveDays;
+      paidAt +
+      fiveDays;
 
     /*
       =====================================
       CREATE $24.99 SUBSCRIPTION
       =====================================
-
-      Only if a good one does not
-      already exist.
-
-      New idempotency key version fixes
-      the error you just received.
     */
 
     if (!subscription) {
@@ -819,13 +1050,15 @@ export async function POST(
 
       const now =
         Math.floor(
-          Date.now() / 1000
+          Date.now() /
+            1000
         );
 
       /*
-        If we're still inside the original
-        5-day period, schedule $24.99 for
-        the correct future date.
+        If still inside the original
+        five days, schedule the first
+        $24.99 charge for the correct
+        future date.
       */
 
       if (
@@ -844,12 +1077,6 @@ export async function POST(
           "none"
         );
       }
-
-      /*
-        If 5 days have already passed,
-        Stripe will start the monthly
-        subscription immediately.
-      */
 
       params.set(
         "metadata[user_id]",
@@ -881,15 +1108,6 @@ export async function POST(
           "/subscriptions",
           stripeSecret,
           params,
-
-          /*
-            IMPORTANT:
-            New versioned key.
-            This avoids the Stripe
-            idempotency-key conflict
-            you just encountered.
-          */
-
           `hm-sub-v2-${sessionId}`
         );
     }
