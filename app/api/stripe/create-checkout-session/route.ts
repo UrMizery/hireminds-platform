@@ -42,17 +42,8 @@ export async function POST(
   request: NextRequest
 ) {
   try {
-    /*
-      ==========================
-      STRIPE CONFIGURATION
-      ==========================
-    */
-
     const stripeSecretKey =
       process.env.STRIPE_SECRET_KEY;
-
-    const monthlyPriceId =
-      process.env.STRIPE_PRICE_MONTHLY;
 
     const introPriceId =
       process.env.STRIPE_PRICE_TRIAL_5DAY;
@@ -63,19 +54,6 @@ export async function POST(
           ok: false,
           error:
             "STRIPE_SECRET_KEY is missing in Vercel.",
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    if (!monthlyPriceId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "STRIPE_PRICE_MONTHLY is missing in Vercel.",
         },
         {
           status: 500,
@@ -96,12 +74,6 @@ export async function POST(
       );
     }
 
-    /*
-      ==========================
-      SIGNUP INFORMATION
-      ==========================
-    */
-
     const body =
       await request.json();
 
@@ -115,18 +87,16 @@ export async function POST(
       80
     );
 
-    const fullName =
-      clean(
-        body?.fullName ||
-          `${firstName} ${lastName}`,
-        160
-      );
+    const fullName = clean(
+      body?.fullName ||
+        `${firstName} ${lastName}`,
+      160
+    );
 
-    const email =
-      clean(
-        body?.email,
-        254
-      ).toLowerCase();
+    const email = clean(
+      body?.email,
+      254
+    ).toLowerCase();
 
     const phone = clean(
       body?.phone,
@@ -175,42 +145,31 @@ export async function POST(
     const siteUrl =
       getSiteUrl(request);
 
-    /*
-      ==========================
-      CREATE STRIPE CHECKOUT
-      ==========================
-
-      LINE ITEM 0
-      $24.99/month recurring subscription.
-
-      Stripe does NOT charge this recurring
-      amount for the first 5 days because
-      the subscription has a 5-day trial.
-
-      LINE ITEM 1
-      $2.99 one-time introductory charge.
-
-      This amount is charged immediately.
-
-      RESULT:
-
-      TODAY:
-      $2.99
-
-      DAYS 1-5:
-      HireMinds access
-
-      AFTER DAY 5:
-      $24.99/month automatically
-      unless canceled.
-    */
-
     const params =
       new URLSearchParams();
 
+    /*
+      ========================================
+      $2.99 INTRODUCTORY PAYMENT
+      ========================================
+
+      This Checkout Session charges ONLY $2.99.
+
+      There is NO Stripe free trial here.
+
+      The card is saved securely so the
+      $24.99/month subscription can begin
+      automatically 5 days later.
+    */
+
     params.set(
       "mode",
-      "subscription"
+      "payment"
+    );
+
+    params.set(
+      "customer_creation",
+      "always"
     );
 
     params.set(
@@ -219,12 +178,32 @@ export async function POST(
     );
 
     /*
-      Recurring $24.99 monthly price
+      Restrict Checkout to a reusable card
+      payment method.
+    */
+
+    params.set(
+      "payment_method_types[0]",
+      "card"
+    );
+
+    /*
+      Save the payment method for the
+      $24.99 recurring subscription.
+    */
+
+    params.set(
+      "payment_intent_data[setup_future_usage]",
+      "off_session"
+    );
+
+    /*
+      $2.99 introductory access price.
     */
 
     params.set(
       "line_items[0][price]",
-      monthlyPriceId
+      introPriceId
     );
 
     params.set(
@@ -233,33 +212,9 @@ export async function POST(
     );
 
     /*
-      One-time $2.99 introductory price
-    */
-
-    params.set(
-      "line_items[1][price]",
-      introPriceId
-    );
-
-    params.set(
-      "line_items[1][quantity]",
-      "1"
-    );
-
-    /*
-      Delay the recurring $24.99
-      subscription charge for 5 days.
-    */
-
-    params.set(
-      "subscription_data[trial_period_days]",
-      "5"
-    );
-
-    /*
-      ==========================
-      CHECKOUT REDIRECTS
-      ==========================
+      ========================================
+      REDIRECTS
+      ========================================
     */
 
     params.set(
@@ -273,9 +228,9 @@ export async function POST(
     );
 
     /*
-      ==========================
-      CHECKOUT METADATA
-      ==========================
+      ========================================
+      SESSION METADATA
+      ========================================
     */
 
     params.set(
@@ -339,54 +294,29 @@ export async function POST(
     }
 
     /*
-      ==========================
-      SUBSCRIPTION METADATA
-      ==========================
+      Also place identifying signup metadata
+      on the PaymentIntent.
     */
 
     params.set(
-      "subscription_data[metadata][plan]",
-      "monthly"
-    );
-
-    params.set(
-      "subscription_data[metadata][intro_offer]",
-      "5_day_2_99"
-    );
-
-    params.set(
-      "subscription_data[metadata][signup_flow]",
+      "payment_intent_data[metadata][signup_flow]",
       "post_payment_account_creation"
     );
 
     params.set(
-      "subscription_data[metadata][full_name]",
-      fullName
+      "payment_intent_data[metadata][intro_offer]",
+      "5_day_2_99"
     );
 
     params.set(
-      "subscription_data[metadata][email]",
+      "payment_intent_data[metadata][email]",
       email
     );
 
-    if (firstName) {
-      params.set(
-        "subscription_data[metadata][first_name]",
-        firstName
-      );
-    }
-
-    if (lastName) {
-      params.set(
-        "subscription_data[metadata][last_name]",
-        lastName
-      );
-    }
-
     /*
-      ==========================
-      SEND REQUEST TO STRIPE
-      ==========================
+      ========================================
+      CREATE CHECKOUT
+      ========================================
     */
 
     const stripeResponse =
@@ -406,7 +336,8 @@ export async function POST(
           body:
             params.toString(),
 
-          cache: "no-store",
+          cache:
+            "no-store",
         }
       );
 
@@ -438,15 +369,10 @@ export async function POST(
       );
     }
 
-    /*
-      ==========================
-      SUCCESS
-      ==========================
-    */
-
     return NextResponse.json({
       ok: true,
-      url: stripeData.url,
+      url:
+        stripeData.url,
       sessionId:
         stripeData.id,
     });
@@ -472,18 +398,9 @@ export async function POST(
 }
 
 /*
-  ==================================================
+  ========================================
   STRIPE DIAGNOSTIC
-  ==================================================
-
-  Visiting this API route with GET checks:
-
-  - Stripe account connection
-  - $24.99 monthly price
-  - $2.99 introductory price
-
-  The old 4-month and annual prices
-  are intentionally no longer checked.
+  ========================================
 */
 
 export async function GET() {
@@ -499,10 +416,6 @@ export async function GET() {
       });
     }
 
-    /*
-      Check Stripe account
-    */
-
     const accountResponse =
       await fetch(
         "https://api.stripe.com/v1/account",
@@ -512,17 +425,13 @@ export async function GET() {
               `Bearer ${secret}`,
           },
 
-          cache: "no-store",
+          cache:
+            "no-store",
         }
       );
 
     const account =
       await accountResponse.json();
-
-    /*
-      Only the two prices
-      HireMinds now uses.
-    */
 
     const prices = {
       monthly:
@@ -563,7 +472,8 @@ export async function GET() {
                 `Bearer ${secret}`,
             },
 
-            cache: "no-store",
+            cache:
+              "no-store",
           }
         );
 
@@ -572,13 +482,10 @@ export async function GET() {
 
       priceChecks[name] = {
         configured: true,
-
         found:
           response.ok,
-
         status:
           response.status,
-
         error:
           response.ok
             ? null
