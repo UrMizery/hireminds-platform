@@ -39,17 +39,25 @@ async function stripeGet(
 async function stripePost(
   path: string,
   secret: string,
-  params: URLSearchParams
+  params: URLSearchParams,
+  idempotencyKey?: string
 ) {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${secret}`,
+    "Content-Type":
+      "application/x-www-form-urlencoded",
+  };
+
+  if (idempotencyKey) {
+    headers["Idempotency-Key"] =
+      idempotencyKey;
+  }
+
   const response = await fetch(
     `https://api.stripe.com/v1${path}`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        "Content-Type":
-          "application/x-www-form-urlencoded",
-      },
+      headers,
       body: params.toString(),
       cache: "no-store",
     }
@@ -67,12 +75,79 @@ async function stripePost(
   return data;
 }
 
+async function stripeDelete(
+  path: string,
+  secret: string
+) {
+  const response = await fetch(
+    `https://api.stripe.com/v1${path}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${secret}`,
+      },
+      cache: "no-store",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message ||
+        "Stripe cancellation failed."
+    );
+  }
+
+  return data;
+}
+
+async function deleteSupabaseUser(
+  supabaseUrl: string,
+  serviceKey: string,
+  userId: string
+) {
+  const response = await fetch(
+    `${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(
+      userId
+    )}`,
+    {
+      method: "DELETE",
+      headers: authHeaders(serviceKey),
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    console.error(
+      "Could not clean up Supabase user:",
+      await response.text()
+    );
+  }
+}
+
 export async function POST(
   request: NextRequest
 ) {
+  let createdUserId: string | null =
+    null;
+
+  let createdSubscriptionId:
+    | string
+    | null = null;
+
   try {
+    /*
+      =====================================
+      SERVER CONFIGURATION
+      =====================================
+    */
+
     const stripeSecret =
       process.env.STRIPE_SECRET_KEY;
+
+    const monthlyPriceId =
+      process.env.STRIPE_PRICE_MONTHLY;
 
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -82,6 +157,7 @@ export async function POST(
 
     if (
       !stripeSecret ||
+      !monthlyPriceId ||
       !supabaseUrl ||
       !serviceKey
     ) {
@@ -96,6 +172,12 @@ export async function POST(
         }
       );
     }
+
+    /*
+      =====================================
+      REQUEST
+      =====================================
+    */
 
     const body =
       await request.json();
@@ -128,12 +210,8 @@ export async function POST(
 
     /*
       =====================================
-      VERIFY STRIPE CHECKOUT
+      VERIFY $2.99 STRIPE PAYMENT
       =====================================
-
-      The account is created ONLY after
-      Stripe confirms the $2.99 checkout
-      was successfully completed.
     */
 
     const session =
@@ -146,18 +224,13 @@ export async function POST(
 
     if (
       session.status !== "complete" ||
-      ![
-        "paid",
-        "no_payment_required",
-      ].includes(
-        session.payment_status
-      )
+      session.payment_status !== "paid"
     ) {
       return NextResponse.json(
         {
           ok: false,
           error:
-            "Stripe has not confirmed this payment yet.",
+            "Stripe has not confirmed the $2.99 payment yet.",
         },
         {
           status: 402,
@@ -183,6 +256,147 @@ export async function POST(
     }
 
     /*
+      This new checkout is PAYMENT mode.
+
+      It should have:
+      - a Stripe Customer
+      - a PaymentIntent
+      - a saved card/payment method
+    */
+
+    const customerId =
+      typeof session.customer ===
+      "string"
+        ? session.customer
+        : session.customer?.id;
+
+    const paymentIntentId =
+      typeof session.payment_intent ===
+      "string"
+        ? session.payment_intent
+        : session.payment_intent?.id;
+
+    if (
+      !customerId ||
+      !paymentIntentId
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Stripe payment information is incomplete.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /*
+      =====================================
+      GET SAVED PAYMENT METHOD
+      =====================================
+    */
+
+    const paymentIntent =
+      await stripeGet(
+        `/payment_intents/${encodeURIComponent(
+          paymentIntentId
+        )}`,
+        stripeSecret
+      );
+
+    const paymentMethodId =
+      typeof paymentIntent
+        ?.payment_method ===
+      "string"
+        ? paymentIntent
+            .payment_method
+        : paymentIntent
+            ?.payment_method?.id;
+
+    if (!paymentMethodId) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Stripe could not locate the saved payment method.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /*
+      =====================================
+      DETERMINE WHEN $24.99 STARTS
+      =====================================
+
+      We use the original Stripe payment
+      time as the starting point.
+
+      First $24.99 charge:
+      5 days after the $2.99 payment.
+    */
+
+    let paidAt =
+      Number(
+        paymentIntent?.created ||
+          session?.created ||
+          Math.floor(
+            Date.now() / 1000
+          )
+      );
+
+    if (
+      paymentIntent?.latest_charge
+    ) {
+      try {
+        const chargeId =
+          typeof paymentIntent
+            .latest_charge ===
+          "string"
+            ? paymentIntent
+                .latest_charge
+            : paymentIntent
+                .latest_charge?.id;
+
+        if (chargeId) {
+          const charge =
+            await stripeGet(
+              `/charges/${encodeURIComponent(
+                chargeId
+              )}`,
+              stripeSecret
+            );
+
+          if (
+            charge?.paid &&
+            charge?.created
+          ) {
+            paidAt =
+              Number(
+                charge.created
+              );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Could not retrieve charge time:",
+          error
+        );
+      }
+    }
+
+    const fiveDaysInSeconds =
+      5 * 24 * 60 * 60;
+
+    const firstMonthlyChargeAt =
+      paidAt +
+      fiveDaysInSeconds;
+
+    /*
       =====================================
       READ SIGNUP INFORMATION
       =====================================
@@ -191,7 +405,8 @@ export async function POST(
     const email =
       String(
         session?.metadata?.email ||
-          session?.customer_details
+          session
+            ?.customer_details
             ?.email ||
           session?.customer_email ||
           ""
@@ -238,12 +453,6 @@ export async function POST(
           ""
       ).trim() || null;
 
-    const plan =
-      String(
-        session?.metadata?.plan ||
-          "monthly"
-      );
-
     if (
       !email ||
       !fullName
@@ -262,71 +471,8 @@ export async function POST(
 
     /*
       =====================================
-      VERIFY SUBSCRIPTION
+      CREATE HIREMINDS LOGIN
       =====================================
-
-      During the first 5 days Stripe
-      should normally report:
-
-      status = "trialing"
-
-      HireMinds access should STILL be active.
-    */
-
-    let stripeSubscription:
-      | Record<string, any>
-      | null = null;
-
-    if (session.subscription) {
-      stripeSubscription =
-        await stripeGet(
-          `/subscriptions/${encodeURIComponent(
-            session.subscription
-          )}`,
-          stripeSecret
-        );
-    }
-
-    const subscriptionStatus =
-      String(
-        stripeSubscription?.status ||
-          "trialing"
-      );
-
-    /*
-      Accept access while Stripe considers
-      the subscription trialing or active.
-    */
-
-    const validAccessStatuses = [
-      "trialing",
-      "active",
-    ];
-
-    if (
-      !validAccessStatuses.includes(
-        subscriptionStatus
-      )
-    ) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Your Stripe subscription is not currently eligible for HireMinds access.",
-        },
-        {
-          status: 402,
-        }
-      );
-    }
-
-    /*
-      =====================================
-      CREATE SUPABASE AUTH USER
-      =====================================
-
-      Paid users create their password
-      AFTER Stripe has confirmed payment.
     */
 
     const createUser =
@@ -408,20 +554,151 @@ export async function POST(
     const userId =
       userData.id;
 
+    createdUserId =
+      userId;
+
     /*
       =====================================
-      CREATE / ACTIVATE HIREMINDS PROFILE
+      CREATE $24.99 MONTHLY SUBSCRIPTION
       =====================================
 
       IMPORTANT:
 
-      has_paid_access = TRUE
+      There is NO Stripe trial.
 
-      even while Stripe status is "trialing".
+      We create the $24.99/month subscription
+      now but set the first billing date
+      for exactly 5 days after the original
+      $2.99 payment.
 
-      They already paid the $2.99 and
-      should receive HireMinds access
-      immediately.
+      proration_behavior = none
+
+      This prevents Stripe from charging
+      any portion of the $24.99 today.
+    */
+
+    const subscriptionParams =
+      new URLSearchParams();
+
+    subscriptionParams.set(
+      "customer",
+      customerId
+    );
+
+    subscriptionParams.set(
+      "items[0][price]",
+      monthlyPriceId
+    );
+
+    subscriptionParams.set(
+      "default_payment_method",
+      paymentMethodId
+    );
+
+    subscriptionParams.set(
+      "collection_method",
+      "charge_automatically"
+    );
+
+    subscriptionParams.set(
+      "billing_cycle_anchor",
+      String(
+        firstMonthlyChargeAt
+      )
+    );
+
+    subscriptionParams.set(
+      "proration_behavior",
+      "none"
+    );
+
+    subscriptionParams.set(
+      "metadata[user_id]",
+      userId
+    );
+
+    subscriptionParams.set(
+      "metadata[plan]",
+      "monthly"
+    );
+
+    subscriptionParams.set(
+      "metadata[intro_offer]",
+      "5_day_2_99"
+    );
+
+    subscriptionParams.set(
+      "metadata[checkout_session_id]",
+      sessionId
+    );
+
+    subscriptionParams.set(
+      "metadata[email]",
+      email
+    );
+
+    const subscription =
+      await stripePost(
+        "/subscriptions",
+        stripeSecret,
+        subscriptionParams,
+        `hireminds-${sessionId}`
+      );
+
+    if (!subscription?.id) {
+      throw new Error(
+        "Stripe subscription could not be created."
+      );
+    }
+
+    createdSubscriptionId =
+      subscription.id;
+
+    const subscriptionStatus =
+      String(
+        subscription?.status ||
+          "active"
+      );
+
+    /*
+      =====================================
+      UPDATE STRIPE CUSTOMER
+      =====================================
+    */
+
+    const customerParams =
+      new URLSearchParams();
+
+    customerParams.set(
+      "metadata[user_id]",
+      userId
+    );
+
+    customerParams.set(
+      "metadata[plan]",
+      "monthly"
+    );
+
+    customerParams.set(
+      "metadata[intro_offer]",
+      "5_day_2_99"
+    );
+
+    await stripePost(
+      `/customers/${encodeURIComponent(
+        customerId
+      )}`,
+      stripeSecret,
+      customerParams
+    );
+
+    /*
+      =====================================
+      CREATE HIREMINDS PROFILE
+      =====================================
+
+      The person already paid $2.99,
+      so HireMinds access begins immediately.
     */
 
     const profile = {
@@ -497,89 +774,72 @@ export async function POST(
     if (
       !profileResponse.ok
     ) {
+      const profileError =
+        await profileResponse.text();
+
       console.error(
         "Profile create failed:",
-        await profileResponse.text()
+        profileError
       );
+
+      /*
+        IMPORTANT SAFETY CLEANUP:
+
+        If HireMinds cannot activate the
+        account, cancel the future $24.99
+        subscription so the customer is
+        not charged later for an unusable
+        account.
+      */
+
+      try {
+        if (
+          createdSubscriptionId
+        ) {
+          await stripeDelete(
+            `/subscriptions/${encodeURIComponent(
+              createdSubscriptionId
+            )}`,
+            stripeSecret
+          );
+        }
+      } catch (
+        cleanupError
+      ) {
+        console.error(
+          "Stripe subscription cleanup failed:",
+          cleanupError
+        );
+      }
+
+      try {
+        if (
+          createdUserId
+        ) {
+          await deleteSupabaseUser(
+            supabaseUrl,
+            serviceKey,
+            createdUserId
+          );
+        }
+      } catch (
+        cleanupError
+      ) {
+        console.error(
+          "Supabase user cleanup failed:",
+          cleanupError
+        );
+      }
 
       return NextResponse.json(
         {
           ok: false,
           error:
-            "Payment succeeded and the login was created, but the HireMinds profile could not be activated. Please contact support.",
+            "Your $2.99 payment succeeded, but HireMinds could not finish activating your account. The future monthly subscription was not kept. Please contact support.",
         },
         {
           status: 500,
         }
-      );
-    }
-
-    /*
-      =====================================
-      ATTACH USER ID TO STRIPE SUBSCRIPTION
-      =====================================
-
-      This is what allows future:
-
-      $24.99 renewals
-      cancellations
-      subscription events
-
-      to identify the correct
-      HireMinds account.
-    */
-
-    if (
-      session.subscription
-    ) {
-      const params =
-        new URLSearchParams();
-
-      params.set(
-        "metadata[user_id]",
-        userId
-      );
-
-      params.set(
-        "metadata[plan]",
-        "monthly"
-      );
-
-      params.set(
-        "metadata[intro_offer]",
-        "5_day_2_99"
-      );
-
-      await stripePost(
-        `/subscriptions/${encodeURIComponent(
-          session.subscription
-        )}`,
-        stripeSecret,
-        params
-      );
-    }
-
-    /*
-      =====================================
-      ATTACH USER ID TO STRIPE CUSTOMER
-      =====================================
-    */
-
-    if (session.customer) {
-      const params =
-        new URLSearchParams();
-
-      params.set(
-        "metadata[user_id]",
-        userId
-      );
-
-      await stripePost(
-        `/customers/${encodeURIComponent(
-          session.customer
-        )}`,
-        stripeSecret,
-        params
       );
     }
 
@@ -594,15 +854,58 @@ export async function POST(
 
       email,
 
+      accessGranted:
+        true,
+
       subscriptionStatus,
 
-      accessGranted: true,
+      firstMonthlyChargeAt:
+        new Date(
+          firstMonthlyChargeAt *
+            1000
+        ).toISOString(),
     });
   } catch (error: any) {
     console.error(
       "Complete paid signup error:",
       error
     );
+
+    /*
+      If we created a HireMinds user
+      but failed before completing the
+      subscription/profile setup,
+      remove that partial account.
+    */
+
+    try {
+      const supabaseUrl =
+        process.env
+          .NEXT_PUBLIC_SUPABASE_URL;
+
+      const serviceKey =
+        process.env
+          .SUPABASE_SERVICE_ROLE_KEY;
+
+      if (
+        createdUserId &&
+        supabaseUrl &&
+        serviceKey
+      ) {
+        await deleteSupabaseUser(
+          supabaseUrl,
+          serviceKey,
+          createdUserId
+        );
+      }
+    } catch (
+      cleanupError
+    ) {
+      console.error(
+        "User cleanup error:",
+        cleanupError
+      );
+    }
 
     return NextResponse.json(
       {
