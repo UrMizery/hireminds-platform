@@ -128,28 +128,107 @@ async function findProfileByEmail(
   return rows[0];
 }
 
+/*
+  FIXED:
+  We no longer use:
+  ?on_conflict=user_id
+
+  Your candidate_profiles.user_id column
+  is not currently configured with the
+  UNIQUE constraint required for that.
+
+  Instead:
+  1. Check whether the profile exists.
+  2. PATCH it if it exists.
+  3. POST it if it does not.
+*/
+
 async function upsertProfile(
   supabaseUrl: string,
   serviceKey: string,
   profile: Record<string, unknown>
 ) {
-  const response = await fetch(
-    `${supabaseUrl}/rest/v1/candidate_profiles?on_conflict=user_id`,
-    {
-      method: "POST",
+  const userId =
+    String(
+      profile.user_id || ""
+    ).trim();
 
-      headers: {
-        ...authHeaders(serviceKey),
+  if (!userId) {
+    throw new Error(
+      "HireMinds profile is missing a user ID."
+    );
+  }
 
-        Prefer:
-          "resolution=merge-duplicates,return=minimal",
-      },
+  /*
+    Check for an existing profile.
+  */
 
-      body: JSON.stringify(profile),
+  const checkResponse =
+    await fetch(
+      `${supabaseUrl}/rest/v1/candidate_profiles?user_id=eq.${encodeURIComponent(
+        userId
+      )}&select=user_id&limit=1`,
+      {
+        headers:
+          authHeaders(
+            serviceKey
+          ),
 
-      cache: "no-store",
-    }
-  );
+        cache:
+          "no-store",
+      }
+    );
+
+  if (!checkResponse.ok) {
+    throw new Error(
+      `HireMinds profile lookup failed: ${await checkResponse.text()}`
+    );
+  }
+
+  const existingRows =
+    await checkResponse.json();
+
+  const profileExists =
+    Array.isArray(existingRows) &&
+    existingRows.length > 0;
+
+  /*
+    Update existing profile
+    OR
+    create a new profile.
+  */
+
+  const response =
+    await fetch(
+      profileExists
+        ? `${supabaseUrl}/rest/v1/candidate_profiles?user_id=eq.${encodeURIComponent(
+            userId
+          )}`
+        : `${supabaseUrl}/rest/v1/candidate_profiles`,
+      {
+        method:
+          profileExists
+            ? "PATCH"
+            : "POST",
+
+        headers: {
+          ...authHeaders(
+            serviceKey
+          ),
+
+          Prefer:
+            "return=minimal",
+        },
+
+        body:
+          JSON.stringify(
+            profile
+          ),
+
+        cache:
+          "no-store",
+      }
+    );
 
   if (!response.ok) {
     throw new Error(
