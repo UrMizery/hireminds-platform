@@ -5,40 +5,53 @@ import { supabase } from "../lib/supabase";
 
 type AccessMethod = "subscription" | "referral";
 
-const IMPACT_ITEMS = [
+const VALUE_ITEMS = [
   {
-    title: "Apply Smarter",
-    text: "Understand the job before you apply — requirements, keywords, fit, and gaps.",
-    tone: "blue",
+    number: "01",
+    title: "Understand the Opportunity",
+    text: "Break down job descriptions, identify keywords, understand requirements, and know where you fit before you apply.",
   },
   {
-    title: "Show Up Stronger",
-    text: "Build better resumes, cover letters, interview responses, and professional branding.",
-    tone: "dark",
+    number: "02",
+    title: "Build a Stronger Application",
+    text: "Create stronger resumes, cover letters, professional messaging, and application materials with more intention.",
   },
   {
+    number: "03",
     title: "Move With Direction",
-    text: "Track your search, explore career paths, set goals, and know what to do next.",
-    tone: "silver",
+    text: "Prepare for interviews, track your search, explore career paths, set goals, and know what your next move should be.",
   },
 ];
 
+const TOOL_ITEMS = [
+  "Resume Builder",
+  "Resume Match",
+  "JD Analyzer",
+  "Cover Letters",
+  "Interview Prep",
+  "Career Goals",
+  "Career Paths",
+  "Job Search Tracking",
+];
+
 export default function SignupPage() {
-  const [fullName, setFullName] = useState("");
+  const [accessMethod, setAccessMethod] =
+    useState<AccessMethod | null>(null);
+
+  const [referralCode, setReferralCode] = useState("");
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [accessMethod, setAccessMethod] =
-    useState<AccessMethod>("subscription");
-
-  const [referralCode, setReferralCode] = useState("");
-
   const [ageConfirmed, setAgeConfirmed] = useState(false);
-  const [billingConfirmed, setBillingConfirmed] = useState(false);
+  const [introConfirmed, setIntroConfirmed] = useState(false);
   const [renewalConfirmed, setRenewalConfirmed] = useState(false);
   const [termsConfirmed, setTermsConfirmed] = useState(false);
 
@@ -49,16 +62,24 @@ export default function SignupPage() {
     setMessage("");
   }
 
+  function chooseAccess(method: AccessMethod) {
+    clearMessage();
+    setAccessMethod(method);
+  }
+
   async function validateReferralCode(code: string) {
-    const response = await fetch("/api/access/validate-referral", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        code,
-      }),
-    });
+    const response = await fetch(
+      "/api/access/validate-referral",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code,
+        }),
+      }
+    );
 
     const raw = await response.text();
 
@@ -85,36 +106,44 @@ export default function SignupPage() {
     return data;
   }
 
-  async function createReferralAccount(options: {
-    normalizedReferralCode: string;
-  }) {
-    const cleanFullName = fullName.trim();
+  async function createReferralAccount(
+    normalizedReferralCode: string
+  ) {
+    const cleanFirstName = firstName.trim();
+    const cleanLastName = lastName.trim();
+    const fullName =
+      `${cleanFirstName} ${cleanLastName}`.trim();
+
     const cleanPhone = phone.trim();
     const cleanCity = city.trim();
     const cleanState = stateName.trim();
     const cleanEmail = email.trim().toLowerCase();
 
-    const normalizedReferralCode =
-      options.normalizedReferralCode.trim();
+    const { data, error } =
+      await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          data: {
+            first_name: cleanFirstName,
+            last_name: cleanLastName,
+            full_name: fullName,
 
-    const { data, error } = await supabase.auth.signUp({
-      email: cleanEmail,
-      password,
-      options: {
-        data: {
-          full_name: cleanFullName,
-          phone: cleanPhone || null,
-          city: cleanCity || null,
-          state_name: cleanState || null,
-          referral_code: normalizedReferralCode,
+            phone: cleanPhone || null,
+            city: cleanCity || null,
+            state_name: cleanState || null,
 
-          has_referral_access: false,
-          has_paid_access: false,
+            referral_code:
+              normalizedReferralCode,
 
-          access_tier: "pending_referral_consent",
+            has_referral_access: false,
+            has_paid_access: false,
+
+            access_tier:
+              "pending_referral_consent",
+          },
         },
-      },
-    });
+      });
 
     if (error) {
       throw new Error(error.message);
@@ -123,20 +152,34 @@ export default function SignupPage() {
     const user = data.user;
 
     if (!user) {
-      throw new Error("User not created.");
+      throw new Error(
+        "Your account could not be created."
+      );
     }
 
-    const profilePayload: Record<string, any> = {
+    const profilePayload: Record<
+      string,
+      any
+    > = {
       user_id: user.id,
-      full_name: cleanFullName,
+
+      first_name: cleanFirstName,
+      last_name: cleanLastName,
+      full_name: fullName,
+
       phone: cleanPhone || null,
       email: cleanEmail,
       city: cleanCity || null,
       state: cleanState || null,
 
-      referral_code: normalizedReferralCode,
-      access_referral_code: normalizedReferralCode,
-      access_referral_verified_at: new Date().toISOString(),
+      referral_code:
+        normalizedReferralCode,
+
+      access_referral_code:
+        normalizedReferralCode,
+
+      access_referral_verified_at:
+        new Date().toISOString(),
 
       referral_consent_accepted: false,
       referral_consent_accepted_at: null,
@@ -144,32 +187,41 @@ export default function SignupPage() {
       has_referral_access: false,
       has_paid_access: false,
 
-      access_tier: "pending_referral_consent",
+      access_tier:
+        "pending_referral_consent",
 
       subscription_status: null,
       subscription_plan: null,
       subscription_provider: null,
     };
 
-    const { error: profileError } = await supabase
-      .from("candidate_profiles")
-      .upsert(profilePayload);
+    const { error: profileError } =
+      await supabase
+        .from("candidate_profiles")
+        .upsert(profilePayload);
 
     if (profileError) {
-      throw new Error(profileError.message);
+      throw new Error(
+        profileError.message
+      );
     }
 
-    const { error: activityError } = await supabase
-      .from("user_activity")
-      .insert({
-        user_id: user.id,
-        full_name: cleanFullName,
-        email: cleanEmail,
-        referral_code: normalizedReferralCode,
-        event_type: "signup",
-        tool_name: null,
-        page_name: "sign-up",
-      });
+    const { error: activityError } =
+      await supabase
+        .from("user_activity")
+        .insert({
+          user_id: user.id,
+
+          full_name: fullName,
+          email: cleanEmail,
+
+          referral_code:
+            normalizedReferralCode,
+
+          event_type: "signup",
+          tool_name: null,
+          page_name: "sign-up",
+        });
 
     if (activityError) {
       console.error(
@@ -190,24 +242,46 @@ export default function SignupPage() {
 
     clearMessage();
 
-    const cleanFullName = fullName.trim();
-    const cleanEmail = email.trim().toLowerCase();
-
-    if (!cleanFullName) {
-      setMessage("Please enter your full name.");
+    if (!accessMethod) {
+      setMessage(
+        "Please choose Paid Subscription or Referral Code."
+      );
       return;
     }
 
-    if (!cleanEmail) {
-      setMessage("Please enter your email address.");
+    const cleanFirstName =
+      firstName.trim();
+
+    const cleanLastName =
+      lastName.trim();
+
+    const fullName =
+      `${cleanFirstName} ${cleanLastName}`.trim();
+
+    const cleanEmail =
+      email.trim().toLowerCase();
+
+    if (!cleanFirstName) {
+      setMessage(
+        "Please enter your first name."
+      );
+      return;
+    }
+
+    if (!cleanLastName) {
+      setMessage(
+        "Please enter your last name."
+      );
       return;
     }
 
     if (
-      accessMethod === "referral" &&
-      !password
+      !cleanEmail ||
+      !cleanEmail.includes("@")
     ) {
-      setMessage("Please create a password.");
+      setMessage(
+        "Please enter a valid email address."
+      );
       return;
     }
 
@@ -215,11 +289,16 @@ export default function SignupPage() {
       setLoading(true);
 
       /*
+        ==========================
         REFERRAL ACCESS
+        ==========================
       */
 
-      if (accessMethod === "referral") {
-        const code = referralCode.trim();
+      if (
+        accessMethod === "referral"
+      ) {
+        const code =
+          referralCode.trim();
 
         if (!code) {
           throw new Error(
@@ -227,16 +306,30 @@ export default function SignupPage() {
           );
         }
 
+        if (!password) {
+          throw new Error(
+            "Please create a password for your HireMinds account."
+          );
+        }
+
+        if (password.length < 6) {
+          throw new Error(
+            "Your password must contain at least 6 characters."
+          );
+        }
+
         const referral =
-          await validateReferralCode(code);
+          await validateReferralCode(
+            code
+          );
 
         const normalizedReferralCode =
           referral.code ||
           code.trim().toUpperCase();
 
-        await createReferralAccount({
-          normalizedReferralCode,
-        });
+        await createReferralAccount(
+          normalizedReferralCode
+        );
 
         try {
           localStorage.setItem(
@@ -251,15 +344,19 @@ export default function SignupPage() {
             );
           }
         } catch {
-          // Database/server validation remains authoritative.
+          // Server/database remains authoritative.
         }
 
-        window.location.href = "/access";
+        window.location.href =
+          "/access";
+
         return;
       }
 
       /*
-        PAID ACCESS
+        ==========================
+        PAID SUBSCRIPTION
+        ==========================
       */
 
       if (!ageConfirmed) {
@@ -268,9 +365,9 @@ export default function SignupPage() {
         );
       }
 
-      if (!billingConfirmed) {
+      if (!introConfirmed) {
         throw new Error(
-          "Please confirm that you understand the $2.99 introductory access charge."
+          "Please confirm that you understand the $2.99 introductory charge."
         );
       }
 
@@ -282,27 +379,43 @@ export default function SignupPage() {
 
       if (!termsConfirmed) {
         throw new Error(
-          "Please confirm that you agree to the HireMinds Terms and Privacy Policy."
+          "Please agree to the HireMinds Terms and Privacy Policy."
         );
       }
 
-      const checkoutResponse = await fetch(
-        "/api/stripe/create-checkout-session",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            plan: "monthly",
-            fullName: cleanFullName,
-            email: cleanEmail,
-            phone: phone.trim(),
-            city: city.trim(),
-            state: stateName.trim(),
-          }),
-        }
-      );
+      const checkoutResponse =
+        await fetch(
+          "/api/stripe/create-checkout-session",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              plan: "monthly",
+
+              fullName,
+              firstName:
+                cleanFirstName,
+              lastName:
+                cleanLastName,
+
+              email: cleanEmail,
+
+              phone:
+                phone.trim(),
+
+              city:
+                city.trim(),
+
+              state:
+                stateName.trim(),
+            }),
+          }
+        );
 
       const checkoutRaw =
         await checkoutResponse.text();
@@ -314,9 +427,12 @@ export default function SignupPage() {
       } = {};
 
       try {
-        checkoutData = checkoutRaw
-          ? JSON.parse(checkoutRaw)
-          : {};
+        checkoutData =
+          checkoutRaw
+            ? JSON.parse(
+                checkoutRaw
+              )
+            : {};
       } catch {
         checkoutData = {};
       }
@@ -331,7 +447,8 @@ export default function SignupPage() {
         );
       }
 
-      window.location.href = checkoutData.url;
+      window.location.href =
+        checkoutData.url;
     } catch (error: any) {
       setMessage(
         error?.message ||
@@ -348,771 +465,1285 @@ export default function SignupPage() {
         onSubmit={handleSignUp}
         style={styles.shell}
       >
-        {/* HERO */}
+        {/* ================================
+            HERO
+        ================================= */}
 
         <section style={styles.hero}>
-          <div style={styles.heroBlueGlow} />
-          <div style={styles.heroSilverGlow} />
+          <div
+            style={styles.heroGlowOne}
+          />
+          <div
+            style={styles.heroGlowTwo}
+          />
 
-          <div style={styles.heroInner}>
-            <div style={styles.heroLeft}>
-              <div style={styles.brandLine}>
-                <span style={styles.brandDot} />
-
-                <span style={styles.brandLabel}>
-                  HIREMINDS
+          <div style={styles.heroGrid}>
+            <div style={styles.heroContent}>
+              <div style={styles.brandRow}>
+                <span
+                  style={styles.brandMark}
+                >
+                  HM
                 </span>
 
-                <span style={styles.brandDivider}>
-                  /
-                </span>
+                <div>
+                  <div
+                    style={styles.brandName}
+                  >
+                    HIREMINDS
+                  </div>
 
-                <span style={styles.brandSub}>
-                  YOUR CAREER PASSPORT
-                </span>
+                  <div
+                    style={
+                      styles.brandDescriptor
+                    }
+                  >
+                    YOUR CAREER PASSPORT
+                  </div>
+                </div>
               </div>
 
-              <h1 style={styles.heroTitle}>
-                Don&apos;t just generate a resume.
-                <span style={styles.heroBlueText}>
-                  {" "}
+              <p
+                style={styles.heroEyebrow}
+              >
+                CAREER DEVELOPMENT +
+                JOB SEARCH INTELLIGENCE
+              </p>
+
+              <h1
+                style={styles.heroTitle}
+              >
+                Stop guessing.
+                <br />
+
+                <span
+                  style={
+                    styles.heroAccent
+                  }
+                >
                   Build your next move.
                 </span>
               </h1>
 
-              <p style={styles.heroLead}>
-                HireMinds is more than a resume
-                generator and more than a job board.
-                It is a career-development platform
-                built to help you understand the
-                opportunity, strengthen your
-                application, prepare for the
-                conversation, track your progress,
-                and make smarter career moves.
+              <p
+                style={styles.heroText}
+              >
+                HireMinds helps you
+                understand the job,
+                position your experience,
+                strengthen your
+                application, prepare for
+                interviews, and move
+                through your career with
+                more direction.
               </p>
 
-              <div style={styles.heroStatement}>
-                <span style={styles.statementMark}>
-                  HM
-                </span>
+              <div
+                style={
+                  styles.heroMiniGrid
+                }
+              >
+                <div
+                  style={
+                    styles.heroMiniItem
+                  }
+                >
+                  <strong>Analyze</strong>
+                  <span>
+                    Know what the job is
+                    really asking for.
+                  </span>
+                </div>
 
-                <p style={styles.statementText}>
-                  <strong>
-                    A generator gives you a document.
-                  </strong>
+                <div
+                  style={
+                    styles.heroMiniItem
+                  }
+                >
+                  <strong>Position</strong>
+                  <span>
+                    Show your experience
+                    with intention.
+                  </span>
+                </div>
 
-                  <br />
-
-                  HireMinds helps you understand what
-                  to do with it.
-                </p>
+                <div
+                  style={
+                    styles.heroMiniItem
+                  }
+                >
+                  <strong>Move</strong>
+                  <span>
+                    Turn preparation into
+                    action.
+                  </span>
+                </div>
               </div>
             </div>
 
-            <aside style={styles.heroRight}>
-              <p style={styles.heroRightEyebrow}>
-                THE HIREMINDS DIFFERENCE
+            <aside
+              style={styles.heroOffer}
+            >
+              <span
+                style={
+                  styles.offerEyebrow
+                }
+              >
+                HIREMINDS ALL ACCESS
+              </span>
+
+              <div
+                style={
+                  styles.offerPriceRow
+                }
+              >
+                <span
+                  style={
+                    styles.offerPrice
+                  }
+                >
+                  $2.99
+                </span>
+              </div>
+
+              <span
+                style={styles.offerTerm}
+              >
+                YOUR FIRST 5 DAYS
+              </span>
+
+              <div
+                style={
+                  styles.offerDivider
+                }
+              />
+
+              <span
+                style={
+                  styles.offerThenLabel
+                }
+              >
+                THEN
+              </span>
+
+              <strong
+                style={
+                  styles.offerRenewal
+                }
+              >
+                $24.99/month
+              </strong>
+
+              <p
+                style={styles.offerText}
+              >
+                Automatically renews
+                monthly after your first
+                5 days unless canceled.
               </p>
 
-              <div style={styles.heroRightRow}>
-                <span style={styles.heroRightNumber}>
-                  01
-                </span>
-
-                <div>
-                  <strong style={styles.heroRightTitle}>
-                    Understand
-                  </strong>
-
-                  <p style={styles.heroRightText}>
-                    Read the role. Identify what
-                    matters. Know where you fit.
-                  </p>
-                </div>
-              </div>
-
-              <div style={styles.heroRightLine} />
-
-              <div style={styles.heroRightRow}>
-                <span style={styles.heroRightNumber}>
-                  02
-                </span>
-
-                <div>
-                  <strong style={styles.heroRightTitle}>
-                    Position
-                  </strong>
-
-                  <p style={styles.heroRightText}>
-                    Present your experience with
-                    intention — not guesswork.
-                  </p>
-                </div>
-              </div>
-
-              <div style={styles.heroRightLine} />
-
-              <div style={styles.heroRightRow}>
-                <span style={styles.heroRightNumber}>
-                  03
-                </span>
-
-                <div>
-                  <strong style={styles.heroRightTitle}>
-                    Move
-                  </strong>
-
-                  <p style={styles.heroRightText}>
-                    Apply smarter, prepare better, and
-                    keep building forward.
-                  </p>
-                </div>
+              <div
+                style={
+                  styles.offerHighlight
+                }
+              >
+                Full access. No limited
+                demo.
               </div>
             </aside>
           </div>
         </section>
 
-        {/* VALUE */}
+        {/* ================================
+            STRONGER VALUE SECTION
+        ================================= */}
 
-        <section style={styles.impactSection}>
-          <div style={styles.impactHeader}>
+        <section
+          style={styles.valueSection}
+        >
+          <div
+            style={styles.valueTop}
+          >
             <div>
-              <p style={styles.eyebrow}>
-                HOW HIREMINDS HELPS
+              <p
+                style={
+                  styles.sectionEyebrow
+                }
+              >
+                WHY HIREMINDS
               </p>
 
-              <h2 style={styles.impactHeadline}>
-                More than tools. A smarter way to move.
+              <h2
+                style={
+                  styles.sectionHeadline
+                }
+              >
+                More than tools.
+                <br />
+                <span
+                  style={
+                    styles.sectionAccent
+                  }
+                >
+                  A smarter way to move.
+                </span>
               </h2>
             </div>
 
-            <div style={styles.startPrice}>
-              <span style={styles.startPriceLabel}>
-                START FOR
-              </span>
-
-              <strong style={styles.startPriceValue}>
-                $2.99
-              </strong>
-
-              <span style={styles.startPriceSub}>
-                / 5 days
-              </span>
-            </div>
+            <p
+              style={
+                styles.sectionIntro
+              }
+            >
+              A resume is only one piece
+              of the process. HireMinds
+              helps you understand,
+              prepare, apply, track and
+              keep moving forward.
+            </p>
           </div>
 
-          <div style={styles.impactGrid}>
-            {IMPACT_ITEMS.map((item) => {
-              const toneStyle =
-                item.tone === "blue"
-                  ? styles.impactBlue
-                  : item.tone === "dark"
-                  ? styles.impactDark
-                  : styles.impactSilver;
+          <div
+            style={styles.valueGrid}
+          >
+            {VALUE_ITEMS.map(
+              (item, index) => {
+                const dark =
+                  index === 1;
 
-              const textStyle =
-                item.tone === "dark"
-                  ? styles.impactTextLight
-                  : styles.impactTextDark;
-
-              return (
-                <article
-                  key={item.title}
-                  style={{
-                    ...styles.impactCard,
-                    ...toneStyle,
-                  }}
-                >
-                  <div style={styles.impactAccent} />
-
-                  <h3
+                return (
+                  <article
+                    key={item.number}
                     style={{
-                      ...styles.impactTitle,
-                      ...textStyle,
+                      ...styles.valueCard,
+
+                      ...(dark
+                        ? styles.valueCardDark
+                        : {}),
                     }}
                   >
-                    {item.title}
-                  </h3>
+                    <span
+                      style={{
+                        ...styles.valueNumber,
 
-                  <p
-                    style={{
-                      ...styles.impactText,
-                      ...textStyle,
-                    }}
-                  >
-                    {item.text}
-                  </p>
-                </article>
-              );
-            })}
+                        ...(dark
+                          ? styles.valueNumberDark
+                          : {}),
+                      }}
+                    >
+                      {item.number}
+                    </span>
+
+                    <h3
+                      style={{
+                        ...styles.valueTitle,
+
+                        ...(dark
+                          ? styles.valueTextLight
+                          : {}),
+                      }}
+                    >
+                      {item.title}
+                    </h3>
+
+                    <p
+                      style={{
+                        ...styles.valueText,
+
+                        ...(dark
+                          ? styles.valueTextLightMuted
+                          : {}),
+                      }}
+                    >
+                      {item.text}
+                    </p>
+                  </article>
+                );
+              }
+            )}
           </div>
 
-          <div style={styles.toolRibbon}>
-            <span style={styles.toolRibbonLabel}>
+          <div
+            style={styles.toolBand}
+          >
+            <span
+              style={
+                styles.toolBandLabel
+              }
+            >
               ONE PLATFORM
             </span>
 
-            <span style={styles.toolRibbonItem}>
-              Resume Builder
-            </span>
-
-            <span style={styles.toolDot}>•</span>
-
-            <span style={styles.toolRibbonItem}>
-              Resume Match
-            </span>
-
-            <span style={styles.toolDot}>•</span>
-
-            <span style={styles.toolRibbonItem}>
-              Job Description Analyzer
-            </span>
-
-            <span style={styles.toolDot}>•</span>
-
-            <span style={styles.toolRibbonItem}>
-              Interview Prep
-            </span>
-
-            <span style={styles.toolDot}>•</span>
-
-            <span style={styles.toolRibbonItem}>
-              Career Goals
-            </span>
-
-            <span style={styles.toolDot}>•</span>
-
-            <span style={styles.toolRibbonItem}>
-              Job Search Tracking
-            </span>
+            <div
+              style={
+                styles.toolBandItems
+              }
+            >
+              {TOOL_ITEMS.map(
+                (tool) => (
+                  <span
+                    key={tool}
+                    style={
+                      styles.toolChip
+                    }
+                  >
+                    {tool}
+                  </span>
+                )
+              )}
+            </div>
           </div>
         </section>
 
-        {/* ACCOUNT */}
+        {/* ================================
+            STEP 1 ACCESS FIRST
+        ================================= */}
 
-        <section style={styles.signupSection}>
-          <div style={styles.signupHeader}>
-            <div style={styles.signupNumber}>
+        <section
+          style={styles.sectionCard}
+        >
+          <div
+            style={styles.stepHeader}
+          >
+            <div
+              style={styles.stepNumber}
+            >
               01
             </div>
 
             <div>
-              <p style={styles.eyebrow}>
-                CREATE YOUR ACCOUNT
-              </p>
-
-              <h2 style={styles.signupTitle}>
-                Create Your Career Passport
-              </h2>
-
-              <p style={styles.signupText}>
-                Start with your information, then
-                choose Paid Access or Referral Access.
-              </p>
-            </div>
-          </div>
-
-          <div style={styles.formGrid}>
-            <label style={styles.field}>
-              <span style={styles.label}>
-                Full Name *
-              </span>
-
-              <input
-                placeholder="Full Name"
-                value={fullName}
-                onChange={(e) =>
-                  setFullName(e.target.value)
+              <p
+                style={
+                  styles.sectionEyebrow
                 }
-                style={styles.input}
-                required
-              />
-            </label>
-
-            <label style={styles.field}>
-              <span style={styles.label}>
-                Phone Number
-              </span>
-
-              <input
-                placeholder="Phone Number"
-                value={phone}
-                onChange={(e) =>
-                  setPhone(e.target.value)
-                }
-                style={styles.input}
-              />
-            </label>
-
-            <label style={styles.field}>
-              <span style={styles.label}>
-                City
-              </span>
-
-              <input
-                placeholder="City"
-                value={city}
-                onChange={(e) =>
-                  setCity(e.target.value)
-                }
-                style={styles.input}
-              />
-            </label>
-
-            <label style={styles.field}>
-              <span style={styles.label}>
-                State
-              </span>
-
-              <input
-                placeholder="State"
-                value={stateName}
-                onChange={(e) =>
-                  setStateName(e.target.value)
-                }
-                style={styles.input}
-              />
-            </label>
-
-            <label
-              style={{
-                ...styles.field,
-                ...styles.fullWidth,
-              }}
-            >
-              <span style={styles.label}>
-                Email *
-              </span>
-
-              <input
-                placeholder="Email"
-                type="email"
-                value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
-                style={styles.input}
-                required
-              />
-            </label>
-
-            {accessMethod === "referral" ? (
-              <label
-                style={{
-                  ...styles.field,
-                  ...styles.fullWidth,
-                }}
               >
-                <span style={styles.label}>
-                  Password *
-                </span>
-
-                <div style={styles.passwordWrap}>
-                  <input
-                    placeholder="Password"
-                    type={
-                      showPassword
-                        ? "text"
-                        : "password"
-                    }
-                    value={password}
-                    onChange={(e) =>
-                      setPassword(e.target.value)
-                    }
-                    style={styles.passwordInput}
-                    required
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowPassword(
-                        (prev) => !prev
-                      )
-                    }
-                    style={styles.passwordToggle}
-                  >
-                    {showPassword
-                      ? "Hide"
-                      : "Show"}
-                  </button>
-                </div>
-              </label>
-            ) : (
-              <div
-                style={{
-                  ...styles.field,
-                  ...styles.fullWidth,
-                }}
-              >
-                <span style={styles.label}>
-                  Password
-                </span>
-
-                <div style={styles.infoBar}>
-                  You will create your HireMinds
-                  password after Stripe confirms your
-                  payment.
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ACCESS */}
-
-        <section style={styles.signupSection}>
-          <div style={styles.signupHeader}>
-            <div style={styles.signupNumberBlue}>
-              02
-            </div>
-
-            <div>
-              <p style={styles.eyebrow}>
                 CHOOSE YOUR ACCESS
               </p>
 
-              <h2 style={styles.signupTitle}>
-                How would you like to access
+              <h2
+                style={styles.stepTitle}
+              >
+                How will you access
                 HireMinds?
               </h2>
 
-              <p style={styles.signupText}>
-                Choose Paid Access or use an active
-                referral code that was provided to
-                you.
+              <p
+                style={styles.stepText}
+              >
+                Choose the option that
+                applies to you before
+                creating your Career
+                Passport.
               </p>
             </div>
           </div>
 
-          <div style={styles.methodTabs}>
-            <button
-              type="button"
-              onClick={() => {
-                clearMessage();
-                setAccessMethod("subscription");
-              }}
-              style={{
-                ...styles.methodButton,
-                ...(accessMethod === "subscription"
-                  ? styles.methodButtonActive
-                  : {}),
-              }}
-            >
-              Paid Access
-            </button>
+          <div
+            style={
+              styles.accessChoiceGrid
+            }
+          >
+            {/* PAID */}
 
             <button
               type="button"
-              onClick={() => {
-                clearMessage();
-                setAccessMethod("referral");
-              }}
+              onClick={() =>
+                chooseAccess(
+                  "subscription"
+                )
+              }
               style={{
-                ...styles.methodButton,
-                ...(accessMethod === "referral"
-                  ? styles.methodButtonActive
+                ...styles.accessCard,
+
+                ...(accessMethod ===
+                "subscription"
+                  ? styles.accessCardSelected
                   : {}),
               }}
             >
-              Referral Code
+              <div
+                style={
+                  styles.accessCardTop
+                }
+              >
+                <span
+                  style={
+                    styles.accessCardLabel
+                  }
+                >
+                  PAID SUBSCRIPTION
+                </span>
+
+                {accessMethod ===
+                "subscription" ? (
+                  <span
+                    style={
+                      styles.selectedPill
+                    }
+                  >
+                    ✓ SELECTED
+                  </span>
+                ) : null}
+              </div>
+
+              <div
+                style={
+                  styles.accessPriceRow
+                }
+              >
+                <strong
+                  style={
+                    styles.accessPrice
+                  }
+                >
+                  $2.99
+                </strong>
+
+                <span
+                  style={
+                    styles.accessPriceDetail
+                  }
+                >
+                  first 5 days
+                </span>
+              </div>
+
+              <div
+                style={
+                  styles.accessRenewal
+                }
+              >
+                Then{" "}
+                <strong>
+                  $24.99/month
+                </strong>
+              </div>
+
+              <p
+                style={
+                  styles.accessDescription
+                }
+              >
+                Full HireMinds access.
+                Automatically renews
+                monthly after your
+                introductory period
+                unless canceled.
+              </p>
+
+              <span
+                style={
+                  styles.accessSelectText
+                }
+              >
+                Choose Paid Access →
+              </span>
+            </button>
+
+            {/* REFERRAL */}
+
+            <button
+              type="button"
+              onClick={() =>
+                chooseAccess(
+                  "referral"
+                )
+              }
+              style={{
+                ...styles.accessCard,
+
+                ...(accessMethod ===
+                "referral"
+                  ? styles.accessCardSelected
+                  : {}),
+              }}
+            >
+              <div
+                style={
+                  styles.accessCardTop
+                }
+              >
+                <span
+                  style={
+                    styles.accessCardLabel
+                  }
+                >
+                  REFERRAL ACCESS
+                </span>
+
+                {accessMethod ===
+                "referral" ? (
+                  <span
+                    style={
+                      styles.selectedPill
+                    }
+                  >
+                    ✓ SELECTED
+                  </span>
+                ) : null}
+              </div>
+
+              <div
+                style={
+                  styles.referralBigTitle
+                }
+              >
+                I Have a Referral Code
+              </div>
+
+              <div
+                style={
+                  styles.accessRenewal
+                }
+              >
+                One-time{" "}
+                <strong>
+                  30 days unlimited
+                  access
+                </strong>
+              </div>
+
+              <p
+                style={
+                  styles.accessDescription
+                }
+              >
+                Available to eligible
+                participants who were
+                provided an active code
+                by an approved program
+                or partner.
+              </p>
+
+              <span
+                style={
+                  styles.accessSelectText
+                }
+              >
+                Use Referral Code →
+              </span>
             </button>
           </div>
 
-          {/* PAID ACCESS */}
-
-          {accessMethod === "subscription" ? (
-            <>
-              <div style={styles.paidOffer}>
-                <div style={styles.paidOfferTop}>
-                  <div>
-                    <span style={styles.paidBadge}>
-                      5-DAY INTRODUCTORY ACCESS
-                    </span>
-
-                    <h3 style={styles.paidTitle}>
-                      HireMinds All Access
-                    </h3>
-
-                    <p style={styles.paidLead}>
-                      Explore HireMinds and unlock
-                      your career-development tools.
-                    </p>
-                  </div>
-
-                  <div style={styles.paidPriceBlock}>
-                    <span style={styles.paidPrice}>
-                      $2.99
-                    </span>
-
-                    <span style={styles.paidPriceTerm}>
-                      first 5 days
-                    </span>
-                  </div>
-                </div>
-
-                <div style={styles.renewalBar}>
-                  <div>
-                    <span
-                      style={styles.renewalEyebrow}
-                    >
-                      AFTER YOUR FIRST 5 DAYS
-                    </span>
-
-                    <strong
-                      style={styles.renewalPrice}
-                    >
-                      $24.99/month
-                    </strong>
-                  </div>
-
-                  <span style={styles.renewalText}>
-                    Automatically renews unless
-                    canceled.
-                  </span>
-                </div>
-
-                <div style={styles.offerPoints}>
-                  <span>✓ Full HireMinds access</span>
-
-                  <span>
-                    ✓ Career-development tools
-                  </span>
-
-                  <span>
-                    ✓ Cancel before renewal
-                  </span>
-                </div>
-              </div>
-
-              <div style={styles.ackPanel}>
-                <p style={styles.ackTitle}>
-                  Before continuing
-                </p>
-
-                <label style={styles.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    checked={ageConfirmed}
-                    onChange={(e) =>
-                      setAgeConfirmed(
-                        e.target.checked
-                      )
-                    }
-                    style={styles.checkbox}
-                  />
-
-                  <span>
-                    I confirm that I am{" "}
-                    <strong>
-                      18 years of age or older.
-                    </strong>
-                  </span>
-                </label>
-
-                <label style={styles.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    checked={billingConfirmed}
-                    onChange={(e) =>
-                      setBillingConfirmed(
-                        e.target.checked
-                      )
-                    }
-                    style={styles.checkbox}
-                  />
-
-                  <span>
-                    I understand that I will be
-                    charged{" "}
-                    <strong>$2.99 today</strong> for
-                    my first 5 days of HireMinds
-                    access.
-                  </span>
-                </label>
-
-                <label style={styles.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    checked={renewalConfirmed}
-                    onChange={(e) =>
-                      setRenewalConfirmed(
-                        e.target.checked
-                      )
-                    }
-                    style={styles.checkbox}
-                  />
-
-                  <span>
-                    I understand that unless I
-                    cancel, my subscription will
-                    automatically continue at{" "}
-                    <strong>
-                      $24.99 per month
-                    </strong>{" "}
-                    after my 5-day introductory
-                    access period.
-                  </span>
-                </label>
-
-                <label style={styles.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    checked={termsConfirmed}
-                    onChange={(e) =>
-                      setTermsConfirmed(
-                        e.target.checked
-                      )
-                    }
-                    style={styles.checkbox}
-                  />
-
-                  <span>
-                    I agree to the HireMinds Terms
-                    and Privacy Policy.
-                  </span>
-                </label>
-
-                <p style={styles.smallNote}>
-                  Payment information and final
-                  authorization are completed
-                  securely through Stripe.
-                </p>
-              </div>
-            </>
-          ) : (
-            /* REFERRAL ACCESS */
-
-            <div style={styles.referralPanel}>
-              <div style={styles.referralIntro}>
-                <div style={styles.referralBadge}>
-                  REFERRAL ACCESS
-                </div>
-
-                <div>
-                  <h3 style={styles.referralTitle}>
-                    I Have a Referral Code
-                  </h3>
-
-                  <p style={styles.referralText}>
-                    Enter the active referral code
-                    that was provided to you by an
-                    approved program or partner.
-                  </p>
-                </div>
-              </div>
-
-              <div style={styles.referralAccessBox}>
+          {accessMethod ===
+          "referral" ? (
+            <div
+              style={
+                styles.referralCodeArea
+              }
+            >
+              <div>
                 <span
-                  style={styles.referralAccessLabel}
+                  style={
+                    styles.fieldLabel
+                  }
                 >
-                  WHAT REFERRAL ACCESS INCLUDES
+                  REFERRAL CODE
                 </span>
-
-                <strong
-                  style={styles.referralAccessTitle}
-                >
-                  One-time 30 days of unlimited
-                  HireMinds access
-                </strong>
 
                 <p
-                  style={styles.referralAccessText}
+                  style={
+                    styles.referralCodeHelp
+                  }
                 >
-                  Referral access is intended for
-                  eligible participants who have
-                  been provided an active referral
-                  code. Referral access does not
-                  automatically renew and does not
-                  require payment.
+                  Enter the active code
+                  that was provided to
+                  you.
                 </p>
               </div>
 
-              <label style={styles.field}>
-                <span style={styles.label}>
-                  Referral Code
-                </span>
+              <input
+                placeholder="Enter Referral Code"
+                value={referralCode}
+                onChange={(e) =>
+                  setReferralCode(
+                    e.target.value
+                  )
+                }
+                style={
+                  styles.referralInput
+                }
+                autoComplete="off"
+                spellCheck={false}
+              />
 
-                <input
-                  placeholder="Enter Referral Code"
-                  value={referralCode}
-                  onChange={(e) =>
-                    setReferralCode(e.target.value)
-                  }
-                  style={styles.input}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </label>
-
-              <div style={styles.previousAccessBox}>
+              <div
+                style={
+                  styles.previousReferralNote
+                }
+              >
                 <strong>
-                  Previously used referral access?
+                  Previously used
+                  referral access?
                 </strong>
 
                 <span>
-                  If you previously had or used
-                  HireMinds referral access, this
-                  option may no longer be available
-                  for your account. You may choose
-                  Paid Access instead.
+                  Referral access is a
+                  one-time benefit. If
+                  you previously used
+                  referral access, this
+                  option may no longer
+                  be available for your
+                  account. Paid Access
+                  remains available.
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        {/* ================================
+            STEP 2 INFO
+        ================================= */}
+
+        {accessMethod ? (
+          <section
+            style={styles.sectionCard}
+          >
+            <div
+              style={styles.stepHeader}
+            >
+              <div
+                style={
+                  styles.stepNumberBlue
+                }
+              >
+                02
+              </div>
+
+              <div>
+                <p
+                  style={
+                    styles.sectionEyebrow
+                  }
+                >
+                  CREATE YOUR CAREER
+                  PASSPORT
+                </p>
+
+                <h2
+                  style={
+                    styles.stepTitle
+                  }
+                >
+                  Tell us who you are.
+                </h2>
+
+                <p
+                  style={
+                    styles.stepText
+                  }
+                >
+                  Enter your basic
+                  information to
+                  continue with the
+                  access option you
+                  selected.
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={styles.formGrid}
+            >
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  First Name *
+                </span>
+
+                <input
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) =>
+                    setFirstName(
+                      e.target.value
+                    )
+                  }
+                  style={styles.input}
+                  required
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  Last Name *
+                </span>
+
+                <input
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) =>
+                    setLastName(
+                      e.target.value
+                    )
+                  }
+                  style={styles.input}
+                  required
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  Email Address *
+                </span>
+
+                <input
+                  placeholder="Email Address"
+                  type="email"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(
+                      e.target.value
+                    )
+                  }
+                  style={styles.input}
+                  required
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  Phone Number
+                </span>
+
+                <input
+                  placeholder="Phone Number"
+                  value={phone}
+                  onChange={(e) =>
+                    setPhone(
+                      e.target.value
+                    )
+                  }
+                  style={styles.input}
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  City
+                </span>
+
+                <input
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) =>
+                    setCity(
+                      e.target.value
+                    )
+                  }
+                  style={styles.input}
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  State
+                </span>
+
+                <input
+                  placeholder="State"
+                  value={stateName}
+                  onChange={(e) =>
+                    setStateName(
+                      e.target.value
+                    )
+                  }
+                  style={styles.input}
+                />
+              </label>
+
+              {accessMethod ===
+              "referral" ? (
+                <label
+                  style={{
+                    ...styles.field,
+                    ...styles.fullWidth,
+                  }}
+                >
+                  <span
+                    style={
+                      styles.fieldLabel
+                    }
+                  >
+                    Create Password *
+                  </span>
+
+                  <div
+                    style={
+                      styles.passwordWrap
+                    }
+                  >
+                    <input
+                      placeholder="Create a password"
+                      type={
+                        showPassword
+                          ? "text"
+                          : "password"
+                      }
+                      value={password}
+                      onChange={(e) =>
+                        setPassword(
+                          e.target.value
+                        )
+                      }
+                      style={
+                        styles.passwordInput
+                      }
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowPassword(
+                          (prev) =>
+                            !prev
+                        )
+                      }
+                      style={
+                        styles.passwordToggle
+                      }
+                    >
+                      {showPassword
+                        ? "Hide"
+                        : "Show"}
+                    </button>
+                  </div>
+
+                  <span
+                    style={
+                      styles.passwordNote
+                    }
+                  >
+                    This password is for
+                    signing back into
+                    your HireMinds
+                    account after
+                    activation.
+                  </span>
+                </label>
+              ) : (
+                <div
+                  style={{
+                    ...styles.fullWidth,
+                    ...styles.paymentPasswordNotice,
+                  }}
+                >
+                  <strong>
+                    Password comes
+                    after payment.
+                  </strong>
+
+                  <span>
+                    Paid subscribers
+                    will create their
+                    HireMinds password
+                    after Stripe
+                    confirms the $2.99
+                    payment.
+                  </span>
+                </div>
+              )}
+            </div>
+          </section>
+        ) : null}
+
+        {/* ================================
+            STEP 3 CONFIRM
+        ================================= */}
+
+        {accessMethod ===
+        "subscription" ? (
+          <section
+            style={styles.sectionCard}
+          >
+            <div
+              style={styles.stepHeader}
+            >
+              <div
+                style={styles.stepNumber}
+              >
+                03
+              </div>
+
+              <div>
+                <p
+                  style={
+                    styles.sectionEyebrow
+                  }
+                >
+                  CONFIRM & CONTINUE
+                </p>
+
+                <h2
+                  style={
+                    styles.stepTitle
+                  }
+                >
+                  Know exactly what
+                  you&apos;re signing
+                  up for.
+                </h2>
+              </div>
+            </div>
+
+            <div
+              style={
+                styles.billingSummary
+              }
+            >
+              <div>
+                <span
+                  style={
+                    styles.billingSmall
+                  }
+                >
+                  TODAY
+                </span>
+
+                <strong
+                  style={
+                    styles.billingBig
+                  }
+                >
+                  $2.99
+                </strong>
+
+                <span
+                  style={
+                    styles.billingDescription
+                  }
+                >
+                  First 5 days
                 </span>
               </div>
 
-              <div style={styles.expirationBox}>
-                After your referral code is
-                verified, you will continue to the
-                HireMinds{" "}
-                <strong>
-                  Consent &amp; Access
-                </strong>{" "}
-                page before your referral access is
-                activated.
+              <div
+                style={
+                  styles.billingArrow
+                }
+              >
+                →
               </div>
 
-              <p style={styles.smallNote}>
-                Referral eligibility and access are
-                subject to verification.
+              <div>
+                <span
+                  style={
+                    styles.billingSmall
+                  }
+                >
+                  AFTER 5 DAYS
+                </span>
+
+                <strong
+                  style={
+                    styles.billingBig
+                  }
+                >
+                  $24.99
+                </strong>
+
+                <span
+                  style={
+                    styles.billingDescription
+                  }
+                >
+                  Per month until
+                  canceled
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={styles.ackPanel}
+            >
+              <label
+                style={
+                  styles.checkboxRow
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(e) =>
+                    setAgeConfirmed(
+                      e.target.checked
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I confirm that I am{" "}
+                  <strong>
+                    18 years of age or
+                    older.
+                  </strong>
+                </span>
+              </label>
+
+              <label
+                style={
+                  styles.checkboxRow
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={
+                    introConfirmed
+                  }
+                  onChange={(e) =>
+                    setIntroConfirmed(
+                      e.target.checked
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I understand that I
+                  will be charged{" "}
+                  <strong>
+                    $2.99 today
+                  </strong>{" "}
+                  for my first 5 days of
+                  HireMinds access.
+                </span>
+              </label>
+
+              <label
+                style={
+                  styles.checkboxRow
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={
+                    renewalConfirmed
+                  }
+                  onChange={(e) =>
+                    setRenewalConfirmed(
+                      e.target.checked
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I understand that
+                  unless canceled, my
+                  subscription will
+                  automatically renew at{" "}
+                  <strong>
+                    $24.99 per month
+                  </strong>{" "}
+                  after the 5-day
+                  introductory period.
+                </span>
+              </label>
+
+              <label
+                style={
+                  styles.checkboxRow
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={
+                    termsConfirmed
+                  }
+                  onChange={(e) =>
+                    setTermsConfirmed(
+                      e.target.checked
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I agree to the
+                  HireMinds Terms and
+                  Privacy Policy.
+                </span>
+              </label>
+            </div>
+          </section>
+        ) : null}
+
+        {accessMethod ===
+        "referral" ? (
+          <section
+            style={styles.sectionCard}
+          >
+            <div
+              style={styles.stepHeader}
+            >
+              <div
+                style={styles.stepNumber}
+              >
+                03
+              </div>
+
+              <div>
+                <p
+                  style={
+                    styles.sectionEyebrow
+                  }
+                >
+                  VERIFY & CONTINUE
+                </p>
+
+                <h2
+                  style={
+                    styles.stepTitle
+                  }
+                >
+                  Confirm your referral
+                  access.
+                </h2>
+
+                <p
+                  style={
+                    styles.stepText
+                  }
+                >
+                  Your referral code
+                  will be verified
+                  before you continue to
+                  the Consent & Access
+                  page.
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={
+                styles.referralSummary
+              }
+            >
+              <div>
+                <span
+                  style={
+                    styles.referralSummaryLabel
+                  }
+                >
+                  REFERRAL ACCESS
+                </span>
+
+                <strong
+                  style={
+                    styles.referralSummaryTitle
+                  }
+                >
+                  One-time 30 days of
+                  unlimited access
+                </strong>
+              </div>
+
+              <p
+                style={
+                  styles.referralSummaryText
+                }
+              >
+                Referral access does
+                not automatically renew
+                and does not require a
+                payment.
               </p>
             </div>
-          )}
-        </section>
+          </section>
+        ) : null}
+
+        {/* ERROR */}
 
         {message ? (
-          <div style={styles.message}>
+          <div
+            style={styles.message}
+          >
             {message}
           </div>
         ) : null}
 
-        <button
-          type="submit"
-          style={styles.submitButton}
-          disabled={loading}
-        >
-          <span>
-            {loading
-              ? "Please wait..."
-              : accessMethod ===
-                "subscription"
-              ? "Continue to Secure Payment"
-              : "Create Career Passport & Continue to Consent"}
-          </span>
+        {/* SUBMIT */}
 
-          {!loading ? (
-            <span style={styles.buttonArrow}>
-              →
+        {accessMethod ? (
+          <button
+            type="submit"
+            style={
+              styles.submitButton
+            }
+            disabled={loading}
+          >
+            <span>
+              {loading
+                ? "Please wait..."
+                : accessMethod ===
+                    "subscription"
+                ? "Continue to Secure Payment"
+                : "Create Career Passport & Continue"}
             </span>
-          ) : null}
-        </button>
 
-        <footer style={styles.footer}>
-          <div style={styles.footerBrand}>
+            {!loading ? (
+              <span
+                style={
+                  styles.buttonArrow
+                }
+              >
+                →
+              </span>
+            ) : null}
+          </button>
+        ) : null}
+
+        <footer
+          style={styles.footer}
+        >
+          <div
+            style={styles.footerBrand}
+          >
             HIREMINDS
           </div>
 
-          <p style={styles.footerText}>
-            Your career is bigger than one
-            application.
+          <p
+            style={styles.footerText}
+          >
+            Your career is bigger than
+            one application.
           </p>
         </footer>
       </form>
@@ -1126,452 +1757,915 @@ const styles: {
   page: {
     minHeight: "100vh",
     background:
-      "linear-gradient(180deg, #e7ebef 0%, #f4f6f8 18%, #ffffff 52%, #e7edf2 100%)",
-    color: "#11151b",
-    padding: "28px 18px 60px",
+      "linear-gradient(180deg, #eef2f5 0%, #ffffff 40%, #edf2f6 100%)",
+
+    color: "#111820",
+
+    padding:
+      "28px 18px 60px",
+
     boxSizing: "border-box",
+
+    fontFamily:
+      "Inter, Arial, Helvetica, sans-serif",
   },
 
   shell: {
     width: "100%",
-    maxWidth: "1120px",
+    maxWidth: "1180px",
     margin: "0 auto",
+
     display: "flex",
     flexDirection: "column",
+
     gap: "22px",
   },
+
+  /* HERO */
 
   hero: {
     position: "relative",
     overflow: "hidden",
-    borderRadius: "30px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #cbd2d9",
+
+    borderRadius: "32px",
+
+    background:
+      "linear-gradient(135deg, #0d151d 0%, #13222e 55%, #115b88 130%)",
+
+    border:
+      "1px solid rgba(255,255,255,0.08)",
+
     boxShadow:
-      "0 18px 50px rgba(16, 29, 43, 0.11)",
+      "0 24px 65px rgba(9, 22, 34, 0.22)",
   },
 
-  heroBlueGlow: {
+  heroGlowOne: {
     position: "absolute",
-    width: "430px",
-    height: "430px",
-    right: "-170px",
-    top: "-180px",
+
+    width: "540px",
+    height: "540px",
+
     borderRadius: "50%",
+
+    right: "-180px",
+    top: "-260px",
+
     background:
-      "radial-gradient(circle, rgba(29, 126, 191, 0.22) 0%, rgba(29, 126, 191, 0.06) 48%, rgba(29, 126, 191, 0) 72%)",
+      "radial-gradient(circle, rgba(37, 144, 207, 0.38) 0%, rgba(37, 144, 207, 0) 68%)",
+
     pointerEvents: "none",
   },
 
-  heroSilverGlow: {
+  heroGlowTwo: {
     position: "absolute",
-    width: "380px",
-    height: "380px",
-    left: "-160px",
-    bottom: "-205px",
+
+    width: "420px",
+    height: "420px",
+
     borderRadius: "50%",
+
+    left: "-200px",
+    bottom: "-230px",
+
     background:
-      "radial-gradient(circle, rgba(149, 156, 165, 0.22) 0%, rgba(149, 156, 165, 0.05) 55%, rgba(149, 156, 165, 0) 74%)",
+      "radial-gradient(circle, rgba(150, 173, 190, 0.18) 0%, rgba(150, 173, 190, 0) 70%)",
+
     pointerEvents: "none",
   },
 
-  heroInner: {
+  heroGrid: {
     position: "relative",
     zIndex: 1,
+
     display: "grid",
+
     gridTemplateColumns:
-      "minmax(0, 1.45fr) minmax(300px, 0.75fr)",
-    gap: "40px",
-    alignItems: "stretch",
+      "minmax(0, 1.45fr) minmax(300px, 0.55fr)",
+
+    gap: "38px",
+
     padding: "52px",
+
+    alignItems: "stretch",
   },
 
-  heroLeft: {
+  heroContent: {
     display: "flex",
     flexDirection: "column",
+
     justifyContent: "center",
   },
 
-  brandLine: {
+  brandRow: {
     display: "flex",
     alignItems: "center",
-    gap: "9px",
-    marginBottom: "22px",
-    flexWrap: "wrap",
+
+    gap: "12px",
+
+    marginBottom: "34px",
   },
 
-  brandDot: {
-    width: "10px",
-    height: "10px",
-    borderRadius: "50%",
-    backgroundColor: "#1c79b7",
-    boxShadow:
-      "0 0 0 5px rgba(28, 121, 183, 0.10)",
-  },
+  brandMark: {
+    width: "47px",
+    height: "47px",
 
-  brandLabel: {
-    color: "#111820",
-    fontSize: "12px",
+    display: "flex",
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    borderRadius: "14px",
+
+    backgroundColor: "#ffffff",
+
+    color: "#0f6092",
+
+    fontSize: "13px",
     fontWeight: 950,
-    letterSpacing: "0.14em",
+
+    boxShadow:
+      "0 10px 28px rgba(0,0,0,0.18)",
   },
 
-  brandDivider: {
-    color: "#a4acb4",
-    fontSize: "11px",
+  brandName: {
+    color: "#ffffff",
+
+    fontSize: "13px",
+
+    fontWeight: 950,
+
+    letterSpacing: "0.16em",
   },
 
-  brandSub: {
-    color: "#68737f",
-    fontSize: "10px",
+  brandDescriptor: {
+    color: "#7fbde2",
+
+    marginTop: "4px",
+
+    fontSize: "9px",
+
     fontWeight: 850,
-    letterSpacing: "0.12em",
+
+    letterSpacing: "0.13em",
+  },
+
+  heroEyebrow: {
+    margin: "0 0 13px",
+
+    color: "#79bde8",
+
+    fontSize: "10px",
+
+    fontWeight: 950,
+
+    letterSpacing: "0.16em",
   },
 
   heroTitle: {
     margin: 0,
-    maxWidth: "760px",
-    color: "#0d1117",
-    fontSize: "clamp(43px, 6.7vw, 70px)",
-    lineHeight: 0.98,
+
+    color: "#ffffff",
+
+    maxWidth: "780px",
+
+    fontSize:
+      "clamp(46px, 7vw, 78px)",
+
+    lineHeight: 0.95,
+
     fontWeight: 950,
-    letterSpacing: "-0.052em",
+
+    letterSpacing: "-0.055em",
   },
 
-  heroBlueText: {
-    color: "#176fae",
+  heroAccent: {
+    color: "#5fb3e5",
   },
 
-  heroLead: {
-    maxWidth: "760px",
-    margin: "23px 0 0",
-    color: "#4f5a66",
+  heroText: {
+    maxWidth: "720px",
+
+    margin: "25px 0 0",
+
+    color: "#c9d4dc",
+
     fontSize: "17px",
+
     lineHeight: 1.72,
+
     fontWeight: 500,
   },
 
-  heroStatement: {
-    display: "flex",
-    alignItems: "center",
-    gap: "15px",
+  heroMiniGrid: {
+    display: "grid",
+
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(150px, 1fr))",
+
+    gap: "10px",
+
     marginTop: "28px",
-    padding: "17px 18px",
-    maxWidth: "680px",
-    borderRadius: "16px",
-    background:
-      "linear-gradient(90deg, #edf1f4 0%, #e5eef5 100%)",
-    borderLeft: "4px solid #176fae",
   },
 
-  statementMark: {
+  heroMiniItem: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "44px",
-    height: "44px",
-    minWidth: "44px",
-    borderRadius: "12px",
-    backgroundColor: "#111820",
+    flexDirection: "column",
+
+    gap: "6px",
+
+    padding:
+      "14px 15px",
+
+    borderRadius: "14px",
+
+    backgroundColor:
+      "rgba(255,255,255,0.06)",
+
+    border:
+      "1px solid rgba(255,255,255,0.08)",
+
     color: "#ffffff",
-    fontSize: "11px",
+
+    fontSize: "12px",
+  },
+
+  heroOffer: {
+    display: "flex",
+    flexDirection: "column",
+
+    justifyContent: "center",
+
+    padding: "29px",
+
+    borderRadius: "25px",
+
+    background:
+      "linear-gradient(160deg, #ffffff 0%, #e9f3fa 100%)",
+
+    boxShadow:
+      "0 20px 45px rgba(0,0,0,0.20)",
+  },
+
+  offerEyebrow: {
+    color: "#176fae",
+
+    fontSize: "9px",
+
     fontWeight: 950,
+
+    letterSpacing: "0.14em",
+  },
+
+  offerPriceRow: {
+    marginTop: "17px",
+  },
+
+  offerPrice: {
+    color: "#111820",
+
+    fontSize: "57px",
+
+    lineHeight: 0.95,
+
+    fontWeight: 950,
+
+    letterSpacing: "-0.055em",
+  },
+
+  offerTerm: {
+    marginTop: "7px",
+
+    color: "#537080",
+
+    fontSize: "11px",
+
+    fontWeight: 900,
+
     letterSpacing: "0.05em",
   },
 
-  statementText: {
-    margin: 0,
-    color: "#29323b",
-    fontSize: "14px",
-    lineHeight: 1.55,
-  },
-
-  heroRight: {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    padding: "30px",
-    borderRadius: "22px",
-    background:
-      "linear-gradient(145deg, #111820 0%, #202a34 55%, #174d70 100%)",
-    boxShadow:
-      "0 18px 40px rgba(12, 20, 28, 0.22)",
-  },
-
-  heroRightEyebrow: {
-    margin: "0 0 24px",
-    color: "#79bde8",
-    fontSize: "10px",
-    fontWeight: 950,
-    letterSpacing: "0.16em",
-  },
-
-  heroRightRow: {
-    display: "grid",
-    gridTemplateColumns: "35px 1fr",
-    gap: "12px",
-  },
-
-  heroRightNumber: {
-    color: "#72b4df",
-    fontSize: "11px",
-    fontWeight: 900,
-    paddingTop: "2px",
-  },
-
-  heroRightTitle: {
-    color: "#ffffff",
-    fontSize: "16px",
-    fontWeight: 900,
-  },
-
-  heroRightText: {
-    margin: "5px 0 0",
-    color: "#c2cad1",
-    fontSize: "12px",
-    lineHeight: 1.55,
-  },
-
-  heroRightLine: {
+  offerDivider: {
     height: "1px",
-    backgroundColor: "#40505c",
-    margin: "19px 0",
+
+    backgroundColor: "#c5d4dd",
+
+    margin: "22px 0",
   },
 
-  impactSection: {
-    padding: "34px",
-    borderRadius: "28px",
-    background:
-      "linear-gradient(135deg, #ffffff 0%, #f7f9fb 58%, #eef3f7 100%)",
-    border: "1px solid #ccd4db",
-    boxShadow:
-      "0 14px 40px rgba(22, 33, 44, 0.07)",
-  },
+  offerThenLabel: {
+    color: "#74838e",
 
-  impactHeader: {
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: "24px",
-    flexWrap: "wrap",
-    marginBottom: "24px",
-  },
+    fontSize: "9px",
 
-  eyebrow: {
-    margin: "0 0 7px",
-    color: "#176fae",
-    fontSize: "10px",
     fontWeight: 950,
-    letterSpacing: "0.16em",
+
+    letterSpacing: "0.11em",
   },
 
-  impactHeadline: {
-    margin: 0,
+  offerRenewal: {
+    marginTop: "4px",
+
     color: "#111820",
-    fontSize: "clamp(30px, 4vw, 46px)",
-    lineHeight: 1.04,
+
+    fontSize: "24px",
+
     fontWeight: 950,
-    letterSpacing: "-0.04em",
   },
 
-  startPrice: {
-    display: "flex",
-    alignItems: "baseline",
-    gap: "5px",
-    padding: "15px 18px",
-    borderRadius: "16px",
+  offerText: {
+    margin: "8px 0 0",
+
+    color: "#5f6d78",
+
+    fontSize: "12px",
+
+    lineHeight: 1.55,
+  },
+
+  offerHighlight: {
+    marginTop: "18px",
+
+    padding:
+      "11px 12px",
+
+    borderRadius: "11px",
+
     backgroundColor: "#111820",
-    boxShadow:
-      "0 12px 26px rgba(17, 24, 32, 0.14)",
-  },
 
-  startPriceLabel: {
-    color: "#7eb9df",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.12em",
-    marginRight: "4px",
-  },
-
-  startPriceValue: {
     color: "#ffffff",
-    fontSize: "28px",
-    fontWeight: 950,
-    letterSpacing: "-0.03em",
-  },
 
-  startPriceSub: {
-    color: "#c2ccd5",
-    fontSize: "11px",
-  },
+    textAlign: "center",
 
-  impactGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "14px",
-  },
-
-  impactCard: {
-    position: "relative",
-    overflow: "hidden",
-    minHeight: "175px",
-    padding: "24px",
-    borderRadius: "20px",
-    border:
-      "1px solid rgba(120, 130, 140, 0.20)",
-    boxShadow:
-      "0 12px 26px rgba(24, 42, 58, 0.08)",
-  },
-
-  impactBlue: {
-    background:
-      "linear-gradient(145deg, #dbeefb 0%, #f6fbff 72%)",
-  },
-
-  impactDark: {
-    background:
-      "linear-gradient(145deg, #111820 0%, #1d2a35 64%, #176fae 150%)",
-  },
-
-  impactSilver: {
-    background:
-      "linear-gradient(145deg, #e2e5e8 0%, #f8f9fa 72%)",
-  },
-
-  impactAccent: {
-    width: "38px",
-    height: "5px",
-    borderRadius: "999px",
-    backgroundColor: "#176fae",
-    marginBottom: "28px",
-  },
-
-  impactTitle: {
-    margin: 0,
-    fontSize: "21px",
-    lineHeight: 1.1,
-    fontWeight: 950,
-    letterSpacing: "-0.02em",
-  },
-
-  impactText: {
-    margin: "11px 0 0",
-    fontSize: "13px",
-    lineHeight: 1.65,
-  },
-
-  impactTextLight: {
-    color: "#ffffff",
-  },
-
-  impactTextDark: {
-    color: "#25313c",
-  },
-
-  toolRibbon: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    flexWrap: "wrap",
-    marginTop: "20px",
-    padding: "14px 16px",
-    borderRadius: "14px",
-    backgroundColor: "#e7edf2",
-    border: "1px solid #d0d8df",
-  },
-
-  toolRibbonLabel: {
-    color: "#176fae",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.12em",
-    marginRight: "4px",
-  },
-
-  toolRibbonItem: {
-    color: "#2e3944",
-    fontSize: "11px",
-    fontWeight: 850,
-  },
-
-  toolDot: {
-    color: "#7c8a96",
     fontSize: "10px",
+
+    fontWeight: 900,
+
+    letterSpacing: "0.04em",
   },
 
-  signupSection: {
-    padding: "34px",
-    borderRadius: "26px",
+  /* VALUE */
+
+  valueSection: {
+    padding: "38px",
+
+    borderRadius: "30px",
+
     backgroundColor: "#ffffff",
-    border: "1px solid #cfd5da",
+
+    border: "1px solid #cfd7de",
+
     boxShadow:
-      "0 14px 40px rgba(21, 32, 43, 0.06)",
+      "0 18px 48px rgba(19, 37, 52, 0.08)",
   },
 
-  signupHeader: {
+  valueTop: {
     display: "flex",
-    gap: "15px",
-    alignItems: "flex-start",
+
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+
+    gap: "30px",
+
+    flexWrap: "wrap",
+
     marginBottom: "27px",
   },
 
-  signupNumber: {
+  sectionEyebrow: {
+    margin: "0 0 8px",
+
+    color: "#1671ad",
+
+    fontSize: "10px",
+
+    fontWeight: 950,
+
+    letterSpacing: "0.16em",
+  },
+
+  sectionHeadline: {
+    margin: 0,
+
+    color: "#101820",
+
+    fontSize:
+      "clamp(35px, 5vw, 55px)",
+
+    lineHeight: 1,
+
+    fontWeight: 950,
+
+    letterSpacing: "-0.045em",
+  },
+
+  sectionAccent: {
+    color: "#176fae",
+  },
+
+  sectionIntro: {
+    maxWidth: "400px",
+
+    margin: 0,
+
+    color: "#5d6974",
+
+    fontSize: "14px",
+
+    lineHeight: 1.7,
+  },
+
+  valueGrid: {
+    display: "grid",
+
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(250px, 1fr))",
+
+    gap: "14px",
+  },
+
+  valueCard: {
+    minHeight: "180px",
+
     display: "flex",
+    flexDirection: "column",
+
+    padding: "24px",
+
+    borderRadius: "20px",
+
+    background:
+      "linear-gradient(145deg, #eef6fb 0%, #ffffff 100%)",
+
+    border:
+      "1px solid #d2e0e9",
+
+    boxShadow:
+      "0 10px 24px rgba(20, 46, 65, 0.06)",
+  },
+
+  valueCardDark: {
+    background:
+      "linear-gradient(145deg, #111820 0%, #19354a 100%)",
+
+    border:
+      "1px solid #1e4a68",
+
+    boxShadow:
+      "0 16px 32px rgba(14, 35, 50, 0.19)",
+  },
+
+  valueNumber: {
+    color: "#176fae",
+
+    fontSize: "11px",
+
+    fontWeight: 950,
+
+    letterSpacing: "0.13em",
+  },
+
+  valueNumberDark: {
+    color: "#67b8e9",
+  },
+
+  valueTitle: {
+    margin: "28px 0 0",
+
+    color: "#111820",
+
+    fontSize: "20px",
+
+    lineHeight: 1.12,
+
+    fontWeight: 950,
+
+    letterSpacing: "-0.02em",
+  },
+
+  valueText: {
+    margin: "10px 0 0",
+
+    color: "#55636e",
+
+    fontSize: "12px",
+
+    lineHeight: 1.65,
+  },
+
+  valueTextLight: {
+    color: "#ffffff",
+  },
+
+  valueTextLightMuted: {
+    color: "#c8d4dc",
+  },
+
+  toolBand: {
+    display: "flex",
+
+    alignItems: "center",
+
+    gap: "18px",
+
+    flexWrap: "wrap",
+
+    marginTop: "18px",
+
+    padding:
+      "15px 17px",
+
+    borderRadius: "15px",
+
+    backgroundColor: "#111820",
+  },
+
+  toolBandLabel: {
+    color: "#6db8e5",
+
+    fontSize: "9px",
+
+    fontWeight: 950,
+
+    letterSpacing: "0.14em",
+
+    whiteSpace: "nowrap",
+  },
+
+  toolBandItems: {
+    display: "flex",
+
+    gap: "8px",
+
+    flexWrap: "wrap",
+  },
+
+  toolChip: {
+    padding: "6px 9px",
+
+    borderRadius: "999px",
+
+    backgroundColor:
+      "rgba(255,255,255,0.07)",
+
+    border:
+      "1px solid rgba(255,255,255,0.08)",
+
+    color: "#e1e8ed",
+
+    fontSize: "10px",
+
+    fontWeight: 750,
+  },
+
+  /* SECTIONS */
+
+  sectionCard: {
+    padding: "34px",
+
+    borderRadius: "27px",
+
+    backgroundColor: "#ffffff",
+
+    border: "1px solid #cfd7de",
+
+    boxShadow:
+      "0 14px 38px rgba(19, 37, 52, 0.065)",
+  },
+
+  stepHeader: {
+    display: "flex",
+
+    gap: "15px",
+
+    alignItems: "flex-start",
+
+    marginBottom: "27px",
+  },
+
+  stepNumber: {
+    width: "46px",
+    height: "46px",
+
+    minWidth: "46px",
+
+    display: "flex",
+
     alignItems: "center",
     justifyContent: "center",
-    width: "45px",
-    height: "45px",
-    minWidth: "45px",
+
     borderRadius: "14px",
+
     backgroundColor: "#111820",
+
     color: "#ffffff",
+
     fontSize: "11px",
+
     fontWeight: 950,
   },
 
-  signupNumberBlue: {
+  stepNumberBlue: {
+    width: "46px",
+    height: "46px",
+
+    minWidth: "46px",
+
     display: "flex",
+
     alignItems: "center",
     justifyContent: "center",
-    width: "45px",
-    height: "45px",
-    minWidth: "45px",
+
     borderRadius: "14px",
+
     background:
       "linear-gradient(145deg, #176fae 0%, #258bc8 100%)",
+
     color: "#ffffff",
+
     fontSize: "11px",
+
     fontWeight: 950,
+
+    boxShadow:
+      "0 8px 20px rgba(23, 111, 174, 0.20)",
   },
 
-  signupTitle: {
+  stepTitle: {
     margin: 0,
+
     color: "#111820",
-    fontSize: "29px",
-    lineHeight: 1.1,
+
+    fontSize:
+      "clamp(28px, 4vw, 38px)",
+
+    lineHeight: 1.05,
+
     fontWeight: 950,
-    letterSpacing: "-0.025em",
+
+    letterSpacing: "-0.035em",
   },
 
-  signupText: {
-    margin: "7px 0 0",
-    color: "#68737d",
+  stepText: {
+    margin: "8px 0 0",
+
+    color: "#68747f",
+
     fontSize: "13px",
+
     lineHeight: 1.55,
   },
 
+  /* ACCESS CARDS */
+
+  accessChoiceGrid: {
+    display: "grid",
+
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(300px, 1fr))",
+
+    gap: "14px",
+  },
+
+  accessCard: {
+    minHeight: "275px",
+
+    display: "flex",
+    flexDirection: "column",
+
+    textAlign: "left",
+
+    padding: "24px",
+
+    borderRadius: "20px",
+
+    border:
+      "1px solid #c7d0d8",
+
+    background:
+      "linear-gradient(145deg, #ffffff 0%, #f0f4f7 100%)",
+
+    color: "#111820",
+
+    cursor: "pointer",
+
+    transition:
+      "all 0.2s ease",
+  },
+
+  accessCardSelected: {
+    border:
+      "2px solid #176fae",
+
+    background:
+      "linear-gradient(145deg, #ffffff 0%, #e7f4fc 100%)",
+
+    boxShadow:
+      "0 16px 34px rgba(23, 111, 174, 0.17)",
+  },
+
+  accessCardTop: {
+    display: "flex",
+
+    justifyContent: "space-between",
+
+    gap: "10px",
+
+    alignItems: "center",
+  },
+
+  accessCardLabel: {
+    color: "#176fae",
+
+    fontSize: "10px",
+
+    fontWeight: 950,
+
+    letterSpacing: "0.12em",
+  },
+
+  selectedPill: {
+    padding: "5px 8px",
+
+    borderRadius: "999px",
+
+    backgroundColor: "#176fae",
+
+    color: "#ffffff",
+
+    fontSize: "8px",
+
+    fontWeight: 950,
+
+    letterSpacing: "0.06em",
+  },
+
+  accessPriceRow: {
+    display: "flex",
+
+    alignItems: "baseline",
+
+    gap: "9px",
+
+    marginTop: "30px",
+  },
+
+  accessPrice: {
+    color: "#111820",
+
+    fontSize: "48px",
+
+    lineHeight: 1,
+
+    fontWeight: 950,
+
+    letterSpacing: "-0.055em",
+  },
+
+  accessPriceDetail: {
+    color: "#687680",
+
+    fontSize: "12px",
+
+    fontWeight: 800,
+  },
+
+  accessRenewal: {
+    marginTop: "8px",
+
+    color: "#3d4a55",
+
+    fontSize: "14px",
+  },
+
+  accessDescription: {
+    margin: "14px 0 0",
+
+    maxWidth: "450px",
+
+    color: "#65727d",
+
+    fontSize: "12px",
+
+    lineHeight: 1.6,
+  },
+
+  accessSelectText: {
+    marginTop: "auto",
+
+    paddingTop: "22px",
+
+    color: "#176fae",
+
+    fontSize: "11px",
+
+    fontWeight: 950,
+  },
+
+  referralBigTitle: {
+    marginTop: "33px",
+
+    color: "#111820",
+
+    fontSize: "26px",
+
+    lineHeight: 1.05,
+
+    fontWeight: 950,
+
+    letterSpacing: "-0.025em",
+  },
+
+  referralCodeArea: {
+    marginTop: "18px",
+
+    display: "grid",
+
+    gap: "12px",
+
+    padding: "21px",
+
+    borderRadius: "17px",
+
+    background:
+      "linear-gradient(145deg, #eff6fa 0%, #e6f0f6 100%)",
+
+    border:
+      "1px solid #c5d8e5",
+  },
+
+  referralCodeHelp: {
+    margin: "4px 0 0",
+
+    color: "#667580",
+
+    fontSize: "12px",
+  },
+
+  referralInput: {
+    width: "100%",
+
+    padding:
+      "15px 16px",
+
+    borderRadius: "12px",
+
+    border:
+      "1px solid #9db9cb",
+
+    backgroundColor: "#ffffff",
+
+    color: "#111820",
+
+    outline: "none",
+
+    boxSizing: "border-box",
+
+    fontSize: "16px",
+
+    fontWeight: 850,
+
+    letterSpacing: "0.04em",
+  },
+
+  previousReferralNote: {
+    display: "flex",
+
+    flexDirection: "column",
+
+    gap: "4px",
+
+    padding:
+      "13px 14px",
+
+    borderRadius: "11px",
+
+    backgroundColor: "#ffffff",
+
+    border:
+      "1px solid #d1dbe2",
+
+    color: "#4e5c67",
+
+    fontSize: "11px",
+
+    lineHeight: 1.5,
+  },
+
+  /* FORM */
+
   formGrid: {
     display: "grid",
+
     gridTemplateColumns:
-      "repeat(2, minmax(0, 1fr))",
+      "repeat(auto-fit, minmax(280px, 1fr))",
+
     gap: "16px",
   },
 
   field: {
     display: "flex",
     flexDirection: "column",
+
     gap: "7px",
   },
 
@@ -1579,396 +2673,361 @@ const styles: {
     gridColumn: "1 / -1",
   },
 
-  label: {
-    color: "#2b3540",
-    fontSize: "12px",
-    fontWeight: 850,
+  fieldLabel: {
+    color: "#293640",
+
+    fontSize: "11px",
+
+    fontWeight: 900,
+
+    letterSpacing: "0.03em",
   },
 
   input: {
     width: "100%",
-    padding: "14px 15px",
+
+    padding:
+      "14px 15px",
+
     borderRadius: "12px",
-    border: "1px solid #b9c4cd",
-    backgroundColor: "#f8f9fa",
+
+    border:
+      "1px solid #b8c5ce",
+
+    backgroundColor: "#f7f9fa",
+
     color: "#111820",
+
     outline: "none",
+
     boxSizing: "border-box",
+
     fontSize: "15px",
   },
 
   passwordWrap: {
     position: "relative",
+
     width: "100%",
   },
 
   passwordInput: {
     width: "100%",
-    padding: "14px 75px 14px 15px",
+
+    padding:
+      "14px 80px 14px 15px",
+
     borderRadius: "12px",
-    border: "1px solid #b9c4cd",
-    backgroundColor: "#f8f9fa",
+
+    border:
+      "1px solid #b8c5ce",
+
+    backgroundColor: "#f7f9fa",
+
     color: "#111820",
+
     outline: "none",
+
     boxSizing: "border-box",
+
     fontSize: "15px",
   },
 
   passwordToggle: {
     position: "absolute",
+
     top: "50%",
     right: "14px",
-    transform: "translateY(-50%)",
+
+    transform:
+      "translateY(-50%)",
+
     border: "none",
+
     background: "transparent",
+
     color: "#176fae",
+
     cursor: "pointer",
+
     fontWeight: 900,
   },
 
-  infoBar: {
-    padding: "14px 16px",
-    borderRadius: "12px",
-    background:
-      "linear-gradient(90deg, #e9edf0 0%, #e6f0f7 100%)",
-    border: "1px solid #cbd6de",
-    color: "#36434e",
-    fontSize: "13px",
+  passwordNote: {
+    color: "#74818b",
+
+    fontSize: "10px",
+
     lineHeight: 1.5,
   },
 
-  methodTabs: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(2, minmax(0, 1fr))",
-    gap: "6px",
-    marginBottom: "23px",
-    padding: "5px",
-    borderRadius: "14px",
-    background:
-      "linear-gradient(90deg, #e2e6e9 0%, #e8eef3 100%)",
-    border: "1px solid #cbd3d9",
-  },
-
-  methodButton: {
-    padding: "14px",
-    borderRadius: "10px",
-    border: "1px solid transparent",
-    backgroundColor: "transparent",
-    color: "#5c6770",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  methodButtonActive: {
-    backgroundColor: "#ffffff",
-    border: "1px solid #176fae",
-    color: "#176fae",
-    boxShadow:
-      "0 5px 14px rgba(23, 111, 174, 0.10)",
-  },
-
-  paidOffer: {
-    padding: "26px",
-    borderRadius: "20px",
-    background:
-      "linear-gradient(145deg, #101820 0%, #172b3a 65%, #176fae 140%)",
-    boxShadow:
-      "0 16px 36px rgba(15, 29, 41, 0.18)",
-  },
-
-  paidOfferTop: {
+  paymentPasswordNotice: {
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "24px",
-    flexWrap: "wrap",
-  },
 
-  paidBadge: {
-    display: "inline-flex",
-    padding: "7px 10px",
-    borderRadius: "999px",
-    backgroundColor:
-      "rgba(114, 180, 223, 0.14)",
-    border:
-      "1px solid rgba(114, 180, 223, 0.35)",
-    color: "#8dccf2",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.10em",
-  },
-
-  paidTitle: {
-    margin: "15px 0 0",
-    color: "#ffffff",
-    fontSize: "28px",
-    fontWeight: 950,
-    letterSpacing: "-0.025em",
-  },
-
-  paidLead: {
-    margin: "7px 0 0",
-    color: "#c9d3db",
-    fontSize: "13px",
-    lineHeight: 1.6,
-  },
-
-  paidPriceBlock: {
-    display: "flex",
     flexDirection: "column",
-    alignItems: "flex-end",
-  },
 
-  paidPrice: {
-    color: "#ffffff",
-    fontSize: "50px",
-    lineHeight: 1,
-    fontWeight: 950,
-    letterSpacing: "-0.05em",
-  },
+    gap: "5px",
 
-  paidPriceTerm: {
-    marginTop: "5px",
-    color: "#8dccf2",
-    fontSize: "12px",
-    fontWeight: 850,
-  },
+    padding: "15px",
 
-  renewalBar: {
-    marginTop: "24px",
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "18px",
-    alignItems: "center",
-    flexWrap: "wrap",
-    padding: "16px 18px",
-    borderRadius: "14px",
-    backgroundColor:
-      "rgba(255, 255, 255, 0.08)",
+    borderRadius: "12px",
+
+    background:
+      "linear-gradient(90deg, #e8edf1 0%, #e5f1f8 100%)",
+
     border:
-      "1px solid rgba(255, 255, 255, 0.11)",
-  },
+      "1px solid #c9d7df",
 
-  renewalEyebrow: {
-    display: "block",
-    color: "#8dccf2",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.11em",
-    marginBottom: "4px",
-  },
+    color: "#42515d",
 
-  renewalPrice: {
-    color: "#ffffff",
-    fontSize: "21px",
-    fontWeight: 950,
-  },
-
-  renewalText: {
-    color: "#d5dde3",
     fontSize: "12px",
   },
 
-  offerPoints: {
-    display: "flex",
-    flexWrap: "wrap",
+  /* BILLING */
+
+  billingSummary: {
+    display: "grid",
+
+    gridTemplateColumns:
+      "1fr auto 1fr",
+
     gap: "18px",
-    marginTop: "18px",
-    color: "#e6edf2",
+
+    alignItems: "center",
+
+    padding: "22px",
+
+    borderRadius: "18px",
+
+    background:
+      "linear-gradient(135deg, #111820 0%, #193c54 100%)",
+  },
+
+  billingSmall: {
+    display: "block",
+
+    color: "#78bce6",
+
+    fontSize: "9px",
+
+    fontWeight: 950,
+
+    letterSpacing: "0.12em",
+  },
+
+  billingBig: {
+    display: "block",
+
+    marginTop: "6px",
+
+    color: "#ffffff",
+
+    fontSize: "32px",
+
+    fontWeight: 950,
+
+    letterSpacing: "-0.04em",
+  },
+
+  billingDescription: {
+    display: "block",
+
+    marginTop: "3px",
+
+    color: "#c8d4dc",
+
     fontSize: "11px",
-    fontWeight: 750,
+  },
+
+  billingArrow: {
+    color: "#6db8e5",
+
+    fontSize: "25px",
   },
 
   ackPanel: {
-    marginTop: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    padding: "19px",
-    borderRadius: "15px",
-    background:
-      "linear-gradient(180deg, #f5f7f8 0%, #edf1f4 100%)",
-    border: "1px solid #cbd2d8",
-  },
+    marginTop: "15px",
 
-  ackTitle: {
-    margin: "0 0 2px",
-    color: "#111820",
-    fontSize: "14px",
-    fontWeight: 950,
+    display: "flex",
+
+    flexDirection: "column",
+
+    gap: "12px",
+
+    padding: "19px",
+
+    borderRadius: "15px",
+
+    backgroundColor: "#f3f6f8",
+
+    border: "1px solid #cfd8df",
   },
 
   checkboxRow: {
     display: "flex",
+
     gap: "10px",
+
     alignItems: "flex-start",
-    color: "#404b55",
-    fontSize: "13px",
-    lineHeight: 1.5,
+
+    color: "#404d57",
+
+    fontSize: "12px",
+
+    lineHeight: 1.55,
+
     cursor: "pointer",
   },
 
   checkbox: {
     width: "18px",
     height: "18px",
+
     minWidth: "18px",
+
     marginTop: "1px",
+
     accentColor: "#176fae",
   },
 
-  smallNote: {
-    margin: "2px 0 0",
-    color: "#747f89",
-    fontSize: "11px",
-    lineHeight: 1.5,
-  },
+  /* REFERRAL SUMMARY */
 
-  referralPanel: {
+  referralSummary: {
     display: "flex",
-    flexDirection: "column",
-    gap: "17px",
-    padding: "24px",
-    borderRadius: "18px",
+
+    justifyContent: "space-between",
+
+    gap: "25px",
+
+    flexWrap: "wrap",
+
+    padding: "20px",
+
+    borderRadius: "16px",
+
     background:
-      "linear-gradient(145deg, #f7f9fa 0%, #e8f1f7 100%)",
-    border: "1px solid #c7d2da",
+      "linear-gradient(145deg, #edf6fb 0%, #ffffff 100%)",
+
+    border:
+      "1px solid #c6dce9",
   },
 
-  referralIntro: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-  },
+  referralSummaryLabel: {
+    display: "block",
 
-  referralBadge: {
-    padding: "7px 9px",
-    borderRadius: "9px",
-    background:
-      "linear-gradient(90deg, #111820 0%, #176fae 140%)",
-    color: "#ffffff",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.08em",
-    whiteSpace: "nowrap",
-  },
-
-  referralTitle: {
-    margin: 0,
-    color: "#111820",
-    fontSize: "20px",
-    fontWeight: 950,
-  },
-
-  referralText: {
-    margin: "4px 0 0",
-    color: "#66717b",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  referralAccessBox: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "7px",
-    padding: "17px",
-    borderRadius: "14px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #bfd1df",
-  },
-
-  referralAccessLabel: {
     color: "#176fae",
+
     fontSize: "9px",
+
     fontWeight: 950,
-    letterSpacing: "0.10em",
+
+    letterSpacing: "0.12em",
+
+    marginBottom: "6px",
   },
 
-  referralAccessTitle: {
+  referralSummaryTitle: {
     color: "#111820",
-    fontSize: "16px",
+
+    fontSize: "18px",
+
     fontWeight: 950,
   },
 
-  referralAccessText: {
+  referralSummaryText: {
+    maxWidth: "420px",
+
     margin: 0,
-    color: "#5c6872",
+
+    color: "#65727d",
+
     fontSize: "12px",
+
     lineHeight: 1.55,
   },
 
-  previousAccessBox: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "5px",
-    padding: "14px 15px",
-    borderRadius: "12px",
-    backgroundColor: "#e7edf2",
-    border: "1px solid #cbd5dc",
-    color: "#44515c",
-    fontSize: "12px",
-    lineHeight: 1.5,
-  },
-
-  expirationBox: {
-    padding: "14px 15px",
-    borderRadius: "12px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #c7ced4",
-    color: "#3e4852",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
+  /* ERROR */
 
   message: {
     padding: "14px 16px",
+
     borderRadius: "12px",
+
     backgroundColor: "#fff0f0",
-    border: "1px solid #daa8a8",
+
+    border:
+      "1px solid #daa8a8",
+
     color: "#8c2f2f",
+
     fontSize: "13px",
+
     fontWeight: 850,
   },
 
+  /* BUTTON */
+
   submitButton: {
     width: "100%",
+
     display: "flex",
+
     justifyContent: "center",
     alignItems: "center",
+
     gap: "14px",
-    padding: "17px 20px",
-    borderRadius: "15px",
-    border: "1px solid #0c5d95",
+
+    padding:
+      "18px 22px",
+
+    borderRadius: "16px",
+
+    border:
+      "1px solid #0b5d93",
+
     background:
-      "linear-gradient(90deg, #111820 0%, #176fae 45%, #2588c7 100%)",
+      "linear-gradient(90deg, #111820 0%, #176fae 55%, #2588c7 100%)",
+
     color: "#ffffff",
+
     fontSize: "15px",
+
     fontWeight: 950,
+
     cursor: "pointer",
+
     boxShadow:
-      "0 12px 28px rgba(23, 111, 174, 0.24)",
+      "0 14px 32px rgba(23, 111, 174, 0.25)",
   },
 
   buttonArrow: {
     fontSize: "20px",
+
     fontWeight: 400,
   },
 
   footer: {
     textAlign: "center",
-    padding: "17px 12px 2px",
+
+    padding:
+      "18px 12px 3px",
   },
 
   footerBrand: {
     color: "#111820",
+
     fontSize: "10px",
+
     fontWeight: 950,
-    letterSpacing: "0.15em",
+
+    letterSpacing: "0.16em",
   },
 
   footerText: {
     margin: "6px 0 0",
-    color: "#727c85",
+
+    color: "#72808a",
+
     fontSize: "11px",
   },
 };
