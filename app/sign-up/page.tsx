@@ -647,8 +647,7 @@ export default function SignupPage() {
                   styles.offerHighlight
                 }
               >
-                Full access. No limited
-                demo.
+                Full access.
               </div>
             </aside>
           </div>
