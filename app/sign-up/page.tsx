@@ -106,23 +106,39 @@ export default function SignupPage() {
     return data;
   }
 
-  async function createReferralAccount(
-    normalizedReferralCode: string
-  ) {
-    const cleanFirstName = firstName.trim();
-    const cleanLastName = lastName.trim();
+  async function createReferralAccount({
+    normalizedReferralCode,
+    firstName: submittedFirstName,
+    lastName: submittedLastName,
+    phone: submittedPhone,
+    city: submittedCity,
+    stateName: submittedStateName,
+    email: submittedEmail,
+    password: submittedPassword,
+  }: {
+    normalizedReferralCode: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    city: string;
+    stateName: string;
+    email: string;
+    password: string;
+  }) {
+    const cleanFirstName = submittedFirstName.trim();
+    const cleanLastName = submittedLastName.trim();
     const fullName =
       `${cleanFirstName} ${cleanLastName}`.trim();
 
-    const cleanPhone = phone.trim();
-    const cleanCity = city.trim();
-    const cleanState = stateName.trim();
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = submittedPhone.trim();
+    const cleanCity = submittedCity.trim();
+    const cleanState = submittedStateName.trim();
+    const cleanEmail = submittedEmail.trim().toLowerCase();
 
     const { data, error } =
       await supabase.auth.signUp({
         email: cleanEmail,
-        password,
+        password: submittedPassword,
         options: {
           data: {
             first_name: cleanFirstName,
@@ -146,6 +162,20 @@ export default function SignupPage() {
       });
 
     if (error) {
+      const authMessage = String(
+        error.message || ""
+      ).toLowerCase();
+
+      if (
+        authMessage.includes("already registered") ||
+        authMessage.includes("already been registered") ||
+        authMessage.includes("user already")
+      ) {
+        throw new Error(
+          "An account already exists with this email. Please sign in or use Forgot Password."
+        );
+      }
+
       throw new Error(error.message);
     }
 
@@ -249,17 +279,62 @@ export default function SignupPage() {
       return;
     }
 
-    const cleanFirstName =
-      firstName.trim();
+    /*
+      Read the actual values from the submitted form.
 
-    const cleanLastName =
-      lastName.trim();
+      This prevents browser autofill from showing a value in an input
+      while React state still thinks the field is empty.
+    */
+    const formData = new FormData(e.currentTarget);
+
+    const cleanFirstName = String(
+      formData.get("firstName") ?? firstName
+    ).trim();
+
+    const cleanLastName = String(
+      formData.get("lastName") ?? lastName
+    ).trim();
+
+    const cleanPhone = String(
+      formData.get("phone") ?? phone
+    ).trim();
+
+    const cleanCity = String(
+      formData.get("city") ?? city
+    ).trim();
+
+    const cleanState = String(
+      formData.get("stateName") ?? stateName
+    ).trim();
+
+    const cleanEmail = String(
+      formData.get("email") ?? email
+    )
+      .trim()
+      .toLowerCase();
+
+    const cleanReferralCode = String(
+      formData.get("referralCode") ?? referralCode
+    ).trim();
+
+    const submittedPassword = String(
+      formData.get("password") ?? password
+    );
 
     const fullName =
       `${cleanFirstName} ${cleanLastName}`.trim();
 
-    const cleanEmail =
-      email.trim().toLowerCase();
+    // Keep the controlled inputs synchronized with what was actually submitted.
+    setFirstName(cleanFirstName);
+    setLastName(cleanLastName);
+    setPhone(cleanPhone);
+    setCity(cleanCity);
+    setStateName(cleanState);
+    setEmail(cleanEmail);
+
+    if (accessMethod === "referral") {
+      setReferralCode(cleanReferralCode.toUpperCase());
+    }
 
     if (!cleanFirstName) {
       setMessage(
@@ -298,7 +373,7 @@ export default function SignupPage() {
         accessMethod === "referral"
       ) {
         const code =
-          referralCode.trim();
+          cleanReferralCode.toUpperCase();
 
         if (!code) {
           throw new Error(
@@ -306,13 +381,13 @@ export default function SignupPage() {
           );
         }
 
-        if (!password) {
+        if (!submittedPassword) {
           throw new Error(
             "Please create a password for your HireMinds account."
           );
         }
 
-        if (password.length < 6) {
+        if (submittedPassword.length < 6) {
           throw new Error(
             "Your password must contain at least 6 characters."
           );
@@ -325,11 +400,18 @@ export default function SignupPage() {
 
         const normalizedReferralCode =
           referral.code ||
-          code.trim().toUpperCase();
+          code;
 
-        await createReferralAccount(
-          normalizedReferralCode
-        );
+        await createReferralAccount({
+          normalizedReferralCode,
+          firstName: cleanFirstName,
+          lastName: cleanLastName,
+          phone: cleanPhone,
+          city: cleanCity,
+          stateName: cleanState,
+          email: cleanEmail,
+          password: submittedPassword,
+        });
 
         try {
           localStorage.setItem(
@@ -406,13 +488,13 @@ export default function SignupPage() {
               email: cleanEmail,
 
               phone:
-                phone.trim(),
+                cleanPhone,
 
               city:
-                city.trim(),
+                cleanCity,
 
               state:
-                stateName.trim(),
+                cleanState,
             }),
           }
         );
@@ -464,6 +546,7 @@ export default function SignupPage() {
       <form
         onSubmit={handleSignUp}
         style={styles.shell}
+        autoComplete="on"
       >
         {/* ================================
             HERO
@@ -1052,18 +1135,26 @@ export default function SignupPage() {
               </div>
 
               <input
+                id="hm-referral-code"
+                name="referralCode"
                 placeholder="Enter Referral Code"
                 value={referralCode}
-                onChange={(e) =>
+                onChange={(e) => {
                   setReferralCode(
-                    e.target.value
-                  )
-                }
+                    e.target.value.toUpperCase()
+                  );
+                  clearMessage();
+                }}
                 style={
                   styles.referralInput
                 }
                 autoComplete="off"
+                autoCapitalize="characters"
                 spellCheck={false}
+                inputMode="text"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                aria-label="Referral Code"
               />
 
               <div
@@ -1157,14 +1248,18 @@ export default function SignupPage() {
                 </span>
 
                 <input
+                  id="firstName"
+                  name="firstName"
                   placeholder="First Name"
                   value={firstName}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFirstName(
                       e.target.value
-                    )
-                  }
+                    );
+                    clearMessage();
+                  }}
                   style={styles.input}
+                  autoComplete="given-name"
                   required
                 />
               </label>
@@ -1181,14 +1276,18 @@ export default function SignupPage() {
                 </span>
 
                 <input
+                  id="lastName"
+                  name="lastName"
                   placeholder="Last Name"
                   value={lastName}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setLastName(
                       e.target.value
-                    )
-                  }
+                    );
+                    clearMessage();
+                  }}
                   style={styles.input}
+                  autoComplete="family-name"
                   required
                 />
               </label>
@@ -1205,15 +1304,19 @@ export default function SignupPage() {
                 </span>
 
                 <input
+                  id="email"
+                  name="email"
                   placeholder="Email Address"
                   type="email"
                   value={email}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setEmail(
                       e.target.value
-                    )
-                  }
+                    );
+                    clearMessage();
+                  }}
                   style={styles.input}
+                  autoComplete="email"
                   required
                 />
               </label>
@@ -1230,14 +1333,19 @@ export default function SignupPage() {
                 </span>
 
                 <input
+                  id="phone"
+                  name="phone"
                   placeholder="Phone Number"
+                  type="tel"
                   value={phone}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setPhone(
                       e.target.value
-                    )
-                  }
+                    );
+                    clearMessage();
+                  }}
                   style={styles.input}
+                  autoComplete="tel"
                 />
               </label>
 
@@ -1253,14 +1361,18 @@ export default function SignupPage() {
                 </span>
 
                 <input
+                  id="city"
+                  name="city"
                   placeholder="City"
                   value={city}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setCity(
                       e.target.value
-                    )
-                  }
+                    );
+                    clearMessage();
+                  }}
                   style={styles.input}
+                  autoComplete="address-level2"
                 />
               </label>
 
@@ -1276,14 +1388,18 @@ export default function SignupPage() {
                 </span>
 
                 <input
+                  id="stateName"
+                  name="stateName"
                   placeholder="State"
                   value={stateName}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setStateName(
                       e.target.value
-                    )
-                  }
+                    );
+                    clearMessage();
+                  }}
                   style={styles.input}
+                  autoComplete="address-level1"
                 />
               </label>
 
@@ -1309,6 +1425,8 @@ export default function SignupPage() {
                     }
                   >
                     <input
+                      id="password"
+                      name="password"
                       placeholder="Create a password"
                       type={
                         showPassword
@@ -1316,14 +1434,16 @@ export default function SignupPage() {
                           : "password"
                       }
                       value={password}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setPassword(
                           e.target.value
-                        )
-                      }
+                        );
+                        clearMessage();
+                      }}
                       style={
                         styles.passwordInput
                       }
+                      autoComplete="new-password"
                     />
 
                     <button
