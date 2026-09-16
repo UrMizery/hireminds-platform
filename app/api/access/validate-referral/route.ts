@@ -1,202 +1,229 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 type ReferralCodeConfig = {
   active: boolean;
   label: string;
-  expiresAt: string;
 };
 
-const REFERRAL_CODES: Record<string, ReferralCodeConfig> = {
-  /*
-    CURRENT REPLACEMENT FOR THE OLD YWCA CODE.
-    YWCA is intentionally NOT included as a valid code.
-    Existing database records containing YWCA remain untouched.
-  */
+/*
+  ==================================================
+  HIREMINDS ACTIVE REFERRAL CODES
+  ==================================================
+
+  THESE ARE THE ONLY CODES THAT CAN BE USED
+  FOR NEW REGISTRATIONS.
+
+  Referral access:
+  - One-time access
+  - 30 days
+  - No payment required
+*/
+
+const REFERRAL_CODES: Record<
+  string,
+  ReferralCodeConfig
+> = {
   "12.2026": {
     active: true,
     label: "HireMinds Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
   },
 
-  YWORK4C3: {
+  RDS1: {
     active: true,
-    label: "HireMinds Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
+    label: "RDS Referral Access",
   },
-
- COHORT1Y: {
-  active: false,
-  label: "HireMinds Cohort Referral Access",
-  expiresAt: "2026-12-31T23:59:59-05:00",
-},
 
   COHORT2Y: {
     active: true,
     label: "HireMinds Cohort Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
   },
 
   COHORT3Y: {
     active: true,
     label: "HireMinds Cohort Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
   },
 
   COHORT4Y: {
     active: true,
     label: "HireMinds Cohort Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
   },
 
   COHORT5Y: {
     active: true,
     label: "HireMinds Cohort Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
   },
 
-  RDS: {
+  DEMO1: {
     active: true,
-    label: "RDS Referral Access",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  /*
-    RESERVED FUTURE REFERRAL CODES.
-    Keep these placeholders in the system, but they are not active
-    until you intentionally activate them.
-  */
-  REFERRAL_06: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_07: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_08: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_09: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_10: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_11: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_12: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_13: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_14: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
-  },
-
-  REFERRAL_15: {
-    active: false,
-    label: "Reserved Referral Code",
-    expiresAt: "2026-12-31T23:59:59-05:00",
+    label: "HireMinds Demo Referral Access",
   },
 };
 
-function normalizeReferralCode(value: unknown) {
+/*
+  ==================================================
+  OLD / BLOCKED CODES
+  ==================================================
+
+  These are recognized as old HireMinds codes,
+  but they CANNOT be used for a new registration.
+*/
+
+const BLOCKED_REFERRAL_CODES = new Set([
+  "YWCA",
+  "COHORT1Y",
+  "RDS",
+  "YWORK4C3",
+]);
+
+function normalizeReferralCode(
+  value: unknown
+) {
   return String(value ?? "")
     .trim()
     .toUpperCase();
 }
 
-export async function POST(request: NextRequest) {
+function getReferralExpiration() {
+  const expiresAt = new Date();
+
+  expiresAt.setDate(
+    expiresAt.getDate() + 30
+  );
+
+  return expiresAt.toISOString();
+}
+
+export async function POST(
+  request: NextRequest
+) {
   try {
-    const body = await request.json();
-    const code = normalizeReferralCode(body?.code);
+    const body =
+      await request.json();
+
+    const code =
+      normalizeReferralCode(
+        body?.code
+      );
+
+    /*
+      =========================================
+      NO CODE ENTERED
+      =========================================
+    */
 
     if (!code) {
       return NextResponse.json(
         {
           valid: false,
-          message: "Enter a referral code.",
+          message:
+            "Enter a referral code.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
     /*
-      IMPORTANT:
-      YWCA was replaced by 12.2026.
-      YWCA must NOT validate for new or refreshed referral access.
-      This does not alter historical YWCA records already stored
-      in Supabase.
+      =========================================
+      BLOCK OLD CODES
+      =========================================
     */
-    if (code === "YWCA") {
+
+    if (
+      BLOCKED_REFERRAL_CODES.has(
+        code
+      )
+    ) {
       return NextResponse.json(
         {
           valid: false,
+          code,
           message:
-            "That referral code is no longer active. Please use your current referral code.",
+            "That referral code is no longer active for new registrations.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const referral = REFERRAL_CODES[code];
+    /*
+      =========================================
+      LOOK UP ACTIVE CODE
+      =========================================
+    */
 
-    if (!referral || !referral.active) {
+    const referral =
+      REFERRAL_CODES[code];
+
+    if (
+      !referral ||
+      !referral.active
+    ) {
       return NextResponse.json(
         {
           valid: false,
+          code,
           message:
             "That referral code is not currently active. Check the code and try again.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
+
+    /*
+      =========================================
+      VALID REFERRAL CODE
+      =========================================
+    */
+
+    const expiresAt =
+      getReferralExpiration();
 
     return NextResponse.json(
       {
         valid: true,
+
         code,
-        label: referral.label,
-        expiresAt: referral.expiresAt,
-        message: "Referral code verified.",
+
+        label:
+          referral.label,
+
+        accessType:
+          "referral",
+
+        accessDays:
+          30,
+
+        expiresAt,
+
+        message:
+          "Referral code verified.",
       },
-      { status: 200 }
+      {
+        status: 200,
+      }
     );
   } catch (error) {
-    console.error("Referral validation error:", error);
+    console.error(
+      "Referral validation error:",
+      error
+    );
 
     return NextResponse.json(
       {
         valid: false,
-        message: "We could not verify the referral code. Please try again.",
+        message:
+          "We could not verify the referral code. Please try again.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
@@ -205,9 +232,28 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
-      route: "/api/access/validate-referral",
-      message: "HireMinds referral validation endpoint is running.",
+
+      route:
+        "/api/access/validate-referral",
+
+      message:
+        "HireMinds referral validation endpoint is running.",
+
+      activeReferralCodes: [
+        "12.2026",
+        "RDS1",
+        "COHORT2Y",
+        "COHORT3Y",
+        "COHORT4Y",
+        "COHORT5Y",
+        "DEMO1",
+      ],
+
+      referralAccessDays:
+        30,
     },
-    { status: 200 }
+    {
+      status: 200,
+    }
   );
 }
