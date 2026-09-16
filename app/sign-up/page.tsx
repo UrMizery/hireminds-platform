@@ -1220,7 +1220,7 @@ export default function SignupPage() {
                 styles.billingSummary
               }
             >
-              <div style={styles.billingCell}>
+              <div style={styles.billingCellLeft}>
                 <span
                   style={
                     styles.billingSmall
@@ -1248,21 +1248,13 @@ export default function SignupPage() {
 
               <div
                 style={
-                  styles.billingArrowWrap
+                  styles.billingArrow
                 }
               >
-                <div style={styles.billingArrowLine} />
-                <div
-                  style={
-                    styles.billingArrow
-                  }
-                >
-                  →
-                </div>
-                <div style={styles.billingArrowLine} />
+                →
               </div>
 
-              <div style={styles.billingCell}>
+              <div style={styles.billingCellRight}>
                 <span
                   style={
                     styles.billingSmall
@@ -1439,7 +1431,7 @@ export default function SignupPage() {
                   styles.referralSummaryText
                 }
               >
-                Includes 21 days of HireMinds access. Each user receives one complimentary referral period only.
+                Includes 21 days of HireMinds access. Each user receives one complimentary referral period only. It does not automatically renew and does not require payment.
               </p>
             </div>
           </section>
@@ -2042,8 +2034,8 @@ const styles: {
   billingSummary: {
     display: "grid",
     gridTemplateColumns:
-      "minmax(0,1fr) auto minmax(0,1fr)",
-    gap: "20px",
+      "minmax(0,1fr) 56px minmax(0,1fr)",
+    gap: "16px",
     alignItems: "center",
     padding: "24px 26px",
     borderRadius: "20px",
@@ -2051,9 +2043,18 @@ const styles: {
       "linear-gradient(135deg, #111820 0%, #193c54 100%)",
   },
 
-  billingCell: {
+  billingCellLeft: {
     display: "flex",
     flexDirection: "column",
+    alignItems: "flex-end",
+    textAlign: "right",
+  },
+
+  billingCellRight: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    textAlign: "left",
   },
 
   billingSmall: {
@@ -2080,27 +2081,13 @@ const styles: {
     fontSize: "11px",
   },
 
-  billingArrowWrap: {
-    minWidth: "90px",
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    justifyContent: "center",
-  },
-
-  billingArrowLine: {
-    width: "26px",
-    height: "1px",
-    backgroundColor: "rgba(109, 184, 229, 0.55)",
-  },
-
   billingArrow: {
     color: "#6db8e5",
-    fontSize: "22px",
+    fontSize: "28px",
     lineHeight: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    alignSelf: "center",
+    justifySelf: "center",
+    transform: "translateY(2px)",
   },
 
   ackPanel: {
