@@ -1431,7 +1431,7 @@ export default function SignupPage() {
                   styles.referralSummaryText
                 }
               >
-                Includes 21 days of HireMinds access. Each user receives one complimentary referral period only. It does not automatically renew and does not require payment.
+                Includes 21 days of HireMinds access. Each user receives one complimentary referral period only.
               </p>
             </div>
           </section>
@@ -2032,15 +2032,19 @@ const styles: {
   },
 
   billingSummary: {
+    width: "fit-content",
+    maxWidth: "100%",
+    margin: "0 auto",
     display: "grid",
     gridTemplateColumns:
-      "minmax(0,1fr) 56px minmax(0,1fr)",
-    gap: "16px",
+      "auto 44px auto",
+    gap: "18px",
     alignItems: "center",
-    padding: "24px 26px",
-    borderRadius: "20px",
+    padding: "18px 24px",
+    borderRadius: "16px",
     background:
       "linear-gradient(135deg, #111820 0%, #193c54 100%)",
+    boxSizing: "border-box",
   },
 
   billingCellLeft: {
@@ -2067,9 +2071,9 @@ const styles: {
 
   billingBig: {
     display: "block",
-    marginTop: "6px",
+    marginTop: "5px",
     color: "#ffffff",
-    fontSize: "32px",
+    fontSize: "30px",
     fontWeight: 950,
     letterSpacing: "-0.04em",
   },
@@ -2083,7 +2087,7 @@ const styles: {
 
   billingArrow: {
     color: "#6db8e5",
-    fontSize: "28px",
+    fontSize: "25px",
     lineHeight: 1,
     alignSelf: "center",
     justifySelf: "center",
