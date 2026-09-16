@@ -7,17 +7,14 @@ type AccessMethod = "subscription" | "referral";
 
 const VALUE_ITEMS = [
   {
-    number: "01",
     title: "Understand the Opportunity",
     text: "Break down job descriptions, identify keywords, understand requirements, and know where you fit before you apply.",
   },
   {
-    number: "02",
     title: "Build a Stronger Application",
     text: "Create stronger resumes, cover letters, professional messaging, and application materials with more intention.",
   },
   {
-    number: "03",
     title: "Move With Direction",
     text: "Prepare for interviews, track your search, explore career paths, set goals, and know what your next move should be.",
   },
@@ -229,9 +226,6 @@ export default function SignupPage() {
         .insert(profilePayload);
 
     if (profileError) {
-      // The Auth account was created successfully, but the
-      // profile failed. Sign the person back out so HireMinds
-      // does not look like the registration completed.
       await supabase.auth.signOut();
 
       throw new Error(
@@ -282,12 +276,6 @@ export default function SignupPage() {
       return;
     }
 
-    /*
-      Read the actual values from the submitted form.
-
-      This prevents browser autofill from showing a value in an input
-      while React state still thinks the field is empty.
-    */
     const formData = new FormData(e.currentTarget);
 
     const cleanFirstName = String(
@@ -327,7 +315,6 @@ export default function SignupPage() {
     const fullName =
       `${cleanFirstName} ${cleanLastName}`.trim();
 
-    // Keep the controlled inputs synchronized with what was actually submitted.
     setFirstName(cleanFirstName);
     setLastName(cleanLastName);
     setPhone(cleanPhone);
@@ -365,12 +352,6 @@ export default function SignupPage() {
 
     try {
       setLoading(true);
-
-      /*
-        ==========================
-        REFERRAL ACCESS
-        ==========================
-      */
 
       if (
         accessMethod === "referral"
@@ -438,12 +419,6 @@ export default function SignupPage() {
         return;
       }
 
-      /*
-        ==========================
-        PAID SUBSCRIPTION
-        ==========================
-      */
-
       if (!ageConfirmed) {
         throw new Error(
           "Please confirm that you are 18 years of age or older."
@@ -473,29 +448,21 @@ export default function SignupPage() {
           "/api/stripe/create-checkout-session",
           {
             method: "POST",
-
             headers: {
-              "Content-Type":
-                "application/json",
+              "Content-Type": "application/json",
             },
-
             body: JSON.stringify({
               plan: "monthly",
-
               fullName,
               firstName:
                 cleanFirstName,
               lastName:
                 cleanLastName,
-
               email: cleanEmail,
-
               phone:
                 cleanPhone,
-
               city:
                 cleanCity,
-
               state:
                 cleanState,
             }),
@@ -551,10 +518,6 @@ export default function SignupPage() {
         style={styles.shell}
         autoComplete="on"
       >
-        {/* ================================
-            HERO
-        ================================= */}
-
         <section style={styles.hero}>
           <div
             style={styles.heroGlowOne}
@@ -592,8 +555,7 @@ export default function SignupPage() {
               <p
                 style={styles.heroEyebrow}
               >
-                CAREER DEVELOPMENT +
-                JOB SEARCH INTELLIGENCE
+                CAREER DEVELOPMENT + JOB SEARCH INTELLIGENCE
               </p>
 
               <h1
@@ -601,7 +563,6 @@ export default function SignupPage() {
               >
                 Stop guessing.
                 <br />
-
                 <span
                   style={
                     styles.heroAccent
@@ -623,48 +584,6 @@ export default function SignupPage() {
                 through your career with
                 more direction.
               </p>
-
-              <div
-                style={
-                  styles.heroMiniGrid
-                }
-              >
-                <div
-                  style={
-                    styles.heroMiniItem
-                  }
-                >
-                  <strong>Analyze</strong>
-                  <span>
-                    Know what the job is
-                    really asking for.
-                  </span>
-                </div>
-
-                <div
-                  style={
-                    styles.heroMiniItem
-                  }
-                >
-                  <strong>Position</strong>
-                  <span>
-                    Show your experience
-                    with intention.
-                  </span>
-                </div>
-
-                <div
-                  style={
-                    styles.heroMiniItem
-                  }
-                >
-                  <strong>Move</strong>
-                  <span>
-                    Turn preparation into
-                    action.
-                  </span>
-                </div>
-              </div>
             </div>
 
             <aside
@@ -727,21 +646,9 @@ export default function SignupPage() {
                 monthly after your first
                 5 days unless canceled.
               </p>
-
-              <div
-                style={
-                  styles.offerHighlight
-                }
-              >
-                Full access.
-              </div>
             </aside>
           </div>
         </section>
-
-        {/* ================================
-            STRONGER VALUE SECTION
-        ================================= */}
 
         <section
           style={styles.valueSection}
@@ -798,31 +705,17 @@ export default function SignupPage() {
 
                 return (
                   <article
-                    key={item.number}
+                    key={item.title}
                     style={{
-                      ...styles.valueCard,
-
+                      ...styles.valueItem,
                       ...(dark
-                        ? styles.valueCardDark
+                        ? styles.valueItemDark
                         : {}),
                     }}
                   >
-                    <span
-                      style={{
-                        ...styles.valueNumber,
-
-                        ...(dark
-                          ? styles.valueNumberDark
-                          : {}),
-                      }}
-                    >
-                      {item.number}
-                    </span>
-
                     <h3
                       style={{
                         ...styles.valueTitle,
-
                         ...(dark
                           ? styles.valueTextLight
                           : {}),
@@ -834,7 +727,6 @@ export default function SignupPage() {
                     <p
                       style={{
                         ...styles.valueText,
-
                         ...(dark
                           ? styles.valueTextLightMuted
                           : {}),
@@ -880,47 +772,19 @@ export default function SignupPage() {
           </div>
         </section>
 
-        {/* ================================
-            STEP 1 ACCESS FIRST
-        ================================= */}
-
         <section
-          style={styles.sectionCard}
+          style={styles.sectionWrap}
         >
-          <div
-            style={styles.stepHeader}
-          >
-            <div
-              style={styles.stepNumber}
-            >
-              01
-            </div>
-
-            <div>
-              <p
-                style={
-                  styles.sectionEyebrow
-                }
-              >
-                CHOOSE YOUR ACCESS
-              </p>
-
-              <h2
-                style={styles.stepTitle}
-              >
-                How will you access
-                HireMinds?
-              </h2>
-
-              <p
-                style={styles.stepText}
-              >
-                Choose the option that
-                applies to you before
-                creating your Career
-                Passport.
-              </p>
-            </div>
+          <div style={styles.sectionIntroBlock}>
+            <p style={styles.sectionEyebrow}>
+              CHOOSE YOUR ACCESS
+            </p>
+            <h2 style={styles.stepTitle}>
+              How will you access HireMinds?
+            </h2>
+            <p style={styles.stepText}>
+              Choose the option that applies to you before creating your Career Passport.
+            </p>
           </div>
 
           <div
@@ -928,8 +792,6 @@ export default function SignupPage() {
               styles.accessChoiceGrid
             }
           >
-            {/* PAID */}
-
             <button
               type="button"
               onClick={() =>
@@ -939,7 +801,6 @@ export default function SignupPage() {
               }
               style={{
                 ...styles.accessCard,
-
                 ...(accessMethod ===
                 "subscription"
                   ? styles.accessCardSelected
@@ -998,10 +859,7 @@ export default function SignupPage() {
                   styles.accessRenewal
                 }
               >
-                Then{" "}
-                <strong>
-                  $24.99/month
-                </strong>
+                Then <strong>$24.99/month</strong>
               </div>
 
               <p
@@ -1025,8 +883,6 @@ export default function SignupPage() {
               </span>
             </button>
 
-            {/* REFERRAL */}
-
             <button
               type="button"
               onClick={() =>
@@ -1036,7 +892,6 @@ export default function SignupPage() {
               }
               style={{
                 ...styles.accessCard,
-
                 ...(accessMethod ===
                 "referral"
                   ? styles.accessCardSelected
@@ -1081,11 +936,7 @@ export default function SignupPage() {
                   styles.accessRenewal
                 }
               >
-                Complimentary{" "}
-                <strong>
-                  3 weeks (21 days)
-                  of access
-                </strong>
+                Complimentary <strong>3 weeks (21 days) of access</strong>
               </div>
 
               <p
@@ -1187,55 +1038,20 @@ export default function SignupPage() {
           ) : null}
         </section>
 
-        {/* ================================
-            STEP 2 INFO
-        ================================= */}
-
         {accessMethod ? (
           <section
-            style={styles.sectionCard}
+            style={styles.sectionWrap}
           >
-            <div
-              style={styles.stepHeader}
-            >
-              <div
-                style={
-                  styles.stepNumberBlue
-                }
-              >
-                02
-              </div>
-
-              <div>
-                <p
-                  style={
-                    styles.sectionEyebrow
-                  }
-                >
-                  CREATE YOUR CAREER
-                  PASSPORT
-                </p>
-
-                <h2
-                  style={
-                    styles.stepTitle
-                  }
-                >
-                  Tell us who you are.
-                </h2>
-
-                <p
-                  style={
-                    styles.stepText
-                  }
-                >
-                  Enter your basic
-                  information to
-                  continue with the
-                  access option you
-                  selected.
-                </p>
-              </div>
+            <div style={styles.sectionIntroBlock}>
+              <p style={styles.sectionEyebrow}>
+                CREATE YOUR CAREER PASSPORT
+              </p>
+              <h2 style={styles.stepTitle}>
+                Tell us who you are.
+              </h2>
+              <p style={styles.stepText}>
+                Enter your basic information to continue with the access option you selected.
+              </p>
             </div>
 
             <div
@@ -1507,43 +1323,22 @@ export default function SignupPage() {
           </section>
         ) : null}
 
-        {/* ================================
-            STEP 3 CONFIRM
-        ================================= */}
-
         {accessMethod ===
         "subscription" ? (
           <section
-            style={styles.sectionCard}
+            style={styles.sectionWrap}
           >
-            <div
-              style={styles.stepHeader}
-            >
-              <div
-                style={styles.stepNumber}
+            <div style={styles.sectionIntroBlock}>
+              <p style={styles.sectionEyebrow}>
+                CONFIRM & CONTINUE
+              </p>
+              <h2
+                style={
+                  styles.stepTitle
+                }
               >
-                03
-              </div>
-
-              <div>
-                <p
-                  style={
-                    styles.sectionEyebrow
-                  }
-                >
-                  CONFIRM & CONTINUE
-                </p>
-
-                <h2
-                  style={
-                    styles.stepTitle
-                  }
-                >
-                  Know exactly what
-                  you&apos;re signing
-                  up for.
-                </h2>
-              </div>
+                Know exactly what you&apos;re signing up for.
+              </h2>
             </div>
 
             <div
@@ -1551,7 +1346,7 @@ export default function SignupPage() {
                 styles.billingSummary
               }
             >
-              <div>
+              <div style={styles.billingCell}>
                 <span
                   style={
                     styles.billingSmall
@@ -1579,13 +1374,21 @@ export default function SignupPage() {
 
               <div
                 style={
-                  styles.billingArrow
+                  styles.billingArrowWrap
                 }
               >
-                →
+                <div style={styles.billingArrowLine} />
+                <div
+                  style={
+                    styles.billingArrow
+                  }
+                >
+                  →
+                </div>
+                <div style={styles.billingArrowLine} />
               </div>
 
-              <div>
+              <div style={styles.billingCell}>
                 <span
                   style={
                     styles.billingSmall
@@ -1607,8 +1410,7 @@ export default function SignupPage() {
                     styles.billingDescription
                   }
                 >
-                  Per month until
-                  canceled
+                  Per month until canceled
                 </span>
               </div>
             </div>
@@ -1633,11 +1435,7 @@ export default function SignupPage() {
                 />
 
                 <span>
-                  I confirm that I am{" "}
-                  <strong>
-                    18 years of age or
-                    older.
-                  </strong>
+                  I confirm that I am <strong>18 years of age or older.</strong>
                 </span>
               </label>
 
@@ -1660,13 +1458,7 @@ export default function SignupPage() {
                 />
 
                 <span>
-                  I understand that I
-                  will be charged{" "}
-                  <strong>
-                    $2.99 today
-                  </strong>{" "}
-                  for my first 5 days of
-                  HireMinds access.
+                  I understand that I will be charged <strong>$2.99 today</strong> for my first 5 days of HireMinds access.
                 </span>
               </label>
 
@@ -1689,15 +1481,7 @@ export default function SignupPage() {
                 />
 
                 <span>
-                  I understand that
-                  unless canceled, my
-                  subscription will
-                  automatically renew at{" "}
-                  <strong>
-                    $24.99 per month
-                  </strong>{" "}
-                  after the 5-day
-                  introductory period.
+                  I understand that unless canceled, my subscription will automatically renew at <strong>$24.99 per month</strong> after the 5-day introductory period.
                 </span>
               </label>
 
@@ -1720,9 +1504,7 @@ export default function SignupPage() {
                 />
 
                 <span>
-                  I agree to the
-                  HireMinds Terms and
-                  Privacy Policy.
+                  I agree to the HireMinds Terms and Privacy Policy.
                 </span>
               </label>
             </div>
@@ -1732,47 +1514,27 @@ export default function SignupPage() {
         {accessMethod ===
         "referral" ? (
           <section
-            style={styles.sectionCard}
+            style={styles.sectionWrap}
           >
-            <div
-              style={styles.stepHeader}
-            >
-              <div
-                style={styles.stepNumber}
+            <div style={styles.sectionIntroBlock}>
+              <p style={styles.sectionEyebrow}>
+                VERIFY & CONTINUE
+              </p>
+              <h2
+                style={
+                  styles.stepTitle
+                }
               >
-                03
-              </div>
+                Confirm your referral access.
+              </h2>
 
-              <div>
-                <p
-                  style={
-                    styles.sectionEyebrow
-                  }
-                >
-                  VERIFY & CONTINUE
-                </p>
-
-                <h2
-                  style={
-                    styles.stepTitle
-                  }
-                >
-                  Confirm your referral
-                  access.
-                </h2>
-
-                <p
-                  style={
-                    styles.stepText
-                  }
-                >
-                  Your referral code
-                  will be verified
-                  before you continue to
-                  the Consent & Access
-                  page.
-                </p>
-              </div>
+              <p
+                style={
+                  styles.stepText
+                }
+              >
+                Your referral code will be verified before you continue to the Consent & Access page.
+              </p>
             </div>
 
             <div
@@ -1794,8 +1556,7 @@ export default function SignupPage() {
                     styles.referralSummaryTitle
                   }
                 >
-                  One-time complimentary
-                  3-week access
+                  One-time complimentary 3-week access
                 </strong>
               </div>
 
@@ -1804,19 +1565,11 @@ export default function SignupPage() {
                   styles.referralSummaryText
                 }
               >
-                Includes 21 days of
-                HireMinds access. Each
-                user receives one
-                complimentary referral
-                period only. It does not
-                automatically renew and
-                does not require payment.
+                Includes 21 days of HireMinds access. Each user receives one complimentary referral period only. It does not automatically renew and does not require payment.
               </p>
             </div>
           </section>
         ) : null}
-
-        {/* ERROR */}
 
         {message ? (
           <div
@@ -1826,8 +1579,6 @@ export default function SignupPage() {
           </div>
         ) : null}
 
-        {/* SUBMIT */}
-
         {accessMethod ? (
           <button
             type="submit"
@@ -1836,24 +1587,26 @@ export default function SignupPage() {
             }
             disabled={loading}
           >
-            <span>
-              {loading
-                ? "Please wait..."
-                : accessMethod ===
-                    "subscription"
-                ? "Continue to Secure Payment"
-                : "Create Career Passport & Continue"}
-            </span>
-
-            {!loading ? (
-              <span
-                style={
-                  styles.buttonArrow
-                }
-              >
-                →
+            <span style={styles.submitInner}>
+              <span>
+                {loading
+                  ? "Please wait..."
+                  : accessMethod ===
+                      "subscription"
+                  ? "Continue to Secure Payment"
+                  : "Create Career Passport & Continue"}
               </span>
-            ) : null}
+
+              {!loading ? (
+                <span
+                  style={
+                    styles.buttonArrow
+                  }
+                >
+                  →
+                </span>
+              ) : null}
+            </span>
           </button>
         ) : null}
 
@@ -1869,8 +1622,7 @@ export default function SignupPage() {
           <p
             style={styles.footerText}
           >
-            Your career is bigger than
-            one application.
+            Your career is bigger than one application.
           </p>
         </footer>
       </form>
@@ -1885,14 +1637,10 @@ const styles: {
     minHeight: "100vh",
     background:
       "linear-gradient(180deg, #eef2f5 0%, #ffffff 40%, #edf2f6 100%)",
-
     color: "#111820",
-
     padding:
       "28px 18px 60px",
-
     boxSizing: "border-box",
-
     fontFamily:
       "Inter, Arial, Helvetica, sans-serif",
   },
@@ -1901,167 +1649,117 @@ const styles: {
     width: "100%",
     maxWidth: "1180px",
     margin: "0 auto",
-
     display: "flex",
     flexDirection: "column",
-
-    gap: "22px",
+    gap: "24px",
   },
-
-  /* HERO */
 
   hero: {
     position: "relative",
     overflow: "hidden",
-
     borderRadius: "32px",
-
     background:
       "linear-gradient(135deg, #0d151d 0%, #13222e 55%, #115b88 130%)",
-
     border:
       "1px solid rgba(255,255,255,0.08)",
-
     boxShadow:
       "0 24px 65px rgba(9, 22, 34, 0.22)",
   },
 
   heroGlowOne: {
     position: "absolute",
-
     width: "540px",
     height: "540px",
-
     borderRadius: "50%",
-
     right: "-180px",
     top: "-260px",
-
     background:
       "radial-gradient(circle, rgba(37, 144, 207, 0.38) 0%, rgba(37, 144, 207, 0) 68%)",
-
     pointerEvents: "none",
   },
 
   heroGlowTwo: {
     position: "absolute",
-
     width: "420px",
     height: "420px",
-
     borderRadius: "50%",
-
     left: "-200px",
     bottom: "-230px",
-
     background:
       "radial-gradient(circle, rgba(150, 173, 190, 0.18) 0%, rgba(150, 173, 190, 0) 70%)",
-
     pointerEvents: "none",
   },
 
   heroGrid: {
     position: "relative",
     zIndex: 1,
-
     display: "grid",
-
     gridTemplateColumns:
       "minmax(0, 1.45fr) minmax(300px, 0.55fr)",
-
     gap: "38px",
-
     padding: "52px",
-
     alignItems: "stretch",
   },
 
   heroContent: {
     display: "flex",
     flexDirection: "column",
-
     justifyContent: "center",
   },
 
   brandRow: {
     display: "flex",
     alignItems: "center",
-
     gap: "12px",
-
     marginBottom: "34px",
   },
 
   brandMark: {
     width: "47px",
     height: "47px",
-
     display: "flex",
-
     alignItems: "center",
     justifyContent: "center",
-
     borderRadius: "14px",
-
     backgroundColor: "#ffffff",
-
     color: "#0f6092",
-
     fontSize: "13px",
     fontWeight: 950,
-
     boxShadow:
       "0 10px 28px rgba(0,0,0,0.18)",
   },
 
   brandName: {
     color: "#ffffff",
-
     fontSize: "13px",
-
     fontWeight: 950,
-
     letterSpacing: "0.16em",
   },
 
   brandDescriptor: {
     color: "#7fbde2",
-
     marginTop: "4px",
-
     fontSize: "9px",
-
     fontWeight: 850,
-
     letterSpacing: "0.13em",
   },
 
   heroEyebrow: {
     margin: "0 0 13px",
-
     color: "#79bde8",
-
     fontSize: "10px",
-
     fontWeight: 950,
-
     letterSpacing: "0.16em",
   },
 
   heroTitle: {
     margin: 0,
-
     color: "#ffffff",
-
     maxWidth: "780px",
-
     fontSize:
       "clamp(46px, 7vw, 78px)",
-
     lineHeight: 0.95,
-
     fontWeight: 950,
-
     letterSpacing: "-0.055em",
   },
 
@@ -2071,75 +1769,29 @@ const styles: {
 
   heroText: {
     maxWidth: "720px",
-
     margin: "25px 0 0",
-
     color: "#c9d4dc",
-
     fontSize: "17px",
-
     lineHeight: 1.72,
-
     fontWeight: 500,
-  },
-
-  heroMiniGrid: {
-    display: "grid",
-
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(150px, 1fr))",
-
-    gap: "10px",
-
-    marginTop: "28px",
-  },
-
-  heroMiniItem: {
-    display: "flex",
-    flexDirection: "column",
-
-    gap: "6px",
-
-    padding:
-      "14px 15px",
-
-    borderRadius: "14px",
-
-    backgroundColor:
-      "rgba(255,255,255,0.06)",
-
-    border:
-      "1px solid rgba(255,255,255,0.08)",
-
-    color: "#ffffff",
-
-    fontSize: "12px",
   },
 
   heroOffer: {
     display: "flex",
     flexDirection: "column",
-
     justifyContent: "center",
-
     padding: "29px",
-
     borderRadius: "25px",
-
     background:
       "linear-gradient(160deg, #ffffff 0%, #e9f3fa 100%)",
-
     boxShadow:
       "0 20px 45px rgba(0,0,0,0.20)",
   },
 
   offerEyebrow: {
     color: "#176fae",
-
     fontSize: "9px",
-
     fontWeight: 950,
-
     letterSpacing: "0.14em",
   },
 
@@ -2149,139 +1801,75 @@ const styles: {
 
   offerPrice: {
     color: "#111820",
-
     fontSize: "57px",
-
     lineHeight: 0.95,
-
     fontWeight: 950,
-
     letterSpacing: "-0.055em",
   },
 
   offerTerm: {
     marginTop: "7px",
-
     color: "#537080",
-
     fontSize: "11px",
-
     fontWeight: 900,
-
     letterSpacing: "0.05em",
   },
 
   offerDivider: {
     height: "1px",
-
     backgroundColor: "#c5d4dd",
-
     margin: "22px 0",
   },
 
   offerThenLabel: {
     color: "#74838e",
-
     fontSize: "9px",
-
     fontWeight: 950,
-
     letterSpacing: "0.11em",
   },
 
   offerRenewal: {
     marginTop: "4px",
-
     color: "#111820",
-
     fontSize: "24px",
-
     fontWeight: 950,
   },
 
   offerText: {
     margin: "8px 0 0",
-
     color: "#5f6d78",
-
     fontSize: "12px",
-
     lineHeight: 1.55,
   },
 
-  offerHighlight: {
-    marginTop: "18px",
-
-    padding:
-      "11px 12px",
-
-    borderRadius: "11px",
-
-    backgroundColor: "#111820",
-
-    color: "#ffffff",
-
-    textAlign: "center",
-
-    fontSize: "10px",
-
-    fontWeight: 900,
-
-    letterSpacing: "0.04em",
-  },
-
-  /* VALUE */
-
   valueSection: {
-    padding: "38px",
-
-    borderRadius: "30px",
-
-    backgroundColor: "#ffffff",
-
-    border: "1px solid #cfd7de",
-
-    boxShadow:
-      "0 18px 48px rgba(19, 37, 52, 0.08)",
+    padding: "22px 6px 0",
   },
 
   valueTop: {
     display: "flex",
-
     justifyContent: "space-between",
     alignItems: "flex-end",
-
     gap: "30px",
-
     flexWrap: "wrap",
-
-    marginBottom: "27px",
+    marginBottom: "18px",
   },
 
   sectionEyebrow: {
     margin: "0 0 8px",
-
     color: "#1671ad",
-
     fontSize: "10px",
-
     fontWeight: 950,
-
     letterSpacing: "0.16em",
   },
 
   sectionHeadline: {
     margin: 0,
-
     color: "#101820",
-
     fontSize:
       "clamp(35px, 5vw, 55px)",
-
     lineHeight: 1,
-
     fontWeight: 950,
-
     letterSpacing: "-0.045em",
   },
 
@@ -2290,509 +1878,277 @@ const styles: {
   },
 
   sectionIntro: {
-    maxWidth: "400px",
-
+    maxWidth: "420px",
     margin: 0,
-
     color: "#5d6974",
-
     fontSize: "14px",
-
     lineHeight: 1.7,
   },
 
   valueGrid: {
     display: "grid",
-
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(250px, 1fr))",
-
-    gap: "14px",
+      "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: "24px",
+    paddingTop: "16px",
+    borderTop: "1px solid #d7dfe5",
   },
 
-  valueCard: {
-    minHeight: "180px",
-
-    display: "flex",
-    flexDirection: "column",
-
-    padding: "24px",
-
-    borderRadius: "20px",
-
-    background:
-      "linear-gradient(145deg, #eef6fb 0%, #ffffff 100%)",
-
-    border:
-      "1px solid #d2e0e9",
-
-    boxShadow:
-      "0 10px 24px rgba(20, 46, 65, 0.06)",
+  valueItem: {
+    paddingRight: "18px",
+    borderRight: "1px solid #dfe5ea",
   },
 
-  valueCardDark: {
-    background:
-      "linear-gradient(145deg, #111820 0%, #19354a 100%)",
-
-    border:
-      "1px solid #1e4a68",
-
-    boxShadow:
-      "0 16px 32px rgba(14, 35, 50, 0.19)",
-  },
-
-  valueNumber: {
-    color: "#176fae",
-
-    fontSize: "11px",
-
-    fontWeight: 950,
-
-    letterSpacing: "0.13em",
-  },
-
-  valueNumberDark: {
-    color: "#67b8e9",
+  valueItemDark: {
+    borderRight: "1px solid #dfe5ea",
   },
 
   valueTitle: {
-    margin: "28px 0 0",
-
+    margin: "0",
     color: "#111820",
-
-    fontSize: "20px",
-
+    fontSize: "21px",
     lineHeight: 1.12,
-
     fontWeight: 950,
-
     letterSpacing: "-0.02em",
   },
 
   valueText: {
     margin: "10px 0 0",
-
     color: "#55636e",
-
-    fontSize: "12px",
-
-    lineHeight: 1.65,
+    fontSize: "13px",
+    lineHeight: 1.7,
   },
 
   valueTextLight: {
-    color: "#ffffff",
+    color: "#111820",
   },
 
   valueTextLightMuted: {
-    color: "#c8d4dc",
+    color: "#55636e",
   },
 
   toolBand: {
     display: "flex",
-
     alignItems: "center",
-
     gap: "18px",
-
     flexWrap: "wrap",
-
-    marginTop: "18px",
-
-    padding:
-      "15px 17px",
-
-    borderRadius: "15px",
-
-    backgroundColor: "#111820",
+    marginTop: "24px",
+    paddingTop: "18px",
+    borderTop: "1px solid #d7dfe5",
   },
 
   toolBandLabel: {
-    color: "#6db8e5",
-
-    fontSize: "9px",
-
+    color: "#176fae",
+    fontSize: "10px",
     fontWeight: 950,
-
     letterSpacing: "0.14em",
-
     whiteSpace: "nowrap",
   },
 
   toolBandItems: {
     display: "flex",
-
     gap: "8px",
-
     flexWrap: "wrap",
   },
 
   toolChip: {
-    padding: "6px 9px",
-
+    padding: "7px 10px",
     borderRadius: "999px",
-
-    backgroundColor:
-      "rgba(255,255,255,0.07)",
-
+    backgroundColor: "#f1f5f8",
     border:
-      "1px solid rgba(255,255,255,0.08)",
-
-    color: "#e1e8ed",
-
+      "1px solid #d4dee6",
+    color: "#30404d",
     fontSize: "10px",
-
     fontWeight: 750,
   },
 
-  /* SECTIONS */
-
-  sectionCard: {
-    padding: "34px",
-
-    borderRadius: "27px",
-
-    backgroundColor: "#ffffff",
-
-    border: "1px solid #cfd7de",
-
-    boxShadow:
-      "0 14px 38px rgba(19, 37, 52, 0.065)",
+  sectionWrap: {
+    padding: "32px 0 0",
+    borderTop: "1px solid #d5dde3",
   },
 
-  stepHeader: {
-    display: "flex",
-
-    gap: "15px",
-
-    alignItems: "flex-start",
-
-    marginBottom: "27px",
-  },
-
-  stepNumber: {
-    width: "46px",
-    height: "46px",
-
-    minWidth: "46px",
-
-    display: "flex",
-
-    alignItems: "center",
-    justifyContent: "center",
-
-    borderRadius: "14px",
-
-    backgroundColor: "#111820",
-
-    color: "#ffffff",
-
-    fontSize: "11px",
-
-    fontWeight: 950,
-  },
-
-  stepNumberBlue: {
-    width: "46px",
-    height: "46px",
-
-    minWidth: "46px",
-
-    display: "flex",
-
-    alignItems: "center",
-    justifyContent: "center",
-
-    borderRadius: "14px",
-
-    background:
-      "linear-gradient(145deg, #176fae 0%, #258bc8 100%)",
-
-    color: "#ffffff",
-
-    fontSize: "11px",
-
-    fontWeight: 950,
-
-    boxShadow:
-      "0 8px 20px rgba(23, 111, 174, 0.20)",
+  sectionIntroBlock: {
+    maxWidth: "760px",
+    marginBottom: "22px",
   },
 
   stepTitle: {
     margin: 0,
-
     color: "#111820",
-
     fontSize:
       "clamp(28px, 4vw, 38px)",
-
     lineHeight: 1.05,
-
     fontWeight: 950,
-
     letterSpacing: "-0.035em",
   },
 
   stepText: {
     margin: "8px 0 0",
-
     color: "#68747f",
-
     fontSize: "13px",
-
-    lineHeight: 1.55,
+    lineHeight: 1.65,
   },
-
-  /* ACCESS CARDS */
 
   accessChoiceGrid: {
     display: "grid",
-
     gridTemplateColumns:
       "repeat(auto-fit, minmax(300px, 1fr))",
-
     gap: "14px",
   },
 
   accessCard: {
-    minHeight: "275px",
-
+    minHeight: "260px",
     display: "flex",
     flexDirection: "column",
-
     textAlign: "left",
-
     padding: "24px",
-
     borderRadius: "20px",
-
     border:
       "1px solid #c7d0d8",
-
     background:
-      "linear-gradient(145deg, #ffffff 0%, #f0f4f7 100%)",
-
+      "linear-gradient(145deg, #ffffff 0%, #f7fafc 100%)",
     color: "#111820",
-
     cursor: "pointer",
-
     transition:
       "all 0.2s ease",
+    boxShadow: "0 8px 22px rgba(20, 46, 65, 0.05)",
   },
 
   accessCardSelected: {
     border:
       "2px solid #176fae",
-
     background:
       "linear-gradient(145deg, #ffffff 0%, #e7f4fc 100%)",
-
     boxShadow:
       "0 16px 34px rgba(23, 111, 174, 0.17)",
   },
 
   accessCardTop: {
     display: "flex",
-
     justifyContent: "space-between",
-
     gap: "10px",
-
     alignItems: "center",
   },
 
   accessCardLabel: {
     color: "#176fae",
-
     fontSize: "10px",
-
     fontWeight: 950,
-
     letterSpacing: "0.12em",
   },
 
   selectedPill: {
     padding: "5px 8px",
-
     borderRadius: "999px",
-
     backgroundColor: "#176fae",
-
     color: "#ffffff",
-
     fontSize: "8px",
-
     fontWeight: 950,
-
     letterSpacing: "0.06em",
   },
 
   accessPriceRow: {
     display: "flex",
-
     alignItems: "baseline",
-
     gap: "9px",
-
     marginTop: "30px",
   },
 
   accessPrice: {
     color: "#111820",
-
     fontSize: "48px",
-
     lineHeight: 1,
-
     fontWeight: 950,
-
     letterSpacing: "-0.055em",
   },
 
   accessPriceDetail: {
     color: "#687680",
-
     fontSize: "12px",
-
     fontWeight: 800,
   },
 
   accessRenewal: {
     marginTop: "8px",
-
     color: "#3d4a55",
-
     fontSize: "14px",
   },
 
   accessDescription: {
     margin: "14px 0 0",
-
     maxWidth: "450px",
-
     color: "#65727d",
-
     fontSize: "12px",
-
     lineHeight: 1.6,
   },
 
   accessSelectText: {
     marginTop: "auto",
-
     paddingTop: "22px",
-
     color: "#176fae",
-
     fontSize: "11px",
-
     fontWeight: 950,
   },
 
   referralBigTitle: {
     marginTop: "33px",
-
     color: "#111820",
-
     fontSize: "26px",
-
     lineHeight: 1.05,
-
     fontWeight: 950,
-
     letterSpacing: "-0.025em",
   },
 
   referralCodeArea: {
     marginTop: "18px",
-
     display: "grid",
-
     gap: "12px",
-
-    padding: "21px",
-
-    borderRadius: "17px",
-
-    background:
-      "linear-gradient(145deg, #eff6fa 0%, #e6f0f6 100%)",
-
-    border:
-      "1px solid #c5d8e5",
+    padding: "0",
   },
 
   referralCodeHelp: {
     margin: "4px 0 0",
-
     color: "#667580",
-
     fontSize: "12px",
   },
 
   referralInput: {
     width: "100%",
-
     padding:
       "15px 16px",
-
     borderRadius: "12px",
-
     border:
       "1px solid #9db9cb",
-
     backgroundColor: "#ffffff",
-
     color: "#111820",
-
     outline: "none",
-
     boxSizing: "border-box",
-
     fontSize: "16px",
-
     fontWeight: 850,
-
     letterSpacing: "0.04em",
   },
 
   previousReferralNote: {
     display: "flex",
-
     flexDirection: "column",
-
     gap: "4px",
-
     padding:
-      "13px 14px",
-
-    borderRadius: "11px",
-
-    backgroundColor: "#ffffff",
-
-    border:
-      "1px solid #d1dbe2",
-
+      "14px 0 0",
     color: "#4e5c67",
-
     fontSize: "11px",
-
     lineHeight: 1.5,
   },
 
-  /* FORM */
-
   formGrid: {
     display: "grid",
-
     gridTemplateColumns:
       "repeat(auto-fit, minmax(280px, 1fr))",
-
     gap: "16px",
   },
 
   field: {
     display: "flex",
     flexDirection: "column",
-
     gap: "7px",
   },
 
@@ -2802,359 +2158,261 @@ const styles: {
 
   fieldLabel: {
     color: "#293640",
-
     fontSize: "11px",
-
     fontWeight: 900,
-
     letterSpacing: "0.03em",
   },
 
   input: {
     width: "100%",
-
     padding:
       "14px 15px",
-
     borderRadius: "12px",
-
     border:
       "1px solid #b8c5ce",
-
     backgroundColor: "#f7f9fa",
-
     color: "#111820",
-
     outline: "none",
-
     boxSizing: "border-box",
-
     fontSize: "15px",
   },
 
   passwordWrap: {
     position: "relative",
-
     width: "100%",
   },
 
   passwordInput: {
     width: "100%",
-
     padding:
       "14px 80px 14px 15px",
-
     borderRadius: "12px",
-
     border:
       "1px solid #b8c5ce",
-
     backgroundColor: "#f7f9fa",
-
     color: "#111820",
-
     outline: "none",
-
     boxSizing: "border-box",
-
     fontSize: "15px",
   },
 
   passwordToggle: {
     position: "absolute",
-
     top: "50%",
     right: "14px",
-
     transform:
       "translateY(-50%)",
-
     border: "none",
-
     background: "transparent",
-
     color: "#176fae",
-
     cursor: "pointer",
-
     fontWeight: 900,
   },
 
   passwordNote: {
     color: "#74818b",
-
     fontSize: "10px",
-
     lineHeight: 1.5,
   },
 
   paymentPasswordNotice: {
     display: "flex",
-
     flexDirection: "column",
-
     gap: "5px",
-
     padding: "15px",
-
     borderRadius: "12px",
-
     background:
       "linear-gradient(90deg, #e8edf1 0%, #e5f1f8 100%)",
-
     border:
       "1px solid #c9d7df",
-
     color: "#42515d",
-
     fontSize: "12px",
   },
 
-  /* BILLING */
-
   billingSummary: {
     display: "grid",
-
     gridTemplateColumns:
-      "1fr auto 1fr",
-
-    gap: "18px",
-
+      "minmax(0,1fr) auto minmax(0,1fr)",
+    gap: "20px",
     alignItems: "center",
-
-    padding: "22px",
-
-    borderRadius: "18px",
-
+    padding: "24px 26px",
+    borderRadius: "20px",
     background:
       "linear-gradient(135deg, #111820 0%, #193c54 100%)",
   },
 
+  billingCell: {
+    display: "flex",
+    flexDirection: "column",
+  },
+
   billingSmall: {
     display: "block",
-
     color: "#78bce6",
-
     fontSize: "9px",
-
     fontWeight: 950,
-
     letterSpacing: "0.12em",
   },
 
   billingBig: {
     display: "block",
-
     marginTop: "6px",
-
     color: "#ffffff",
-
     fontSize: "32px",
-
     fontWeight: 950,
-
     letterSpacing: "-0.04em",
   },
 
   billingDescription: {
     display: "block",
-
     marginTop: "3px",
-
     color: "#c8d4dc",
-
     fontSize: "11px",
+  },
+
+  billingArrowWrap: {
+    minWidth: "90px",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    justifyContent: "center",
+  },
+
+  billingArrowLine: {
+    width: "26px",
+    height: "1px",
+    backgroundColor: "rgba(109, 184, 229, 0.55)",
   },
 
   billingArrow: {
     color: "#6db8e5",
-
-    fontSize: "25px",
+    fontSize: "22px",
+    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   ackPanel: {
-    marginTop: "15px",
-
+    marginTop: "18px",
     display: "flex",
-
     flexDirection: "column",
-
-    gap: "12px",
-
-    padding: "19px",
-
-    borderRadius: "15px",
-
-    backgroundColor: "#f3f6f8",
-
-    border: "1px solid #cfd8df",
+    gap: "0",
+    borderTop: "1px solid #d7e0e6",
   },
 
   checkboxRow: {
     display: "flex",
-
     gap: "10px",
-
     alignItems: "flex-start",
-
     color: "#404d57",
-
     fontSize: "12px",
-
-    lineHeight: 1.55,
-
+    lineHeight: 1.65,
     cursor: "pointer",
+    padding: "14px 2px",
+    borderBottom: "1px solid #d7e0e6",
   },
 
   checkbox: {
     width: "18px",
     height: "18px",
-
     minWidth: "18px",
-
     marginTop: "1px",
-
     accentColor: "#176fae",
   },
 
-  /* REFERRAL SUMMARY */
-
   referralSummary: {
     display: "flex",
-
     justifyContent: "space-between",
-
     gap: "25px",
-
     flexWrap: "wrap",
-
-    padding: "20px",
-
-    borderRadius: "16px",
-
-    background:
-      "linear-gradient(145deg, #edf6fb 0%, #ffffff 100%)",
-
-    border:
-      "1px solid #c6dce9",
+    padding: "20px 0 0",
+    borderTop: "1px solid #d7e0e6",
   },
 
   referralSummaryLabel: {
     display: "block",
-
     color: "#176fae",
-
     fontSize: "9px",
-
     fontWeight: 950,
-
     letterSpacing: "0.12em",
-
     marginBottom: "6px",
   },
 
   referralSummaryTitle: {
     color: "#111820",
-
     fontSize: "18px",
-
     fontWeight: 950,
   },
 
   referralSummaryText: {
-    maxWidth: "420px",
-
+    maxWidth: "470px",
     margin: 0,
-
     color: "#65727d",
-
     fontSize: "12px",
-
-    lineHeight: 1.55,
+    lineHeight: 1.65,
   },
-
-  /* ERROR */
 
   message: {
     padding: "14px 16px",
-
     borderRadius: "12px",
-
     backgroundColor: "#fff0f0",
-
     border:
       "1px solid #daa8a8",
-
     color: "#8c2f2f",
-
     fontSize: "13px",
-
     fontWeight: 850,
   },
 
-  /* BUTTON */
-
   submitButton: {
     width: "100%",
-
     display: "flex",
-
     justifyContent: "center",
     alignItems: "center",
-
-    gap: "14px",
-
     padding:
       "18px 22px",
-
     borderRadius: "16px",
-
     border:
       "1px solid #0b5d93",
-
     background:
       "linear-gradient(90deg, #111820 0%, #176fae 55%, #2588c7 100%)",
-
     color: "#ffffff",
-
     fontSize: "15px",
-
     fontWeight: 950,
-
     cursor: "pointer",
-
     boxShadow:
       "0 14px 32px rgba(23, 111, 174, 0.25)",
   },
 
+  submitInner: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "12px",
+  },
+
   buttonArrow: {
     fontSize: "20px",
-
     fontWeight: 400,
+    lineHeight: 1,
   },
 
   footer: {
     textAlign: "center",
-
     padding:
       "18px 12px 3px",
   },
 
   footerBrand: {
     color: "#111820",
-
     fontSize: "10px",
-
     fontWeight: 950,
-
     letterSpacing: "0.16em",
   },
 
   footerText: {
     margin: "6px 0 0",
-
     color: "#72808a",
-
     fontSize: "11px",
   },
 };
