@@ -1081,10 +1081,10 @@ export default function SignupPage() {
                   styles.accessRenewal
                 }
               >
-                One-time{" "}
+                Complimentary{" "}
                 <strong>
-                  30 days unlimited
-                  access
+                  3 weeks (21 days)
+                  of access
                 </strong>
               </div>
 
@@ -1093,11 +1093,13 @@ export default function SignupPage() {
                   styles.accessDescription
                 }
               >
-                Available to eligible
-                participants who were
-                provided an active code
-                by an approved program
-                or partner.
+                Each user is eligible
+                for one complimentary
+                referral access period
+                only. An active code
+                must be provided by an
+                approved program or
+                partner.
               </p>
 
               <span
@@ -1171,14 +1173,14 @@ export default function SignupPage() {
                 </strong>
 
                 <span>
-                  Referral access is a
-                  one-time benefit. If
-                  you previously used
-                  referral access, this
-                  option may no longer
-                  be available for your
-                  account. Paid Access
-                  remains available.
+                  Each user may receive
+                  complimentary referral
+                  access one time only.
+                  If you previously used
+                  your complimentary
+                  referral access, Paid
+                  Access remains
+                  available.
                 </span>
               </div>
             </div>
@@ -1792,8 +1794,8 @@ export default function SignupPage() {
                     styles.referralSummaryTitle
                   }
                 >
-                  One-time 30 days of
-                  unlimited access
+                  One-time complimentary
+                  3-week access
                 </strong>
               </div>
 
@@ -1802,10 +1804,13 @@ export default function SignupPage() {
                   styles.referralSummaryText
                 }
               >
-                Referral access does
-                not automatically renew
-                and does not require a
-                payment.
+                Includes 21 days of
+                HireMinds access. Each
+                user receives one
+                complimentary referral
+                period only. It does not
+                automatically renew and
+                does not require payment.
               </p>
             </div>
           </section>
