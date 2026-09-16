@@ -49,13 +49,13 @@ const PLANS: Array<{
 ];
 
 const CONSENT_VERSION =
-  "HM-REFERRAL-2026-09-30DAY-SIMPLIFIED";
+  "HM-REFERRAL-2026-09-21DAY-SIMPLIFIED";
 
-function createThirtyDayExpiration() {
+function createThreeWeekExpiration() {
   const expiration = new Date();
 
   expiration.setDate(
-    expiration.getDate() + 30
+    expiration.getDate() + 21
   );
 
   return expiration.toISOString();
@@ -83,24 +83,10 @@ export default function AccessPage() {
   ] =
     useState<PlanKey>("monthly");
 
-  /*
-    REFERRAL CONSENT
-
-    One final acknowledgment instead of
-    multiple small acknowledgment boxes.
-  */
-
   const [
     finalConsentAccepted,
     setFinalConsentAccepted,
   ] = useState(false);
-
-  /*
-    SUBSCRIPTION ACKNOWLEDGMENTS
-
-    Kept for the existing subscription
-    side of this page.
-  */
 
   const [
     ageConfirmed,
@@ -138,12 +124,6 @@ export default function AccessPage() {
 
       [selectedPlan]
     );
-
-  /*
-    ==========================================
-    LOAD ACCESS INFORMATION
-    ==========================================
-  */
 
   useEffect(() => {
     let mounted = true;
@@ -300,10 +280,6 @@ export default function AccessPage() {
           );
         }
 
-        /*
-          REFERRAL ACCESS
-        */
-
         if (
           profile?.access_tier ===
             "pending_referral_consent" ||
@@ -317,10 +293,6 @@ export default function AccessPage() {
 
           return;
         }
-
-        /*
-          SUBSCRIPTION ACCESS
-        */
 
         if (
           profile?.access_tier ===
@@ -391,12 +363,6 @@ export default function AccessPage() {
     };
   }, []);
 
-  /*
-    ==========================================
-    COMPLETE REFERRAL ACCESS
-    ==========================================
-  */
-
   async function handleReferralCheckout() {
     if (loading) return;
 
@@ -434,7 +400,7 @@ export default function AccessPage() {
         new Date().toISOString();
 
       const expiresAt =
-        createThirtyDayExpiration();
+        createThreeWeekExpiration();
 
       const {
         error: updateError,
@@ -543,12 +509,6 @@ export default function AccessPage() {
       setLoading(false);
     }
   }
-
-  /*
-    ==========================================
-    EXISTING SUBSCRIPTION FLOW
-    ==========================================
-  */
 
   async function handleSubscriptionCheckout() {
     if (loading) return;
@@ -686,12 +646,6 @@ export default function AccessPage() {
     }
   }
 
-  /*
-    ==========================================
-    LOADING
-    ==========================================
-  */
-
   if (mode === "loading") {
     return (
       <main style={styles.page}>
@@ -728,12 +682,6 @@ export default function AccessPage() {
       </main>
     );
   }
-
-  /*
-    ==========================================
-    ERROR
-    ==========================================
-  */
 
   if (mode === "error") {
     return (
@@ -792,10 +740,6 @@ export default function AccessPage() {
   return (
     <main style={styles.page}>
       <div style={styles.shell}>
-        {/* ============================
-            HERO
-        ============================ */}
-
         <section
           style={styles.hero}
         >
@@ -862,7 +806,7 @@ export default function AccessPage() {
               }
             >
               {mode === "referral"
-                ? "Your referral code has been verified. Review the short agreement below and activate your 30 days of HireMinds access."
+                ? "Your referral code has been verified. Review the short agreement below and activate your one-time 3 weeks of HireMinds access."
                 : "Review your subscription details and continue to payment."}
             </p>
           </div>
@@ -935,7 +879,7 @@ export default function AccessPage() {
                     styles.statusValueSmall
                   }
                 >
-                  30 Days
+                  One-Time / 3 Weeks
                 </strong>
               </>
             ) : (
@@ -982,10 +926,6 @@ export default function AccessPage() {
           </aside>
         </section>
 
-        {/* ============================
-            REFERRAL
-        ============================ */}
-
         {mode === "referral" ? (
           <>
             <section
@@ -1026,8 +966,6 @@ export default function AccessPage() {
                   Passport access.
                 </p>
               </div>
-
-              {/* IDENTITY */}
 
               <div
                 style={
@@ -1104,8 +1042,6 @@ export default function AccessPage() {
                   </div>
                 ) : null}
               </div>
-
-              {/* CONTINUOUS AGREEMENT */}
 
               <div
                 style={
@@ -1305,8 +1241,6 @@ export default function AccessPage() {
                 </div>
               </div>
 
-              {/* ACCESS NOTICE */}
-
               <div
                 style={
                   styles.accessNotice
@@ -1317,8 +1251,8 @@ export default function AccessPage() {
                     styles.accessNoticeLabel
                   }
                 >
-                  30-DAY REFERRAL
-                  ACCESS
+                  ONE-TIME 3-WEEK
+                  REFERRAL ACCESS
                 </span>
 
                 <p
@@ -1329,19 +1263,22 @@ export default function AccessPage() {
                   Your referral
                   provides{" "}
                   <strong>
-                    30 days of
+                    21 days of
                     HireMinds access
                   </strong>{" "}
                   beginning when you
-                  activate it. It
-                  does not
-                  automatically renew
-                  and does not
-                  require payment.
+                  activate it.
+                  Referral access is
+                  a{" "}
+                  <strong>
+                    one-time benefit
+                  </strong>
+                  , does not
+                  automatically renew,
+                  and does not require
+                  payment.
                 </p>
               </div>
-
-              {/* ONE FINAL CHECKBOX */}
 
               <label
                 style={
@@ -1382,11 +1319,10 @@ export default function AccessPage() {
                     I voluntarily
                     choose to use
                     HireMinds and
-                    agree to the
-                    HireMinds
-                    Platform Consent
-                    & Registration
-                    Agreement.
+                    understand that
+                    my referral
+                    provides one-time
+                    3-week access.
                   </p>
                 </div>
               </label>
@@ -1431,10 +1367,6 @@ export default function AccessPage() {
           </>
         ) : (
           <>
-            {/* ============================
-                SUBSCRIPTION
-            ============================ */}
-
             <section
               style={
                 styles.section
@@ -1870,10 +1802,6 @@ const styles: {
     gap: "22px",
   },
 
-  /*
-    LOADING
-  */
-
   loadingCard: {
     width: "100%",
 
@@ -1935,10 +1863,6 @@ const styles: {
 
     fontSize: "13px",
   },
-
-  /*
-    ERROR
-  */
 
   errorCard: {
     width: "100%",
@@ -2036,10 +1960,6 @@ const styles: {
 
     fontWeight: 900,
   },
-
-  /*
-    HERO
-  */
 
   hero: {
     position:
@@ -2266,10 +2186,6 @@ const styles: {
     backgroundColor:
       "#40505c",
   },
-
-  /*
-    REFERRAL AGREEMENT
-  */
 
   agreementSection: {
     padding:
@@ -2556,10 +2472,6 @@ const styles: {
       "#176fae",
   },
 
-  /*
-    SUBSCRIPTION
-  */
-
   section: {
     padding: "34px",
 
@@ -2812,10 +2724,6 @@ const styles: {
     cursor: "pointer",
   },
 
-  /*
-    MESSAGE + BUTTON
-  */
-
   message: {
     padding:
       "14px 16px",
@@ -2878,10 +2786,6 @@ const styles: {
 
     fontWeight: 400,
   },
-
-  /*
-    FOOTER
-  */
 
   footer: {
     display: "flex",
