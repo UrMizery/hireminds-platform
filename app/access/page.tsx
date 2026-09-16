@@ -40,8 +40,7 @@ const PLANS: Array<{
   },
 ];
 
-const CONSENT_VERSION = "HM-REFERRAL-2026-09-INDEPENDENT-PLATFORM";
-const REFERRAL_EXPIRES_AT = "2026-12-31T23:59:59-05:00";
+const CONSENT_VERSION = "HM-REFERRAL-2026-09-30DAY";
 
 export default function AccessPage() {
   const [mode, setMode] = useState<CheckoutMode>("loading");
@@ -60,13 +59,7 @@ export default function AccessPage() {
   const [communityAccepted, setCommunityAccepted] = useState(false);
   const [employerVisibilityAccepted, setEmployerVisibilityAccepted] =
     useState(false);
-  const [referralExpirationAccepted, setReferralExpirationAccepted] =
-    useState(false);
   const [finalConsentAccepted, setFinalConsentAccepted] = useState(false);
-
-  const [contactAuthorized, setContactAuthorized] = useState(false);
-  const [futureEventsAuthorized, setFutureEventsAuthorized] = useState(false);
-  const [mediaChoice, setMediaChoice] = useState<"yes" | "no" | "">("");
 
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [billingConfirmed, setBillingConfirmed] = useState(false);
@@ -291,13 +284,6 @@ export default function AccessPage() {
       return;
     }
 
-    if (!referralExpirationAccepted) {
-      setMessage(
-        "Please acknowledge that referral access is available through December 31, 2026."
-      );
-      return;
-    }
-
     if (!finalConsentAccepted) {
       setMessage(
         "Please confirm that you have read and agree to the HireMinds Platform Consent & Registration Agreement."
@@ -316,6 +302,9 @@ export default function AccessPage() {
       }
 
       const now = new Date().toISOString();
+      const referralExpiresAt = new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
 
       const { error: updateError } = await supabase
         .from("candidate_profiles")
@@ -328,7 +317,7 @@ export default function AccessPage() {
           has_paid_access: false,
           access_tier: "referral",
 
-          existing_access_expires_at: REFERRAL_EXPIRES_AT,
+          existing_access_expires_at: referralExpiresAt,
           access_reauthorized_at: now,
         })
         .eq("user_id", authData.user.id);
@@ -355,21 +344,8 @@ export default function AccessPage() {
 
       try {
         localStorage.removeItem("hireminds_pending_referral_code");
-        localStorage.removeItem("hireminds_referral_expiration_confirmed");
         localStorage.removeItem("hireminds_pending_referral_expires_at");
-
-        localStorage.setItem(
-          "hireminds_referral_contact_authorized",
-          String(contactAuthorized)
-        );
-        localStorage.setItem(
-          "hireminds_referral_future_events_authorized",
-          String(futureEventsAuthorized)
-        );
-        localStorage.setItem(
-          "hireminds_referral_media_choice",
-          mediaChoice || "not_selected"
-        );
+        localStorage.removeItem("hireminds_referral_expiration_confirmed");
       } catch {
         // Convenience only. Access state is stored in Supabase.
       }
@@ -378,7 +354,7 @@ export default function AccessPage() {
     } catch (error: any) {
       setMessage(
         error?.message ||
-          "We could not complete your referral checkout. Please try again."
+          "We could not complete your referral access. Please try again."
       );
       setLoading(false);
     }
@@ -529,7 +505,7 @@ export default function AccessPage() {
 
             <p style={styles.heroText}>
               {mode === "referral"
-                ? "Your referral code has been verified. This is your HireMinds consent and acknowledgment step. Review each section, confirm your referral-access terms, and complete checkout to activate access."
+                ? "Your referral code has been verified. Review the required acknowledgments below to activate your 30 days of HireMinds referral access."
                 : "Review your HireMinds subscription, confirm your checkout acknowledgments, and continue to secure payment."}
             </p>
           </div>
@@ -551,8 +527,8 @@ export default function AccessPage() {
 
                 <div style={styles.statusLine} />
 
-                <span style={styles.statusLabel}>ACCESS THROUGH</span>
-                <strong style={styles.statusValueSmall}>12.31.2026</strong>
+                <span style={styles.statusLabel}>ACCESS PERIOD</span>
+                <strong style={styles.statusValueSmall}>30 DAYS</strong>
               </>
             ) : (
               <>
@@ -575,14 +551,14 @@ export default function AccessPage() {
                 <div style={styles.stepNumber}>01</div>
 
                 <div>
-                  <p style={styles.eyebrow}>REFERRAL CHECKOUT</p>
+                  <p style={styles.eyebrow}>REFERRAL ACCESS</p>
                   <h2 style={styles.sectionTitle}>
                     HireMinds Platform Consent & Registration Agreement
                   </h2>
                   <p style={styles.sectionIntro}>
-                    Review each section and check the required acknowledgments.
-                    Your referral access is not activated until checkout is
-                    completed.
+                    Review each required acknowledgment below. Your referral
+                    access begins when you complete this page and remains active
+                    for 30 days.
                   </p>
                 </div>
               </div>
@@ -764,142 +740,20 @@ export default function AccessPage() {
               </div>
             </section>
 
-            <section style={styles.expirationSection}>
-              <div style={styles.expirationDateBlock}>
-                <span style={styles.expirationSmall}>REFERRAL ACCESS</span>
-                <strong style={styles.expirationDate}>12.31.2026</strong>
-              </div>
-
-              <div style={styles.expirationCopy}>
-                <p style={styles.expirationEyebrow}>IMPORTANT ACCESS NOTICE</p>
-                <h2 style={styles.expirationTitle}>
-                  Your referral access ends December 31, 2026.
-                </h2>
-
-                <p style={styles.expirationText}>
-                  If you would like to continue using HireMinds after December
-                  31, 2026, you will need to subscribe to a paid HireMinds
-                  plan.
-                </p>
-
-                <label style={styles.expirationCheck}>
-                  <input
-                    type="checkbox"
-                    checked={referralExpirationAccepted}
-                    onChange={(e) =>
-                      setReferralExpirationAccepted(e.target.checked)
-                    }
-                    style={styles.checkbox}
-                  />
-
-                  <span>
-                    <strong>I understand.</strong> My referral access is
-                    available through December 31, 2026. Access after that date
-                    requires a HireMinds subscription.
-                  </span>
-                </label>
-              </div>
-            </section>
-
-            <section style={styles.section}>
-              <div style={styles.sectionHeader}>
-                <div style={styles.stepNumberBlue}>02</div>
-
-                <div>
-                  <p style={styles.eyebrow}>YOUR PREFERENCES</p>
-                  <h2 style={styles.sectionTitle}>Optional authorizations</h2>
-                  <p style={styles.sectionIntro}>
-                    These choices are optional and do not affect your referral
-                    access.
-                  </p>
-                </div>
-              </div>
-
-              <div style={styles.optionalGrid}>
-                <label style={styles.optionalCard}>
-                  <input
-                    type="checkbox"
-                    checked={contactAuthorized}
-                    onChange={(e) => setContactAuthorized(e.target.checked)}
-                    style={styles.checkbox}
-                  />
-                  <span>
-                    I authorize HireMinds to contact me regarding my account,
-                    career resources, platform updates, and important service
-                    notifications.
-                  </span>
-                </label>
-
-                <label style={styles.optionalCard}>
-                  <input
-                    type="checkbox"
-                    checked={futureEventsAuthorized}
-                    onChange={(e) =>
-                      setFutureEventsAuthorized(e.target.checked)
-                    }
-                    style={styles.checkbox}
-                  />
-                  <span>
-                    I would like to receive information about future HireMinds
-                    workshops, job fairs, networking opportunities, hiring
-                    events, and workforce-development programs.
-                  </span>
-                </label>
-              </div>
-
-              <div style={styles.mediaPanel}>
-                <div>
-                  <p style={styles.mediaTitle}>
-                    Photo, Video & Testimonial Release
-                  </p>
-                  <p style={styles.mediaText}>
-                    Choosing NO will not affect your participation or access.
-                  </p>
-                </div>
-
-                <div style={styles.mediaChoices}>
-                  <button
-                    type="button"
-                    onClick={() => setMediaChoice("yes")}
-                    style={{
-                      ...styles.choiceButton,
-                      ...(mediaChoice === "yes"
-                        ? styles.choiceButtonActive
-                        : {}),
-                    }}
-                  >
-                    YES — I authorize use
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMediaChoice("no")}
-                    style={{
-                      ...styles.choiceButton,
-                      ...(mediaChoice === "no"
-                        ? styles.choiceButtonActive
-                        : {}),
-                    }}
-                  >
-                    NO — I do not authorize
-                  </button>
-                </div>
-              </div>
-            </section>
-
             <section style={styles.finalConsent}>
               <div style={styles.finalConsentMark}>✓</div>
 
               <div style={styles.finalConsentBody}>
                 <p style={styles.finalConsentEyebrow}>FINAL ACKNOWLEDGMENT</p>
                 <h2 style={styles.finalConsentTitle}>
-                  Complete your referral checkout.
+                  Complete your referral access.
                 </h2>
 
                 <p style={styles.finalConsentText}>
                   By checking below, I acknowledge that I have read and
                   understand the HireMinds Platform Consent & Registration
-                  Agreement and voluntarily choose to use HireMinds.
+                  Agreement, voluntarily choose to use HireMinds, and understand
+                  that referral access is available for 30 days from activation.
                 </p>
 
                 <label style={styles.finalCheckRow}>
@@ -929,8 +783,8 @@ export default function AccessPage() {
             >
               <span>
                 {loading
-                  ? "Completing Checkout..."
-                  : "Complete Referral Checkout & Enter HireMinds"}
+                  ? "Activating Access..."
+                  : "Complete Referral Access & Enter HireMinds"}
               </span>
               {!loading ? <span style={styles.arrow}>→</span> : null}
             </button>
@@ -1616,158 +1470,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     minWidth: "21px",
     marginTop: "1px",
     accentColor: "#176fae",
-  },
-
-  expirationSection: {
-    display: "grid",
-    gridTemplateColumns: "250px minmax(0, 1fr)",
-    overflow: "hidden",
-    borderRadius: "26px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #c8d1d8",
-    boxShadow: "0 14px 40px rgba(20, 34, 47, 0.07)",
-  },
-
-  expirationDateBlock: {
-    minHeight: "250px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "28px",
-    background:
-      "linear-gradient(145deg, #176fae 0%, #2588c7 60%, #111820 145%)",
-  },
-
-  expirationSmall: {
-    color: "#dceffc",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.16em",
-  },
-
-  expirationDate: {
-    marginTop: "8px",
-    color: "#ffffff",
-    fontSize: "34px",
-    fontWeight: 950,
-    letterSpacing: "-0.04em",
-  },
-
-  expirationCopy: {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    padding: "32px",
-  },
-
-  expirationEyebrow: {
-    margin: "0 0 6px",
-    color: "#176fae",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.14em",
-  },
-
-  expirationTitle: {
-    margin: 0,
-    color: "#111820",
-    fontSize: "27px",
-    lineHeight: 1.12,
-    fontWeight: 950,
-    letterSpacing: "-0.03em",
-  },
-
-  expirationText: {
-    margin: "11px 0 17px",
-    color: "#606b75",
-    fontSize: "13px",
-    lineHeight: 1.65,
-  },
-
-  expirationCheck: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "10px",
-    padding: "14px 15px",
-    borderRadius: "13px",
-    background:
-      "linear-gradient(90deg, #e8eef2 0%, #e5f0f7 100%)",
-    border: "1px solid #c5d4df",
-    color: "#35424c",
-    fontSize: "12px",
-    lineHeight: 1.55,
-    cursor: "pointer",
-  },
-
-  optionalGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-    gap: "12px",
-  },
-
-  optionalCard: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "10px",
-    padding: "17px",
-    borderRadius: "15px",
-    background:
-      "linear-gradient(145deg, #f7f9fa 0%, #eaf1f6 100%)",
-    border: "1px solid #ccd6de",
-    color: "#46525d",
-    fontSize: "12px",
-    lineHeight: 1.6,
-    cursor: "pointer",
-  },
-
-  mediaPanel: {
-    marginTop: "12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "18px",
-    flexWrap: "wrap",
-    padding: "18px",
-    borderRadius: "16px",
-    backgroundColor: "#eef1f3",
-    border: "1px solid #ccd3d8",
-  },
-
-  mediaTitle: {
-    margin: 0,
-    color: "#111820",
-    fontSize: "14px",
-    fontWeight: 950,
-  },
-
-  mediaText: {
-    margin: "5px 0 0",
-    color: "#6d7881",
-    fontSize: "11px",
-  },
-
-  mediaChoices: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-  },
-
-  choiceButton: {
-    padding: "11px 13px",
-    borderRadius: "11px",
-    border: "1px solid #bcc7cf",
-    backgroundColor: "#ffffff",
-    color: "#4a5660",
-    cursor: "pointer",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  choiceButtonActive: {
-    border: "1px solid #176fae",
-    backgroundColor: "#deedf7",
-    color: "#115c90",
   },
 
   finalConsent: {
