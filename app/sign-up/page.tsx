@@ -1439,7 +1439,7 @@ export default function SignupPage() {
                   styles.referralSummaryText
                 }
               >
-                Includes 21 days of HireMinds access. Each user receives one complimentary referral period only. It does not automatically renew and does not require payment.
+                Includes 21 days of HireMinds access. Each user receives one complimentary referral period only.
               </p>
             </div>
           </section>
