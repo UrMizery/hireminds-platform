@@ -193,8 +193,6 @@ export default function SignupPage() {
     > = {
       user_id: user.id,
 
-      first_name: cleanFirstName,
-      last_name: cleanLastName,
       full_name: fullName,
 
       phone: cleanPhone || null,
@@ -228,11 +226,16 @@ export default function SignupPage() {
     const { error: profileError } =
       await supabase
         .from("candidate_profiles")
-        .upsert(profilePayload);
+        .insert(profilePayload);
 
     if (profileError) {
+      // The Auth account was created successfully, but the
+      // profile failed. Sign the person back out so HireMinds
+      // does not look like the registration completed.
+      await supabase.auth.signOut();
+
       throw new Error(
-        profileError.message
+        `Your login was created, but your HireMinds profile could not be completed: ${profileError.message}`
       );
     }
 
