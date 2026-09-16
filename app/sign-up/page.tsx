@@ -5,32 +5,6 @@ import { supabase } from "../lib/supabase";
 
 type AccessMethod = "subscription" | "referral";
 
-const VALUE_ITEMS = [
-  {
-    title: "Understand the Opportunity",
-    text: "Break down job descriptions, identify keywords, understand requirements, and know where you fit before you apply.",
-  },
-  {
-    title: "Build a Stronger Application",
-    text: "Create stronger resumes, cover letters, professional messaging, and application materials with more intention.",
-  },
-  {
-    title: "Move With Direction",
-    text: "Prepare for interviews, track your search, explore career paths, set goals, and know what your next move should be.",
-  },
-];
-
-const TOOL_ITEMS = [
-  "Resume Builder",
-  "Resume Match",
-  "JD Analyzer",
-  "Cover Letters",
-  "Interview Prep",
-  "Career Goals",
-  "Career Paths",
-  "Job Search Tracking",
-];
-
 export default function SignupPage() {
   const [accessMethod, setAccessMethod] =
     useState<AccessMethod | null>(null);
@@ -650,124 +624,24 @@ export default function SignupPage() {
           </div>
         </section>
 
-        <section
-          style={styles.valueSection}
-        >
-          <div
-            style={styles.valueTop}
-          >
-            <div>
-              <p
-                style={
-                  styles.sectionEyebrow
-                }
-              >
-                WHY HIREMINDS
+        <section style={styles.valueSection}>
+          <div style={styles.valueFocus}>
+            <h2 style={styles.sectionHeadline}>
+              More than tools.
+              <br />
+              <span style={styles.sectionAccent}>
+                A smarter way to move.
+              </span>
+            </h2>
+
+            <div style={styles.moveDirection}>
+              <h3 style={styles.moveDirectionTitle}>
+                Move With Direction
+              </h3>
+
+              <p style={styles.moveDirectionText}>
+                Prepare for interviews, track your search, explore career paths, set goals, and know what your next move should be.
               </p>
-
-              <h2
-                style={
-                  styles.sectionHeadline
-                }
-              >
-                More than tools.
-                <br />
-                <span
-                  style={
-                    styles.sectionAccent
-                  }
-                >
-                  A smarter way to move.
-                </span>
-              </h2>
-            </div>
-
-            <p
-              style={
-                styles.sectionIntro
-              }
-            >
-              A resume is only one piece
-              of the process. HireMinds
-              helps you understand,
-              prepare, apply, track and
-              keep moving forward.
-            </p>
-          </div>
-
-          <div
-            style={styles.valueGrid}
-          >
-            {VALUE_ITEMS.map(
-              (item, index) => {
-                const dark =
-                  index === 1;
-
-                return (
-                  <article
-                    key={item.title}
-                    style={{
-                      ...styles.valueItem,
-                      ...(dark
-                        ? styles.valueItemDark
-                        : {}),
-                    }}
-                  >
-                    <h3
-                      style={{
-                        ...styles.valueTitle,
-                        ...(dark
-                          ? styles.valueTextLight
-                          : {}),
-                      }}
-                    >
-                      {item.title}
-                    </h3>
-
-                    <p
-                      style={{
-                        ...styles.valueText,
-                        ...(dark
-                          ? styles.valueTextLightMuted
-                          : {}),
-                      }}
-                    >
-                      {item.text}
-                    </p>
-                  </article>
-                );
-              }
-            )}
-          </div>
-
-          <div
-            style={styles.toolBand}
-          >
-            <span
-              style={
-                styles.toolBandLabel
-              }
-            >
-              ONE PLATFORM
-            </span>
-
-            <div
-              style={
-                styles.toolBandItems
-              }
-            >
-              {TOOL_ITEMS.map(
-                (tool) => (
-                  <span
-                    key={tool}
-                    style={
-                      styles.toolChip
-                    }
-                  >
-                    {tool}
-                  </span>
-                )
-              )}
             </div>
           </div>
         </section>
@@ -1843,31 +1717,23 @@ const styles: {
   },
 
   valueSection: {
-    padding: "22px 6px 0",
+    padding: "34px 6px 10px",
+    borderTop: "1px solid #d7dfe5",
+    borderBottom: "1px solid #d7dfe5",
   },
 
-  valueTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: "30px",
-    flexWrap: "wrap",
-    marginBottom: "18px",
-  },
-
-  sectionEyebrow: {
-    margin: "0 0 8px",
-    color: "#1671ad",
-    fontSize: "10px",
-    fontWeight: 950,
-    letterSpacing: "0.16em",
+  valueFocus: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1.15fr) minmax(300px, 0.85fr)",
+    gap: "56px",
+    alignItems: "end",
+    padding: "0 0 30px",
   },
 
   sectionHeadline: {
     margin: 0,
     color: "#101820",
-    fontSize:
-      "clamp(35px, 5vw, 55px)",
+    fontSize: "clamp(35px, 5vw, 55px)",
     lineHeight: 1,
     fontWeight: 950,
     letterSpacing: "-0.045em",
@@ -1877,89 +1743,33 @@ const styles: {
     color: "#176fae",
   },
 
-  sectionIntro: {
-    maxWidth: "420px",
+  moveDirection: {
+    paddingLeft: "28px",
+    borderLeft: "1px solid #d7dfe5",
+  },
+
+  moveDirectionTitle: {
     margin: 0,
-    color: "#5d6974",
-    fontSize: "14px",
-    lineHeight: 1.7,
-  },
-
-  valueGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(260px, 1fr))",
-    gap: "24px",
-    paddingTop: "16px",
-    borderTop: "1px solid #d7dfe5",
-  },
-
-  valueItem: {
-    paddingRight: "18px",
-    borderRight: "1px solid #dfe5ea",
-  },
-
-  valueItemDark: {
-    borderRight: "1px solid #dfe5ea",
-  },
-
-  valueTitle: {
-    margin: "0",
     color: "#111820",
-    fontSize: "21px",
-    lineHeight: 1.12,
+    fontSize: "24px",
+    lineHeight: 1.15,
     fontWeight: 950,
     letterSpacing: "-0.02em",
   },
 
-  valueText: {
+  moveDirectionText: {
     margin: "10px 0 0",
     color: "#55636e",
-    fontSize: "13px",
+    fontSize: "14px",
     lineHeight: 1.7,
   },
 
-  valueTextLight: {
-    color: "#111820",
-  },
-
-  valueTextLightMuted: {
-    color: "#55636e",
-  },
-
-  toolBand: {
-    display: "flex",
-    alignItems: "center",
-    gap: "18px",
-    flexWrap: "wrap",
-    marginTop: "24px",
-    paddingTop: "18px",
-    borderTop: "1px solid #d7dfe5",
-  },
-
-  toolBandLabel: {
-    color: "#176fae",
+  sectionEyebrow: {
+    margin: "0 0 8px",
+    color: "#1671ad",
     fontSize: "10px",
     fontWeight: 950,
-    letterSpacing: "0.14em",
-    whiteSpace: "nowrap",
-  },
-
-  toolBandItems: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-  },
-
-  toolChip: {
-    padding: "7px 10px",
-    borderRadius: "999px",
-    backgroundColor: "#f1f5f8",
-    border:
-      "1px solid #d4dee6",
-    color: "#30404d",
-    fontSize: "10px",
-    fontWeight: 750,
+    letterSpacing: "0.16em",
   },
 
   sectionWrap: {
