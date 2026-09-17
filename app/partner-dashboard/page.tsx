@@ -17,8 +17,6 @@ import { supabase } from "../lib/supabase";
 
 type DashboardTab =
   | "overview"
-  | "live"
-  | "history"
   | "tools"
   | "meeting_requests"
   | "availability"
@@ -40,6 +38,7 @@ type OptionalMetricKey =
   | "activity_records"
   | "code_comparison"
   | "most_used_tool"
+  | "tool_outcomes"
   | "career_services"
   | "document_submissions"
   | "cancellations";
@@ -51,6 +50,63 @@ type PartnerRow = {
   account_type?: string | null;
   account_holder?: string | null;
 };
+type ReferralCodeStatus = "active" | "inactive" | "reserved" | "historical";
+
+type ReferralCodeDefinition = {
+  code: string;
+  status: ReferralCodeStatus;
+  note: string;
+};
+
+const REFERRAL_CODE_REGISTRY: ReferralCodeDefinition[] = [
+  { code: "12.2026", status: "active", note: "Current YWCA replacement code" },
+  { code: "RDS1", status: "active", note: "Current RDS referral code" },
+  { code: "COHORT2Y", status: "active", note: "Active cohort code" },
+  { code: "COHORT3Y", status: "active", note: "Active cohort code" },
+  { code: "COHORT4Y", status: "active", note: "Active cohort code" },
+  { code: "COHORT5Y", status: "active", note: "Active cohort code" },
+  { code: "DEMO1", status: "active", note: "Active demonstration code" },
+  { code: "YWCA", status: "inactive", note: "Legacy code — replaced by 12.2026" },
+  { code: "RDS", status: "inactive", note: "Legacy code — replaced by RDS1" },
+  { code: "COHORT1Y", status: "inactive", note: "Existing participants only; blocked for new registrations" },
+  { code: "YWORK4C3", status: "inactive", note: "Inactive legacy referral code" },
+  { code: "DEMO2", status: "inactive", note: "Inactive demonstration code" },
+  { code: "DEMO3", status: "inactive", note: "Inactive demonstration code" },
+  { code: "CT_SWIFT", status: "reserved", note: "Reserved future partnership code" },
+  { code: "CT_VALV", status: "reserved", note: "Reserved future partnership code" },
+  { code: "CT_CRI", status: "reserved", note: "Reserved future partnership code" },
+  { code: "CT_TWP", status: "reserved", note: "Reserved future partnership code" },
+  { code: "CT_AJC", status: "reserved", note: "Reserved future partnership code" },
+];
+
+const PROFILE_TOOL_NAMES = new Set([
+  "profile",
+  "my profile",
+  "career passport",
+]);
+
+function normalizedToolName(value?: string | null) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function isRealToolActivity(row: ActivityRow) {
+  const tool = normalizedToolName(row.tool_name);
+  return Boolean(tool) && !PROFILE_TOOL_NAMES.has(tool);
+}
+
+function isToolOutputEvent(row: ActivityRow) {
+  const event = String(row.event_type || "").toLowerCase();
+  return (
+    event.includes("save") ||
+    event.includes("saved") ||
+    event.includes("generate") ||
+    event.includes("generated") ||
+    event.includes("download") ||
+    event.includes("export") ||
+    event === "document_submitted"
+  );
+}
+
 
 type ParticipantRow = {
   id?: string | null;
@@ -84,6 +140,9 @@ type ParticipantSummaryRow = {
   toolUses: number;
   completions: number;
   documentSubmissions: number;
+  toolOutputs: number;
+  lastToolSave?: string | null;
+  topTool: string;
   cancellations: number;
 };
 
@@ -1257,6 +1316,16 @@ export default function PartnerDashboardPage() {
       ""
     );
 
+  const [
+    archivedMeetingIds,
+    setArchivedMeetingIds,
+  ] = useState<string[]>([]);
+
+  const [
+    expandedMeetingIds,
+    setExpandedMeetingIds,
+  ] = useState<string[]>([]);
+
   /* =======================================================
      AVAILABILITY
   ======================================================= */
@@ -1325,22 +1394,6 @@ export default function PartnerDashboardPage() {
      CAREER CONNECT
   ======================================================= */
 
-  const [
-    careerSettings,
-    setCareerSettings,
-  ] =
-    useState<CareerConnectSettings>(
-      DEFAULT_CAREER_CONNECT_SETTINGS
-    );
-
-  const [
-    savingCareerSettings,
-    setSavingCareerSettings,
-  ] =
-    useState(
-      false
-    );
-
   /* =======================================================
      REPORTS
   ======================================================= */
@@ -1395,6 +1448,7 @@ export default function PartnerDashboardPage() {
       OptionalMetricKey[]
     >([
       "tool_engagements",
+      "tool_outcomes",
       "completed_activities",
       "career_services",
       "document_submissions",
@@ -1418,6 +1472,18 @@ export default function PartnerDashboardPage() {
     },
     []
   );
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("hireminds_archived_meeting_ids");
+      const parsed = saved ? JSON.parse(saved) : [];
+      if (Array.isArray(parsed)) {
+        setArchivedMeetingIds(parsed.filter((item) => typeof item === "string"));
+      }
+    } catch {
+      setArchivedMeetingIds([]);
+    }
+  }, []);
 
   /* =======================================================
      ADMIN STATUS
@@ -1585,58 +1651,58 @@ export default function PartnerDashboardPage() {
           return;
         }
 
-        let activityQuery =
-          supabase
-            .from(
-              "user_activity"
-            )
+        const activityRows: ActivityRow[] = [];
+        const activityPageSize = 1000;
+        let activityFrom = 0;
+        let activityLoadError: string | null = null;
+
+        while (true) {
+          let pageQuery = supabase
+            .from("user_activity")
             .select(
               "id, user_id, full_name, email, referral_code, event_type, tool_name, page_name, created_at"
             )
-            .order(
-              "created_at",
-              {
-                ascending:
-                  false,
-              }
-            )
-            .limit(
-              10000
+            .order("created_at", { ascending: false })
+            .range(
+              activityFrom,
+              activityFrom + activityPageSize - 1
             );
 
-        if (
-          accountType !==
-            "super_admin" &&
-          email.toLowerCase() !==
-            SYSTEM_ADMIN_EMAIL.toLowerCase()
-        ) {
-          activityQuery =
-            activityQuery.eq(
+          if (
+            accountType !== "super_admin" &&
+            email.toLowerCase() !== SYSTEM_ADMIN_EMAIL.toLowerCase()
+          ) {
+            pageQuery = pageQuery.eq(
               "referral_code",
               partnerRow.referral_code
             );
+          }
+
+          const { data: pageRows, error: pageError } = await pageQuery;
+
+          if (pageError) {
+            activityLoadError = pageError.message;
+            break;
+          }
+
+          const rows = (pageRows as ActivityRow[]) || [];
+          activityRows.push(...rows);
+
+          if (rows.length < activityPageSize) {
+            break;
+          }
+
+          activityFrom += activityPageSize;
+
+          // Safety guard for an unexpectedly massive table.
+          if (activityFrom >= 100000) {
+            break;
+          }
         }
 
-        const {
-          data:
-            activityRows,
-
-          error:
-            activityError,
-        } =
-          await activityQuery;
-
-        if (
-          activityError
-        ) {
-          setMessage(
-            activityError.message
-          );
-
-          setLoading(
-            false
-          );
-
+        if (activityLoadError) {
+          setMessage(activityLoadError);
+          setLoading(false);
           return;
         }
 
@@ -1691,12 +1757,7 @@ export default function PartnerDashboardPage() {
             []
         );
 
-        setActivity(
-          (
-            activityRows as ActivityRow[]
-          ) ||
-            []
-        );
+        setActivity(activityRows);
 
         setWorkforceSessionServices(
           (
@@ -1758,7 +1819,6 @@ export default function PartnerDashboardPage() {
           choicesResult,
           attachmentsResult,
           availabilityResult,
-          settingsResult,
           cancellationsResult,
         ] =
           await Promise.all([
@@ -1822,18 +1882,6 @@ export default function PartnerDashboardPage() {
                 }
               ),
 
-            supabase
-              .from(
-                "career_connect_settings"
-              )
-              .select(
-                "*"
-              )
-              .eq(
-                "id",
-                "default"
-              )
-              .maybeSingle(),
 
             supabase
               .from(
@@ -1927,44 +1975,6 @@ export default function PartnerDashboardPage() {
           );
         }
 
-        if (
-          !settingsResult.error &&
-          settingsResult.data
-        ) {
-          setCareerSettings({
-            id:
-              settingsResult.data.id ||
-              "default",
-
-            meeting_link:
-              settingsResult.data.meeting_link ||
-              DEFAULT_CAREER_CONNECT_SETTINGS.meeting_link,
-
-            open_room_title:
-              settingsResult.data.open_room_title ||
-              DEFAULT_CAREER_CONNECT_SETTINGS.open_room_title,
-
-            open_room_schedule:
-              settingsResult.data.open_room_schedule ||
-              DEFAULT_CAREER_CONNECT_SETTINGS.open_room_schedule,
-
-            open_room_time:
-              settingsResult.data.open_room_time ||
-              DEFAULT_CAREER_CONNECT_SETTINGS.open_room_time,
-
-            doors_open:
-              settingsResult.data.doors_open ||
-              DEFAULT_CAREER_CONNECT_SETTINGS.doors_open,
-
-            doors_close:
-              settingsResult.data.doors_close ||
-              DEFAULT_CAREER_CONNECT_SETTINGS.doors_close,
-
-            open_room_note:
-              settingsResult.data.open_room_note ||
-              DEFAULT_CAREER_CONNECT_SETTINGS.open_room_note,
-          });
-        }
       },
       [
         partner?.account_type,
@@ -3017,176 +3027,73 @@ export default function PartnerDashboardPage() {
   }
 
   /* =======================================================
-     CAREER CONNECT SETTINGS
-  ======================================================= */
-
-  function updateCareerSetting(
-    key:
-      keyof CareerConnectSettings,
-
-    value:
-      string
-  ) {
-    setCareerSettings(
-      (
-        previous
-      ) => ({
-        ...previous,
-
-        [key]:
-          value,
-      })
-    );
-  }
-
-  async function saveCareerConnectSettings() {
-    if (
-      !isSystemAdmin
-    ) {
-      return;
-    }
-
-    setSavingCareerSettings(
-      true
-    );
-
-    setMessage(
-      ""
-    );
-
-    const {
-      error,
-    } =
-      await supabase
-        .from(
-          "career_connect_settings"
-        )
-        .upsert({
-          id:
-            "default",
-
-          meeting_link:
-            careerSettings.meeting_link,
-
-          open_room_title:
-            careerSettings.open_room_title,
-
-          open_room_schedule:
-            careerSettings.open_room_schedule,
-
-          open_room_time:
-            careerSettings.open_room_time,
-
-          doors_open:
-            careerSettings.doors_open,
-
-          doors_close:
-            careerSettings.doors_close,
-
-          open_room_note:
-            careerSettings.open_room_note,
-
-          updated_at:
-            new Date().toISOString(),
-        });
-
-    if (
-      error
-    ) {
-      setMessage(
-        error.message
-      );
-
-      setSavingCareerSettings(
-        false
-      );
-
-      return;
-    }
-
-    setMessage(
-      "Career Connect settings saved."
-    );
-
-    setSavingCareerSettings(
-      false
-    );
-  }
-
-  /* =======================================================
      REFERRAL CODES
   ======================================================= */
 
-  const referralCodes =
-    useMemo(
-      () => {
-        const codes =
-          new Set<
-            string
-          >();
+  const referralCodeDefinitions =
+    useMemo(() => {
+      const observed = new Set<string>();
 
-        participants.forEach(
-          (
-            row
-          ) => {
-            const code =
-              row.referral_code?.trim();
+      participants.forEach((row) => {
+        const code = row.referral_code?.trim().toUpperCase();
+        if (code) observed.add(code);
+      });
 
-            if (
-              code
-            ) {
-              codes.add(
-                code.toUpperCase()
-              );
-            }
-          }
-        );
+      activity.forEach((row) => {
+        const code = row.referral_code?.trim().toUpperCase();
+        if (code) observed.add(code);
+      });
 
-        activity.forEach(
-          (
-            row
-          ) => {
-            const code =
-              row.referral_code?.trim();
+      const known = new Map(
+        REFERRAL_CODE_REGISTRY.map((item) => [item.code.toUpperCase(), item])
+      );
 
-            if (
-              code
-            ) {
-              codes.add(
-                code.toUpperCase()
-              );
-            }
-          }
-        );
+      observed.forEach((code) => {
+        if (!known.has(code)) {
+          known.set(code, {
+            code,
+            status: "historical",
+            note: "Observed in HireMinds records",
+          });
+        }
+      });
 
-        return [
-          ...codes,
-        ].sort();
-      },
-      [
-        participants,
-        activity,
-      ]
-    );
+      const statusRank: Record<ReferralCodeStatus, number> = {
+        active: 0,
+        inactive: 1,
+        reserved: 2,
+        historical: 3,
+      };
 
-  useEffect(
-    () => {
-      if (
-        selectedCodes.length ===
-          0 &&
-        referralCodes.length >
-          0
-      ) {
-        setSelectedCodes(
-          referralCodes
-        );
-      }
-    },
-    [
-      referralCodes,
-      selectedCodes.length,
-    ]
+      return [...known.values()].sort((a, b) => {
+        const statusCompare = statusRank[a.status] - statusRank[b.status];
+        return statusCompare || a.code.localeCompare(b.code);
+      });
+    }, [participants, activity]);
+
+  const referralCodes = useMemo(
+    () => referralCodeDefinitions.map((item) => item.code),
+    [referralCodeDefinitions]
   );
+
+  const activeReferralCodes = useMemo(
+    () => referralCodeDefinitions.filter((item) => item.status === "active"),
+    [referralCodeDefinitions]
+  );
+
+  const inactiveReferralCodes = useMemo(
+    () =>
+      referralCodeDefinitions.filter(
+        (item) => item.status === "inactive" || item.status === "reserved"
+      ),
+    [referralCodeDefinitions]
+  );
+
+  useEffect(() => {
+    if (selectedCodes.length === 0 && referralCodes.length > 0) {
+      setSelectedCodes(referralCodes);
+    }
+  }, [referralCodes, selectedCodes.length]);
 
   /* =======================================================
      PARTICIPANTS
@@ -3307,13 +3214,19 @@ export default function PartnerDashboardPage() {
           (
             request
           ) => {
-            if (
-              requestFilter !==
-                "all" &&
-              request.status !==
-                requestFilter
-            ) {
-              return false;
+            const archived = archivedMeetingIds.includes(request.id);
+
+            if (requestFilter === "archived") {
+              if (!archived) return false;
+            } else {
+              if (archived) return false;
+
+              if (
+                requestFilter !== "all" &&
+                request.status !== requestFilter
+              ) {
+                return false;
+              }
             }
 
             if (
@@ -3363,6 +3276,7 @@ export default function PartnerDashboardPage() {
         meetingRequests,
         requestFilter,
         requestSearch,
+        archivedMeetingIds,
       ]
     );
 
@@ -3514,6 +3428,260 @@ export default function PartnerDashboardPage() {
         row.cancellation_source ===
         "participant"
     ).length;
+
+  const realToolActivity = useMemo(
+    () => activity.filter(isRealToolActivity),
+    [activity]
+  );
+
+  const toolOutputActivity = useMemo(
+    () => realToolActivity.filter(isToolOutputEvent),
+    [realToolActivity]
+  );
+
+  const participantLastActivity = useMemo(() => {
+    const map = new Map<string, number>();
+
+    activity.forEach((row) => {
+      const key = participantKey(row);
+      const time = toDate(row.created_at)?.getTime() || 0;
+      if (key && time > (map.get(key) || 0)) {
+        map.set(key, time);
+      }
+    });
+
+    return map;
+  }, [activity]);
+
+  const activeParticipants30Days = useMemo(() => {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return uniqueParticipants.filter((row) => {
+      const key = participantKey(row);
+      return key ? (participantLastActivity.get(key) || 0) >= cutoff : false;
+    });
+  }, [uniqueParticipants, participantLastActivity]);
+
+  const participantsUsingTools = useMemo(() => {
+    const keys = new Set<string>();
+    realToolActivity.forEach((row) => {
+      const key = participantKey(row);
+      if (key) keys.add(key);
+    });
+    return keys;
+  }, [realToolActivity]);
+
+  const participantsSavingOutputs = useMemo(() => {
+    const keys = new Set<string>();
+    toolOutputActivity.forEach((row) => {
+      const key = participantKey(row);
+      if (key) keys.add(key);
+    });
+    return keys;
+  }, [toolOutputActivity]);
+
+  const toolAnalytics = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        name: string;
+        uses: number;
+        outputs: number;
+        participants: Set<string>;
+        lastUsed: string | null;
+        lastSaved: string | null;
+      }
+    >();
+
+    realToolActivity.forEach((row) => {
+      const name = String(row.tool_name || "Career Tool").trim();
+      const key = normalizedToolName(name);
+      const participant = participantKey(row);
+      const createdAt = row.created_at || null;
+
+      const current = map.get(key) || {
+        name,
+        uses: 0,
+        outputs: 0,
+        participants: new Set<string>(),
+        lastUsed: null,
+        lastSaved: null,
+      };
+
+      current.uses += 1;
+      if (participant) current.participants.add(participant);
+
+      if (
+        createdAt &&
+        (!current.lastUsed ||
+          new Date(createdAt).getTime() > new Date(current.lastUsed).getTime())
+      ) {
+        current.lastUsed = createdAt;
+      }
+
+      if (isToolOutputEvent(row)) {
+        current.outputs += 1;
+        if (
+          createdAt &&
+          (!current.lastSaved ||
+            new Date(createdAt).getTime() > new Date(current.lastSaved).getTime())
+        ) {
+          current.lastSaved = createdAt;
+        }
+      }
+
+      map.set(key, current);
+    });
+
+    return [...map.values()]
+      .map((item) => ({
+        ...item,
+        participantCount: item.participants.size,
+      }))
+      .sort((a, b) => b.uses - a.uses);
+  }, [realToolActivity]);
+
+  const topRealTool = toolAnalytics[0] || null;
+
+  const referralOverviewRows = useMemo(() => {
+    return referralCodeDefinitions.map((definition) => {
+      const code = definition.code.toUpperCase();
+      const codeParticipants = uniqueParticipants.filter(
+        (row) => (row.referral_code || "").toUpperCase() === code
+      );
+      const codeActivity = activity.filter(
+        (row) => (row.referral_code || "").toUpperCase() === code
+      );
+      const codeToolActivity = realToolActivity.filter(
+        (row) => (row.referral_code || "").toUpperCase() === code
+      );
+
+      return {
+        ...definition,
+        participants: codeParticipants.length,
+        activity: codeActivity.length,
+        toolUses: codeToolActivity.length,
+      };
+    });
+  }, [
+    referralCodeDefinitions,
+    uniqueParticipants,
+    activity,
+    realToolActivity,
+  ]);
+
+  const meetingRequestGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        key: string;
+        name: string;
+        email: string;
+        referralCode: string;
+        userId: string;
+        requests: MeetingRequestRow[];
+      }
+    >();
+
+    sortedMeetingRequests.forEach((request) => {
+      const key =
+        request.user_id ||
+        request.participant_email?.toLowerCase() ||
+        request.participant_name?.toLowerCase() ||
+        request.id;
+
+      const existing = groups.get(key) || {
+        key,
+        name: request.participant_name || request.participant_email || "Participant",
+        email: request.participant_email || "",
+        referralCode: request.referral_code || "",
+        userId: request.user_id,
+        requests: [],
+      };
+
+      existing.requests.push(request);
+      groups.set(key, existing);
+    });
+
+    return [...groups.values()];
+  }, [sortedMeetingRequests]);
+
+  const openRoomRoster = useMemo(() => {
+    const participantByUser = new Map(
+      uniqueParticipants
+        .filter((row) => row.user_id)
+        .map((row) => [row.user_id as string, row])
+    );
+
+    return workforceSessionServices
+      .filter((row) => {
+        const type = String(row.service_type || "").toLowerCase();
+        const label = String(row.service_label || "").toLowerCase();
+        return type === "open_room" || label.includes("open room");
+      })
+      .map((row) => {
+        const participant = row.user_id ? participantByUser.get(row.user_id) : undefined;
+        return {
+          id: row.id || `${row.user_id}-${row.created_at}`,
+          userId: row.user_id || "",
+          name: participant?.full_name || participant?.email || "Participant",
+          email: participant?.email || "",
+          referralCode: participant?.referral_code || "—",
+          date: row.created_at || null,
+          service: row.service_label || "Open Room",
+        };
+      })
+      .sort(
+        (a, b) =>
+          (toDate(b.date)?.getTime() || 0) - (toDate(a.date)?.getTime() || 0)
+      );
+  }, [workforceSessionServices, uniqueParticipants]);
+
+  function toggleMeetingDetails(requestId: string) {
+    setExpandedMeetingIds((previous) =>
+      previous.includes(requestId)
+        ? previous.filter((id) => id !== requestId)
+        : [...previous, requestId]
+    );
+  }
+
+  function archiveMeeting(requestId: string) {
+    const request = meetingRequests.find((item) => item.id === requestId);
+
+    if (!request || request.status !== "completed") {
+      setMessage("Only completed appointments can be archived.");
+      return;
+    }
+
+    const next = Array.from(new Set([...archivedMeetingIds, requestId]));
+    setArchivedMeetingIds(next);
+
+    try {
+      localStorage.setItem(
+        "hireminds_archived_meeting_ids",
+        JSON.stringify(next)
+      );
+    } catch {
+      // Local archive state still works for this session.
+    }
+
+    setMessage("Completed appointment archived from the active Meeting Requests view.");
+  }
+
+  function restoreArchivedMeeting(requestId: string) {
+    const next = archivedMeetingIds.filter((id) => id !== requestId);
+    setArchivedMeetingIds(next);
+
+    try {
+      localStorage.setItem(
+        "hireminds_archived_meeting_ids",
+        JSON.stringify(next)
+      );
+    } catch {
+      // Local archive state still works for this session.
+    }
+
+    setMessage("Appointment restored to Meeting Requests.");
+  }
 
   /* =======================================================
      REPORT DATE FILTER
@@ -4098,141 +4266,66 @@ export default function PartnerDashboardPage() {
     );
 
   const reportStats =
-    useMemo(
-      () => {
-        let completions =
-          0;
+    useMemo(() => {
+      let completions = 0;
+      let toolUses = 0;
+      let toolOutputs = 0;
+      let documentSubmissions = 0;
+      let lastToolSave: string | null = null;
+      const tools: Record<string, number> = {};
 
-        let toolUses =
-          0;
+      reportActivity.forEach((row) => {
+        const event = String(row.event_type || "").toLowerCase();
 
-        let documentSubmissions =
-          0;
+        if (event.includes("complete")) completions += 1;
+        if (event === "document_submitted") documentSubmissions += 1;
 
-        const tools: Record<
-          string,
-          number
-        > = {};
+        if (isRealToolActivity(row)) {
+          toolUses += 1;
+          const tool = String(row.tool_name || "Career Tool").trim();
+          tools[tool] = (tools[tool] || 0) + 1;
 
-        reportActivity.forEach(
-          (
-            row
-          ) => {
-            const event =
-              (
-                row.event_type ||
-                ""
-              ).toLowerCase();
-
-            const tool =
-              (
-                row.tool_name ||
-                ""
-              ).toLowerCase();
-
+          if (isToolOutputEvent(row)) {
+            toolOutputs += 1;
             if (
-              event.includes(
-                "complete"
-              )
+              row.created_at &&
+              (!lastToolSave ||
+                new Date(row.created_at).getTime() > new Date(lastToolSave).getTime())
             ) {
-              completions +=
-                1;
-            }
-
-            if (
-              event ===
-              "document_submitted"
-            ) {
-              documentSubmissions +=
-                1;
-            }
-
-            if (
-              tool
-            ) {
-              toolUses +=
-                1;
-
-              tools[
-                tool
-              ] =
-                (
-                  tools[
-                    tool
-                  ] ||
-                  0
-                ) +
-                1;
+              lastToolSave = row.created_at;
             }
           }
-        );
+        }
+      });
 
-        const topToolEntry =
-          Object.entries(
-            tools
-          ).sort(
-            (
-              a,
-              b
-            ) =>
-              b[1] -
-              a[1]
-          )[0] ||
-          null;
+      const topToolEntry =
+        Object.entries(tools).sort((a, b) => b[1] - a[1])[0] || null;
 
-        return {
-          participantsServed:
-            participantsServed.length,
-
-          newEnrollments:
-            newEnrollments.length,
-
-          activeParticipants:
-            activeParticipants.length,
-
-          trainingEnrollments:
-            trainingEnrollments.length,
-
-          activities:
-            reportActivity.length,
-
-          toolUses,
-
-          completions,
-
-          documentSubmissions,
-
-          careerServices:
-            reportServiceRows.length,
-
-          cancellations:
-            reportCancellationRows.length,
-
-          topTool:
-            topToolEntry
-              ? topToolEntry[
-                  0
-                ]
-              : "—",
-
-          topToolUses:
-            topToolEntry
-              ? topToolEntry[
-                  1
-                ]
-              : 0,
-        };
-      },
-      [
-        participantsServed,
-        newEnrollments,
-        activeParticipants,
-        trainingEnrollments,
-        reportActivity,
-        reportServiceRows,
-        reportCancellationRows,
-      ]
-    );
+      return {
+        participantsServed: participantsServed.length,
+        newEnrollments: newEnrollments.length,
+        activeParticipants: activeParticipants.length,
+        trainingEnrollments: trainingEnrollments.length,
+        activities: reportActivity.length,
+        toolUses,
+        toolOutputs,
+        lastToolSave,
+        completions,
+        documentSubmissions,
+        careerServices: reportServiceRows.length,
+        cancellations: reportCancellationRows.length,
+        topTool: topToolEntry ? topToolEntry[0] : "—",
+        topToolUses: topToolEntry ? topToolEntry[1] : 0,
+      };
+    }, [
+      participantsServed,
+      newEnrollments,
+      activeParticipants,
+      trainingEnrollments,
+      reportActivity,
+      reportServiceRows,
+      reportCancellationRows,
+    ]);
 
   const participantSummary =
     useMemo<
@@ -4322,32 +4415,41 @@ export default function PartnerDashboardPage() {
               activityCount:
                 personActivity.length,
 
-              toolUses:
-                personActivity.filter(
-                  (
-                    row
-                  ) =>
-                    Boolean(
-                      row.tool_name
-                    )
-                ).length,
+              toolUses: personActivity.filter(isRealToolActivity).length,
 
               completions:
                 personActivity.filter(
-                  (
-                    row
-                  ) =>
-                    (
-                      row.event_type ||
-                      ""
-                    )
+                  (row) =>
+                    String(row.event_type || "")
                       .toLowerCase()
-                      .includes(
-                        "complete"
-                      )
+                      .includes("complete")
                 ).length,
 
               documentSubmissions,
+
+              toolOutputs: personActivity.filter(
+                (row) => isRealToolActivity(row) && isToolOutputEvent(row)
+              ).length,
+
+              lastToolSave:
+                personActivity
+                  .filter((row) => isRealToolActivity(row) && isToolOutputEvent(row))
+                  .sort(
+                    (a, b) =>
+                      (toDate(b.created_at)?.getTime() || 0) -
+                      (toDate(a.created_at)?.getTime() || 0)
+                  )[0]?.created_at || null,
+
+              topTool: (() => {
+                const counts: Record<string, number> = {};
+                personActivity
+                  .filter(isRealToolActivity)
+                  .forEach((row) => {
+                    const name = String(row.tool_name || "Career Tool").trim();
+                    counts[name] = (counts[name] || 0) + 1;
+                  });
+                return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+              })(),
 
               cancellations,
             };
@@ -4701,6 +4803,9 @@ export default function PartnerDashboardPage() {
           "Last Activity",
           "Activity Count",
           "Tool Engagements",
+          "Most Used Tool",
+          "Saved / Generated Outputs",
+          "Last Tool Save",
           "Completed Activities",
           "Document Submissions",
           "Participant Cancellations",
@@ -4731,6 +4836,14 @@ export default function PartnerDashboardPage() {
             String(
               row.toolUses
             ),
+
+            row.topTool,
+
+            String(
+              row.toolOutputs
+            ),
+
+            row.lastToolSave || "",
 
             String(
               row.completions
@@ -4836,93 +4949,24 @@ export default function PartnerDashboardPage() {
   ======================================================= */
 
   const dashboardTabs: {
-    key:
-      DashboardTab;
-
-    label:
-      string;
-
-    adminOnly?:
-      boolean;
-  }[] =
-    [
-      {
-        key:
-          "overview",
-
-        label:
-          "Overview",
-      },
-
-      {
-        key:
-          "live",
-
-        label:
-          "Live Activity",
-      },
-
-      {
-        key:
-          "history",
-
-        label:
-          "History",
-      },
-
-      {
-        key:
-          "tools",
-
-        label:
-          "Tool Usage",
-      },
-
-      {
-        key:
-          "meeting_requests",
-
-        label:
-          pendingRequestCount +
-            rescheduleRequestCount >
-          0
-            ? `Meeting Requests (${pendingRequestCount + rescheduleRequestCount})`
-            : "Meeting Requests",
-
-        adminOnly:
-          true,
-      },
-
-      {
-        key:
-          "availability",
-
-        label:
-          "Availability Calendar",
-
-        adminOnly:
-          true,
-      },
-
-      {
-        key:
-          "career_connect",
-
-        label:
-          "Career Connect",
-
-        adminOnly:
-          true,
-      },
-
-      {
-        key:
-          "reports",
-
-        label:
-          "Reports",
-      },
-    ];
+    key: DashboardTab;
+    label: string;
+    adminOnly?: boolean;
+  }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "tools", label: "Tool Usage" },
+    {
+      key: "meeting_requests",
+      label:
+        pendingRequestCount + rescheduleRequestCount > 0
+          ? `Meeting Requests (${pendingRequestCount + rescheduleRequestCount})`
+          : "Meeting Requests",
+      adminOnly: true,
+    },
+    { key: "availability", label: "Availability Calendar", adminOnly: true },
+    { key: "career_connect", label: "Career Connect", adminOnly: true },
+    { key: "reports", label: "Reports" },
+  ];
 
   /* =======================================================
      RENDER
@@ -5166,382 +5210,197 @@ export default function PartnerDashboardPage() {
             OVERVIEW
         ================================================= */}
 
-        {activeTab ===
-        "overview" ? (
+        {activeTab === "overview" ? (
           <>
-            <section
-              style={
-                styles.summaryGrid
-              }
-            >
-              <MetricCard
-                label="Participants"
-                value={
-                  uniqueParticipants.length
-                }
-              />
-
-              <MetricCard
-                label="Referral Codes"
-                value={
-                  referralCodes.length
-                }
-              />
-
-              <MetricCard
-                label="Activity Records"
-                value={
-                  activity.length
-                }
-              />
-
-              <MetricCard
-                label="Career Services Tracked"
-                value={
-                  workforceSessionServices.length
-                }
-              />
-
-              {isSystemAdmin ? (
-                <>
-                  <MetricCard
-                    label="Pending Meeting Requests"
-                    value={
-                      pendingRequestCount
-                    }
-                  />
-
-                  <MetricCard
-                    label="Approved - Awaiting Confirmation"
-                    value={
-                      approvedRequestCount
-                    }
-                  />
-
-                  <MetricCard
-                    label="Confirmed Meetings"
-                    value={
-                      confirmedRequestCount
-                    }
-                  />
-
-                  <MetricCard
-                    label="Reschedule Requests"
-                    value={
-                      rescheduleRequestCount
-                    }
-                  />
-
-                  <MetricCard
-                    label="Completed Meetings"
-                    value={
-                      completedRequestCount
-                    }
-                  />
-
-                  <MetricCard
-                    label="Available Times"
-                    value={
-                      availableSlotCount
-                    }
-                  />
-
-                  <MetricCard
-                    label="Booked Times"
-                    value={
-                      bookedSlotCount
-                    }
-                  />
-
-                  <MetricCard
-                    label="Participant Cancellations"
-                    value={
-                      participantCancellationTotal
-                    }
-                  />
-                </>
-              ) : null}
+            <section style={styles.overviewHeroGrid}>
+              <MetricCard label="Participants" value={uniqueParticipants.length} />
+              <MetricCard label="Active • Last 30 Days" value={activeParticipants30Days.length} />
+              <MetricCard label="Using Career Tools" value={participantsUsingTools.size} />
+              <MetricCard label="Saved / Generated Outputs" value={toolOutputActivity.length} />
+              <MetricCard label="All Activity Records" value={activity.length} />
+              <MetricCard label="Career Services" value={workforceSessionServices.length} />
             </section>
 
-            <a
-              href="/partner-dashboard/logs"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 18,
-                padding: 22,
-                marginBottom: 18,
-                borderRadius: 18,
-                border: "1px solid rgba(255,255,255,.12)",
-                background: "rgba(255,255,255,.04)",
-                color: "#ffffff",
-                textDecoration: "none",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                }}
-              >
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 14,
-                    display: "grid",
-                    placeItems: "center",
-                    background: "rgba(168,85,247,.14)",
-                    border: "1px solid rgba(168,85,247,.25)",
-                    fontSize: 23,
-                    flexShrink: 0,
-                  }}
-                >
-                  📋
-                </div>
-
+            <section style={styles.card}>
+              <div style={styles.sectionTop}>
                 <div>
-                  <p
-                    style={{
-                      margin: "0 0 4px",
-                      fontSize: 11,
-                      fontWeight: 800,
-                      letterSpacing: ".12em",
-                      color: "#c4b5fd",
-                    }}
-                  >
-                    PARTICIPANT ACTIVITY
-                  </p>
-
-                  <h3
-                    style={{
-                      margin: "0 0 5px",
-                      fontSize: 20,
-                    }}
-                  >
-                    Weekly Logs
-                  </h3>
-
-                  <p
-                    style={{
-                      margin: 0,
-                      color: "#9ca3af",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    Review submitted Weekly Job Logs and Career Development Logs.
+                  <p style={styles.kicker}>PARTICIPANT ENGAGEMENT PICTURE</p>
+                  <h2 style={styles.sectionTitle}>What participants are actually doing</h2>
+                  <p style={styles.muted}>
+                    Profile is intentionally excluded from Most Used Tool because it is the normal landing page after login.
                   </p>
                 </div>
               </div>
 
-              <span
-                aria-hidden="true"
-                style={{
-                  fontSize: 24,
-                  color: "#c4b5fd",
-                  flexShrink: 0,
-                }}
-              >
-                →
-              </span>
+              <div style={styles.insightGrid}>
+                <div style={styles.insightBlock}>
+                  <span style={styles.insightLabel}>MOST USED CAREER TOOL</span>
+                  <strong style={styles.insightValue}>{topRealTool?.name || "No tool use yet"}</strong>
+                  <span style={styles.insightSubtext}>
+                    {topRealTool ? `${topRealTool.uses} recorded use(s) by ${topRealTool.participantCount} participant(s)` : "Profile visits are not counted as tool use."}
+                  </span>
+                </div>
+
+                <div style={styles.insightBlock}>
+                  <span style={styles.insightLabel}>PARTICIPANTS SAVING / GENERATING</span>
+                  <strong style={styles.insightValue}>{participantsSavingOutputs.size}</strong>
+                  <span style={styles.insightSubtext}>
+                    Participants with a recorded save, generated output, download, export, or document submission.
+                  </span>
+                </div>
+
+                <div style={styles.insightBlock}>
+                  <span style={styles.insightLabel}>COMPLETED APPOINTMENTS</span>
+                  <strong style={styles.insightValue}>{completedRequestCount}</strong>
+                  <span style={styles.insightSubtext}>
+                    {archivedMeetingIds.length} completed appointment(s) currently archived from the active workflow view.
+                  </span>
+                </div>
+
+                <div style={styles.insightBlock}>
+                  <span style={styles.insightLabel}>OPEN ROOM / CAREER CONNECT</span>
+                  <strong style={styles.insightValue}>{openRoomRoster.length}</strong>
+                  <span style={styles.insightSubtext}>
+                    Recorded Open Room service entries currently available for the Career Connect roster.
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <section style={styles.card}>
+              <div style={styles.sectionTop}>
+                <div>
+                  <p style={styles.kicker}>REFERRAL CODE HEALTH</p>
+                  <h2 style={styles.sectionTitle}>All referral codes</h2>
+                  <p style={styles.muted}>
+                    Active, inactive, reserved, and historical codes are shown even when they currently have zero participants.
+                  </p>
+                </div>
+                <div style={styles.compactStatRow}>
+                  <span style={styles.activeCodePill}>{activeReferralCodes.length} Active</span>
+                  <span style={styles.inactiveCodePill}>{inactiveReferralCodes.length} Inactive / Reserved</span>
+                </div>
+              </div>
+
+              <div style={styles.referralStatusList}>
+                {referralOverviewRows.map((item) => (
+                  <div key={item.code} style={styles.referralStatusRow}>
+                    <div style={styles.referralStatusIdentity}>
+                      <strong style={styles.referralStatusCode}>{item.code}</strong>
+                      <span style={styles.referralStatusNote}>{item.note}</span>
+                    </div>
+
+                    <span
+                      style={{
+                        ...styles.referralStatusBadge,
+                        ...(item.status === "active"
+                          ? styles.referralStatusActive
+                          : item.status === "reserved"
+                            ? styles.referralStatusReserved
+                            : item.status === "historical"
+                              ? styles.referralStatusHistorical
+                              : styles.referralStatusInactive),
+                      }}
+                    >
+                      {item.status.toUpperCase()}
+                    </span>
+
+                    <div style={styles.referralStatusMetrics}>
+                      <span><strong>{item.participants}</strong> Participants</span>
+                      <span><strong>{item.toolUses}</strong> Tool Uses</span>
+                      <span><strong>{item.activity}</strong> Activity</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {isSystemAdmin ? (
+              <section style={styles.compactMeetingMetrics}>
+                <MetricCard label="Pending Meetings" value={pendingRequestCount} />
+                <MetricCard label="Awaiting Confirmation" value={approvedRequestCount} />
+                <MetricCard label="Confirmed" value={confirmedRequestCount} />
+                <MetricCard label="Reschedule Requests" value={rescheduleRequestCount} />
+                <MetricCard label="Completed" value={completedRequestCount} />
+                <MetricCard label="Participant Cancellations" value={participantCancellationTotal} />
+              </section>
+            ) : null}
+
+            <a
+              href="/partner-dashboard/logs"
+              style={styles.compactLinkCard}
+            >
+              <div>
+                <p style={styles.kicker}>PARTICIPANT ACTIVITY</p>
+                <h3 style={styles.compactLinkTitle}>Weekly Job & Career Development Logs</h3>
+                <p style={styles.muted}>Review participant-submitted logs without adding more cards to the dashboard.</p>
+              </div>
+              <span style={styles.compactLinkArrow}>→</span>
             </a>
 
-            <section
-              style={
-                styles.card
-              }
-            >
-              <h2
-                style={
-                  styles.sectionTitle
-                }
-              >
-                Participant List
-              </h2>
-
-              <p
-                style={
-                  styles.muted
-                }
-              >
-                Participants are shown once. Referral codes and activity
-                are tracked separately for reporting.
-              </p>
+            <section style={styles.card}>
+              <h2 style={styles.sectionTitle}>Participant List</h2>
+              <p style={styles.muted}>Participants are shown once. Search by name, email, phone, or referral code.</p>
 
               <input
-                value={
-                  participantSearch
-                }
-                onChange={
-                  (
-                    e
-                  ) =>
-                    setParticipantSearch(
-                      e.target.value
-                    )
-                }
+                value={participantSearch}
+                onChange={(e) => setParticipantSearch(e.target.value)}
                 placeholder="Search name, email, phone, or referral code"
-                style={
-                  styles.input
-                }
+                style={styles.input}
               />
 
-              <div
-                style={
-                  styles.tableWrap
-                }
-              >
-                <table
-                  style={
-                    styles.table
-                  }
-                >
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th
-                        style={
-                          styles.th
-                        }
-                      >
-                        Participant
-                      </th>
-
-                      <th
-                        style={
-                          styles.th
-                        }
-                      >
-                        Email
-                      </th>
-
-                      <th
-                        style={
-                          styles.th
-                        }
-                      >
-                        Referral Code
-                      </th>
-
-                      <th
-                        style={
-                          styles.th
-                        }
-                      >
-                        Joined
-                      </th>
-
-                      {isSystemAdmin ? (
-                        <th
-                          style={
-                            styles.th
-                          }
-                        >
-                          Cancellations
-                        </th>
-                      ) : null}
+                      <th style={styles.th}>Participant</th>
+                      <th style={styles.th}>Email</th>
+                      <th style={styles.th}>Referral Code</th>
+                      <th style={styles.th}>Joined</th>
+                      <th style={styles.th}>Last Activity</th>
+                      <th style={styles.th}>Tool Activity</th>
+                      {isSystemAdmin ? <th style={styles.th}>Cancellations</th> : null}
                     </tr>
                   </thead>
-
                   <tbody>
-                    {filteredParticipants.map(
-                      (
-                        row,
-                        index
-                      ) => {
-                        const cancellations =
-                          row.user_id
-                            ? getParticipantCancellationCount(
-                                row.user_id
-                              )
-                            : 0;
+                    {filteredParticipants.map((row, index) => {
+                      const cancellations = row.user_id
+                        ? getParticipantCancellationCount(row.user_id)
+                        : 0;
+                      const key = participantKey(row);
+                      const personToolUses = realToolActivity.filter(
+                        (item) => participantKey(item) === key
+                      ).length;
+                      const last = key ? participantLastActivity.get(key) : 0;
 
-                        return (
-                          <tr
-                            key={
-                              row.id ||
-                              `${row.email}-${index}`
-                            }
-                          >
-                            <td
-                              style={
-                                styles.td
-                              }
-                            >
-                              {row.full_name ||
-                                "Participant"}
-
-                              {cancellations >=
-                              2 ? (
-                                <div
-                                  style={
-                                    styles.referralWarningInline
-                                  }
-                                >
-                                  ⚠ Refer back to provider
-                                </div>
-                              ) : null}
-                            </td>
-
-                            <td
-                              style={
-                                styles.td
-                              }
-                            >
-                              {row.email ||
-                                "—"}
-                            </td>
-
-                            <td
-                              style={
-                                styles.td
-                              }
-                            >
+                      return (
+                        <tr key={row.id || `${row.email}-${index}`}>
+                          <td style={styles.td}>
+                            {row.full_name || "Participant"}
+                            {cancellations >= 2 ? (
+                              <div style={styles.referralWarningInline}>⚠ Refer back to provider</div>
+                            ) : null}
+                          </td>
+                          <td style={styles.td}>{row.email || "—"}</td>
+                          <td style={styles.td}><span style={styles.codeBadge}>{row.referral_code || "—"}</span></td>
+                          <td style={styles.td}>{formatShortDate(row.created_at)}</td>
+                          <td style={styles.td}>{last ? formatDate(new Date(last).toISOString()) : "—"}</td>
+                          <td style={styles.td}>{personToolUses}</td>
+                          {isSystemAdmin ? (
+                            <td style={styles.td}>
                               <span
-                                style={
-                                  styles.codeBadge
-                                }
+                                style={{
+                                  ...styles.cancellationBadge,
+                                  ...(cancellations >= 2 ? styles.cancellationBadgeWarning : {}),
+                                }}
                               >
-                                {row.referral_code ||
-                                  "—"}
+                                {cancellations}
                               </span>
                             </td>
-
-                            <td
-                              style={
-                                styles.td
-                              }
-                            >
-                              {formatShortDate(
-                                row.created_at
-                              )}
-                            </td>
-
-                            {isSystemAdmin ? (
-                              <td
-                                style={
-                                  styles.td
-                                }
-                              >
-                                <span
-                                  style={{
-                                    ...styles.cancellationBadge,
-
-                                    ...(cancellations >=
-                                    2
-                                      ? styles.cancellationBadgeWarning
-                                      : {}),
-                                  }}
-                                >
-                                  {cancellations}
-                                </span>
-                              </td>
-                            ) : null}
-                          </tr>
-                        );
-                      }
-                    )}
+                          ) : null}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -5550,133 +5409,84 @@ export default function PartnerDashboardPage() {
         ) : null}
 
         {/* =================================================
-            LIVE ACTIVITY
-        ================================================= */}
-
-        {activeTab ===
-        "live" ? (
-          <ActivityTable
-            title="Live Activity"
-            rows={
-              activity.slice(
-                0,
-                100
-              )
-            }
-          />
-        ) : null}
-
-        {/* =================================================
-            HISTORY
-        ================================================= */}
-
-        {activeTab ===
-        "history" ? (
-          <ActivityTable
-            title="Activity History"
-            rows={
-              activity
-            }
-          />
-        ) : null}
-
-        {/* =================================================
             TOOL USAGE
         ================================================= */}
 
-        {activeTab ===
-        "tools" ? (
-          <section
-            style={
-              styles.card
-            }
-          >
-            <h2
-              style={
-                styles.sectionTitle
-              }
-            >
-              Tool & Career Service Usage
-            </h2>
+        {activeTab === "tools" ? (
+          <section style={styles.card}>
+            <div style={styles.sectionTop}>
+              <div>
+                <p style={styles.kicker}>CAREER TOOL ENGAGEMENT</p>
+                <h2 style={styles.sectionTitle}>Tool Usage & Saved Outcomes</h2>
+                <p style={styles.muted}>
+                  Profile is not counted as a career tool. This view separates tool activity from saved, generated, downloaded, exported, or submitted outcomes.
+                </p>
+              </div>
+            </div>
 
-            <p
-              style={
-                styles.muted
-              }
-            >
-              Career tools and Career Connect services are tracked for
-              participant and referral-code reporting.
+            <div style={styles.toolUsageSummary}>
+              <MetricCard label="Career Tool Events" value={realToolActivity.length} />
+              <MetricCard label="Participants Using Tools" value={participantsUsingTools.size} />
+              <MetricCard label="Saved / Generated Outputs" value={toolOutputActivity.length} />
+              <MetricCard label="Participants Saving Outputs" value={participantsSavingOutputs.size} />
+              <MetricCard label="Most Used Tool" value={topRealTool?.name || "—"} />
+            </div>
+
+            <div style={styles.tableWrap}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Tool</th>
+                    <th style={styles.th}>Uses</th>
+                    <th style={styles.th}>Participants</th>
+                    <th style={styles.th}>Saved / Generated</th>
+                    <th style={styles.th}>Last Used</th>
+                    <th style={styles.th}>Last Saved / Generated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {toolAnalytics.map((tool) => (
+                    <tr key={tool.name}>
+                      <td style={styles.td}><strong>{tool.name}</strong></td>
+                      <td style={styles.td}>{tool.uses}</td>
+                      <td style={styles.td}>{tool.participantCount}</td>
+                      <td style={styles.td}>{tool.outputs}</td>
+                      <td style={styles.td}>{formatDate(tool.lastUsed)}</td>
+                      <td style={styles.td}>{formatDate(tool.lastSaved)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {toolAnalytics.length === 0 ? (
+              <div style={styles.emptyPanel}>No career-tool usage has been recorded yet.</div>
+            ) : null}
+
+            <div style={styles.sectionDivider} />
+
+            <h3 style={styles.subsectionTitle}>Career Connect Service Usage</h3>
+            <p style={styles.muted}>
+              Human services are shown separately from digital career tools so the dashboard does not mix coaching with platform-tool activity.
             </p>
 
-            <div
-              style={
-                styles.summaryGrid
-              }
-            >
-              <MetricCard
-                label="Career Services"
-                value={
-                  workforceSessionServices.length
-                }
-              />
-
+            <div style={styles.compactServiceGrid}>
+              <MetricCard label="Career Services" value={workforceSessionServices.length} />
               {Object.entries(
                 workforceSessionServices.reduce(
-                  (
-                    counts: Record<
-                      string,
-                      number
-                    >,
-                    row
-                  ) => {
-                    const label =
-                      row.service_label ||
-                      serviceLabel(
-                        row.service_type
-                      );
-
-                    counts[
-                      label
-                    ] =
-                      (
-                        counts[
-                          label
-                        ] ||
-                        0
-                      ) +
-                      1;
-
+                  (counts: Record<string, number>, row) => {
+                    const label = row.service_label || serviceLabel(row.service_type);
+                    counts[label] = (counts[label] || 0) + 1;
                     return counts;
                   },
                   {}
                 )
               )
-                .sort(
-                  (
-                    a,
-                    b
-                  ) =>
-                    b[1] -
-                    a[1]
-                )
-                .map(
-                  ([
-                    label,
-                    count,
-                  ]) => (
-                    <MetricCard
-                      key={
-                        label
-                      }
-                      label={
-                        label
-                      }
-                      value={
-                        count
-                      }
-                    />
-                  )
-                )}
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 6)
+                .map(([label, count]) => (
+                  <MetricCard key={label} label={label} value={count} />
+                ))}
             </div>
           </section>
         ) : null}
@@ -5685,1160 +5495,347 @@ export default function PartnerDashboardPage() {
             MEETING REQUESTS
         ================================================= */}
 
-        {activeTab ===
-          "meeting_requests" &&
-        isSystemAdmin ? (
-          <section
-            style={
-              styles.card
-            }
-          >
-            <div
-              style={
-                styles.sectionTop
-              }
-            >
+        {activeTab === "meeting_requests" && isSystemAdmin ? (
+          <section style={styles.card}>
+            <div style={styles.sectionTop}>
               <div>
-                <p
-                  style={
-                    styles.kicker
-                  }
-                >
-                  CAREER CONNECT
-                </p>
-
-                <h2
-                  style={
-                    styles.sectionTitle
-                  }
-                >
-                  Meeting Requests
-                </h2>
-
-                <p
-                  style={
-                    styles.muted
-                  }
-                >
-                  Participants may choose up to 3 preferred appointment times.
-                  You approve one time. That time becomes booked and the
-                  participant then confirms the appointment inside Career Connect.
+                <p style={styles.kicker}>CAREER CONNECT</p>
+                <h2 style={styles.sectionTitle}>Meeting Requests</h2>
+                <p style={styles.muted}>
+                  Participants are grouped together. Appointments stay compact until you open the details you need.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={
-                  loadAdminData
-                }
-                style={
-                  styles.secondaryButton
-                }
-              >
+              <button type="button" onClick={loadAdminData} style={styles.secondaryButton}>
                 Refresh Requests
               </button>
             </div>
 
-            <div
-              style={
-                styles.requestStatsGrid
-              }
-            >
-              <div
-                style={
-                  styles.requestMiniStat
-                }
-              >
-                <strong>
-                  {pendingRequestCount}
-                </strong>
-
-                <span>
-                  Pending
-                </span>
-              </div>
-
-              <div
-                style={
-                  styles.requestMiniStat
-                }
-              >
-                <strong>
-                  {approvedRequestCount}
-                </strong>
-
-                <span>
-                  Awaiting Participant Confirmation
-                </span>
-              </div>
-
-              <div
-                style={
-                  styles.requestMiniStat
-                }
-              >
-                <strong>
-                  {confirmedRequestCount}
-                </strong>
-
-                <span>
-                  Confirmed
-                </span>
-              </div>
-
-              <div
-                style={
-                  styles.requestMiniStat
-                }
-              >
-                <strong>
-                  {rescheduleRequestCount}
-                </strong>
-
-                <span>
-                  Reschedule Requests
-                </span>
-              </div>
-
-              <div
-                style={
-                  styles.requestMiniStat
-                }
-              >
-                <strong>
-                  {completedRequestCount}
-                </strong>
-
-                <span>
-                  Completed
-                </span>
-              </div>
+            <div style={styles.requestStatsGrid}>
+              <div style={styles.requestMiniStat}><strong>{pendingRequestCount}</strong><span>Pending</span></div>
+              <div style={styles.requestMiniStat}><strong>{approvedRequestCount}</strong><span>Awaiting Confirmation</span></div>
+              <div style={styles.requestMiniStat}><strong>{confirmedRequestCount}</strong><span>Confirmed</span></div>
+              <div style={styles.requestMiniStat}><strong>{rescheduleRequestCount}</strong><span>Reschedule</span></div>
+              <div style={styles.requestMiniStat}><strong>{completedRequestCount}</strong><span>Completed</span></div>
+              <div style={styles.requestMiniStat}><strong>{archivedMeetingIds.length}</strong><span>Archived</span></div>
             </div>
 
-            <div
-              style={
-                styles.requestControls
-              }
-            >
+            <div style={styles.requestControls}>
               <input
-                value={
-                  requestSearch
-                }
-                onChange={
-                  (
-                    e
-                  ) =>
-                    setRequestSearch(
-                      e.target.value
-                    )
-                }
+                value={requestSearch}
+                onChange={(e) => setRequestSearch(e.target.value)}
                 placeholder="Search participant, email, referral code, or service"
-                style={
-                  styles.input
-                }
+                style={styles.input}
               />
 
               <select
-                value={
-                  requestFilter
-                }
-                onChange={
-                  (
-                    e
-                  ) =>
-                    setRequestFilter(
-                      e.target.value
-                    )
-                }
-                style={
-                  styles.input
-                }
+                value={requestFilter}
+                onChange={(e) => setRequestFilter(e.target.value)}
+                style={styles.input}
               >
-                <option
-                  value="all"
-                >
-                  All Requests
-                </option>
-
-                <option
-                  value="pending"
-                >
-                  Pending
-                </option>
-
-                <option
-                  value="approved"
-                >
-                  Approved - Awaiting Participant
-                </option>
-
-                <option
-                  value="confirmed"
-                >
-                  Confirmed
-                </option>
-
-                <option
-                  value="reschedule_requested"
-                >
-                  Reschedule Requested
-                </option>
-
-                <option
-                  value="rescheduled"
-                >
-                  Rescheduled
-                </option>
-
-                <option
-                  value="completed"
-                >
-                  Completed
-                </option>
-
-                <option
-                  value="cancelled"
-                >
-                  Cancelled
-                </option>
-
-                <option
-                  value="declined"
-                >
-                  Declined
-                </option>
+                <option value="all">Active Workflow</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved - Awaiting Participant</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="reschedule_requested">Reschedule Requested</option>
+                <option value="rescheduled">Rescheduled</option>
+                <option value="completed">Completed - Not Archived</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="declined">Declined</option>
+                <option value="archived">Archived Completed Appointments</option>
               </select>
             </div>
 
-            <div
-              style={
-                styles.requestList
-              }
-            >
-              {sortedMeetingRequests.map(
-                (
-                  request,
-                  index
-                ) => {
-                  const choices =
-                    getRequestChoices(
-                      request.id
-                    );
+            <div style={styles.participantAppointmentList}>
+              {meetingRequestGroups.map((group) => {
+                const confirmedCount = group.requests.filter((item) => item.status === "confirmed").length;
+                const completedCount = group.requests.filter((item) => item.status === "completed").length;
+                const attentionCount = group.requests.filter((item) =>
+                  ["pending", "approved", "reschedule_requested", "rescheduled"].includes(item.status)
+                ).length;
+                const cancellationCount = group.userId
+                  ? getParticipantCancellationCount(group.userId)
+                  : 0;
 
-                  const files =
-                    getRequestFiles(
-                      request.id
-                    );
-
-                  const cancellationCount =
-                    getParticipantCancellationCount(
-                      request.user_id
-                    );
-
-                  const participantGroupKey =
-                    request.user_id ||
-                    request.participant_email?.toLowerCase() ||
-                    request.participant_name?.toLowerCase() ||
-                    request.id;
-
-                  const previousRequest =
-                    index >
-                    0
-                      ? sortedMeetingRequests[
-                          index -
-                            1
-                        ]
-                      : null;
-
-                  const previousGroupKey =
-                    previousRequest
-                      ? previousRequest.user_id ||
-                        previousRequest.participant_email?.toLowerCase() ||
-                        previousRequest.participant_name?.toLowerCase() ||
-                        previousRequest.id
-                      : null;
-
-                  const isNewParticipant =
-                    participantGroupKey !==
-                    previousGroupKey;
-
-                  const participantRequests =
-                    sortedMeetingRequests.filter(
-                      (
-                        item
-                      ) =>
-                        (
-                          item.user_id ||
-                          item.participant_email?.toLowerCase() ||
-                          item.participant_name?.toLowerCase() ||
-                          item.id
-                        ) ===
-                        participantGroupKey
-                    );
-
-                  const confirmedCount =
-                    participantRequests.filter(
-                      (
-                        item
-                      ) =>
-                        item.status ===
-                        "confirmed"
-                    ).length;
-
-                  const activeCount =
-                    participantRequests.filter(
-                      (
-                        item
-                      ) =>
-                        [
-                          "pending",
-                          "approved",
-                          "reschedule_requested",
-                          "rescheduled",
-                        ].includes(
-                          item.status
-                        )
-                    ).length;
-
-                  const closedCount =
-                    participantRequests.filter(
-                      (
-                        item
-                      ) =>
-                        [
-                          "completed",
-                          "cancelled",
-                          "declined",
-                        ].includes(
-                          item.status
-                        )
-                    ).length;
-
-                  return (
-                    <div
-                      key={
-                        request.id
-                      }
-                      style={
-                        styles.requestGroupItem
-                      }
-                    >
-                      {isNewParticipant ? (
-                        <div
-                          style={
-                            styles.participantGroupHeader
-                          }
-                        >
-                          <div>
-                            <p
-                              style={
-                                styles.participantGroupEyebrow
-                              }
-                            >
-                              PARTICIPANT APPOINTMENTS
-                            </p>
-
-                            <h3
-                              style={
-                                styles.participantGroupName
-                              }
-                            >
-                              {request.participant_name ||
-                                request.participant_email ||
-                                "Participant"}
-                            </h3>
-
-                            <p
-                              style={
-                                styles.participantGroupEmail
-                              }
-                            >
-                              {request.participant_email ||
-                                "No email"}
-                            </p>
-                          </div>
-
-                          <div
-                            style={
-                              styles.participantGroupStats
-                            }
-                          >
-                            {confirmedCount >
-                            0 ? (
-                              <span
-                                style={
-                                  styles.groupConfirmedBadge
-                                }
-                              >
-                                {confirmedCount} Confirmed
-                              </span>
-                            ) : null}
-
-                            {activeCount >
-                            0 ? (
-                              <span
-                                style={
-                                  styles.groupActiveBadge
-                                }
-                              >
-                                {activeCount} Needs Attention
-                              </span>
-                            ) : null}
-
-                            {closedCount >
-                            0 ? (
-                              <span
-                                style={
-                                  styles.groupClosedBadge
-                                }
-                              >
-                                {closedCount} Closed
-                              </span>
-                            ) : null}
-                          </div>
+                return (
+                  <div key={group.key} style={styles.participantAppointmentGroup}>
+                    <div style={styles.participantAppointmentHeader}>
+                      <div>
+                        <div style={styles.participantAppointmentNameRow}>
+                          <h3 style={styles.participantAppointmentName}>{group.name}</h3>
+                          <span style={styles.appointmentCountPill}>{group.requests.length} appointment{group.requests.length === 1 ? "" : "s"}</span>
                         </div>
-                      ) : null}
-
-                      <article
-                      key={
-                        request.id
-                      }
-                      style={{
-                        ...styles.requestCard,
-                        ...requestCardStatusStyle(
-                          request.status
-                        ),
-                      }}
-                    >
-                      <div
-                        style={
-                          styles.requestHeader
-                        }
-                      >
-                        <div>
-                          <div
-                            style={
-                              styles.requestNameRow
-                            }
-                          >
-                            <h3
-                              style={
-                                styles.requestName
-                              }
-                            >
-                              {request.participant_name ||
-                                request.participant_email ||
-                                "Participant"}
-                            </h3>
-
-                            <span
-                              style={{
-                                ...styles.statusBadge,
-
-                                ...requestStatusStyle(
-                                  request.status
-                                ),
-                              }}
-                            >
-                              {requestStatusLabel(
-                                request.status
-                              )}
-                            </span>
-                          </div>
-
-                          <p
-                            style={
-                              styles.requestSubline
-                            }
-                          >
-                            {request.participant_email ||
-                              "No email"}{" "}
-                            •{" "}
-                            {request.referral_code ||
-                              "No referral code"}
-                          </p>
-
-                          <p
-                            style={
-                              styles.requestServiceTitle
-                            }
-                          >
-                            {serviceLabel(
-                              request.service_type,
-                              request.other_service
-                            )}
-                          </p>
-                        </div>
-
-                        <div
-                          style={
-                            styles.requestDateText
-                          }
-                        >
-                          Requested{" "}
-                          {formatDate(
-                            request.created_at
-                          )}
-                        </div>
-                      </div>
-
-                      {/* AGREEMENT */}
-
-                      <div
-                        style={
-                          request.policy_agreed
-                            ? styles.agreementAcceptedBox
-                            : styles.agreementMissingBox
-                        }
-                      >
-                        <strong>
-                          {request.policy_agreed
-                            ? "✓ Scheduling & Cancellation Agreement Accepted"
-                            : "⚠ Scheduling & Cancellation Agreement Not Recorded"}
-                        </strong>
-
-                        {request.policy_agreed_at ? (
-                          <p
-                            style={
-                              styles.agreementDate
-                            }
-                          >
-                            Accepted{" "}
-                            {formatDate(
-                              request.policy_agreed_at
-                            )}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      {/* CANCELLATION COUNT */}
-
-                      <div
-                        style={{
-                          ...styles.cancellationSummaryBox,
-
-                          ...(cancellationCount >=
-                          2
-                            ? styles.cancellationSummaryWarning
-                            : {}),
-                        }}
-                      >
-                        <div>
-                          <span
-                            style={
-                              styles.requestSectionLabel
-                            }
-                          >
-                            PARTICIPANT CANCELLATIONS
-                          </span>
-
-                          <strong
-                            style={
-                              styles.cancellationBigNumber
-                            }
-                          >
-                            {cancellationCount}
-                          </strong>
-                        </div>
-
-                        {cancellationCount >=
-                        2 ? (
-                          <div
-                            style={
-                              styles.providerReferralAlert
-                            }
-                          >
-                            ⚠ Two participant-initiated cancellations
-                            have been recorded. Refer this participant
-                            back to the organization or provider that
-                            referred them to HireMinds.
-                          </div>
-                        ) : (
-                          <p
-                            style={
-                              styles.cancellationPolicySmall
-                            }
-                          >
-                            Two participant-initiated cancellations
-                            trigger referral back to the referring
-                            provider or organization.
-                          </p>
-                        )}
-                      </div>
-
-                      {/* NOTES */}
-
-                      {request.cancellation_note ? (
-                        <div
-                          style={
-                            styles.cancellationNoteBox
-                          }
-                        >
-                          <strong>
-                            Cancellation Note
-                          </strong>
-
-                          <p>
-                            {request.cancellation_note}
-                          </p>
-                        </div>
-                      ) : null}
-
-                      {request.notes ? (
-                        <div
-                          style={
-                            styles.notesBox
-                          }
-                        >
-                          <strong>
-                            Participant Notes
-                          </strong>
-
-                          <p>
-                            {request.notes}
-                          </p>
-                        </div>
-                      ) : null}
-
-                      {request.admin_notes ? (
-                        <div
-                          style={
-                            styles.adminNotesBox
-                          }
-                        >
-                          <strong>
-                            Admin Notes
-                          </strong>
-
-                          <p>
-                            {request.admin_notes}
-                          </p>
-                        </div>
-                      ) : null}
-
-                      {/* RESCHEDULE REQUEST */}
-
-                      {request.status ===
-                        "reschedule_requested" ||
-                      request.reschedule_requested_at ||
-                      request.reschedule_slot_id ||
-                      request.reschedule_note ? (
-                        <div
-                          style={
-                            styles.rescheduleAlertBox
-                          }
-                        >
-                          <div
-                            style={
-                              styles.rescheduleAlertHeader
-                            }
-                          >
-                            <div>
-                              <span
-                                style={
-                                  styles.requestSectionLabel
-                                }
-                              >
-                                RESCHEDULE REQUESTED
-                              </span>
-
-                              <strong
-                                style={
-                                  styles.rescheduleAlertTitle
-                                }
-                              >
-                                Participant requested a different appointment
-                              </strong>
-                            </div>
-
-                            {request.reschedule_requested_at ? (
-                              <span
-                                style={
-                                  styles.requestDateText
-                                }
-                              >
-                                {formatDate(
-                                  request.reschedule_requested_at
-                                )}
-                              </span>
-                            ) : null}
-                          </div>
-
-                          {request.confirmed_slot_id ? (
-                            <div
-                              style={
-                                styles.rescheduleInfoCard
-                              }
-                            >
-                              <span>
-                                CURRENT APPOINTMENT
-                              </span>
-
-                              <strong>
-                                {formatAppointment(
-                                  getSlot(
-                                    request.confirmed_slot_id
-                                  )?.start_time
-                                )}
-                              </strong>
-                            </div>
-                          ) : null}
-
-                          {request.reschedule_slot_id ? (
-                            <div
-                              style={
-                                styles.rescheduleInfoCardHighlight
-                              }
-                            >
-                              <span>
-                                PARTICIPANT SELECTED NEW TIME
-                              </span>
-
-                              <strong>
-                                {formatAppointment(
-                                  getSlot(
-                                    request.reschedule_slot_id
-                                  )?.start_time
-                                )}
-                              </strong>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  confirmRequestSlot(
-                                    request.id,
-                                    request.reschedule_slot_id as string
-                                  )
-                                }
-                                style={
-                                  styles.confirmButton
-                                }
-                              >
-                                Approve Requested New Time
-                              </button>
-                            </div>
-                          ) : null}
-
-                          {request.reschedule_note ? (
-                            <div
-                              style={
-                                styles.notesBox
-                              }
-                            >
-                              <strong>
-                                Participant Requested
-                              </strong>
-
-                              <p>
-                                {request.reschedule_note}
-                              </p>
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-
-                      {/* PREFERRED TIMES */}
-
-                      <div
-                        style={
-                          styles.requestSection
-                        }
-                      >
-                        <p
-                          style={
-                            styles.requestSectionLabel
-                          }
-                        >
-                          Preferred Appointment Times
+                        <p style={styles.participantAppointmentMeta}>
+                          {group.email || "No email"} {group.referralCode ? `• ${group.referralCode}` : ""}
                         </p>
+                      </div>
 
-                        <p
-                          style={
-                            styles.preferenceInstruction
-                          }
-                        >
-                          Participant may select up to 3 preferred appointment
-                          times. Approve only one. The participant confirms it
-                          afterward inside Career Connect.
-                        </p>
+                      <div style={styles.participantAppointmentBadges}>
+                        {attentionCount > 0 ? <span style={styles.groupActiveBadge}>{attentionCount} Needs Attention</span> : null}
+                        {confirmedCount > 0 ? <span style={styles.groupConfirmedBadge}>{confirmedCount} Confirmed</span> : null}
+                        {completedCount > 0 ? <span style={styles.groupClosedBadge}>{completedCount} Completed</span> : null}
+                        {cancellationCount > 0 ? <span style={styles.groupCancelBadge}>{cancellationCount} Cancellation{cancellationCount === 1 ? "" : "s"}</span> : null}
+                      </div>
+                    </div>
 
-                        {choices.length ? (
-                          <div
-                            style={
-                              styles.choiceList
-                            }
-                          >
-                            {choices.map(
-                              (
-                                choice
-                              ) => {
-                                const slot =
-                                  getSlot(
-                                    choice.slot_id
-                                  );
+                    <div style={styles.compactAppointmentRows}>
+                      {group.requests.map((request) => {
+                        const choices = getRequestChoices(request.id);
+                        const files = getRequestFiles(request.id);
+                        const confirmedSlot = request.confirmed_slot_id
+                          ? getSlot(request.confirmed_slot_id)
+                          : undefined;
+                        const expanded = expandedMeetingIds.includes(request.id);
+                        const archived = archivedMeetingIds.includes(request.id);
 
-                                const confirmed =
-                                  request.confirmed_slot_id ===
-                                  choice.slot_id;
+                        return (
+                          <div key={request.id} style={styles.compactAppointmentItem}>
+                            <div style={styles.compactAppointmentRow}>
+                              <div style={styles.compactAppointmentService}>
+                                <span
+                                  style={{
+                                    ...styles.statusBadge,
+                                    ...requestStatusStyle(request.status),
+                                  }}
+                                >
+                                  {requestStatusLabel(request.status)}
+                                </span>
+                                <strong>{serviceLabel(request.service_type, request.other_service)}</strong>
+                              </div>
 
-                                const unavailable =
-                                  isSlotUnavailableForRequest(
-                                    slot,
-                                    request.id
-                                  );
+                              <div style={styles.compactAppointmentTime}>
+                                <span style={styles.compactAppointmentLabel}>APPOINTMENT</span>
+                                <strong>
+                                  {confirmedSlot
+                                    ? `${formatShortDate(confirmedSlot.start_time)} • ${formatTimeOnly(confirmedSlot.start_time)} – ${formatTimeOnly(confirmedSlot.end_time)}`
+                                    : choices.length
+                                      ? `${choices.length} preferred time${choices.length === 1 ? "" : "s"}`
+                                      : "Time not selected"}
+                                </strong>
+                              </div>
 
-                                return (
-                                  <div
-                                    key={
-                                      choice.id
-                                    }
-                                    style={{
-                                      ...styles.choiceCard,
+                              <div style={styles.compactAppointmentRequested}>
+                                <span style={styles.compactAppointmentLabel}>REQUESTED</span>
+                                <span>{formatShortDate(request.created_at)}</span>
+                              </div>
 
-                                      ...(confirmed
-                                        ? styles.choiceCardConfirmed
-                                        : {}),
+                              <div style={styles.compactAppointmentActions}>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleMeetingDetails(request.id)}
+                                  style={styles.secondaryButtonSmall}
+                                >
+                                  {expanded ? "Close Details" : "View Details"}
+                                </button>
 
-                                      ...(unavailable
-                                        ? styles.choiceCardUnavailable
-                                        : {}),
-                                    }}
+                                {request.status === "completed" && !archived ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => archiveMeeting(request.id)}
+                                    style={styles.archiveButtonSmall}
                                   >
-                                    <div>
-                                      <span
-                                        style={
-                                          styles.preferenceLabel
-                                        }
-                                      >
-                                        Choice{" "}
-                                        {choice.preference_order}
-                                      </span>
+                                    Archive
+                                  </button>
+                                ) : null}
 
-                                      <strong
-                                        style={
-                                          styles.choiceDate
-                                        }
-                                      >
-                                        {formatShortDate(
-                                          slot?.start_time
-                                        )}
-                                      </strong>
+                                {archived ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => restoreArchivedMeeting(request.id)}
+                                    style={styles.restoreButtonSmall}
+                                  >
+                                    Restore
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
 
-                                      <span
-                                        style={
-                                          styles.choiceTime
-                                        }
-                                      >
-                                        {formatTimeOnly(
-                                          slot?.start_time
-                                        )}
-                                        {" – "}
-                                        {formatTimeOnly(
-                                          slot?.end_time
-                                        )}
-                                      </span>
+                            {expanded ? (
+                              <div style={styles.appointmentDetailsPanel}>
+                                <div style={styles.appointmentDetailGrid}>
+                                  <div>
+                                    <span style={styles.requestSectionLabel}>SCHEDULING AGREEMENT</span>
+                                    <p style={styles.compactDetailText}>
+                                      {request.policy_agreed
+                                        ? `Accepted${request.policy_agreed_at ? ` • ${formatDate(request.policy_agreed_at)}` : ""}`
+                                        : "Not recorded"}
+                                    </p>
+                                  </div>
 
-                                      {slot?.label ? (
-                                        <span
-                                          style={
-                                            styles.choiceNote
-                                          }
-                                        >
-                                          {slot.label}
-                                        </span>
-                                      ) : null}
+                                  <div>
+                                    <span style={styles.requestSectionLabel}>PARTICIPANT CANCELLATIONS</span>
+                                    <p style={styles.compactDetailText}>{cancellationCount}</p>
+                                  </div>
 
-                                      {confirmed ? (
-                                        <span
-                                          style={
-                                            styles.confirmedTimeText
-                                          }
-                                        >
-                                          {request.status ===
-                                          "confirmed"
-                                            ? "✓ PARTICIPANT CONFIRMED"
-                                            : "✓ APPROVED APPOINTMENT TIME"}
-                                        </span>
-                                      ) : unavailable ? (
-                                        <span
-                                          style={
-                                            styles.unavailableTimeText
-                                          }
-                                        >
-                                          NO LONGER AVAILABLE
-                                        </span>
-                                      ) : (
-                                        <span
-                                          style={
-                                            styles.availableTimeText
-                                          }
-                                        >
-                                          AVAILABLE TO APPROVE
-                                        </span>
-                                      )}
+                                  <div>
+                                    <span style={styles.requestSectionLabel}>REFERRAL CODE</span>
+                                    <p style={styles.compactDetailText}>{request.referral_code || "—"}</p>
+                                  </div>
+
+                                  <div>
+                                    <span style={styles.requestSectionLabel}>REQUEST ID</span>
+                                    <p style={styles.compactDetailText}>{request.id}</p>
+                                  </div>
+                                </div>
+
+                                {request.notes ? (
+                                  <div style={styles.compactNoteLine}><strong>Participant Notes:</strong> {request.notes}</div>
+                                ) : null}
+
+                                {request.admin_notes ? (
+                                  <div style={styles.compactNoteLine}><strong>Admin Notes:</strong> {request.admin_notes}</div>
+                                ) : null}
+
+                                {request.cancellation_note ? (
+                                  <div style={styles.compactNoteLine}><strong>Cancellation Note:</strong> {request.cancellation_note}</div>
+                                ) : null}
+
+                                {request.reschedule_note ? (
+                                  <div style={styles.compactNoteLine}><strong>Reschedule Note:</strong> {request.reschedule_note}</div>
+                                ) : null}
+
+                                <div style={styles.compactDetailSection}>
+                                  <span style={styles.requestSectionLabel}>PREFERRED APPOINTMENT TIMES</span>
+
+                                  {choices.length ? (
+                                    <div style={styles.compactChoiceList}>
+                                      {choices.map((choice) => {
+                                        const slot = getSlot(choice.slot_id);
+                                        const confirmed = request.confirmed_slot_id === choice.slot_id;
+                                        const unavailable = isSlotUnavailableForRequest(slot, request.id);
+
+                                        return (
+                                          <div key={choice.id} style={styles.compactChoiceRow}>
+                                            <div>
+                                              <strong>
+                                                Choice {choice.preference_order}: {formatShortDate(slot?.start_time)} • {formatTimeOnly(slot?.start_time)} – {formatTimeOnly(slot?.end_time)}
+                                              </strong>
+                                              {slot?.label ? <span style={styles.compactChoiceNote}> {slot.label}</span> : null}
+                                            </div>
+
+                                            {request.status !== "completed" &&
+                                            request.status !== "cancelled" &&
+                                            request.status !== "declined" ? (
+                                              <button
+                                                type="button"
+                                                disabled={unavailable || confirmed}
+                                                onClick={() => confirmRequestSlot(request.id, choice.slot_id)}
+                                                style={
+                                                  confirmed
+                                                    ? styles.confirmedButton
+                                                    : unavailable
+                                                      ? styles.unavailableButton
+                                                      : styles.confirmButton
+                                                }
+                                              >
+                                                {confirmed
+                                                  ? "✓ Approved"
+                                                  : unavailable
+                                                    ? "Unavailable"
+                                                    : request.status === "reschedule_requested"
+                                                      ? "Approve New Time"
+                                                      : "Approve Time"}
+                                              </button>
+                                            ) : null}
+                                          </div>
+                                        );
+                                      })}
                                     </div>
+                                  ) : (
+                                    <p style={styles.emptyText}>No preferred times recorded.</p>
+                                  )}
+                                </div>
 
-                                    {request.status !==
-                                      "completed" &&
-                                    request.status !==
-                                      "cancelled" &&
-                                    request.status !==
-                                      "declined" ? (
+                                {files.length ? (
+                                  <div style={styles.compactDetailSection}>
+                                    <span style={styles.requestSectionLabel}>SUPPORTING FILES</span>
+                                    <div style={styles.fileRow}>
+                                      {files.map((file) => (
+                                        <button
+                                          key={file.id}
+                                          type="button"
+                                          onClick={() => openAttachment(file.file_path)}
+                                          style={styles.fileButton}
+                                        >
+                                          📎 {file.file_name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                <div style={styles.compactAdminActions}>
+                                  <button type="button" onClick={() => editAdminNotes(request)} style={styles.actionButtonBlue}>
+                                    {request.admin_notes ? "Edit Admin Notes" : "Add Admin Notes"}
+                                  </button>
+
+                                  {!archived && request.status !== "completed" && request.status !== "cancelled" && request.status !== "declined" ? (
+                                    <>
                                       <button
                                         type="button"
-                                        disabled={
-                                          unavailable ||
-                                          confirmed
-                                        }
-                                        onClick={() =>
-                                          confirmRequestSlot(
-                                            request.id,
-                                            choice.slot_id
-                                          )
-                                        }
-                                        style={
-                                          confirmed
-                                            ? styles.confirmedButton
-                                            : unavailable
-                                              ? styles.unavailableButton
-                                              : styles.confirmButton
-                                        }
+                                        onClick={() => updateRequestStatus(request.id, "reschedule_requested")}
+                                        style={styles.actionButtonPurple}
                                       >
-                                        {confirmed
-                                          ? request.status ===
-                                            "confirmed"
-                                            ? "✓ Participant Confirmed"
-                                            : "✓ Approved Time"
-                                          : unavailable
-                                            ? "No Longer Available"
-                                            : request.status ===
-                                              "reschedule_requested"
-                                              ? "Approve New Time"
-                                              : "Approve This Time"}
+                                        Reschedule
                                       </button>
-                                    ) : null}
-                                  </div>
-                                );
-                              }
-                            )}
+
+                                      <button
+                                        type="button"
+                                        onClick={() => updateRequestStatus(request.id, "completed")}
+                                        style={styles.actionButtonBlue}
+                                      >
+                                        Mark Completed
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const confirmed = window.confirm(
+                                            "Record this as a PARTICIPANT cancellation? This WILL count toward the two-cancellation policy."
+                                          );
+                                          if (confirmed) updateRequestStatus(request.id, "cancelled", "participant");
+                                        }}
+                                        style={styles.actionButtonRed}
+                                      >
+                                        Participant Cancelled
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => updateRequestStatus(request.id, "cancelled", "admin")}
+                                        style={styles.actionButtonNeutral}
+                                      >
+                                        Admin Cancelled
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => updateRequestStatus(request.id, "declined")}
+                                        style={styles.actionButtonNeutral}
+                                      >
+                                        Decline
+                                      </button>
+                                    </>
+                                  ) : null}
+
+                                  {request.status === "completed" && !archived ? (
+                                    <button type="button" onClick={() => archiveMeeting(request.id)} style={styles.archiveButtonSmall}>
+                                      Archive Completed Appointment
+                                    </button>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
-                        ) : (
-                          <p
-                            style={
-                              styles.emptyText
-                            }
-                          >
-                            No appointment preferences found.
-                          </p>
-                        )}
-                      </div>
-
-                      {/* FILES */}
-
-                      <div
-                        style={
-                          styles.requestSection
-                        }
-                      >
-                        <p
-                          style={
-                            styles.requestSectionLabel
-                          }
-                        >
-                          Supporting Files
-                        </p>
-
-                        {files.length ? (
-                          <div
-                            style={
-                              styles.fileRow
-                            }
-                          >
-                            {files.map(
-                              (
-                                file
-                              ) => (
-                                <button
-                                  key={
-                                    file.id
-                                  }
-                                  type="button"
-                                  onClick={() =>
-                                    openAttachment(
-                                      file.file_path
-                                    )
-                                  }
-                                  style={
-                                    styles.fileButton
-                                  }
-                                >
-                                  📎 {file.file_name}
-                                </button>
-                              )
-                            )}
-                          </div>
-                        ) : (
-                          <p
-                            style={
-                              styles.emptyText
-                            }
-                          >
-                            No files attached.
-                          </p>
-                        )}
-                      </div>
-
-                      {/* ACTIONS */}
-
-                      <div
-                        style={
-                          styles.requestActions
-                        }
-                      >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            editAdminNotes(
-                              request
-                            )
-                          }
-                          style={
-                            styles.actionButtonBlue
-                          }
-                        >
-                          {request.admin_notes
-                            ? "Edit Admin Notes"
-                            : "Add Admin Notes"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const confirmed =
-                              window.confirm(
-                                "Mark this appointment as needing reschedule review? The currently booked time will remain reserved until a replacement is approved."
-                              );
-
-                            if (
-                              confirmed
-                            ) {
-                              updateRequestStatus(
-                                request.id,
-                                "reschedule_requested"
-                              );
-                            }
-                          }}
-                          style={
-                            styles.actionButtonPurple
-                          }
-                        >
-                          Reschedule
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateRequestStatus(
-                              request.id,
-                              "completed"
-                            )
-                          }
-                          style={
-                            styles.actionButtonBlue
-                          }
-                        >
-                          Completed
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const confirmed =
-                              window.confirm(
-                                "Record this as a PARTICIPANT cancellation? This WILL count toward the two-cancellation policy."
-                              );
-
-                            if (
-                              confirmed
-                            ) {
-                              updateRequestStatus(
-                                request.id,
-                                "cancelled",
-                                "participant"
-                              );
-                            }
-                          }}
-                          style={
-                            styles.actionButtonRed
-                          }
-                        >
-                          Participant Cancelled
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const confirmed =
-                              window.confirm(
-                                "Record this as an ADMIN cancellation? This will NOT count against the participant."
-                              );
-
-                            if (
-                              confirmed
-                            ) {
-                              updateRequestStatus(
-                                request.id,
-                                "cancelled",
-                                "admin"
-                              );
-                            }
-                          }}
-                          style={
-                            styles.actionButtonNeutral
-                          }
-                        >
-                          Admin Cancelled
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const confirmed =
-                              window.confirm(
-                                "Decline this meeting request?"
-                              );
-
-                            if (
-                              confirmed
-                            ) {
-                              updateRequestStatus(
-                                request.id,
-                                "declined"
-                              );
-                            }
-                          }}
-                          style={
-                            styles.actionButtonNeutral
-                          }
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    </article>
+                        );
+                      })}
                     </div>
-                  );
-                }
-              )}
+                  </div>
+                );
+              })}
 
-              {sortedMeetingRequests.length ===
-              0 ? (
-                <div
-                  style={
-                    styles.emptyPanel
-                  }
-                >
-                  No meeting requests match the selected filters.
-                </div>
+              {meetingRequestGroups.length === 0 ? (
+                <div style={styles.emptyPanel}>No meeting requests match the selected filters.</div>
               ) : null}
             </div>
           </section>
@@ -7479,250 +6476,96 @@ export default function PartnerDashboardPage() {
         ) : null}
 
         {/* =================================================
-            CAREER CONNECT SETTINGS
+            CAREER CONNECT
         ================================================= */}
 
-        {activeTab ===
-          "career_connect" &&
-        isSystemAdmin ? (
-          <section
-            style={
-              styles.card
-            }
-          >
-            <p
-              style={
-                styles.kicker
-              }
-            >
-              ADMIN SETTINGS
-            </p>
-
-            <h2
-              style={
-                styles.sectionTitle
-              }
-            >
-              Career Connect Settings
-            </h2>
-
-            <p
-              style={
-                styles.muted
-              }
-            >
-              Change your meeting room and Open Room schedule directly
-              from HireMinds without editing GitHub.
-            </p>
-
-            <div
-              style={
-                styles.settingsGrid
-              }
-            >
-              <SettingInput
-                label="Live Meeting Link"
-                value={
-                  careerSettings.meeting_link
-                }
-                onChange={
-                  (
-                    value
-                  ) =>
-                    updateCareerSetting(
-                      "meeting_link",
-                      value
-                    )
-                }
-              />
-
-              <SettingInput
-                label="Open Room Title"
-                value={
-                  careerSettings.open_room_title
-                }
-                onChange={
-                  (
-                    value
-                  ) =>
-                    updateCareerSetting(
-                      "open_room_title",
-                      value
-                    )
-                }
-              />
-
-              <SettingInput
-                label="Schedule"
-                value={
-                  careerSettings.open_room_schedule
-                }
-                onChange={
-                  (
-                    value
-                  ) =>
-                    updateCareerSetting(
-                      "open_room_schedule",
-                      value
-                    )
-                }
-              />
-
-              <SettingInput
-                label="Time"
-                value={
-                  careerSettings.open_room_time
-                }
-                onChange={
-                  (
-                    value
-                  ) =>
-                    updateCareerSetting(
-                      "open_room_time",
-                      value
-                    )
-                }
-              />
-
-              <SettingInput
-                label="Doors Open"
-                value={
-                  careerSettings.doors_open
-                }
-                onChange={
-                  (
-                    value
-                  ) =>
-                    updateCareerSetting(
-                      "doors_open",
-                      value
-                    )
-                }
-              />
-
-              <SettingInput
-                label="Doors Close"
-                value={
-                  careerSettings.doors_close
-                }
-                onChange={
-                  (
-                    value
-                  ) =>
-                    updateCareerSetting(
-                      "doors_close",
-                      value
-                    )
-                }
-              />
+        {activeTab === "career_connect" && isSystemAdmin ? (
+          <section style={styles.card}>
+            <div style={styles.sectionTop}>
+              <div>
+                <p style={styles.kicker}>CAREER CONNECT</p>
+                <h2 style={styles.sectionTitle}>Human Engagement & Open Room Roster</h2>
+                <p style={styles.muted}>
+                  Career Connect now focuses on participant engagement with live services instead of storing Open Room settings here.
+                </p>
+              </div>
             </div>
 
-            <label
-              style={
-                styles.fieldWrap
-              }
-            >
-              <span
-                style={
-                  styles.controlLabel
-                }
-              >
-                Open Room Description / Note
-              </span>
-
-              <textarea
-                value={
-                  careerSettings.open_room_note
-                }
-                onChange={
-                  (
-                    e
-                  ) =>
-                    updateCareerSetting(
-                      "open_room_note",
-                      e.target.value
-                    )
-                }
-                style={
-                  styles.textarea
-                }
+            <div style={styles.careerConnectMetrics}>
+              <MetricCard label="Open Room Records" value={openRoomRoster.length} />
+              <MetricCard
+                label="Unique Open Room Participants"
+                value={new Set(openRoomRoster.map((row) => row.userId || row.email)).size}
               />
-            </label>
-
-            <div
-              style={
-                styles.settingsPreview
-              }
-            >
-              <p
-                style={
-                  styles.kicker
-                }
-              >
-                LIVE PREVIEW
-              </p>
-
-              <h3
-                style={
-                  styles.settingsPreviewTitle
-                }
-              >
-                {careerSettings.open_room_title}
-              </h3>
-
-              <p>
-                <strong>
-                  Schedule:
-                </strong>{" "}
-                {careerSettings.open_room_schedule}
-              </p>
-
-              <p>
-                <strong>
-                  Time:
-                </strong>{" "}
-                {careerSettings.open_room_time}
-              </p>
-
-              <p>
-                <strong>
-                  Doors Open:
-                </strong>{" "}
-                {careerSettings.doors_open}
-              </p>
-
-              <p>
-                <strong>
-                  Doors Close:
-                </strong>{" "}
-                {careerSettings.doors_close}
-              </p>
-
-              <p
-                style={
-                  styles.muted
-                }
-              >
-                {careerSettings.open_room_note}
-              </p>
+              <MetricCard label="Career Services Tracked" value={workforceSessionServices.length} />
+              <MetricCard label="Completed Meetings" value={completedRequestCount} />
             </div>
 
-            <button
-              type="button"
-              onClick={
-                saveCareerConnectSettings
-              }
-              disabled={
-                savingCareerSettings
-              }
-              style={
-                styles.primaryButton
-              }
-            >
-              {savingCareerSettings
-                ? "Saving..."
-                : "Save Career Connect Settings"}
-            </button>
+            <div style={styles.sectionDivider} />
+
+            <div style={styles.sectionTop}>
+              <div>
+                <h3 style={styles.subsectionTitle}>Open Room Roster</h3>
+                <p style={styles.muted}>
+                  This roster uses Open Room service records already tracked in HireMinds. If you later add formal registration and attendance statuses, they can plug into this same section.
+                </p>
+              </div>
+            </div>
+
+            <div style={styles.tableWrap}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Participant</th>
+                    <th style={styles.th}>Email</th>
+                    <th style={styles.th}>Referral Code</th>
+                    <th style={styles.th}>Career Connect Service</th>
+                    <th style={styles.th}>Recorded</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {openRoomRoster.map((row) => (
+                    <tr key={row.id}>
+                      <td style={styles.td}><strong>{row.name}</strong></td>
+                      <td style={styles.td}>{row.email || "—"}</td>
+                      <td style={styles.td}><span style={styles.codeBadge}>{row.referralCode}</span></td>
+                      <td style={styles.td}>{row.service}</td>
+                      <td style={styles.td}>{formatDate(row.date)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {openRoomRoster.length === 0 ? (
+              <div style={styles.emptyPanel}>
+                No Open Room roster records are available yet. Once Open Room participation is written to workforce_session_services, participants will appear here automatically.
+              </div>
+            ) : null}
+
+            <div style={styles.sectionDivider} />
+
+            <h3 style={styles.subsectionTitle}>Career Connect Service Mix</h3>
+            <p style={styles.muted}>
+              This separates live support from digital tool usage so you can see where participants are asking for human help.
+            </p>
+
+            <div style={styles.compactServiceGrid}>
+              {Object.entries(
+                workforceSessionServices.reduce(
+                  (counts: Record<string, number>, row) => {
+                    const label = row.service_label || serviceLabel(row.service_type);
+                    counts[label] = (counts[label] || 0) + 1;
+                    return counts;
+                  },
+                  {}
+                )
+              )
+                .sort((a, b) => b[1] - a[1])
+                .map(([label, count]) => (
+                  <MetricCard key={label} label={label} value={count} />
+                ))}
+            </div>
           </section>
         ) : null}
 
@@ -8103,6 +6946,14 @@ export default function PartnerDashboardPage() {
 
                       {
                         key:
+                          "tool_outcomes",
+
+                        label:
+                          "Saved / Generated Tool Outcomes",
+                      },
+
+                      {
+                        key:
                           "career_services",
 
                         label:
@@ -8345,6 +7196,17 @@ export default function PartnerDashboardPage() {
                 ) : null}
 
                 {hasOptionalMetric(
+                  "tool_outcomes"
+                ) ? (
+                  <ReportMetric
+                    value={
+                      reportStats.toolOutputs
+                    }
+                    label="Saved / Generated Outputs"
+                  />
+                ) : null}
+
+                {hasOptionalMetric(
                   "completed_activities"
                 ) ? (
                   <ReportMetric
@@ -8382,6 +7244,13 @@ export default function PartnerDashboardPage() {
                   </strong>{" "}
                   {reportStats.topTool}{" "}
                   ({reportStats.topToolUses} uses)
+                </div>
+              ) : null}
+
+              {hasOptionalMetric("tool_outcomes") && reportStats.lastToolSave ? (
+                <div style={styles.highlightStrip}>
+                  <strong>Most Recent Tool Save / Output:</strong>{" "}
+                  {formatDate(reportStats.lastToolSave)}
                 </div>
               ) : null}
 
@@ -8682,6 +7551,21 @@ export default function PartnerDashboardPage() {
                         ) : null}
 
                         {hasOptionalMetric(
+                          "most_used_tool"
+                        ) ? (
+                          <th style={styles.reportTh}>Top Tool</th>
+                        ) : null}
+
+                        {hasOptionalMetric(
+                          "tool_outcomes"
+                        ) ? (
+                          <>
+                            <th style={styles.reportTh}>Saved / Generated</th>
+                            <th style={styles.reportTh}>Last Save</th>
+                          </>
+                        ) : null}
+
+                        {hasOptionalMetric(
                           "completed_activities"
                         ) ? (
                           <th
@@ -8800,6 +7684,21 @@ export default function PartnerDashboardPage() {
                               >
                                 {row.toolUses}
                               </td>
+                            ) : null}
+
+                            {hasOptionalMetric(
+                              "most_used_tool"
+                            ) ? (
+                              <td style={styles.reportTd}>{row.topTool}</td>
+                            ) : null}
+
+                            {hasOptionalMetric(
+                              "tool_outcomes"
+                            ) ? (
+                              <>
+                                <td style={styles.reportTd}>{row.toolOutputs}</td>
+                                <td style={styles.reportTd}>{formatShortDate(row.lastToolSave)}</td>
+                              </>
                             ) : null}
 
                             {hasOptionalMetric(
@@ -11627,4 +10526,422 @@ const styles: Record<
     flexWrap:
       "wrap",
   },
+
+  overviewHeroGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
+    gap: 14,
+  },
+
+  insightGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))",
+    gap: 1,
+    marginTop: 18,
+    border: "1px solid rgba(255,255,255,.10)",
+    borderRadius: 18,
+    overflow: "hidden",
+    background: "rgba(255,255,255,.08)",
+  },
+
+  insightBlock: {
+    minHeight: 145,
+    padding: 20,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    background: "#111113",
+  },
+
+  insightLabel: {
+    color: "#60a5fa",
+    fontSize: 9,
+    fontWeight: 900,
+    letterSpacing: ".12em",
+  },
+
+  insightValue: {
+    marginTop: 8,
+    color: "#fff",
+    fontSize: 26,
+    lineHeight: 1.1,
+  },
+
+  insightSubtext: {
+    marginTop: 8,
+    color: "#9ca3af",
+    fontSize: 11,
+    lineHeight: 1.55,
+  },
+
+  compactStatRow: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+
+  activeCodePill: {
+    padding: "7px 10px",
+    borderRadius: 999,
+    background: "rgba(34,197,94,.12)",
+    border: "1px solid rgba(34,197,94,.25)",
+    color: "#86efac",
+    fontSize: 10,
+    fontWeight: 800,
+  },
+
+  inactiveCodePill: {
+    padding: "7px 10px",
+    borderRadius: 999,
+    background: "rgba(148,163,184,.10)",
+    border: "1px solid rgba(148,163,184,.20)",
+    color: "#cbd5e1",
+    fontSize: 10,
+    fontWeight: 800,
+  },
+
+  referralStatusList: {
+    display: "flex",
+    flexDirection: "column",
+    marginTop: 18,
+    borderTop: "1px solid rgba(255,255,255,.10)",
+  },
+
+  referralStatusRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(210px,1.2fr) auto minmax(260px,.9fr)",
+    gap: 18,
+    alignItems: "center",
+    padding: "14px 2px",
+    borderBottom: "1px solid rgba(255,255,255,.08)",
+  },
+
+  referralStatusIdentity: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 3,
+  },
+
+  referralStatusCode: {
+    fontSize: 14,
+    color: "#fff",
+  },
+
+  referralStatusNote: {
+    fontSize: 10,
+    color: "#9ca3af",
+  },
+
+  referralStatusBadge: {
+    padding: "5px 8px",
+    borderRadius: 999,
+    fontSize: 8,
+    fontWeight: 900,
+    letterSpacing: ".08em",
+  },
+
+  referralStatusActive: {
+    color: "#86efac",
+    background: "rgba(34,197,94,.12)",
+    border: "1px solid rgba(34,197,94,.24)",
+  },
+
+  referralStatusInactive: {
+    color: "#fca5a5",
+    background: "rgba(239,68,68,.10)",
+    border: "1px solid rgba(239,68,68,.20)",
+  },
+
+  referralStatusReserved: {
+    color: "#fde68a",
+    background: "rgba(250,204,21,.10)",
+    border: "1px solid rgba(250,204,21,.20)",
+  },
+
+  referralStatusHistorical: {
+    color: "#c4b5fd",
+    background: "rgba(168,85,247,.10)",
+    border: "1px solid rgba(168,85,247,.20)",
+  },
+
+  referralStatusMetrics: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 16,
+    flexWrap: "wrap",
+    color: "#9ca3af",
+    fontSize: 10,
+  },
+
+  compactMeetingMetrics: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+    gap: 12,
+  },
+
+  compactLinkCard: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 18,
+    padding: "18px 20px",
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,.10)",
+    background: "rgba(255,255,255,.035)",
+    color: "#fff",
+    textDecoration: "none",
+  },
+
+  compactLinkTitle: {
+    margin: "2px 0 5px",
+    fontSize: 17,
+  },
+
+  compactLinkArrow: {
+    fontSize: 22,
+    color: "#60a5fa",
+  },
+
+  toolUsageSummary: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
+    gap: 12,
+    margin: "18px 0 20px",
+  },
+
+  sectionDivider: {
+    height: 1,
+    margin: "28px 0",
+    background: "rgba(255,255,255,.10)",
+  },
+
+  subsectionTitle: {
+    margin: 0,
+    fontSize: 20,
+    color: "#fff",
+  },
+
+  compactServiceGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
+    gap: 12,
+    marginTop: 16,
+  },
+
+  participantAppointmentList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+  },
+
+  participantAppointmentGroup: {
+    borderTop: "1px solid rgba(255,255,255,.12)",
+    paddingTop: 16,
+  },
+
+  participantAppointmentHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 18,
+    alignItems: "center",
+    padding: "0 2px 12px",
+    flexWrap: "wrap",
+  },
+
+  participantAppointmentNameRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+
+  participantAppointmentName: {
+    margin: 0,
+    fontSize: 17,
+    color: "#fff",
+  },
+
+  appointmentCountPill: {
+    padding: "4px 7px",
+    borderRadius: 999,
+    background: "rgba(96,165,250,.10)",
+    border: "1px solid rgba(96,165,250,.20)",
+    color: "#bfdbfe",
+    fontSize: 9,
+    fontWeight: 800,
+  },
+
+  participantAppointmentMeta: {
+    margin: "4px 0 0",
+    color: "#9ca3af",
+    fontSize: 10,
+  },
+
+  participantAppointmentBadges: {
+    display: "flex",
+    gap: 7,
+    flexWrap: "wrap",
+  },
+
+  groupCancelBadge: {
+    padding: "5px 8px",
+    borderRadius: 999,
+    background: "rgba(248,113,113,.10)",
+    border: "1px solid rgba(248,113,113,.20)",
+    color: "#fca5a5",
+    fontSize: 9,
+    fontWeight: 800,
+  },
+
+  compactAppointmentRows: {
+    display: "flex",
+    flexDirection: "column",
+    borderTop: "1px solid rgba(255,255,255,.07)",
+  },
+
+  compactAppointmentItem: {
+    borderBottom: "1px solid rgba(255,255,255,.07)",
+  },
+
+  compactAppointmentRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(220px,1.35fr) minmax(230px,1fr) minmax(110px,.55fr) auto",
+    gap: 16,
+    alignItems: "center",
+    padding: "13px 2px",
+  },
+
+  compactAppointmentService: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 7,
+    color: "#fff",
+    fontSize: 12,
+  },
+
+  compactAppointmentTime: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    color: "#e5e7eb",
+    fontSize: 11,
+  },
+
+  compactAppointmentLabel: {
+    color: "#6b7280",
+    fontSize: 8,
+    fontWeight: 900,
+    letterSpacing: ".10em",
+  },
+
+  compactAppointmentRequested: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    color: "#9ca3af",
+    fontSize: 10,
+  },
+
+  compactAppointmentActions: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 7,
+    flexWrap: "wrap",
+  },
+
+  archiveButtonSmall: {
+    padding: "8px 10px",
+    borderRadius: 9,
+    border: "1px solid rgba(96,165,250,.30)",
+    background: "rgba(59,130,246,.10)",
+    color: "#bfdbfe",
+    cursor: "pointer",
+    fontSize: 10,
+    fontWeight: 800,
+  },
+
+  restoreButtonSmall: {
+    padding: "8px 10px",
+    borderRadius: 9,
+    border: "1px solid rgba(34,197,94,.30)",
+    background: "rgba(34,197,94,.10)",
+    color: "#86efac",
+    cursor: "pointer",
+    fontSize: 10,
+    fontWeight: 800,
+  },
+
+  appointmentDetailsPanel: {
+    padding: "16px 2px 18px",
+    borderTop: "1px solid rgba(255,255,255,.06)",
+  },
+
+  appointmentDetailGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+    gap: 12,
+    marginBottom: 14,
+  },
+
+  compactDetailText: {
+    margin: "5px 0 0",
+    color: "#d1d5db",
+    fontSize: 11,
+    lineHeight: 1.45,
+  },
+
+  compactNoteLine: {
+    marginTop: 8,
+    padding: "9px 10px",
+    borderLeft: "3px solid #334155",
+    background: "rgba(255,255,255,.025)",
+    color: "#cbd5e1",
+    fontSize: 11,
+    lineHeight: 1.5,
+  },
+
+  compactDetailSection: {
+    marginTop: 16,
+  },
+
+  compactChoiceList: {
+    display: "flex",
+    flexDirection: "column",
+    marginTop: 8,
+    borderTop: "1px solid rgba(255,255,255,.08)",
+  },
+
+  compactChoiceRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 14,
+    alignItems: "center",
+    padding: "10px 0",
+    borderBottom: "1px solid rgba(255,255,255,.07)",
+    color: "#e5e7eb",
+    fontSize: 11,
+  },
+
+  compactChoiceNote: {
+    color: "#9ca3af",
+    fontWeight: 400,
+  },
+
+  compactAdminActions: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+    marginTop: 16,
+    paddingTop: 14,
+    borderTop: "1px solid rgba(255,255,255,.08)",
+  },
+
+  careerConnectMetrics: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
+    gap: 12,
+    marginTop: 18,
+  }
+
 };
