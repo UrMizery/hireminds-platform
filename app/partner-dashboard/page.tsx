@@ -6227,9 +6227,9 @@ export default function PartnerDashboardPage() {
                     }
                   >
                     Available appointment times can be edited, hidden,
-                    activated, or deleted. Booked appointments remain manageable:
-                    you can open the request, edit the appointment time, add notes,
-                    reschedule, or cancel without losing admin access.
+                    activated, or deleted. Booked appointments remain manageable.
+                    Once an appointment is completed, archive it to remove it from
+                    this active view without deleting the appointment history.
                   </p>
                 </div>
               </div>
@@ -6239,7 +6239,17 @@ export default function PartnerDashboardPage() {
                   styles.availabilityAdminGrid
                 }
               >
-                {availabilitySlots.map(
+                {availabilitySlots
+                  .filter((slot) => {
+                    if (!slot.booked_request_id) {
+                      return true;
+                    }
+
+                    return !archivedMeetingIds.includes(
+                      slot.booked_request_id
+                    );
+                  })
+                  .map(
                   (
                     slot
                   ) => {
@@ -6271,6 +6281,19 @@ export default function PartnerDashboardPage() {
                         slot.booked_request_id
                       );
 
+                    const bookedRequest =
+                      slot.booked_request_id
+                        ? meetingRequests.find(
+                            (request) =>
+                              request.id ===
+                              slot.booked_request_id
+                          )
+                        : undefined;
+
+                    const completedBooking =
+                      bookedRequest?.status ===
+                      "completed";
+
                     return (
                       <div
                         key={
@@ -6294,18 +6317,22 @@ export default function PartnerDashboardPage() {
                             ...styles.availabilityStatus,
 
                             color:
-                              booked
-                                ? "#fca5a5"
-                                : slot.is_active
-                                  ? "#86efac"
-                                  : "#a1a1aa",
+                              completedBooking
+                                ? "#93c5fd"
+                                : booked
+                                  ? "#fca5a5"
+                                  : slot.is_active
+                                    ? "#86efac"
+                                    : "#a1a1aa",
                           }}
                         >
-                          {booked
-                            ? "● BOOKED"
-                            : slot.is_active
-                              ? "● AVAILABLE"
-                              : "○ HIDDEN"}
+                          {completedBooking
+                            ? "● COMPLETED"
+                            : booked
+                              ? "● BOOKED"
+                              : slot.is_active
+                                ? "● AVAILABLE"
+                                : "○ HIDDEN"}
                         </span>
 
                         <strong
@@ -6379,36 +6406,57 @@ export default function PartnerDashboardPage() {
                             styles.availabilityActions
                           }
                         >
-                          <button
-                            type="button"
-                            onClick={() =>
-                              editAvailability(
-                                slot
-                              )
-                            }
-                            style={
-                              styles.editButtonSmall
-                            }
-                          >
-                            {booked
-                              ? "Edit Time"
-                              : "Edit"}
-                          </button>
-
-                          {booked ? (
+                          {!completedBooking ? (
                             <button
                               type="button"
                               onClick={() =>
-                                openBookedRequest(
-                                  slot.booked_request_id
+                                editAvailability(
+                                  slot
                                 )
                               }
                               style={
-                                styles.secondaryButtonSmall
+                                styles.editButtonSmall
                               }
                             >
-                              Open Appointment
+                              {booked
+                                ? "Edit Time"
+                                : "Edit"}
                             </button>
+                          ) : null}
+
+                          {booked ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openBookedRequest(
+                                    slot.booked_request_id
+                                  )
+                                }
+                                style={
+                                  styles.secondaryButtonSmall
+                                }
+                              >
+                                Open Appointment
+                              </button>
+
+                              {completedBooking &&
+                              bookedRequest ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    archiveMeeting(
+                                      bookedRequest.id
+                                    )
+                                  }
+                                  style={
+                                    styles.archiveButtonSmall
+                                  }
+                                >
+                                  Archive
+                                </button>
+                              ) : null}
+                            </>
                           ) : (
                             <>
                               <button
@@ -6450,9 +6498,9 @@ export default function PartnerDashboardPage() {
                               styles.bookedMessage
                             }
                           >
-                            This time is booked, but you can still edit the
-                            appointment or open the participant request to add
-                            notes, reschedule, complete, or cancel it.
+                            {completedBooking
+                              ? "This appointment is completed. Archive it to remove it from the active Appointment Times view while keeping the appointment history."
+                              : "This time is booked, but you can still edit the appointment or open the participant request to add notes, reschedule, complete, or cancel it."}
                           </div>
                         ) : null}
                       </div>
@@ -6461,8 +6509,13 @@ export default function PartnerDashboardPage() {
                 )}
               </div>
 
-              {availabilitySlots.length ===
-              0 ? (
+              {availabilitySlots.filter(
+                (slot) =>
+                  !slot.booked_request_id ||
+                  !archivedMeetingIds.includes(
+                    slot.booked_request_id
+                  )
+              ).length === 0 ? (
                 <div
                   style={
                     styles.emptyPanel
@@ -7244,13 +7297,6 @@ export default function PartnerDashboardPage() {
                   </strong>{" "}
                   {reportStats.topTool}{" "}
                   ({reportStats.topToolUses} uses)
-                </div>
-              ) : null}
-
-              {hasOptionalMetric("tool_outcomes") && reportStats.lastToolSave ? (
-                <div style={styles.highlightStrip}>
-                  <strong>Most Recent Tool Save / Output:</strong>{" "}
-                  {formatDate(reportStats.lastToolSave)}
                 </div>
               ) : null}
 
