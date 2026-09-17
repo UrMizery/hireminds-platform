@@ -385,7 +385,7 @@ export default function CareerDevelopmentGeneratorPage() {
     setCurrentStatus("submitted");
 
     setMessage(
-      "✓ Career development activity submitted to HireMinds. It is saved with your participant record for reporting."
+      "✓ Activity submitted to HireMinds. It is saved to your participant record and can be reopened under Saved Activities below."
     );
 
     await loadPreviousLogs();
@@ -563,23 +563,9 @@ export default function CareerDevelopmentGeneratorPage() {
 
             <h1>Career Development Generator</h1>
 
-            <p className="intro">
-              Track a career-development activity, reflect on what you gained,
-              and identify your next move. Complete this when you finish an
-              activity — there is no Friday deadline.
-            </p>
           </div>
 
           <div className="heroQuick">
-            <div className="quickItem">
-              <span>PARTICIPANT</span>
-              <strong>{participantName}</strong>
-            </div>
-
-            <div className="quickItem">
-              <span>PROGRAM / CODE</span>
-              <strong>{referralCode || "Not Assigned"}</strong>
-            </div>
 
             <div className="quickProgress">
               <div>
@@ -614,19 +600,6 @@ export default function CareerDevelopmentGeneratorPage() {
                 </p>
               </div>
 
-              <div
-                className={`statusPill ${
-                  currentStatus === "submitted"
-                    ? "statusSubmitted"
-                    : "statusDraft"
-                }`}
-              >
-                {currentStatus === "submitted"
-                  ? "✓ Submitted"
-                  : currentLogId
-                    ? "Saved Draft"
-                    : "New Draft"}
-              </div>
             </div>
 
             <div className="startRow">
@@ -881,20 +854,6 @@ export default function CareerDevelopmentGeneratorPage() {
               </strong>
             </div>
 
-            <div className="snapshotRule" />
-
-            <div className="momentumNote">
-              <span>KEEP IT MOVING</span>
-              <strong>
-                Progress does not have to be dramatic to
-                matter.
-              </strong>
-              <p>
-                Researching, practicing, planning, revising,
-                and making one clear decision all count as
-                career development.
-              </p>
-            </div>
           </aside>
         </section>
 
@@ -1034,7 +993,7 @@ export default function CareerDevelopmentGeneratorPage() {
             minmax(250px, 340px);
           gap: 38px;
           align-items: center;
-          padding: 48px;
+          padding: 34px 40px;
           border-radius: 30px;
           background:
             radial-gradient(
@@ -2075,6 +2034,38 @@ export default function CareerDevelopmentGeneratorPage() {
           font-size: 10px;
         }
 
+
+        /* Cleaned header + snapshot */
+        .compactHero {
+          min-height: 0;
+        }
+
+        .compactHero .heroCopy {
+          align-self: center;
+        }
+
+        .compactHero h1 {
+          max-width: 780px;
+          font-size: clamp(44px, 5.3vw, 68px);
+        }
+
+        .heroQuick {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+        }
+
+        .quickProgress {
+          width: min(100%, 360px);
+        }
+
+        .workspaceIntro {
+          display: block;
+        }
+
+        .snapshot {
+          align-self: start;
+        }
         @media (max-width: 1000px) {
           .hero {
             grid-template-columns: 1fr;
@@ -2115,9 +2106,7 @@ export default function CareerDevelopmentGeneratorPage() {
           }
 
           .snapshotEyebrow,
-          .snapshot h3,
-          .snapshotRule,
-          .momentumNote {
+          .snapshot h3 {
             grid-column: 1 / -1;
           }
 
@@ -2219,9 +2208,7 @@ export default function CareerDevelopmentGeneratorPage() {
           }
 
           .snapshotEyebrow,
-          .snapshot h3,
-          .snapshotRule,
-          .momentumNote {
+          .snapshot h3 {
             grid-column: auto;
           }
 
