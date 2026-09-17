@@ -5,25 +5,12 @@ export const maxDuration = 60;
 
 const MODEL = "claude-sonnet-4-6";
 
-function extractJson(text: string) {
-  const cleaned = text
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch {}
-
-  const first = cleaned.indexOf("{");
-  const last = cleaned.lastIndexOf("}");
-
-  if (first >= 0 && last > first) {
-    return JSON.parse(cleaned.slice(first, last + 1));
-  }
-
-  throw new Error("Unable to read the career coach response.");
-}
+/*
+  Keep the route comfortably inside Vercel's 60-second limit.
+  The previous version aborted at 45 seconds, which is the
+  exact message you were seeing on the page.
+*/
+const ANTHROPIC_TIMEOUT_MS = 52000;
 
 function clamp(value: unknown) {
   const n = Number(value);
@@ -35,7 +22,7 @@ function clamp(value: unknown) {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-function list(value: unknown) {
+function list(value: unknown, max = 5) {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -43,7 +30,7 @@ function list(value: unknown) {
   return value
     .map((item) => String(item ?? "").trim())
     .filter(Boolean)
-    .slice(0, 8);
+    .slice(0, max);
 }
 
 function normalize(data: any) {
@@ -107,75 +94,93 @@ function normalize(data: any) {
     ).trim(),
 
     strongestEvidence: list(
-      data?.strongestEvidence
+      data?.strongestEvidence,
+      5
     ),
 
     requiredQualificationsMet: list(
-      data?.requiredQualificationsMet
+      data?.requiredQualificationsMet,
+      5
     ),
 
     requiredQualificationsUnclear: list(
-      data?.requiredQualificationsUnclear
+      data?.requiredQualificationsUnclear,
+      4
     ),
 
     requiredQualificationsNotFound: list(
-      data?.requiredQualificationsNotFound
+      data?.requiredQualificationsNotFound,
+      4
     ),
 
     preferredQualificationsMet: list(
-      data?.preferredQualificationsMet
+      data?.preferredQualificationsMet,
+      4
     ),
 
     preferredQualificationsNotFound: list(
-      data?.preferredQualificationsNotFound
+      data?.preferredQualificationsNotFound,
+      4
     ),
 
     matchedSkillsKeywords: list(
-      data?.matchedSkillsKeywords
+      data?.matchedSkillsKeywords,
+      5
     ),
 
     missingSkillsKeywords: list(
-      data?.missingSkillsKeywords
+      data?.missingSkillsKeywords,
+      5
     ),
 
     whatIsWorking: list(
-      data?.whatIsWorking
+      data?.whatIsWorking,
+      4
     ),
 
     screenOutRisks: list(
-      data?.screenOutRisks
+      data?.screenOutRisks,
+      4
     ),
 
     resumeQualityFlags: list(
-      data?.resumeQualityFlags
+      data?.resumeQualityFlags,
+      4
     ),
 
     fixFirst: list(
-      data?.fixFirst
-    ).slice(0, 5),
+      data?.fixFirst,
+      4
+    ),
 
     tailoringRecommendations: list(
-      data?.tailoringRecommendations
+      data?.tailoringRecommendations,
+      5
     ),
 
     doNotInvent: list(
-      data?.doNotInvent
+      data?.doNotInvent,
+      4
     ),
 
     coverLetterStrategy: list(
-      data?.coverLetterStrategy
+      data?.coverLetterStrategy,
+      4
     ),
 
     interviewReadiness: list(
-      data?.interviewReadiness
+      data?.interviewReadiness,
+      4
     ),
 
     likelyInterviewQuestions: list(
-      data?.likelyInterviewQuestions
-    ).slice(0, 6),
+      data?.likelyInterviewQuestions,
+      4
+    ),
 
     concernsToPrepareFor: list(
-      data?.concernsToPrepareFor
+      data?.concernsToPrepareFor,
+      4
     ),
 
     nextMove: String(
@@ -188,192 +193,114 @@ function normalize(data: any) {
   };
 }
 
-export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    route: "job-match-analyzer-ai",
-    configured: Boolean(
-      process.env.ANTHROPIC_API_KEY
-    ),
-    model: MODEL,
-  });
+/*
+  Preserve both the beginning and end of longer text.
+  Job requirements are often near the bottom of postings,
+  while resume education/certifications are often near the end.
+*/
+function trimForModel(
+  value: string,
+  maxChars = 7500
+) {
+  if (value.length <= maxChars) {
+    return value;
+  }
+
+  const endChars = 1800;
+  const startChars =
+    maxChars - endChars;
+
+  return [
+    value.slice(0, startChars),
+    "\n\n[...middle shortened for analysis speed...]\n\n",
+    value.slice(-endChars),
+  ].join("");
 }
 
-export async function POST(
-  req: NextRequest
-) {
-  const controller = new AbortController();
+function buildPrompt({
+  jobTitle,
+  jobDescription,
+  resumeText,
+  resumeMetadata,
+}: {
+  jobTitle: string;
+  jobDescription: string;
+  resumeText: string;
+  resumeMetadata: any;
+}) {
+  return `
+<job_description>
+${jobDescription}
+</job_description>
 
-  /*
-    Stop our Anthropic request BEFORE
-    Vercel kills the entire function.
-  */
-  const timeout = setTimeout(() => {
-    controller.abort();
-  }, 45000);
+<resume>
+${resumeText}
+</resume>
 
-  try {
-    const apiKey =
-      process.env.ANTHROPIC_API_KEY;
+<resume_metadata>
+file_name: ${resumeMetadata?.fileName ?? "unknown"}
+page_count: ${resumeMetadata?.pageCount ?? "unknown"}
+has_image: ${resumeMetadata?.hasImage ?? "unknown"}
+image_count: ${resumeMetadata?.imageCount ?? "unknown"}
+</resume_metadata>
 
-    if (!apiKey) {
-      return NextResponse.json(
-        {
-          error:
-            "Job Match Analyzer AI is not configured.",
-        },
-        { status: 500 }
-      );
-    }
-
-    const body = await req.json();
-
-    const jobTitle =
-      String(
-        body?.jobTitle || ""
-      ).trim();
-
-    const jobDescription =
-      String(
-        body?.jobDescription || ""
-      ).trim();
-
-    const resumeText =
-      String(
-        body?.resumeText || ""
-      ).trim();
-
-    const resumeMetadata =
-      body?.resumeMetadata ?? {};
-
-    if (jobDescription.length < 80) {
-      return NextResponse.json(
-        {
-          error:
-            "Please provide a complete job description.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (resumeText.length < 80) {
-      return NextResponse.json(
-        {
-          error:
-            "Please provide a readable resume.",
-        },
-        { status: 400 }
-      );
-    }
-
-    /*
-      Keep input controlled so a very long
-      resume or posting doesn't slow the route.
-    */
-    const trimmedJob =
-      jobDescription.slice(0, 10000);
-
-    const trimmedResume =
-      resumeText.slice(0, 10000);
-
-    const prompt = `
+<task>
 You are the HireMinds Career Coach.
 
-Compare ONE resume to ONE job description.
+Compare this ONE resume to this ONE job description.
 
-Your job is to provide:
-- ATS-style screening
-- qualification analysis
-- resume strategy
-- job-fit guidance
-- interview preparation
+Job title:
+${jobTitle || "Not provided"}
 
-TRUTH RULES
-
-Never invent:
-experience, skills, certifications, licenses,
-education, job titles, dates, software,
-accomplishments, or qualifications.
-
-"Not found on the resume" does NOT mean
-the candidate does not possess it.
-
-Required qualifications matter more than
-preferred qualifications.
-
-Recognize legitimate transferable experience.
-
-Do not reward keyword stuffing.
-
-A missing preferred qualification should not
-automatically make someone unqualified.
-
-A mandatory missing credential or qualification
-must be treated as a major concern.
-
-SCORING
-
-Required Qualifications = 30%
-Experience Alignment = 20%
-Skills Alignment = 15%
-Preferred Qualifications = 10%
-Education / Certifications = 10%
-Keywords / Terminology = 5%
-Resume / ATS Structure = 10%
-
-Use real 0-100 scores.
-
-Do not artificially inflate or cap scores.
-
-RECOMMENDATION
-
-Choose the most appropriate:
-
-APPLY NOW
-APPLY AFTER REVISING
-APPLY, BUT PREPARE TO EXPLAIN GAPS
-RESEARCH / VERIFY REQUIREMENTS FIRST
-SIGNIFICANT GAPS — CONSIDER A DIFFERENT ROLE
-BUILD QUALIFICATIONS BEFORE APPLYING
-
-The recommendation must consider the actual
-importance of missing qualifications, not only
-the overall percentage.
-
-COACHING
-
-Be specific.
-
-Tell the candidate:
-- whether they are reasonably qualified
-- their competitive position
-- what the employer may notice first
-- strongest evidence of fit
-- required qualifications met
-- required qualifications unclear
-- required qualifications not found
-- preferred qualifications met
-- preferred qualifications not found
-- matched skills and keywords
-- missing or weakly represented skills
-- what is working
-- what could screen them out
-- resume / ATS concerns
-- what to fix first
-- how to tailor the resume truthfully
-- what NOT to invent
-- cover letter strategy
+Evaluate:
+- required qualifications
+- experience alignment
+- skills alignment
+- preferred qualifications
+- education and certifications
+- keywords and terminology
+- resume / ATS structure
+- likely screen-out concerns
+- truthful tailoring opportunities
 - interview readiness
-- likely interview questions
-- concerns to prepare for
-- best next move
 
-Keep each list concise.
-Do not generate essays.
+Truth rules:
+- Never invent experience, skills, certifications, licenses,
+  education, job titles, dates, software, accomplishments,
+  or qualifications.
+- "Not found on the resume" does not mean the candidate
+  does not possess it.
+- Required qualifications matter more than preferred ones.
+- Recognize legitimate transferable experience.
+- Do not reward keyword stuffing.
+- A mandatory missing credential or qualification is a
+  major concern.
 
-Return ONLY valid JSON.
+Scoring weights:
+- Required Qualifications: 30%
+- Experience Alignment: 20%
+- Skills Alignment: 15%
+- Preferred Qualifications: 10%
+- Education / Certifications: 10%
+- Keywords / Terminology: 5%
+- Resume / ATS Structure: 10%
 
-Use exactly this structure:
+Recommendation must be exactly one of:
+- APPLY NOW
+- APPLY AFTER REVISING
+- APPLY, BUT PREPARE TO EXPLAIN GAPS
+- RESEARCH / VERIFY REQUIREMENTS FIRST
+- SIGNIFICANT GAPS — CONSIDER A DIFFERENT ROLE
+- BUILD QUALIFICATIONS BEFORE APPLYING
+
+Keep the response concise:
+- narrative fields: 1-2 short sentences
+- list fields: no more than 4-5 concise items
+- no essays
+- return ONLY valid JSON
+- do not wrap JSON in markdown
+
+Use exactly these keys:
 
 {
   "overallMatch": 0,
@@ -413,35 +340,158 @@ Use exactly this structure:
   "nextMove": "",
   "coachingSummary": ""
 }
+</task>
+  `.trim();
+}
 
-JOB TITLE
+function extractJson(text: string) {
+  const cleaned = text
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
 
-${jobTitle || "Not provided"}
+  try {
+    return JSON.parse(cleaned);
+  } catch {}
 
-JOB DESCRIPTION
+  const first =
+    cleaned.indexOf("{");
 
-${trimmedJob}
+  const last =
+    cleaned.lastIndexOf("}");
 
-RESUME
+  if (
+    first >= 0 &&
+    last > first
+  ) {
+    return JSON.parse(
+      cleaned.slice(
+        first,
+        last + 1
+      )
+    );
+  }
 
-${trimmedResume}
+  throw new Error(
+    "Unable to read the career coach response."
+  );
+}
 
-RESUME METADATA
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    route:
+      "job-match-analyzer-ai",
+    configured: Boolean(
+      process.env.ANTHROPIC_API_KEY
+    ),
+    model: MODEL,
+    maxDuration,
+    timeoutMs:
+      ANTHROPIC_TIMEOUT_MS,
+  });
+}
 
-${JSON.stringify({
-  fileName:
-    resumeMetadata?.fileName ?? null,
+export async function POST(
+  req: NextRequest
+) {
+  const controller =
+    new AbortController();
 
-  pageCount:
-    resumeMetadata?.pageCount ?? null,
+  const timeout =
+    setTimeout(() => {
+      controller.abort();
+    }, ANTHROPIC_TIMEOUT_MS);
 
-  hasImage:
-    resumeMetadata?.hasImage ?? null,
+  try {
+    const apiKey =
+      process.env.ANTHROPIC_API_KEY;
 
-  imageCount:
-    resumeMetadata?.imageCount ?? null,
-})}
-`.trim();
+    if (!apiKey) {
+      return NextResponse.json(
+        {
+          error:
+            "Job Match Analyzer AI is not configured.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    const body =
+      await req.json();
+
+    const jobTitle =
+      String(
+        body?.jobTitle || ""
+      ).trim();
+
+    const rawJobDescription =
+      String(
+        body?.jobDescription || ""
+      ).trim();
+
+    const rawResumeText =
+      String(
+        body?.resumeText || ""
+      ).trim();
+
+    const resumeMetadata =
+      body?.resumeMetadata ?? {};
+
+    if (
+      rawJobDescription.length <
+      80
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Please provide a complete job description.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      rawResumeText.length <
+      80
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Please provide a readable resume.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const jobDescription =
+      trimForModel(
+        rawJobDescription,
+        7500
+      );
+
+    const resumeText =
+      trimForModel(
+        rawResumeText,
+        7500
+      );
+
+    const prompt =
+      buildPrompt({
+        jobTitle,
+        jobDescription,
+        resumeText,
+        resumeMetadata,
+      });
+
+    const startedAt =
+      Date.now();
 
     const anthropic =
       await fetch(
@@ -449,7 +499,8 @@ ${JSON.stringify({
         {
           method: "POST",
 
-          signal: controller.signal,
+          signal:
+            controller.signal,
 
           headers: {
             "Content-Type":
@@ -462,37 +513,56 @@ ${JSON.stringify({
               "2023-06-01",
           },
 
-          body: JSON.stringify({
-            model: MODEL,
+          body:
+            JSON.stringify({
+              model: MODEL,
 
-            /*
-              We do not need a 6000-token answer.
-              Shorter output = faster response.
-            */
-            max_tokens: 2200,
+              /*
+                The original route allowed 2200 output tokens.
+                This analyzer asks for concise coaching, so
+                1600 is enough and reduces generation time.
+              */
+              max_tokens: 1600,
 
-            temperature: 0.1,
+              temperature: 0.1,
 
-            messages: [
-              {
-                role: "user",
-                content: prompt,
-              },
-            ],
-          }),
+              messages: [
+                {
+                  role: "user",
+                  content: prompt,
+                },
+              ],
+            }),
         }
       );
 
     clearTimeout(timeout);
+
+    const elapsedMs =
+      Date.now() - startedAt;
+
+    const requestId =
+      anthropic.headers.get(
+        "request-id"
+      ) ||
+      anthropic.headers.get(
+        "x-request-id"
+      ) ||
+      null;
 
     const raw =
       await anthropic.text();
 
     if (!anthropic.ok) {
       console.error(
-        "Anthropic error:",
-        anthropic.status,
-        raw
+        "Anthropic Job Match error:",
+        {
+          status:
+            anthropic.status,
+          requestId,
+          elapsedMs,
+          raw,
+        }
       );
 
       let message =
@@ -507,61 +577,179 @@ ${JSON.stringify({
           message;
       } catch {}
 
+      /*
+        Give the participant a useful message for
+        provider overload/rate-limit conditions.
+      */
+      if (
+        anthropic.status ===
+        429
+      ) {
+        message =
+          "The Job Match Analyzer is receiving a lot of requests right now. Please wait a moment and try again.";
+      }
+
+      if (
+        anthropic.status ===
+        529
+      ) {
+        message =
+          "The AI service is temporarily busy. Please try the analysis again in a moment.";
+      }
+
       return NextResponse.json(
         {
           error: message,
+          requestId,
         },
-        { status: 502 }
+        {
+          status:
+            anthropic.status ===
+            429
+              ? 429
+              : 502,
+        }
       );
     }
 
-    let data: any;
+    let envelope: any;
 
     try {
-      data = JSON.parse(raw);
+      envelope =
+        JSON.parse(raw);
     } catch {
       console.error(
-        "Unreadable Anthropic response:",
-        raw
+        "Unreadable Anthropic envelope:",
+        {
+          requestId,
+          elapsedMs,
+          raw,
+        }
       );
 
       return NextResponse.json(
         {
           error:
             "The AI service returned an unreadable response.",
+          requestId,
         },
-        { status: 502 }
+        {
+          status: 502,
+        }
       );
     }
 
     const output =
-      Array.isArray(data?.content)
-        ? data.content
+      Array.isArray(
+        envelope?.content
+      )
+        ? envelope.content
             .filter(
               (block: any) =>
-                block?.type === "text"
+                block?.type ===
+                "text"
             )
             .map(
               (block: any) =>
                 String(
-                  block?.text || ""
+                  block?.text ||
+                    ""
                 )
             )
             .join("\n")
         : "";
 
     if (!output.trim()) {
+      console.error(
+        "Empty Anthropic output:",
+        {
+          requestId,
+          elapsedMs,
+          stopReason:
+            envelope?.stop_reason,
+        }
+      );
+
       return NextResponse.json(
         {
           error:
             "No career coach analysis was returned.",
+          requestId,
         },
-        { status: 502 }
+        {
+          status: 502,
+        }
       );
     }
 
-    const parsed =
-      extractJson(output);
+    /*
+      If max_tokens was hit, the JSON may be cut off.
+      Return a clearer error instead of a mysterious parse failure.
+    */
+    if (
+      envelope?.stop_reason ===
+      "max_tokens"
+    ) {
+      console.error(
+        "Job Match output hit max_tokens:",
+        {
+          requestId,
+          elapsedMs,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "The analysis was too long to finish. Please try again with a slightly shorter job description.",
+          requestId,
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
+    let parsed: any;
+
+    try {
+      parsed =
+        extractJson(output);
+    } catch (error) {
+      console.error(
+        "Unable to parse Job Match JSON:",
+        {
+          requestId,
+          elapsedMs,
+          output,
+          error,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "The Job Match Analyzer received an incomplete AI response. Please try again.",
+          requestId,
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
+    console.log(
+      "Job Match Analyzer completed:",
+      {
+        requestId,
+        elapsedMs,
+        model: MODEL,
+        jobChars:
+          jobDescription.length,
+        resumeChars:
+          resumeText.length,
+      }
+    );
 
     return NextResponse.json(
       normalize(parsed)
@@ -570,18 +758,23 @@ ${JSON.stringify({
     clearTimeout(timeout);
 
     if (
-      error?.name === "AbortError"
+      error?.name ===
+      "AbortError"
     ) {
       console.error(
-        "Job Match Analyzer timed out waiting for Anthropic."
+        "Job Match Analyzer timed out waiting for Anthropic after",
+        ANTHROPIC_TIMEOUT_MS,
+        "ms"
       );
 
       return NextResponse.json(
         {
           error:
-            "The career coach analysis took too long. Please try again.",
+            "The Job Match Analyzer is taking longer than expected. Please try again. If it happens again, shorten the job description slightly.",
         },
-        { status: 504 }
+        {
+          status: 504,
+        }
       );
     }
 
@@ -596,7 +789,9 @@ ${JSON.stringify({
           error?.message ||
           "Unable to complete the Job Match analysis.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
