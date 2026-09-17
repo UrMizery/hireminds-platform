@@ -453,16 +453,17 @@ export default function ProfilePage() {
           <div style={st.connectHeader}>
             <div>
               <p style={st.eyebrow}>CONNECT & EXPLORE</p>
-              <h2 style={st.connectTitle}>Career & Connect</h2>
+              <h2 style={st.connectTitle}>Career <span style={st.connectTitleAccent}>& Connect</span></h2>
               <p style={st.connectIntro}>
-                Career support, weekly development, and job-search tracking — all in one place.
+                Your career support, weekly development, and job-search tracking — connected in one place.
               </p>
             </div>
           </div>
 
           <div style={st.toolGrid}>
             <ToolCard
-              href="/career-connect"
+              href="/open-room/live"
+              symbol="◎"
               kicker="CAREER SUPPORT"
               title="Career Connect"
               description="Request career support, manage appointments, confirm or reschedule meetings, and check in for scheduled services."
@@ -472,6 +473,7 @@ export default function ProfilePage() {
 
             <ToolCard
               href="/career-development-generator"
+              symbol="✦"
               kicker="WEEKLY DEVELOPMENT"
               title="Career Development Generator"
               description="Complete your weekly career-development activity, save your progress, and document your next step."
@@ -480,6 +482,7 @@ export default function ProfilePage() {
 
             <ToolCard
               href="/job-log-generator"
+              symbol="✓"
               kicker="JOB SEARCH"
               title="Weekly Job Log"
               description="Track job opportunities, applications, outcomes, and the positions you are most interested in."
@@ -550,6 +553,7 @@ function TextAreaField({
 
 function ToolCard({
   href,
+  symbol,
   kicker,
   title,
   description,
@@ -557,6 +561,7 @@ function ToolCard({
   featured = false,
 }: {
   href: string;
+  symbol: string;
   kicker: string;
   title: string;
   description: string;
@@ -588,6 +593,15 @@ function ToolCard({
           >
             →
           </span>
+        </div>
+
+        <div
+          style={{
+            ...st.toolSymbol,
+            ...(featured ? st.toolSymbolFeatured : {}),
+          }}
+        >
+          {symbol}
         </div>
 
         {featured ? (
@@ -1152,59 +1166,64 @@ const st: Record<string, CSSProperties> = {
   connectSection: {
     position: "relative",
     overflow: "hidden",
-    padding: "34px",
+    padding: "38px",
     borderRadius: "30px",
     background:
-      "linear-gradient(130deg, #0e171f 0%, #12344a 58%, #176fae 125%)",
-    border: "1px solid rgba(17,78,117,.22)",
-    boxShadow: "0 22px 55px rgba(18,52,74,.14)",
+      "linear-gradient(145deg, #f9fbfc 0%, #eef5f9 52%, #e6f1f8 100%)",
+    border: "1px solid #cbd9e2",
+    boxShadow: "0 22px 58px rgba(18,52,74,.11)",
   },
 
   connectGlowOne: {
     position: "absolute",
-    width: "360px",
-    height: "360px",
-    right: "-140px",
-    top: "-210px",
+    width: "440px",
+    height: "440px",
+    right: "-180px",
+    top: "-260px",
     borderRadius: "50%",
     background:
-      "radial-gradient(circle, rgba(87,184,240,.30) 0%, rgba(87,184,240,0) 68%)",
+      "radial-gradient(circle, rgba(47,150,211,.22) 0%, rgba(47,150,211,0) 68%)",
     pointerEvents: "none",
   },
 
   connectGlowTwo: {
     position: "absolute",
-    width: "250px",
-    height: "250px",
-    left: "-100px",
-    bottom: "-160px",
+    width: "320px",
+    height: "320px",
+    left: "-150px",
+    bottom: "-210px",
     borderRadius: "50%",
     background:
-      "radial-gradient(circle, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 70%)",
+      "radial-gradient(circle, rgba(17,24,32,.08) 0%, rgba(17,24,32,0) 70%)",
     pointerEvents: "none",
   },
 
   connectHeader: {
     position: "relative",
     zIndex: 2,
-    padding: "0 2px 8px",
+    padding: "0 2px 4px",
+    maxWidth: "820px",
   },
 
   connectTitle: {
     margin: 0,
-    color: "#ffffff",
-    fontSize: "clamp(34px,5vw,52px)",
-    lineHeight: 1,
+    color: "#111820",
+    fontSize: "clamp(38px,5.4vw,58px)",
+    lineHeight: .96,
     fontWeight: 950,
-    letterSpacing: "-.045em",
+    letterSpacing: "-.05em",
+  },
+
+  connectTitleAccent: {
+    color: "#176fae",
   },
 
   connectIntro: {
-    maxWidth: "660px",
-    margin: "10px 0 0",
-    color: "#c4d5df",
+    maxWidth: "700px",
+    margin: "12px 0 0",
+    color: "#566570",
     fontSize: "13px",
-    lineHeight: 1.65,
+    lineHeight: 1.7,
   },
 
   toolGrid: {
@@ -1212,37 +1231,40 @@ const st: Record<string, CSSProperties> = {
     zIndex: 2,
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
-    gap: "14px",
-    marginTop: "19px",
+    gap: "16px",
+    marginTop: "24px",
+    alignItems: "stretch",
   },
 
   toolLink: {
+    display: "flex",
     color: "inherit",
     textDecoration: "none",
+    minWidth: 0,
   },
 
   toolCard: {
     position: "relative",
-    overflow: "hidden",
-    height: "100%",
-    minHeight: "215px",
+    width: "100%",
+    minHeight: "292px",
     padding: "24px",
+    boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
-    borderRadius: "20px",
+    borderRadius: "22px",
     background:
-      "linear-gradient(180deg, #ffffff 0%, #f3f8fb 100%)",
-    border: "1px solid rgba(255,255,255,.76)",
-    borderTop: "4px solid #5db4e5",
-    boxShadow: "0 16px 34px rgba(0,0,0,.16)",
+      "linear-gradient(160deg, #ffffff 0%, #f7fafc 68%, #edf5fa 100%)",
+    border: "1px solid #c7d6df",
+    borderTop: "4px solid #58afe0",
+    boxShadow: "0 16px 34px rgba(18,52,74,.09)",
   },
 
   toolCardFeatured: {
     background:
-      "linear-gradient(145deg, #07131c 0%, #0f3954 54%, #1681bd 125%)",
-    border: "1px solid rgba(113,203,251,.30)",
-    borderTop: "4px solid #7fd0ff",
-    boxShadow: "0 20px 42px rgba(0,0,0,.26)",
+      "linear-gradient(145deg, #0a1720 0%, #103b56 58%, #176fae 135%)",
+    border: "1px solid rgba(77,164,214,.40)",
+    borderTop: "4px solid #71c8f4",
+    boxShadow: "0 20px 46px rgba(14,48,69,.24)",
   },
 
   toolCardTop: {
@@ -1256,29 +1278,60 @@ const st: Record<string, CSSProperties> = {
     color: "#176fae",
     fontSize: "8px",
     fontWeight: 950,
-    letterSpacing: ".13em",
+    letterSpacing: ".14em",
   },
 
   toolKickerFeatured: {
-    color: "#7fc5ec",
+    color: "#82c9ef",
   },
 
   toolArrow: {
+    width: "32px",
+    height: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "50%",
+    backgroundColor: "#e8f3fa",
     color: "#176fae",
-    fontSize: "19px",
+    fontSize: "17px",
+    fontWeight: 800,
   },
 
   toolArrowFeatured: {
+    backgroundColor: "rgba(255,255,255,.10)",
+    color: "#ffffff",
+    border: "1px solid rgba(255,255,255,.14)",
+  },
+
+  toolSymbol: {
+    width: "48px",
+    height: "48px",
+    marginTop: "22px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "15px",
+    backgroundColor: "#e8f3fa",
+    border: "1px solid #c8dfec",
+    color: "#176fae",
+    fontSize: "21px",
+    fontWeight: 950,
+  },
+
+  toolSymbolFeatured: {
+    backgroundColor: "rgba(255,255,255,.09)",
+    border: "1px solid rgba(255,255,255,.15)",
     color: "#ffffff",
   },
 
   featuredBadge: {
     alignSelf: "flex-start",
-    marginTop: "18px",
+    marginTop: "14px",
     padding: "6px 9px",
     borderRadius: "999px",
-    backgroundColor: "rgba(255,255,255,.10)",
-    border: "1px solid rgba(255,255,255,.18)",
+    backgroundColor: "rgba(255,255,255,.09)",
+    border: "1px solid rgba(255,255,255,.16)",
     color: "#dff4ff",
     fontSize: "7px",
     fontWeight: 950,
@@ -1286,12 +1339,12 @@ const st: Record<string, CSSProperties> = {
   },
 
   toolTitle: {
-    margin: "16px 0 0",
+    margin: "17px 0 0",
     color: "#111820",
-    fontSize: "23px",
-    lineHeight: 1.08,
+    fontSize: "24px",
+    lineHeight: 1.05,
     fontWeight: 950,
-    letterSpacing: "-.025em",
+    letterSpacing: "-.03em",
   },
 
   toolTitleFeatured: {
@@ -1300,9 +1353,9 @@ const st: Record<string, CSSProperties> = {
 
   toolDescription: {
     margin: "10px 0 0",
-    color: "#65717b",
+    color: "#61707a",
     fontSize: "11px",
-    lineHeight: 1.65,
+    lineHeight: 1.68,
   },
 
   toolDescriptionFeatured: {
@@ -1310,15 +1363,21 @@ const st: Record<string, CSSProperties> = {
   },
 
   toolAction: {
+    alignSelf: "flex-start",
     marginTop: "auto",
-    paddingTop: "24px",
+    padding: "10px 13px",
+    borderRadius: "10px",
+    backgroundColor: "#e8f3fa",
+    border: "1px solid #c7deeb",
     color: "#176fae",
-    fontSize: "10px",
+    fontSize: "9px",
     fontWeight: 950,
   },
 
   toolActionFeatured: {
-    color: "#ffffff",
+    backgroundColor: "#ffffff",
+    border: "1px solid #ffffff",
+    color: "#12344a",
   },
 
   footer: {
