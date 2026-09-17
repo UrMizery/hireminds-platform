@@ -106,7 +106,7 @@ export default function CareerDevelopmentGeneratorPage() {
   ======================================================= */
 
   const [weekEnding, setWeekEnding] = useState("");
-  const [activityType, setActivityType] = useState("");
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [completed, setCompleted] = useState("");
   const [learnedAccomplished, setLearnedAccomplished] = useState("");
   const [nextStep, setNextStep] = useState("");
@@ -235,9 +235,9 @@ export default function CareerDevelopmentGeneratorPage() {
       return false;
     }
 
-    if (!activityType) {
+    if (selectedActivities.length === 0) {
       setMessage(
-        "Please choose one career development activity."
+        "Please choose at least one career development activity."
       );
       return false;
     }
@@ -288,7 +288,7 @@ export default function CareerDevelopmentGeneratorPage() {
       participant_email: participantEmail,
       referral_code: referralCode || null,
       week_ending: weekEnding,
-      activity_type: activityType,
+      activity_type: selectedActivities.join(" | "),
       completed: completed.trim() || null,
       learned_accomplished:
         learnedAccomplished.trim() || null,
@@ -316,7 +316,7 @@ export default function CareerDevelopmentGeneratorPage() {
     setCurrentStatus("draft");
 
     setMessage(
-      "✓ Draft saved. You can return and finish this log later."
+      "✓ Draft saved. It stays in Previous Weekly Logs until you reopen and submit it."
     );
 
     await loadPreviousLogs();
@@ -344,7 +344,7 @@ export default function CareerDevelopmentGeneratorPage() {
       participant_email: participantEmail,
       referral_code: referralCode || null,
       week_ending: weekEnding,
-      activity_type: activityType,
+      activity_type: selectedActivities.join(" | "),
       completed: completed.trim(),
       learned_accomplished:
         learnedAccomplished.trim(),
@@ -387,7 +387,7 @@ export default function CareerDevelopmentGeneratorPage() {
     setCurrentStatus("submitted");
 
     setMessage(
-      "✓ Weekly Career Development Log submitted successfully."
+      "✓ Weekly Career Development Log submitted to HireMinds. It is now saved with your participant record and appears below under Previous Weekly Logs."
     );
 
     await loadPreviousLogs();
@@ -403,7 +403,11 @@ export default function CareerDevelopmentGeneratorPage() {
     setCurrentLogId(log.id);
     setCurrentStatus(log.status);
     setWeekEnding(log.week_ending);
-    setActivityType(log.activity_type);
+    setSelectedActivities(
+      log.activity_type
+        ? log.activity_type.split(" | ").filter(Boolean)
+        : []
+    );
     setCompleted(log.completed || "");
     setLearnedAccomplished(
       log.learned_accomplished || ""
@@ -429,7 +433,7 @@ export default function CareerDevelopmentGeneratorPage() {
     setCurrentLogId(null);
     setCurrentStatus("draft");
     setWeekEnding("");
-    setActivityType("");
+    setSelectedActivities([]);
     setCompleted("");
     setLearnedAccomplished("");
     setNextStep("");
@@ -452,7 +456,7 @@ export default function CareerDevelopmentGeneratorPage() {
   const progress = useMemo(() => {
     const checks = [
       Boolean(weekEnding),
-      Boolean(activityType),
+      selectedActivities.length > 0,
       Boolean(completed.trim()),
       Boolean(learnedAccomplished.trim()),
       Boolean(nextStep.trim()),
@@ -464,7 +468,7 @@ export default function CareerDevelopmentGeneratorPage() {
     );
   }, [
     weekEnding,
-    activityType,
+    selectedActivities,
     completed,
     learnedAccomplished,
     nextStep,
@@ -488,9 +492,14 @@ export default function CareerDevelopmentGeneratorPage() {
     (log) => log.status === "submitted"
   ).length;
 
-  const selectedActivity = ACTIVITY_OPTIONS.find(
-    (activity) => activity.title === activityType
-  );
+  function toggleActivity(title: string) {
+    setSelectedActivities((current) =>
+      current.includes(title)
+        ? current.filter((item) => item !== title)
+        : [...current, title]
+    );
+    setMessage("");
+  }
 
   function formatWeekEnding(value: string) {
     if (!value) return "Not selected";
@@ -569,9 +578,10 @@ export default function CareerDevelopmentGeneratorPage() {
             </h1>
 
             <p className="intro">
-              Use this space to document what you worked on,
-              what you learned, and the next move you want to
-              make. Small progress still counts.
+              If you are not actively job searching, use this weekly log
+              to document career-development work instead of a Weekly Job Log.
+              Choose everything you worked on, reflect on the progress, and
+              submit it when the week is complete.
             </p>
 
             <div className="heroMeta">
@@ -638,8 +648,8 @@ export default function CareerDevelopmentGeneratorPage() {
                 </h2>
 
                 <p>
-                  Choose a week, select one activity, then
-                  capture what happened and what comes next.
+                  Choose the week, select every activity you worked on,
+                  then answer the three short reflection questions.
                 </p>
               </div>
 
@@ -675,12 +685,14 @@ export default function CareerDevelopmentGeneratorPage() {
               <div className="currentFocus">
                 <span>CURRENT FOCUS</span>
                 <strong>
-                  {selectedActivity?.title ||
-                    "Choose an activity below"}
+                  {selectedActivities.length > 0
+                    ? `${selectedActivities.length} selected`
+                    : "Choose one or more activities below"}
                 </strong>
                 <p>
-                  {selectedActivity?.description ||
-                    "Pick the career-development activity that best represents what you worked on this week."}
+                  {selectedActivities.length > 0
+                    ? selectedActivities.join(" • ")
+                    : "Select everything that represents what you worked on this week."}
                 </p>
               </div>
             </div>
@@ -690,22 +702,22 @@ export default function CareerDevelopmentGeneratorPage() {
             <div className="activityHeading">
               <div>
                 <p className="eyebrow">
-                  CHOOSE YOUR FOCUS
+                  YOUR WEEK
                 </p>
 
                 <h3>
-                  What did you work on?
+                  What did you work on this week?
                 </h3>
               </div>
 
-              <span>Choose one</span>
+              <span>Select all that apply</span>
             </div>
 
             <div className="activityGrid">
               {ACTIVITY_OPTIONS.map(
                 (activity) => {
                   const selected =
-                    activityType === activity.title;
+                    selectedActivities.includes(activity.title);
 
                   return (
                     <button
@@ -717,7 +729,7 @@ export default function CareerDevelopmentGeneratorPage() {
                           : ""
                       }`}
                       onClick={() =>
-                        setActivityType(
+                        toggleActivity(
                           activity.title
                         )
                       }
@@ -753,7 +765,7 @@ export default function CareerDevelopmentGeneratorPage() {
               </p>
 
               <h3>
-                Turn the activity into a next step.
+                Tell us what happened and what comes next.
               </h3>
 
               <p>
@@ -847,7 +859,7 @@ export default function CareerDevelopmentGeneratorPage() {
                 className="newBtn"
                 onClick={startNewLog}
               >
-                + New Log
+                + Start New Weekly Log
               </button>
 
               <div className="rightActions">
@@ -891,10 +903,11 @@ export default function CareerDevelopmentGeneratorPage() {
             </div>
 
             <div className="snapshotItem">
-              <span>Activity</span>
+              <span>Activities</span>
               <strong>
-                {selectedActivity?.title ||
-                  "Not selected"}
+                {selectedActivities.length > 0
+                  ? selectedActivities.join(", ")
+                  : "Not selected"}
               </strong>
             </div>
 
@@ -932,12 +945,13 @@ export default function CareerDevelopmentGeneratorPage() {
               </p>
 
               <h2>
-                Career Development History
+                Previous Weekly Logs
               </h2>
 
               <p>
-                Open a previous log to review it or continue
-                working on a draft.
+                Submitted logs and saved drafts stay here so you can review
+                what you worked on from week to week. Submitted logs are also
+                stored with your HireMinds participant record for partner reporting.
               </p>
             </div>
 
