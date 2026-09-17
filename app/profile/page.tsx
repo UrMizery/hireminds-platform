@@ -462,7 +462,7 @@ export default function ProfilePage() {
 
           <div style={st.toolGrid}>
             <ToolCard
-              href="/open-room/live"
+              href="/career-connect"
               symbol="◎"
               kicker="CAREER SUPPORT"
               title="Career Connect"
