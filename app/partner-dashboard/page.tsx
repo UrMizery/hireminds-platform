@@ -3750,82 +3750,56 @@ export default function PartnerDashboardPage() {
     setMessage("");
 
     try {
-      const files = getRequestFiles(request.id);
+      /*
+        IMPORTANT:
+        Meeting records are protected by Supabase RLS.
+        Permanent deletion is performed by a secure server route
+        after the current signed-in admin is verified.
+      */
+      const {
+        data: sessionData,
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-      if (files.length > 0) {
-        const filePaths = files
-          .map((file) => file.file_path)
-          .filter(Boolean);
+      const accessToken = sessionData.session?.access_token;
 
-        if (filePaths.length > 0) {
-          const { error: storageError } = await supabase.storage
-            .from("meeting-request-files")
-            .remove(filePaths);
+      if (sessionError || !accessToken) {
+        throw new Error(
+          "Your admin session could not be verified. Please sign in again."
+        );
+      }
 
-          if (storageError) {
-            console.error(
-              "Could not remove one or more meeting files from storage:",
-              storageError
-            );
-          }
+      const response = await fetch(
+        "/api/admin/meeting-requests/delete",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            requestId: request.id,
+          }),
         }
+      );
+
+      const raw = await response.text();
+
+      let result: {
+        ok?: boolean;
+        error?: string;
+      } = {};
+
+      try {
+        result = raw ? JSON.parse(raw) : {};
+      } catch {
+        result = {};
       }
 
-      const { error: releaseSlotError } = await supabase
-        .from("availability_slots")
-        .update({
-          booked_request_id: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("booked_request_id", request.id);
-
-      if (releaseSlotError) {
+      if (!response.ok || !result.ok) {
         throw new Error(
-          `Could not release the appointment time: ${releaseSlotError.message}`
-        );
-      }
-
-      const { error: choicesError } = await supabase
-        .from("meeting_request_choices")
-        .delete()
-        .eq("request_id", request.id);
-
-      if (choicesError) {
-        throw new Error(
-          `Could not remove preferred appointment times: ${choicesError.message}`
-        );
-      }
-
-      const { error: attachmentsError } = await supabase
-        .from("meeting_request_attachments")
-        .delete()
-        .eq("request_id", request.id);
-
-      if (attachmentsError) {
-        throw new Error(
-          `Could not remove appointment attachments: ${attachmentsError.message}`
-        );
-      }
-
-      const { error: cancellationsError } = await supabase
-        .from("meeting_cancellations")
-        .delete()
-        .eq("request_id", request.id);
-
-      if (cancellationsError) {
-        throw new Error(
-          `Could not remove cancellation history: ${cancellationsError.message}`
-        );
-      }
-
-      const { error: requestError } = await supabase
-        .from("meeting_requests")
-        .delete()
-        .eq("id", request.id);
-
-      if (requestError) {
-        throw new Error(
-          `Could not delete the appointment/activity: ${requestError.message}`
+          result.error ||
+            "The appointment could not be permanently deleted."
         );
       }
 
@@ -3838,7 +3812,7 @@ export default function PartnerDashboardPage() {
           JSON.stringify(nextArchived)
         );
       } catch {
-        // Database remains authoritative for the deleted request.
+        // Database deletion is authoritative.
       }
 
       setExpandedMeetingIds((previous) =>
