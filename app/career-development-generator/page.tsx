@@ -27,8 +27,6 @@ type CareerDevelopmentLog = {
   updated_at: string;
 };
 
-type HistoryFilter = "all" | "draft" | "submitted";
-
 type ActivityOption = {
   title: string;
   label: string;
@@ -130,8 +128,8 @@ export default function CareerDevelopmentGeneratorPage() {
     CareerDevelopmentLog[]
   >([]);
 
-  const [historyFilter, setHistoryFilter] =
-    useState<HistoryFilter>("all");
+  const [showSavedActivities, setShowSavedActivities] =
+    useState(false);
 
   /* =======================================================
      LOAD PAGE
@@ -197,7 +195,7 @@ export default function CareerDevelopmentGeneratorPage() {
   }
 
   /* =======================================================
-     LOAD LOG HISTORY
+     LOAD SAVED ACTIVITIES
   ======================================================= */
 
   async function loadPreviousLogs(uid?: string) {
@@ -231,7 +229,7 @@ export default function CareerDevelopmentGeneratorPage() {
 
   function basicValidation() {
     if (!weekEnding) {
-      setMessage("Please select the week ending date.");
+      setMessage("Please select the activity date.");
       return false;
     }
 
@@ -316,7 +314,7 @@ export default function CareerDevelopmentGeneratorPage() {
     setCurrentStatus("draft");
 
     setMessage(
-      "✓ Draft saved. It stays in Previous Weekly Logs until you reopen and submit it."
+      "✓ Draft saved. You can reopen it anytime from Saved Activities."
     );
 
     await loadPreviousLogs();
@@ -325,7 +323,7 @@ export default function CareerDevelopmentGeneratorPage() {
   }
 
   /* =======================================================
-     SUBMIT WEEKLY LOG
+     SUBMIT ACTIVITY
   ======================================================= */
 
   async function submitLog() {
@@ -387,7 +385,7 @@ export default function CareerDevelopmentGeneratorPage() {
     setCurrentStatus("submitted");
 
     setMessage(
-      "✓ Weekly Career Development Log submitted to HireMinds. It is now saved with your participant record and appears below under Previous Weekly Logs."
+      "✓ Career development activity submitted to HireMinds. It is saved with your participant record for reporting."
     );
 
     await loadPreviousLogs();
@@ -396,7 +394,7 @@ export default function CareerDevelopmentGeneratorPage() {
   }
 
   /* =======================================================
-     OPEN PREVIOUS LOG
+     OPEN SAVED ACTIVITY
   ======================================================= */
 
   function openLog(log: CareerDevelopmentLog) {
@@ -417,7 +415,7 @@ export default function CareerDevelopmentGeneratorPage() {
 
     window.setTimeout(() => {
       document
-        .getElementById("weekly-workspace")
+        .getElementById("career-development-workspace")
         ?.scrollIntoView({
           behavior: "smooth",
           block: "start",
@@ -426,7 +424,7 @@ export default function CareerDevelopmentGeneratorPage() {
   }
 
   /* =======================================================
-     NEW LOG
+     NEW ACTIVITY
   ======================================================= */
 
   function startNewLog() {
@@ -441,7 +439,7 @@ export default function CareerDevelopmentGeneratorPage() {
 
     window.setTimeout(() => {
       document
-        .getElementById("weekly-workspace")
+        .getElementById("career-development-workspace")
         ?.scrollIntoView({
           behavior: "smooth",
           block: "start",
@@ -474,15 +472,6 @@ export default function CareerDevelopmentGeneratorPage() {
     nextStep,
   ]);
 
-  const filteredLogs = useMemo(() => {
-    if (historyFilter === "all") {
-      return previousLogs;
-    }
-
-    return previousLogs.filter(
-      (log) => log.status === historyFilter
-    );
-  }, [previousLogs, historyFilter]);
 
   const draftCount = previousLogs.filter(
     (log) => log.status === "draft"
@@ -501,7 +490,7 @@ export default function CareerDevelopmentGeneratorPage() {
     setMessage("");
   }
 
-  function formatWeekEnding(value: string) {
+  function formatActivityDate(value: string) {
     if (!value) return "Not selected";
 
     return new Date(
@@ -566,90 +555,62 @@ export default function CareerDevelopmentGeneratorPage() {
           ← My Profile
         </button>
 
-        <section className="hero">
+        <section className="hero compactHero">
           <div className="heroCopy">
             <p className="eyebrow heroEyebrow">
-              WEEKLY CAREER DEVELOPMENT
+              CAREER DEVELOPMENT
             </p>
 
-            <h1>
-              Build momentum.
-              <span>One week at a time.</span>
-            </h1>
+            <h1>Career Development Generator</h1>
 
             <p className="intro">
-              If you are not actively job searching, use this weekly log
-              to document career-development work instead of a Weekly Job Log.
-              Choose everything you worked on, reflect on the progress, and
-              submit it when the week is complete.
+              Track a career-development activity, reflect on what you gained,
+              and identify your next move. Complete this when you finish an
+              activity — there is no Friday deadline.
             </p>
-
-            <div className="heroMeta">
-              <div>
-                <span>PARTICIPANT</span>
-                <strong>{participantName}</strong>
-              </div>
-
-              <div>
-                <span>PROGRAM / CODE</span>
-                <strong>
-                  {referralCode || "Not Assigned"}
-                </strong>
-              </div>
-            </div>
           </div>
 
-          <div className="heroSide">
-            <div className="weekCard">
-              <span>WEEKLY SUBMISSION</span>
-              <strong>Due Every Friday</strong>
-              <p>
-                Save a draft anytime. Submit when your
-                reflection is complete.
-              </p>
+          <div className="heroQuick">
+            <div className="quickItem">
+              <span>PARTICIPANT</span>
+              <strong>{participantName}</strong>
             </div>
 
-            <div className="progressCard">
-              <div className="progressTop">
-                <span>THIS LOG</span>
+            <div className="quickItem">
+              <span>PROGRAM / CODE</span>
+              <strong>{referralCode || "Not Assigned"}</strong>
+            </div>
+
+            <div className="quickProgress">
+              <div>
+                <span>THIS ACTIVITY</span>
                 <strong>{progress}%</strong>
               </div>
 
               <div className="progressTrack">
-                <span
-                  style={{
-                    width: `${progress}%`,
-                  }}
-                />
+                <span style={{ width: `${progress}%` }} />
               </div>
-
-              <p>
-                {progress === 100
-                  ? "Ready to submit."
-                  : "Keep going — your progress saves when you choose Save Draft."}
-              </p>
             </div>
           </div>
         </section>
 
         <section
           className="workspace"
-          id="weekly-workspace"
+          id="career-development-workspace"
         >
           <div className="workspaceMain">
             <div className="workspaceIntro">
               <div>
                 <p className="eyebrow">
-                  YOUR WEEKLY REFLECTION
+                  CAREER DEVELOPMENT ACTIVITY
                 </p>
 
                 <h2>
-                  What did you move forward this week?
+                  What are you working on?
                 </h2>
 
                 <p>
-                  Choose the week, select every activity you worked on,
-                  then answer the three short reflection questions.
+                  Choose the date, select everything you worked on, then answer the three short reflection questions.
                 </p>
               </div>
 
@@ -670,8 +631,8 @@ export default function CareerDevelopmentGeneratorPage() {
 
             <div className="startRow">
               <label className="dateField">
-                <span>WEEK ENDING</span>
-                <strong>Choose the Friday for this log</strong>
+                <span>ACTIVITY DATE</span>
+                <strong>When did you work on this?</strong>
 
                 <input
                   type="date"
@@ -692,7 +653,7 @@ export default function CareerDevelopmentGeneratorPage() {
                 <p>
                   {selectedActivities.length > 0
                     ? selectedActivities.join(" • ")
-                    : "Select everything that represents what you worked on this week."}
+                    : "Select everything that represents what you worked on for this activity."}
                 </p>
               </div>
             </div>
@@ -702,11 +663,11 @@ export default function CareerDevelopmentGeneratorPage() {
             <div className="activityHeading">
               <div>
                 <p className="eyebrow">
-                  YOUR WEEK
+                  YOUR ACTIVITY
                 </p>
 
                 <h3>
-                  What did you work on this week?
+                  What did you work on?
                 </h3>
               </div>
 
@@ -859,7 +820,7 @@ export default function CareerDevelopmentGeneratorPage() {
                 className="newBtn"
                 onClick={startNewLog}
               >
-                + Start New Weekly Log
+                + Start New Activity
               </button>
 
               <div className="rightActions">
@@ -882,7 +843,7 @@ export default function CareerDevelopmentGeneratorPage() {
                 >
                   {submitting
                     ? "Submitting..."
-                    : "Submit Weekly Log →"}
+                    : "Submit Activity →"}
                 </button>
               </div>
             </div>
@@ -890,15 +851,15 @@ export default function CareerDevelopmentGeneratorPage() {
 
           <aside className="snapshot">
             <p className="snapshotEyebrow">
-              THIS WEEK
+              THIS ACTIVITY
             </p>
 
             <h3>Your progress at a glance</h3>
 
             <div className="snapshotItem">
-              <span>Week ending</span>
+              <span>Activity date</span>
               <strong>
-                {formatWeekEnding(weekEnding)}
+                {formatActivityDate(weekEnding)}
               </strong>
             </div>
 
@@ -937,152 +898,82 @@ export default function CareerDevelopmentGeneratorPage() {
           </aside>
         </section>
 
-        <section className="historyPanel">
-          <div className="historyHeader">
+        <section className="savedPanel">
+          <button
+            type="button"
+            className="savedToggle"
+            onClick={() =>
+              setShowSavedActivities((value) => !value)
+            }
+          >
             <div>
-              <p className="eyebrow">
-                YOUR PROGRESS
-              </p>
-
-              <h2>
-                Previous Weekly Logs
-              </h2>
-
-              <p>
-                Submitted logs and saved drafts stay here so you can review
-                what you worked on from week to week. Submitted logs are also
-                stored with your HireMinds participant record for partner reporting.
-              </p>
+              <span className="savedLabel">SAVED ACTIVITIES</span>
+              <strong>
+                {previousLogs.length === 0
+                  ? "No saved activities yet"
+                  : `${previousLogs.length} saved ${
+                      previousLogs.length === 1 ? "activity" : "activities"
+                    }`}
+              </strong>
             </div>
 
-            <div className="historyStats">
-              <div>
-                <strong>{previousLogs.length}</strong>
-                <span>Total</span>
-              </div>
-
-              <div>
-                <strong>{submittedCount}</strong>
-                <span>Submitted</span>
-              </div>
-
-              <div>
-                <strong>{draftCount}</strong>
-                <span>Drafts</span>
-              </div>
+            <div className="savedSummary">
+              <span>{submittedCount} submitted</span>
+              <span>{draftCount} drafts</span>
+              <b>{showSavedActivities ? "Hide ↑" : "View ↓"}</b>
             </div>
-          </div>
+          </button>
 
-          <div className="historyFilters">
-            <button
-              type="button"
-              className={
-                historyFilter === "all"
-                  ? "filterActive"
-                  : ""
-              }
-              onClick={() =>
-                setHistoryFilter("all")
-              }
-            >
-              All
-            </button>
-
-            <button
-              type="button"
-              className={
-                historyFilter === "submitted"
-                  ? "filterActive"
-                  : ""
-              }
-              onClick={() =>
-                setHistoryFilter("submitted")
-              }
-            >
-              Submitted
-            </button>
-
-            <button
-              type="button"
-              className={
-                historyFilter === "draft"
-                  ? "filterActive"
-                  : ""
-              }
-              onClick={() =>
-                setHistoryFilter("draft")
-              }
-            >
-              Drafts
-            </button>
-          </div>
-
-          {filteredLogs.length === 0 ? (
-            <div className="emptyHistory">
-              {previousLogs.length === 0
-                ? "Your saved and submitted weekly logs will appear here."
-                : "No logs match this filter."}
-            </div>
-          ) : (
-            <div className="historyList">
-              {filteredLogs.map((log) => (
-                <button
-                  type="button"
-                  key={log.id}
-                  className="historyRow"
-                  onClick={() =>
-                    openLog(log)
-                  }
-                >
-                  <div className="historyDate">
-                    <span>WEEK ENDING</span>
-
-                    <strong>
-                      {new Date(
-                        `${log.week_ending}T00:00:00`
-                      ).toLocaleDateString(
-                        [],
-                        {
+          {showSavedActivities ? (
+            <div className="savedList">
+              {previousLogs.length === 0 ? (
+                <div className="emptySaved">
+                  Saved drafts and submitted activities will appear here.
+                </div>
+              ) : (
+                previousLogs.map((log) => (
+                  <button
+                    type="button"
+                    key={log.id}
+                    className="savedRow"
+                    onClick={() => openLog(log)}
+                  >
+                    <div className="savedDate">
+                      <span>DATE</span>
+                      <strong>
+                        {new Date(
+                          `${log.week_ending}T00:00:00`
+                        ).toLocaleDateString([], {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
-                        }
-                      )}
-                    </strong>
-                  </div>
+                        })}
+                      </strong>
+                    </div>
 
-                  <div className="historyActivity">
-                    <span>ACTIVITY</span>
-                    <strong>
-                      {log.activity_type}
-                    </strong>
-                  </div>
+                    <div className="savedActivity">
+                      <span>ACTIVITY</span>
+                      <strong>{log.activity_type}</strong>
+                    </div>
 
-                  <div className="historyNext">
-                    <span>NEXT MOVE</span>
-                    <strong>
-                      {log.next_step ||
-                        "No next step added yet"}
-                    </strong>
-                  </div>
+                    <span
+                      className={`savedStatus ${
+                        log.status === "submitted"
+                          ? "savedSubmitted"
+                          : "savedDraft"
+                      }`}
+                    >
+                      {log.status === "submitted"
+                        ? "✓ Submitted"
+                        : "Draft"}
+                    </span>
 
-                  <span
-                    className={`historyStatus ${
-                      log.status === "submitted"
-                        ? "historySubmitted"
-                        : "historyDraft"
-                    }`}
-                  >
-                    {log.status === "submitted"
-                      ? "✓ Submitted"
-                      : "Draft"}
-                  </span>
-
-                  <span className="openArrow">→</span>
-                </button>
-              ))}
+                    <span className="savedArrow">→</span>
+                  </button>
+                ))
+              )}
             </div>
-          )}
+          ) : null}
         </section>
       </div>
 
@@ -1982,9 +1873,219 @@ export default function CareerDevelopmentGeneratorPage() {
           font-size: 10px;
         }
 
+
+
+        /* COMPACT PAGE HEADER */
+        .compactHero {
+          grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
+          gap: 26px;
+          padding: 28px 32px;
+          border-radius: 22px;
+        }
+
+        .compactHero h1 {
+          max-width: none;
+          font-size: clamp(34px, 4.4vw, 54px);
+          line-height: 0.98;
+          letter-spacing: -0.045em;
+        }
+
+        .compactHero .intro {
+          max-width: 720px;
+          margin-top: 13px;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .heroQuick {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+
+        .quickItem,
+        .quickProgress {
+          min-height: 72px;
+          padding: 13px 14px;
+          border-radius: 13px;
+          background: rgba(255,255,255,.08);
+          border: 1px solid rgba(255,255,255,.12);
+        }
+
+        .quickItem span,
+        .quickProgress span {
+          display: block;
+          color: #7fc5e9;
+          font-size: 7px;
+          font-weight: 950;
+          letter-spacing: .11em;
+        }
+
+        .quickItem strong {
+          display: block;
+          margin-top: 5px;
+          color: #fff;
+          font-size: 10px;
+          line-height: 1.35;
+        }
+
+        .quickProgress {
+          grid-column: 1 / -1;
+          min-height: 58px;
+        }
+
+        .quickProgress > div:first-child {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .quickProgress strong {
+          color: #fff;
+          font-size: 14px;
+        }
+
+        /* COMPACT SAVED ACTIVITIES */
+        .savedPanel {
+          margin-top: 18px;
+          border-radius: 16px;
+          background: #fff;
+          border: 1px solid #cfd9e0;
+          box-shadow: 0 10px 24px rgba(23,51,68,.045);
+          overflow: hidden;
+        }
+
+        .savedToggle {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 18px;
+          padding: 15px 18px;
+          border: none;
+          background: #fff;
+          color: #172832;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .savedLabel {
+          display: block;
+          color: #176fa8;
+          font-size: 7px;
+          font-weight: 950;
+          letter-spacing: .11em;
+        }
+
+        .savedToggle strong {
+          display: block;
+          margin-top: 3px;
+          font-size: 12px;
+        }
+
+        .savedSummary {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #75838c;
+          font-size: 9px;
+          white-space: nowrap;
+        }
+
+        .savedSummary b {
+          color: #176fa8;
+        }
+
+        .savedList {
+          border-top: 1px solid #d8e1e7;
+          padding: 0 18px;
+        }
+
+        .savedRow {
+          width: 100%;
+          display: grid;
+          grid-template-columns: 125px minmax(0,1fr) auto 18px;
+          gap: 16px;
+          align-items: center;
+          padding: 13px 0;
+          border: none;
+          border-bottom: 1px solid #e0e6ea;
+          background: transparent;
+          color: #172832;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .savedRow:last-child {
+          border-bottom: none;
+        }
+
+        .savedDate,
+        .savedActivity {
+          display: grid;
+          gap: 3px;
+        }
+
+        .savedDate span,
+        .savedActivity span {
+          color: #85919a;
+          font-size: 7px;
+          font-weight: 950;
+          letter-spacing: .08em;
+        }
+
+        .savedDate strong,
+        .savedActivity strong {
+          font-size: 9px;
+          line-height: 1.35;
+        }
+
+        .savedStatus {
+          padding: 5px 8px;
+          border-radius: 999px;
+          font-size: 8px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .savedSubmitted {
+          background: #e8f6ed;
+          border: 1px solid #b8dcc5;
+          color: #246d46;
+        }
+
+        .savedDraft {
+          background: #fff5d9;
+          border: 1px solid #efd690;
+          color: #765b13;
+        }
+
+        .savedArrow {
+          color: #176fa8;
+          font-size: 15px;
+        }
+
+        .emptySaved {
+          padding: 18px 0;
+          color: #76838c;
+          text-align: center;
+          font-size: 10px;
+        }
+
         @media (max-width: 1000px) {
           .hero {
             grid-template-columns: 1fr;
+          }
+
+          .compactHero {
+            grid-template-columns: 1fr;
+          }
+
+          .heroQuick {
+            grid-template-columns: 1fr 1fr;
           }
 
           .heroSide {
@@ -2041,6 +2142,40 @@ export default function CareerDevelopmentGeneratorPage() {
           .hero {
             padding: 29px 23px;
             border-radius: 23px;
+          }
+
+          .compactHero {
+            padding: 22px 20px;
+          }
+
+          .heroQuick {
+            grid-template-columns: 1fr;
+          }
+
+          .quickProgress {
+            grid-column: auto;
+          }
+
+          .savedToggle {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .savedSummary {
+            flex-wrap: wrap;
+          }
+
+          .savedRow {
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+          }
+
+          .savedActivity {
+            grid-column: 1 / -1;
+          }
+
+          .savedArrow {
+            display: none;
           }
 
           h1 {
