@@ -3723,6 +3723,167 @@ export default function PartnerDashboardPage() {
     setMessage("Appointment restored to Meeting Requests → Completed.");
   }
 
+  async function deleteMeetingActivity(request: MeetingRequestRow) {
+    if (!isSystemAdmin) return;
+
+    const canDelete =
+      request.status === "cancelled" ||
+      request.status === "declined" ||
+      (request.status === "completed" && archivedMeetingIds.includes(request.id));
+
+    if (!canDelete) {
+      setMessage(
+        "Only cancelled, declined, or archived completed appointments can be permanently deleted."
+      );
+      return;
+    }
+
+    const participant =
+      request.participant_name || request.participant_email || "this participant";
+
+    const confirmed = window.confirm(
+      `Permanently delete this appointment/activity for ${participant}?\n\nThis removes the meeting request and its related appointment history. This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setMessage("");
+
+    try {
+      const files = getRequestFiles(request.id);
+
+      if (files.length > 0) {
+        const filePaths = files
+          .map((file) => file.file_path)
+          .filter(Boolean);
+
+        if (filePaths.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from("meeting-request-files")
+            .remove(filePaths);
+
+          if (storageError) {
+            console.error(
+              "Could not remove one or more meeting files from storage:",
+              storageError
+            );
+          }
+        }
+      }
+
+      const { error: releaseSlotError } = await supabase
+        .from("availability_slots")
+        .update({
+          booked_request_id: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("booked_request_id", request.id);
+
+      if (releaseSlotError) {
+        throw new Error(
+          `Could not release the appointment time: ${releaseSlotError.message}`
+        );
+      }
+
+      const { error: choicesError } = await supabase
+        .from("meeting_request_choices")
+        .delete()
+        .eq("request_id", request.id);
+
+      if (choicesError) {
+        throw new Error(
+          `Could not remove preferred appointment times: ${choicesError.message}`
+        );
+      }
+
+      const { error: attachmentsError } = await supabase
+        .from("meeting_request_attachments")
+        .delete()
+        .eq("request_id", request.id);
+
+      if (attachmentsError) {
+        throw new Error(
+          `Could not remove appointment attachments: ${attachmentsError.message}`
+        );
+      }
+
+      const { error: cancellationsError } = await supabase
+        .from("meeting_cancellations")
+        .delete()
+        .eq("request_id", request.id);
+
+      if (cancellationsError) {
+        throw new Error(
+          `Could not remove cancellation history: ${cancellationsError.message}`
+        );
+      }
+
+      const { error: requestError } = await supabase
+        .from("meeting_requests")
+        .delete()
+        .eq("id", request.id);
+
+      if (requestError) {
+        throw new Error(
+          `Could not delete the appointment/activity: ${requestError.message}`
+        );
+      }
+
+      const nextArchived = archivedMeetingIds.filter((id) => id !== request.id);
+      setArchivedMeetingIds(nextArchived);
+
+      try {
+        localStorage.setItem(
+          "hireminds_archived_meeting_ids_v2",
+          JSON.stringify(nextArchived)
+        );
+      } catch {
+        // Database remains authoritative for the deleted request.
+      }
+
+      setExpandedMeetingIds((previous) =>
+        previous.filter((id) => id !== request.id)
+      );
+
+      setMeetingRequests((previous) =>
+        previous.filter((item) => item.id !== request.id)
+      );
+
+      setMeetingChoices((previous) =>
+        previous.filter((item) => item.request_id !== request.id)
+      );
+
+      setRequestAttachments((previous) =>
+        previous.filter((item) => item.request_id !== request.id)
+      );
+
+      setMeetingCancellations((previous) =>
+        previous.filter((item) => item.request_id !== request.id)
+      );
+
+      setAvailabilitySlots((previous) =>
+        previous.map((slot) =>
+          slot.booked_request_id === request.id
+            ? {
+                ...slot,
+                booked_request_id: null,
+                updated_at: new Date().toISOString(),
+              }
+            : slot
+        )
+      );
+
+      setMessage("Appointment/activity permanently deleted.");
+
+      await loadAdminData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Could not delete the appointment/activity. Please try again."
+      );
+    }
+  }
+
   /* =======================================================
      REPORT DATE FILTER
   ======================================================= */
@@ -5752,6 +5913,18 @@ export default function PartnerDashboardPage() {
                                     Restore
                                   </button>
                                 ) : null}
+
+                                {request.status === "cancelled" ||
+                                request.status === "declined" ||
+                                (request.status === "completed" && archived) ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteMeetingActivity(request)}
+                                    style={styles.deleteActivityButtonSmall}
+                                  >
+                                    Delete Activity
+                                  </button>
+                                ) : null}
                               </div>
                             </div>
 
@@ -5926,6 +6099,18 @@ export default function PartnerDashboardPage() {
                                   {request.status === "completed" && !archived ? (
                                     <button type="button" onClick={() => archiveMeeting(request.id)} style={styles.archiveButtonSmall}>
                                       Archive Completed Appointment
+                                    </button>
+                                  ) : null}
+
+                                  {request.status === "cancelled" ||
+                                  request.status === "declined" ||
+                                  (request.status === "completed" && archived) ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteMeetingActivity(request)}
+                                      style={styles.deleteActivityButtonSmall}
+                                    >
+                                      Delete Activity Permanently
                                     </button>
                                   ) : null}
                                 </div>
@@ -11085,6 +11270,18 @@ const styles: Record<
     cursor: "pointer",
     fontSize: 10,
     fontWeight: 800,
+  },
+
+  deleteActivityButtonSmall: {
+    border: "1px solid rgba(248,113,113,.42)",
+    background: "rgba(127,29,29,.22)",
+    color: "#fecaca",
+    borderRadius: 9,
+    padding: "8px 11px",
+    fontSize: 11,
+    fontWeight: 800,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
   },
 
   restoreButtonSmall: {
