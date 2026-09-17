@@ -221,11 +221,6 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    window.location.href = "/sign-in";
-  }
-
   if (loading) {
     return (
       <main style={st.loadingPage}>
@@ -241,38 +236,10 @@ export default function ProfilePage() {
   return (
     <main style={st.page}>
       <div style={st.shell}>
-        <header style={st.header}>
-          <div style={st.brandArea}>
-            <div style={st.brandMark}>HM</div>
-            <div>
-              <strong style={st.brandName}>HireMinds™</strong>
-              <span style={st.brandSub}>Career Passport</span>
-            </div>
-          </div>
-
-          <div style={st.headerActions}>
-            {publicProfileUrl ? (
-              <a
-                href={publicProfileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={st.headerPassportButton}
-              >
-                View Public Profile ↗
-              </a>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={handleSignOut}
-              style={st.signOutButton}
-            >
-              Sign Out
-            </button>
-          </div>
-        </header>
-
         <section style={st.identityCard}>
+          <div style={st.identityOrbOne} />
+          <div style={st.identityOrbTwo} />
+
           <div style={st.photoColumn}>
             {photoUrl ? (
               <img
@@ -315,9 +282,22 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-              <div style={st.profileStatus}>
-                <span style={st.statusDot} />
-                Profile Active
+              <div style={st.identityActions}>
+                <div style={st.profileStatus}>
+                  <span style={st.statusDot} />
+                  Profile Active
+                </div>
+
+                {publicProfileUrl ? (
+                  <a
+                    href={publicProfileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={st.identityPassportButton}
+                  >
+                    View Career Passport ↗
+                  </a>
+                ) : null}
               </div>
             </div>
 
@@ -467,12 +447,15 @@ export default function ProfilePage() {
         </section>
 
         <section style={st.connectSection}>
+          <div style={st.connectGlowOne} />
+          <div style={st.connectGlowTwo} />
+
           <div style={st.connectHeader}>
             <div>
               <p style={st.eyebrow}>CONNECT & EXPLORE</p>
-              <h2 style={st.sectionTitle}>Keep moving forward.</h2>
-              <p style={st.sectionIntro}>
-                Your main career-support and weekly development resources are here.
+              <h2 style={st.connectTitle}>Career & Connect</h2>
+              <p style={st.connectIntro}>
+                Career support, weekly development, and job-search tracking — all in one place.
               </p>
             </div>
           </div>
@@ -607,6 +590,10 @@ function ToolCard({
           </span>
         </div>
 
+        {featured ? (
+          <span style={st.featuredBadge}>CAREER SERVICES</span>
+        ) : null}
+
         <h3
           style={{
             ...st.toolTitle,
@@ -641,7 +628,7 @@ function ToolCard({
 const st: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
-    padding: "28px 18px 56px",
+    padding: "18px 18px 56px",
     boxSizing: "border-box",
     color: "#111820",
     background:
@@ -770,18 +757,47 @@ const st: Record<string, CSSProperties> = {
   },
 
   identityCard: {
+    position: "relative",
+    overflow: "hidden",
     display: "grid",
     gridTemplateColumns: "190px minmax(0,1fr)",
     alignItems: "center",
     gap: "32px",
-    padding: "36px",
-    borderRadius: "30px",
+    padding: "42px 40px",
+    borderRadius: "32px",
     background:
-      "linear-gradient(135deg, #111820 0%, #17384f 72%, #1f6e9e 135%)",
-    boxShadow: "0 22px 52px rgba(17,24,32,.17)",
+      "linear-gradient(125deg, #0c151d 0%, #12344a 50%, #176fae 100%)",
+    border: "1px solid rgba(255,255,255,.08)",
+    boxShadow: "0 26px 65px rgba(17,24,32,.22)",
+  },
+
+  identityOrbOne: {
+    position: "absolute",
+    width: "420px",
+    height: "420px",
+    right: "-170px",
+    top: "-240px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(99,190,239,.36) 0%, rgba(99,190,239,0) 68%)",
+    pointerEvents: "none",
+  },
+
+  identityOrbTwo: {
+    position: "absolute",
+    width: "280px",
+    height: "280px",
+    left: "-130px",
+    bottom: "-170px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(255,255,255,.12) 0%, rgba(255,255,255,0) 70%)",
+    pointerEvents: "none",
   },
 
   photoColumn: {
+    position: "relative",
+    zIndex: 2,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -834,6 +850,8 @@ const st: Record<string, CSSProperties> = {
   },
 
   identityInfo: {
+    position: "relative",
+    zIndex: 2,
     minWidth: 0,
   },
 
@@ -868,6 +886,26 @@ const st: Record<string, CSSProperties> = {
     color: "#d8e4eb",
     fontSize: "15px",
     lineHeight: 1.5,
+  },
+
+  identityActions: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+
+  identityPassportButton: {
+    padding: "9px 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,.22)",
+    backgroundColor: "rgba(255,255,255,.10)",
+    color: "#ffffff",
+    textDecoration: "none",
+    fontSize: "9px",
+    fontWeight: 900,
+    backdropFilter: "blur(8px)",
   },
 
   profileStatus: {
@@ -1112,15 +1150,66 @@ const st: Record<string, CSSProperties> = {
   },
 
   connectSection: {
-    padding: "26px 2px 4px",
-    borderTop: "1px solid #d7dfe5",
+    position: "relative",
+    overflow: "hidden",
+    padding: "34px",
+    borderRadius: "30px",
+    background:
+      "linear-gradient(130deg, #0e171f 0%, #12344a 58%, #176fae 125%)",
+    border: "1px solid rgba(17,78,117,.22)",
+    boxShadow: "0 22px 55px rgba(18,52,74,.14)",
+  },
+
+  connectGlowOne: {
+    position: "absolute",
+    width: "360px",
+    height: "360px",
+    right: "-140px",
+    top: "-210px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(87,184,240,.30) 0%, rgba(87,184,240,0) 68%)",
+    pointerEvents: "none",
+  },
+
+  connectGlowTwo: {
+    position: "absolute",
+    width: "250px",
+    height: "250px",
+    left: "-100px",
+    bottom: "-160px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 70%)",
+    pointerEvents: "none",
   },
 
   connectHeader: {
-    padding: "0 2px 6px",
+    position: "relative",
+    zIndex: 2,
+    padding: "0 2px 8px",
+  },
+
+  connectTitle: {
+    margin: 0,
+    color: "#ffffff",
+    fontSize: "clamp(34px,5vw,52px)",
+    lineHeight: 1,
+    fontWeight: 950,
+    letterSpacing: "-.045em",
+  },
+
+  connectIntro: {
+    maxWidth: "660px",
+    margin: "10px 0 0",
+    color: "#c4d5df",
+    fontSize: "13px",
+    lineHeight: 1.65,
   },
 
   toolGrid: {
+    position: "relative",
+    zIndex: 2,
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
     gap: "14px",
@@ -1133,22 +1222,27 @@ const st: Record<string, CSSProperties> = {
   },
 
   toolCard: {
+    position: "relative",
+    overflow: "hidden",
     height: "100%",
-    minHeight: "195px",
-    padding: "22px",
+    minHeight: "215px",
+    padding: "24px",
     display: "flex",
     flexDirection: "column",
-    borderRadius: "18px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #cbd5dc",
-    boxShadow: "0 10px 28px rgba(20,34,47,.06)",
+    borderRadius: "20px",
+    background:
+      "linear-gradient(180deg, #ffffff 0%, #f3f8fb 100%)",
+    border: "1px solid rgba(255,255,255,.76)",
+    borderTop: "4px solid #5db4e5",
+    boxShadow: "0 16px 34px rgba(0,0,0,.16)",
   },
 
   toolCardFeatured: {
     background:
-      "linear-gradient(145deg, #111820 0%, #17384f 68%, #1e6f9f 135%)",
-    border: "1px solid #173b54",
-    boxShadow: "0 16px 34px rgba(17,24,32,.16)",
+      "linear-gradient(145deg, #07131c 0%, #0f3954 54%, #1681bd 125%)",
+    border: "1px solid rgba(113,203,251,.30)",
+    borderTop: "4px solid #7fd0ff",
+    boxShadow: "0 20px 42px rgba(0,0,0,.26)",
   },
 
   toolCardTop: {
@@ -1178,8 +1272,21 @@ const st: Record<string, CSSProperties> = {
     color: "#ffffff",
   },
 
+  featuredBadge: {
+    alignSelf: "flex-start",
+    marginTop: "18px",
+    padding: "6px 9px",
+    borderRadius: "999px",
+    backgroundColor: "rgba(255,255,255,.10)",
+    border: "1px solid rgba(255,255,255,.18)",
+    color: "#dff4ff",
+    fontSize: "7px",
+    fontWeight: 950,
+    letterSpacing: ".10em",
+  },
+
   toolTitle: {
-    margin: "24px 0 0",
+    margin: "16px 0 0",
     color: "#111820",
     fontSize: "23px",
     lineHeight: 1.08,
