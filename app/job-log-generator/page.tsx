@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
 import { supabase } from "../lib/supabase";
-
-/* =========================================================
-   TYPES
-========================================================= */
 
 type JobEntry = {
   date: string;
@@ -28,30 +19,30 @@ type JobEntry = {
 type WeeklyJobLog = {
   id: string;
   user_id: string;
-
   participant_name: string | null;
   participant_email: string | null;
   referral_code: string | null;
-
   week_ending: string;
-
   entries: JobEntry[];
-
-  status:
-    | "draft"
-    | "submitted";
-
-  submitted_at:
-    | string
-    | null;
-
+  status: "draft" | "submitted";
+  submitted_at: string | null;
   created_at: string;
   updated_at: string;
 };
 
-/* =========================================================
-   HELPERS
-========================================================= */
+const OUTCOME_OPTIONS = [
+  "Interested",
+  "Planning to Apply",
+  "Applied",
+  "Application Submitted",
+  "Follow-Up Needed",
+  "Interview Scheduled",
+  "Interview Completed",
+  "Offer Received",
+  "Hired",
+  "Not Selected",
+  "No Longer Interested",
+];
 
 function blankEntry(): JobEntry {
   return {
@@ -77,131 +68,34 @@ function createFiveEntries() {
   ];
 }
 
-/* =========================================================
-   OUTCOMES
-========================================================= */
-
-const OUTCOME_OPTIONS = [
-  "Interested",
-  "Planning to Apply",
-  "Applied",
-  "Application Submitted",
-  "Follow-Up Needed",
-  "Interview Scheduled",
-  "Interview Completed",
-  "Offer Received",
-  "Hired",
-  "Not Selected",
-  "No Longer Interested",
-];
-
-/* =========================================================
-   PAGE
-========================================================= */
-
 export default function JobLogGeneratorPage() {
-  const router =
-    useRouter();
+  const router = useRouter();
 
-  /* =======================================================
-     USER
-  ======================================================= */
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState("");
+  const [participantName, setParticipantName] = useState("");
+  const [participantEmail, setParticipantEmail] = useState("");
+  const [referralCode, setReferralCode] = useState("");
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+  const [logDate, setLogDate] = useState("");
+  const [entries, setEntries] = useState<JobEntry[]>(
+    createFiveEntries()
+  );
+  const [currentLogId, setCurrentLogId] =
+    useState<string | null>(null);
+  const [currentStatus, setCurrentStatus] =
+    useState<"draft" | "submitted">("draft");
 
-  const [
-    userId,
-    setUserId,
-  ] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const [
-    participantName,
-    setParticipantName,
-  ] = useState("");
-
-  const [
-    participantEmail,
-    setParticipantEmail,
-  ] = useState("");
-
-  const [
-    referralCode,
-    setReferralCode,
-  ] = useState("");
-
-  /* =======================================================
-     LOG
-  ======================================================= */
-
-  const [
-    weekEnding,
-    setWeekEnding,
-  ] = useState("");
-
-  const [
-    entries,
-    setEntries,
-  ] =
-    useState<JobEntry[]>(
-      createFiveEntries()
-    );
-
-  const [
-    currentLogId,
-    setCurrentLogId,
-  ] =
-    useState<
-      string | null
-    >(null);
-
-  const [
-    currentStatus,
-    setCurrentStatus,
-  ] =
-    useState<
-      "draft" | "submitted"
-    >("draft");
-
-  /* =======================================================
-     SAVE / SUBMIT
-  ======================================================= */
-
-  const [
-    saving,
-    setSaving,
-  ] =
-    useState(false);
-
-  const [
-    submitting,
-    setSubmitting,
-  ] =
-    useState(false);
-
-  const [
-    message,
-    setMessage,
-  ] =
-    useState("");
-
-  /* =======================================================
-     HISTORY
-  ======================================================= */
-
-  const [
-    previousLogs,
-    setPreviousLogs,
-  ] =
-    useState<
-      WeeklyJobLog[]
-    >([]);
-
-  /* =======================================================
-     LOAD
-  ======================================================= */
+  const [previousLogs, setPreviousLogs] = useState<
+    WeeklyJobLog[]
+  >([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [expandedIndexes, setExpandedIndexes] =
+    useState<number[]>([0]);
 
   useEffect(() => {
     loadPage();
@@ -211,64 +105,31 @@ export default function JobLogGeneratorPage() {
     setLoading(true);
 
     const {
-      data:
-        authData,
+      data: authData,
+      error: authError,
+    } = await supabase.auth.getUser();
 
-      error:
-        authError,
-    } =
-      await supabase.auth.getUser();
-
-    if (
-      authError ||
-      !authData.user
-    ) {
-      router.push(
-        "/sign-in"
-      );
-
+    if (authError || !authData.user) {
+      router.push("/sign-in");
       return;
     }
 
-    const user =
-      authData.user;
+    const user = authData.user;
 
-    setUserId(
-      user.id
-    );
-
-    setParticipantEmail(
-      user.email ||
-        ""
-    );
+    setUserId(user.id);
+    setParticipantEmail(user.email || "");
 
     const {
-      data:
-        profile,
+      data: profile,
+      error: profileError,
+    } = await supabase
+      .from("candidate_profiles")
+      .select("full_name,email,referral_code")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      error:
-        profileError,
-    } =
-      await supabase
-        .from(
-          "candidate_profiles"
-        )
-        .select(
-          "full_name,email,referral_code"
-        )
-        .eq(
-          "user_id",
-          user.id
-        )
-        .maybeSingle();
-
-    if (
-      profileError
-    ) {
-      console.error(
-        "Profile error:",
-        profileError
-      );
+    if (profileError) {
+      console.error("Profile error:", profileError);
     }
 
     setParticipantName(
@@ -290,112 +151,48 @@ export default function JobLogGeneratorPage() {
         ""
     );
 
-    await loadPreviousLogs(
-      user.id
-    );
-
+    await loadPreviousLogs(user.id);
     setLoading(false);
   }
 
-  /* =======================================================
-     LOAD HISTORY
-  ======================================================= */
+  async function loadPreviousLogs(uid?: string) {
+    const id = uid || userId;
+    if (!id) return;
 
-  async function loadPreviousLogs(
-    uid?: string
-  ) {
-    const id =
-      uid ||
-      userId;
+    const { data, error } = await supabase
+      .from("weekly_job_logs")
+      .select("*")
+      .eq("user_id", id)
+      .order("week_ending", {
+        ascending: false,
+      });
 
-    if (
-      !id
-    ) {
-      return;
-    }
-
-    const {
-      data,
-      error,
-    } =
-      await supabase
-        .from(
-          "weekly_job_logs"
-        )
-        .select("*")
-        .eq(
-          "user_id",
-          id
-        )
-        .order(
-          "week_ending",
-          {
-            ascending:
-              false,
-          }
-        );
-
-    if (
-      error
-    ) {
-      console.error(
-        "Job log history error:",
-        error
-      );
-
+    if (error) {
+      console.error("Job log history error:", error);
       return;
     }
 
     setPreviousLogs(
-      (
-        data as WeeklyJobLog[]
-      ) ||
-        []
+      (data as WeeklyJobLog[]) || []
     );
   }
-
-  /* =======================================================
-     UPDATE ENTRY
-  ======================================================= */
 
   function updateEntry(
     index: number,
-    field:
-      keyof JobEntry,
-    value:
-      string | boolean
+    field: keyof JobEntry,
+    value: string | boolean
   ) {
-    setEntries(
-      (
-        previous
-      ) =>
-        previous.map(
-          (
-            entry,
-            entryIndex
-          ) =>
-            entryIndex ===
-            index
-              ? {
-                  ...entry,
-                  [field]:
-                    value,
-                }
-              : entry
-        )
+    setEntries((previous) =>
+      previous.map((entry, entryIndex) =>
+        entryIndex === index
+          ? { ...entry, [field]: value }
+          : entry
+      )
     );
-
     setMessage("");
   }
 
-  /* =======================================================
-     COUNTS
-  ======================================================= */
-
-  function hasEntryContent(
-    entry:
-      JobEntry
-  ) {
+  function hasEntryContent(entry: JobEntry) {
     return Boolean(
       entry.date ||
         entry.company_name ||
@@ -403,448 +200,327 @@ export default function JobLogGeneratorPage() {
         entry.city_state ||
         entry.website ||
         entry.job_description_summary ||
-        entry.outcome
+        entry.outcome ||
+        entry.company_starred ||
+        entry.job_title_starred
     );
   }
 
-  const completedCount =
-    entries.filter(
-      hasEntryContent
-    ).length;
+  function toggleEntry(index: number) {
+    setExpandedIndexes((current) =>
+      current.includes(index)
+        ? current.filter((item) => item !== index)
+        : [...current, index]
+    );
+  }
 
-  const starredCount =
-    entries.filter(
-      (
-        entry
-      ) =>
-        entry.company_starred ||
-        entry.job_title_starred
-    ).length;
+  function expandEntry(index: number) {
+    setExpandedIndexes((current) =>
+      current.includes(index)
+        ? current
+        : [...current, index]
+    );
+  }
 
-  /* =======================================================
-     VALIDATE
-  ======================================================= */
+  const completedCount = useMemo(
+    () => entries.filter(hasEntryContent).length,
+    [entries]
+  );
+
+  const starredCount = useMemo(
+    () =>
+      entries.filter(
+        (entry) =>
+          entry.company_starred ||
+          entry.job_title_starred
+      ).length,
+    [entries]
+  );
+
+  const draftCount = previousLogs.filter(
+    (log) => log.status === "draft"
+  ).length;
+
+  const submittedCount = previousLogs.filter(
+    (log) => log.status === "submitted"
+  ).length;
 
   function validateDraft() {
-    if (
-      !weekEnding
-    ) {
+    if (!logDate) {
       setMessage(
-        "Please select the week ending date before saving your draft."
+        "Please choose a date for this job log before saving."
       );
-
       return false;
     }
-
     return true;
   }
 
   function validateSubmission() {
-    if (
-      !weekEnding
-    ) {
+    if (!logDate) {
       setMessage(
-        "Please select the week ending date."
+        "Please choose a date for this job log."
       );
-
       return false;
     }
 
-    if (
-      completedCount ===
-      0
-    ) {
+    if (completedCount === 0) {
       setMessage(
-        "Please complete at least one job entry before submitting your Weekly Job Log."
+        "Please add at least one job opportunity before submitting."
       );
-
       return false;
     }
 
     return true;
   }
 
-  /* =======================================================
-     SAVE DRAFT
-  ======================================================= */
-
   async function saveDraft() {
-    if (
-      !validateDraft()
-    ) {
-      return;
-    }
+    if (!validateDraft()) return;
 
     setSaving(true);
-
     setMessage("");
 
     const payload = {
-      user_id:
-        userId,
-
-      participant_name:
-        participantName,
-
-      participant_email:
-        participantEmail,
-
-      referral_code:
-        referralCode ||
-        null,
-
-      week_ending:
-        weekEnding,
-
+      user_id: userId,
+      participant_name: participantName,
+      participant_email: participantEmail,
+      referral_code: referralCode || null,
+      week_ending: logDate,
       entries,
-
-      total_entries:
-        completedCount,
-
-      starred_entries:
-        starredCount,
-
-      status:
-        "draft",
-
-      submitted_at:
-        null,
-
-      updated_at:
-        new Date().toISOString(),
+      total_entries: completedCount,
+      starred_entries: starredCount,
+      status: "draft",
+      submitted_at: null,
+      updated_at: new Date().toISOString(),
     };
 
-    const {
-      data,
-      error,
-    } =
-      await supabase
-        .from(
-          "weekly_job_logs"
-        )
-        .upsert(
-          payload,
-          {
-            onConflict:
-              "user_id,week_ending",
-          }
-        )
-        .select("*")
-        .single();
+    const { data, error } = await supabase
+      .from("weekly_job_logs")
+      .upsert(payload, {
+        onConflict: "user_id,week_ending",
+      })
+      .select("*")
+      .single();
 
-    if (
-      error
-    ) {
-      setMessage(
-        error.message
-      );
-
+    if (error) {
+      setMessage(error.message);
       setSaving(false);
-
       return;
     }
 
-    setCurrentLogId(
-      data.id
-    );
-
-    setCurrentStatus(
-      "draft"
-    );
+    setCurrentLogId(data.id);
+    setCurrentStatus("draft");
 
     await supabase
-      .from(
-        "user_activity"
-      )
+      .from("user_activity")
       .insert({
-        user_id:
-          userId,
-
-        full_name:
-          participantName,
-
-        email:
-          participantEmail,
-
-        referral_code:
-          referralCode ||
-          null,
-
+        user_id: userId,
+        full_name: participantName,
+        email: participantEmail,
+        referral_code: referralCode || null,
         event_type:
           "weekly_job_log_draft_saved",
-
         tool_name:
           "Weekly Job Log Generator",
-
         page_name:
           "job-log-generator",
       });
 
     setMessage(
-      "✓ Draft saved. You can return and continue working on this Weekly Job Log."
+      "✓ Draft saved. You can reopen it later from Saved Job Logs."
     );
 
     await loadPreviousLogs();
-
     setSaving(false);
   }
 
-  /* =======================================================
-     SUBMIT
-  ======================================================= */
-
   async function submitLog() {
-    if (
-      !validateSubmission()
-    ) {
-      return;
-    }
+    if (!validateSubmission()) return;
 
     setSubmitting(true);
-
     setMessage("");
 
-    const submittedAt =
-      new Date().toISOString();
+    const submittedAt = new Date().toISOString();
 
     const payload = {
-      user_id:
-        userId,
-
-      participant_name:
-        participantName,
-
-      participant_email:
-        participantEmail,
-
-      referral_code:
-        referralCode ||
-        null,
-
-      week_ending:
-        weekEnding,
-
+      user_id: userId,
+      participant_name: participantName,
+      participant_email: participantEmail,
+      referral_code: referralCode || null,
+      week_ending: logDate,
       entries,
-
-      total_entries:
-        completedCount,
-
-      starred_entries:
-        starredCount,
-
-      status:
-        "submitted",
-
-      submitted_at:
-        submittedAt,
-
-      updated_at:
-        submittedAt,
+      total_entries: completedCount,
+      starred_entries: starredCount,
+      status: "submitted",
+      submitted_at: submittedAt,
+      updated_at: submittedAt,
     };
 
-    const {
-      data,
-      error,
-    } =
-      await supabase
-        .from(
-          "weekly_job_logs"
-        )
-        .upsert(
-          payload,
-          {
-            onConflict:
-              "user_id,week_ending",
-          }
-        )
-        .select("*")
-        .single();
+    const { data, error } = await supabase
+      .from("weekly_job_logs")
+      .upsert(payload, {
+        onConflict: "user_id,week_ending",
+      })
+      .select("*")
+      .single();
 
-    if (
-      error
-    ) {
-      setMessage(
-        error.message
-      );
-
+    if (error) {
+      setMessage(error.message);
       setSubmitting(false);
-
       return;
     }
 
-    setCurrentLogId(
-      data.id
-    );
-
-    setCurrentStatus(
-      "submitted"
-    );
-
-    /* =====================================================
-       REPORTING ACTIVITY
-    ===================================================== */
+    setCurrentLogId(data.id);
+    setCurrentStatus("submitted");
 
     await supabase
-      .from(
-        "user_activity"
-      )
+      .from("user_activity")
       .insert({
-        user_id:
-          userId,
-
-        full_name:
-          participantName,
-
-        email:
-          participantEmail,
-
-        referral_code:
-          referralCode ||
-          null,
-
+        user_id: userId,
+        full_name: participantName,
+        email: participantEmail,
+        referral_code: referralCode || null,
         event_type:
           "weekly_job_log_submitted",
-
         tool_name:
           "Weekly Job Log Generator",
-
         page_name:
           "job-log-generator",
       });
 
     setMessage(
-      "✓ Weekly Job Log submitted successfully."
+      "✓ Job Log submitted to HireMinds. It is saved with your participant record and can be reopened under Saved Job Logs."
     );
 
     await loadPreviousLogs();
-
     setSubmitting(false);
   }
 
-  /* =======================================================
-     OPEN HISTORY
-  ======================================================= */
+  function openPreviousLog(log: WeeklyJobLog) {
+    setCurrentLogId(log.id);
+    setCurrentStatus(log.status);
+    setLogDate(log.week_ending);
 
-  function openPreviousLog(
-    log:
-      WeeklyJobLog
-  ) {
-    setCurrentLogId(
-      log.id
-    );
+    const loaded = Array.isArray(log.entries)
+      ? [...log.entries]
+      : [];
 
-    setCurrentStatus(
-      log.status
-    );
-
-    setWeekEnding(
-      log.week_ending
-    );
-
-    const loaded =
-      Array.isArray(
-        log.entries
-      )
-        ? [
-            ...log.entries,
-          ]
-        : [];
-
-    while (
-      loaded.length <
-      5
-    ) {
-      loaded.push(
-        blankEntry()
-      );
+    while (loaded.length < 5) {
+      loaded.push(blankEntry());
     }
 
-    setEntries(
-      loaded.slice(
-        0,
-        5
+    const normalized = loaded.slice(0, 5);
+    setEntries(normalized);
+
+    const contentIndexes = normalized
+      .map((entry, index) =>
+        hasEntryContent(entry) ? index : -1
       )
+      .filter((index) => index >= 0);
+
+    setExpandedIndexes(
+      contentIndexes.length > 0
+        ? contentIndexes
+        : [0]
     );
 
     setMessage("");
+    setHistoryOpen(false);
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.setTimeout(() => {
+      document
+        .getElementById("job-log-workspace")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 50);
   }
-
-  /* =======================================================
-     NEW LOG
-  ======================================================= */
 
   function startNewLog() {
-    setCurrentLogId(
-      null
-    );
-
-    setCurrentStatus(
-      "draft"
-    );
-
-    setWeekEnding("");
-
-    setEntries(
-      createFiveEntries()
-    );
-
+    setCurrentLogId(null);
+    setCurrentStatus("draft");
+    setLogDate("");
+    setEntries(createFiveEntries());
+    setExpandedIndexes([0]);
     setMessage("");
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
+    window.setTimeout(() => {
+      document
+        .getElementById("job-log-workspace")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 50);
+  }
+
+  function formatDate(value: string) {
+    if (!value) return "";
+
+    return new Date(
+      `${value}T00:00:00`
+    ).toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   }
 
-  /* =======================================================
-     LOADING
-  ======================================================= */
-
-  if (
-    loading
+  function entrySummary(
+    entry: JobEntry,
+    index: number
   ) {
-    return (
-      <main
-        className="loadingPage"
-      >
-        <div
-          className="loadingOrb"
-        >
-          HM
-        </div>
+    const title =
+      entry.job_title ||
+      entry.company_name ||
+      `Opportunity ${index + 1}`;
 
-        <p>
-          Loading Weekly Job Log...
-        </p>
+    const details = [
+      entry.company_name &&
+      entry.job_title
+        ? entry.company_name
+        : "",
+      entry.city_state,
+      entry.outcome,
+    ]
+      .filter(Boolean)
+      .join(" • ");
+
+    return {
+      title,
+      details:
+        details ||
+        "Add company, title, location, link, and outcome.",
+    };
+  }
+
+  if (loading) {
+    return (
+      <main className="loadingPage">
+        <div className="loadingMark">HM</div>
+        <strong>Loading Job Log...</strong>
 
         <style jsx>{`
           .loadingPage {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            gap: 14px;
             align-items: center;
             justify-content: center;
-            gap: 14px;
-            background: #050814;
-            color: white;
-            font-family: system-ui, sans-serif;
+            background: #eef3f6;
+            color: #112330;
+            font-family: Inter, Arial, sans-serif;
           }
 
-          .loadingOrb {
-            width: 58px;
-            height: 58px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            border: 1px solid rgba(16,243,255,.28);
-            background: rgba(16,243,255,.07);
-            color: #10f3ff;
+          .loadingMark {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            place-items: center;
+            border-radius: 16px;
+            background: #123a52;
+            color: white;
             font-weight: 950;
           }
         `}</style>
@@ -852,587 +528,380 @@ export default function JobLogGeneratorPage() {
     );
   }
 
-  /* =======================================================
-     RENDER
-  ======================================================= */
-
   return (
-    <main
-      className="page"
-    >
-      <div
-        className="gridBackground"
-      />
-
-      <div
-        className="glow glowOne"
-      />
-
-      <div
-        className="glow glowTwo"
-      />
-
-      <div
-        className="shell"
-      >
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
-        <header
-          className="topBar"
+    <main className="page">
+      <div className="shell">
+        <button
+          type="button"
+          className="backBtn"
+          onClick={() => router.push("/profile")}
         >
+          ← My Profile
+        </button>
+
+        <section className="titleArea">
           <div>
-            <p
-              className="brand"
-            >
-              HIREMINDS™
-            </p>
-
-            <span
-              className="brandSub"
-            >
-              Career Passport
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className="backBtn"
-            onClick={() =>
-              router.push(
-                "/profile"
-              )
-            }
-          >
-            ← Return to Profile
-          </button>
-        </header>
-
-        {/* =================================================
-            HERO
-        ================================================= */}
-
-        <section
-          className="hero"
-        >
-          <div>
-            <p
-              className="eyebrow"
-            >
-              WEEKLY JOB SEARCH ACTIVITY
+            <p className="eyebrow">
+              JOB SEARCH TRACKING
             </p>
 
             <h1>
-              Weekly Job Log
+              Job Log Generator
             </h1>
 
-            <p
-              className="intro"
-            >
-              Track the jobs you are researching and applying for each
-              week. Keep your opportunities organized, document your
-              progress, and record what happens next.
+            <p className="intro">
+              Keep the opportunities you are researching,
+              applying to, and following up on in one place.
+              Add up to five positions to each log and update
+              the outcome as things change.
             </p>
           </div>
 
-          <div
-            className="weekBadge"
-          >
-            <span>
-              WEEKLY SUBMISSION
-            </span>
-
-            <strong>
-              Due Every Friday
-            </strong>
-          </div>
-        </section>
-
-        {/* =================================================
-            PARTICIPANT
-        ================================================= */}
-
-        <section
-          className="participantPanel"
-        >
-          <div>
-            <span>
-              PARTICIPANT
-            </span>
-
-            <strong>
-              {participantName}
-            </strong>
-          </div>
-
-          <div>
-            <span>
-              PROGRAM / REFERRAL CODE
-            </span>
-
-            <strong>
-              {referralCode ||
-                "Not Assigned"}
-            </strong>
-          </div>
-
-          <div>
-            <span>
-              LOG STATUS
-            </span>
-
-            <strong
-              className={
-                currentStatus ===
-                "submitted"
-                  ? "submittedStatus"
-                  : "draftStatus"
-              }
-            >
-              {currentStatus ===
-              "submitted"
-                ? "✓ Submitted"
-                : "Draft"}
-            </strong>
-          </div>
-        </section>
-
-        {/* =================================================
-            WEEK
-        ================================================= */}
-
-        <section
-          className="mainPanel"
-        >
-          <div
-            className="sectionHeader"
-          >
+          <div className="titleStats">
             <div>
-              <p
-                className="eyebrow"
-              >
-                STEP 1
-              </p>
-
-              <h2>
-                Select Your Week
-              </h2>
-
-              <p>
-                Enter the Friday date for the week you are documenting.
-              </p>
+              <strong>{completedCount}</strong>
+              <span>Opportunities Added</span>
             </div>
-          </div>
 
-          <div
-            className="weekField"
-          >
-            <label>
-              Week Ending
-            </label>
-
-            <input
-              type="date"
-              value={
-                weekEnding
-              }
-              onChange={(
-                e
-              ) =>
-                setWeekEnding(
-                  e.target.value
-                )
-              }
-            />
-          </div>
-
-          <div
-            className="sectionDivider"
-          />
-
-          {/* ===============================================
-              INSTRUCTIONS
-          =============================================== */}
-
-          <div
-            className="sectionHeader"
-          >
             <div>
-              <p
-                className="eyebrow"
-              >
-                STEP 2
-              </p>
-
-              <h2>
-                Add Your Job Opportunities
-              </h2>
-
-              <p>
-                You can document up to five job opportunities for the week.
-              </p>
-            </div>
-
-            <div
-              className="counter"
-            >
-              {completedCount}/5 Entries
-            </div>
-          </div>
-
-          <div
-            className="starNotice"
-          >
-            <div
-              className="starNoticeIcon"
-            >
-              ☆
+              <strong>{starredCount}</strong>
+              <span>High Interest</span>
             </div>
 
             <div>
               <strong>
-                Mark the opportunities you are most interested in.
+                {currentStatus === "submitted"
+                  ? "Submitted"
+                  : currentLogId
+                    ? "Saved"
+                    : "New"}
               </strong>
-
-              <p>
-                Select the star beside the COMPANY and/or JOB TITLE that
-                you would especially like to pursue.
-              </p>
+              <span>Log Status</span>
             </div>
           </div>
+        </section>
 
-          {/* ===============================================
-              FIVE JOB ENTRIES
-          =============================================== */}
+        <section
+          className="workspace"
+          id="job-log-workspace"
+        >
+          <div className="logTop">
+            <div>
+              <p className="eyebrow">
+                YOUR JOB SEARCH
+              </p>
 
-          <div
-            className="jobEntries"
-          >
-            {entries.map(
-              (
-                entry,
-                index
-              ) => (
-                <article
-                  key={
-                    index
-                  }
-                  className={`jobCard ${
-                    entry.company_starred ||
-                    entry.job_title_starred
-                      ? "jobCardStarred"
-                      : ""
-                  }`}
-                >
-                  <div
-                    className="jobCardHeader"
-                  >
-                    <div
-                      className="entryHeading"
-                    >
-                      <div
-                        className="entryNumber"
-                      >
-                        {index +
-                          1}
-                      </div>
+              <h2>
+                Add the opportunities you want to track.
+              </h2>
 
-                      <div>
-                        <p>
-                          JOB ENTRY
-                        </p>
+              <p>
+                You do not have to fill all five. Use only
+                the rows you need.
+              </p>
+            </div>
 
-                        <h3>
-                          Opportunity{" "}
-                          {index +
-                            1}
-                        </h3>
-                      </div>
-                    </div>
+            <label className="logDateField">
+              <span>LOG DATE</span>
 
-                    {entry.company_starred ||
-                    entry.job_title_starred ? (
-                      <div
-                        className="highInterestBadge"
-                      >
-                        ★ HIGH INTEREST
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div
-                    className="fieldGrid"
-                  >
-                    {/* DATE */}
-
-                    <div
-                      className="field"
-                    >
-                      <label>
-                        Date
-                      </label>
-
-                      <input
-                        type="date"
-                        value={
-                          entry.date
-                        }
-                        onChange={(
-                          e
-                        ) =>
-                          updateEntry(
-                            index,
-                            "date",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </div>
-
-                    {/* COMPANY */}
-
-                    <div
-                      className="field"
-                    >
-                      <label
-                        className="starFieldLabel"
-                      >
-                        Company Name
-
-                        <button
-                          type="button"
-                          className={`starButton ${
-                            entry.company_starred
-                              ? "starSelected"
-                              : ""
-                          }`}
-                          onClick={() =>
-                            updateEntry(
-                              index,
-                              "company_starred",
-                              !entry.company_starred
-                            )
-                          }
-                          title="Mark this company as high interest"
-                        >
-                          {entry.company_starred
-                            ? "★"
-                            : "☆"}
-                        </button>
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          entry.company_name
-                        }
-                        placeholder="Company name"
-                        onChange={(
-                          e
-                        ) =>
-                          updateEntry(
-                            index,
-                            "company_name",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </div>
-
-                    {/* JOB TITLE */}
-
-                    <div
-                      className="field"
-                    >
-                      <label
-                        className="starFieldLabel"
-                      >
-                        Job Title
-
-                        <button
-                          type="button"
-                          className={`starButton ${
-                            entry.job_title_starred
-                              ? "starSelected"
-                              : ""
-                          }`}
-                          onClick={() =>
-                            updateEntry(
-                              index,
-                              "job_title_starred",
-                              !entry.job_title_starred
-                            )
-                          }
-                          title="Mark this job title as high interest"
-                        >
-                          {entry.job_title_starred
-                            ? "★"
-                            : "☆"}
-                        </button>
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          entry.job_title
-                        }
-                        placeholder="Job title"
-                        onChange={(
-                          e
-                        ) =>
-                          updateEntry(
-                            index,
-                            "job_title",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </div>
-
-                    {/* CITY STATE */}
-
-                    <div
-                      className="field"
-                    >
-                      <label>
-                        City, State
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          entry.city_state
-                        }
-                        placeholder="Hartford, CT"
-                        onChange={(
-                          e
-                        ) =>
-                          updateEntry(
-                            index,
-                            "city_state",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  {/* WEBSITE */}
-
-                  <div
-                    className="field fullField"
-                  >
-                    <label>
-                      Website
-                    </label>
-
-                    <input
-                      type="text"
-                      value={
-                        entry.website
-                      }
-                      placeholder="Paste the job posting or company website"
-                      onChange={(
-                        e
-                      ) =>
-                        updateEntry(
-                          index,
-                          "website",
-                          e.target.value
-                        )
-                      }
-                    />
-                  </div>
-
-                  {/* DESCRIPTION */}
-
-                  <div
-                    className="field fullField"
-                  >
-                    <label>
-                      Summary of Job Description
-                    </label>
-
-                    <textarea
-                      value={
-                        entry.job_description_summary
-                      }
-                      placeholder="Briefly summarize the position, responsibilities, qualifications, and other important information from the job posting."
-                      onChange={(
-                        e
-                      ) =>
-                        updateEntry(
-                          index,
-                          "job_description_summary",
-                          e.target.value
-                        )
-                      }
-                    />
-                  </div>
-
-                  {/* OUTCOME */}
-
-                  <div
-                    className="field fullField"
-                  >
-                    <label>
-                      Outcome
-                    </label>
-
-                    <select
-                      value={
-                        entry.outcome
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        updateEntry(
-                          index,
-                          "outcome",
-                          e.target.value
-                        )
-                      }
-                    >
-                      <option
-                        value=""
-                      >
-                        Select outcome
-                      </option>
-
-                      {OUTCOME_OPTIONS.map(
-                        (
-                          outcome
-                        ) => (
-                          <option
-                            key={
-                              outcome
-                            }
-                            value={
-                              outcome
-                            }
-                          >
-                            {outcome}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </div>
-                </article>
-              )
-            )}
+              <input
+                type="date"
+                value={logDate}
+                onChange={(e) =>
+                  setLogDate(e.target.value)
+                }
+              />
+            </label>
           </div>
 
-          {/* ===============================================
-              MESSAGE
-          =============================================== */}
+          <div className="starHelp">
+            <span className="starHelpIcon">★</span>
+            <p>
+              Use the star beside a company or job title
+              when it is one of your strongest interests.
+            </p>
+          </div>
+
+          <div className="opportunityList">
+            {entries.map((entry, index) => {
+              const expanded =
+                expandedIndexes.includes(index);
+
+              const summary =
+                entrySummary(entry, index);
+
+              const hasContent =
+                hasEntryContent(entry);
+
+              const highInterest =
+                entry.company_starred ||
+                entry.job_title_starred;
+
+              return (
+                <article
+                  className={`opportunityRow ${
+                    highInterest
+                      ? "opportunityStarred"
+                      : ""
+                  }`}
+                  key={index}
+                >
+                  <button
+                    type="button"
+                    className="opportunityHeader"
+                    onClick={() =>
+                      toggleEntry(index)
+                    }
+                  >
+                    <span className="opportunityNumber">
+                      {index + 1}
+                    </span>
+
+                    <div className="opportunitySummary">
+                      <strong>
+                        {summary.title}
+                      </strong>
+
+                      <span>
+                        {summary.details}
+                      </span>
+                    </div>
+
+                    {highInterest ? (
+                      <span className="interestBadge">
+                        ★ High Interest
+                      </span>
+                    ) : hasContent ? (
+                      <span className="entryBadge">
+                        Added
+                      </span>
+                    ) : null}
+
+                    <span className="expandIcon">
+                      {expanded ? "−" : "+"}
+                    </span>
+                  </button>
+
+                  {expanded ? (
+                    <div className="entryBody">
+                      <div className="fieldGrid">
+                        <label className="field">
+                          <span>Date</span>
+
+                          <input
+                            type="date"
+                            value={entry.date}
+                            onChange={(e) =>
+                              updateEntry(
+                                index,
+                                "date",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span className="labelWithStar">
+                            Company Name
+
+                            <button
+                              type="button"
+                              className={`starButton ${
+                                entry.company_starred
+                                  ? "starSelected"
+                                  : ""
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                updateEntry(
+                                  index,
+                                  "company_starred",
+                                  !entry.company_starred
+                                );
+                              }}
+                            >
+                              {entry.company_starred
+                                ? "★"
+                                : "☆"}
+                            </button>
+                          </span>
+
+                          <input
+                            type="text"
+                            value={entry.company_name}
+                            placeholder="Company name"
+                            onChange={(e) =>
+                              updateEntry(
+                                index,
+                                "company_name",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span className="labelWithStar">
+                            Job Title
+
+                            <button
+                              type="button"
+                              className={`starButton ${
+                                entry.job_title_starred
+                                  ? "starSelected"
+                                  : ""
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                updateEntry(
+                                  index,
+                                  "job_title_starred",
+                                  !entry.job_title_starred
+                                );
+                              }}
+                            >
+                              {entry.job_title_starred
+                                ? "★"
+                                : "☆"}
+                            </button>
+                          </span>
+
+                          <input
+                            type="text"
+                            value={entry.job_title}
+                            placeholder="Job title"
+                            onChange={(e) =>
+                              updateEntry(
+                                index,
+                                "job_title",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>City, State</span>
+
+                          <input
+                            type="text"
+                            value={entry.city_state}
+                            placeholder="Hartford, CT"
+                            onChange={(e) =>
+                              updateEntry(
+                                index,
+                                "city_state",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      <label className="field fullField">
+                        <span>
+                          Job Posting / Company Link
+                        </span>
+
+                        <input
+                          type="text"
+                          value={entry.website}
+                          placeholder="Paste the job posting or company website"
+                          onChange={(e) =>
+                            updateEntry(
+                              index,
+                              "website",
+                              e.target.value
+                            )
+                          }
+                        />
+                      </label>
+
+                      <div className="detailGrid">
+                        <label className="field">
+                          <span>
+                            Quick Job Summary
+                          </span>
+
+                          <textarea
+                            value={
+                              entry.job_description_summary
+                            }
+                            placeholder="Briefly note the responsibilities, qualifications, pay, schedule, or anything important from the posting."
+                            onChange={(e) =>
+                              updateEntry(
+                                index,
+                                "job_description_summary",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>
+                            Current Outcome
+                          </span>
+
+                          <select
+                            value={entry.outcome}
+                            onChange={(e) =>
+                              updateEntry(
+                                index,
+                                "outcome",
+                                e.target.value
+                              )
+                            }
+                          >
+                            <option value="">
+                              Select outcome
+                            </option>
+
+                            {OUTCOME_OPTIONS.map(
+                              (outcome) => (
+                                <option
+                                  key={outcome}
+                                  value={outcome}
+                                >
+                                  {outcome}
+                                </option>
+                              )
+                            )}
+                          </select>
+
+                          <p className="fieldHint">
+                            You can reopen this log later and change the outcome.
+                          </p>
+                        </label>
+                      </div>
+
+                      {index < entries.length - 1 ? (
+                        <button
+                          type="button"
+                          className="nextOpportunity"
+                          onClick={() =>
+                            expandEntry(index + 1)
+                          }
+                        >
+                          Open Opportunity {index + 2} →
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
 
           {message ? (
             <div
               className={
-                message.startsWith(
-                  "✓"
-                )
+                message.startsWith("✓")
                   ? "successMessage"
                   : "message"
               }
@@ -1441,35 +910,21 @@ export default function JobLogGeneratorPage() {
             </div>
           ) : null}
 
-          {/* ===============================================
-              ACTIONS
-          =============================================== */}
-
-          <div
-            className="actions"
-          >
+          <div className="actions">
             <button
               type="button"
               className="newBtn"
-              onClick={
-                startNewLog
-              }
+              onClick={startNewLog}
             >
-              + New Log
+              + Start New Log
             </button>
 
-            <div
-              className="rightActions"
-            >
+            <div className="rightActions">
               <button
                 type="button"
                 className="draftBtn"
-                disabled={
-                  saving
-                }
-                onClick={
-                  saveDraft
-                }
+                disabled={saving}
+                onClick={saveDraft}
               >
                 {saving
                   ? "Saving..."
@@ -1479,88 +934,71 @@ export default function JobLogGeneratorPage() {
               <button
                 type="button"
                 className="submitBtn"
-                disabled={
-                  submitting
-                }
-                onClick={
-                  submitLog
-                }
+                disabled={submitting}
+                onClick={submitLog}
               >
                 {submitting
                   ? "Submitting..."
-                  : "Submit Weekly Job Log →"}
+                  : "Submit Job Log →"}
               </button>
             </div>
           </div>
         </section>
 
-        {/* =================================================
-            HISTORY
-        ================================================= */}
-
-        <section
-          className="historyPanel"
-        >
-          <div
-            className="historyHeader"
+        <section className="savedSection">
+          <button
+            type="button"
+            className="savedToggle"
+            onClick={() =>
+              setHistoryOpen(!historyOpen)
+            }
           >
             <div>
-              <p
-                className="eyebrow"
-              >
-                YOUR PROGRESS
-              </p>
+              <span className="eyebrow">
+                SAVED JOB LOGS
+              </span>
 
-              <h2>
-                Weekly Job Log History
-              </h2>
+              <strong>
+                {previousLogs.length === 0
+                  ? "No saved logs yet"
+                  : `${previousLogs.length} saved log${
+                      previousLogs.length === 1
+                        ? ""
+                        : "s"
+                    }`}
+              </strong>
 
-              <p>
-                View your saved drafts and previously submitted weekly logs.
-              </p>
+              <small>
+                {submittedCount} submitted
+                {" • "}
+                {draftCount} draft
+              </small>
             </div>
 
-            <div
-              className="historyCount"
-            >
-              {
-                previousLogs.length
-              }
-            </div>
-          </div>
+            <span className="savedArrow">
+              {historyOpen ? "−" : "+"}
+            </span>
+          </button>
 
-          {previousLogs.length ===
-          0 ? (
-            <div
-              className="emptyHistory"
-            >
-              Your saved and submitted Weekly Job Logs will appear here.
-            </div>
-          ) : (
-            <div
-              className="historyList"
-            >
-              {previousLogs.map(
-                (
-                  log
-                ) => {
+          {historyOpen ? (
+            <div className="savedList">
+              {previousLogs.length === 0 ? (
+                <div className="emptySaved">
+                  Saved drafts and submitted Job Logs will appear here.
+                </div>
+              ) : (
+                previousLogs.map((log) => {
                   const logEntries =
-                    Array.isArray(
-                      log.entries
-                    )
+                    Array.isArray(log.entries)
                       ? log.entries.filter(
                           hasEntryContent
                         )
                       : [];
 
                   const logStars =
-                    Array.isArray(
-                      log.entries
-                    )
+                    Array.isArray(log.entries)
                       ? log.entries.filter(
-                          (
-                            entry
-                          ) =>
+                          (entry) =>
                             entry.company_starred ||
                             entry.job_title_starred
                         ).length
@@ -1569,109 +1007,60 @@ export default function JobLogGeneratorPage() {
                   return (
                     <button
                       type="button"
-                      key={
-                        log.id
-                      }
-                      className="historyCard"
+                      key={log.id}
+                      className="savedRow"
                       onClick={() =>
-                        openPreviousLog(
-                          log
-                        )
+                        openPreviousLog(log)
                       }
                     >
-                      <div
-                        className="historyTop"
-                      >
-                        <div>
-                          <span
-                            className="historyWeek"
-                          >
-                            WEEK ENDING
-                          </span>
+                      <div>
+                        <span>LOG DATE</span>
+                        <strong>
+                          {formatDate(
+                            log.week_ending
+                          )}
+                        </strong>
+                      </div>
 
-                          <strong>
-                            {new Date(
-                              `${log.week_ending}T00:00:00`
-                            ).toLocaleDateString(
-                              [],
-                              {
-                                month:
-                                  "long",
+                      <div>
+                        <span>OPPORTUNITIES</span>
+                        <strong>
+                          {logEntries.length}
+                        </strong>
+                      </div>
 
-                                day:
-                                  "numeric",
+                      <div>
+                        <span>HIGH INTEREST</span>
+                        <strong>
+                          {logStars}
+                        </strong>
+                      </div>
 
-                                year:
-                                  "numeric",
-                              }
-                            )}
-                          </strong>
-                        </div>
-
-                        <span
-                          className={`historyStatus ${
-                            log.status ===
-                            "submitted"
-                              ? "historySubmitted"
-                              : "historyDraft"
-                          }`}
-                        >
-                          {log.status ===
+                      <span
+                        className={`savedStatus ${
+                          log.status ===
                           "submitted"
-                            ? "✓ Submitted"
-                            : "Draft"}
-                        </span>
-                      </div>
-
-                      <div
-                        className="historyStats"
+                            ? "savedSubmitted"
+                            : "savedDraft"
+                        }`}
                       >
-                        <div>
-                          <span>
-                            JOB ENTRIES
-                          </span>
+                        {log.status ===
+                        "submitted"
+                          ? "✓ Submitted"
+                          : "Draft"}
+                      </span>
 
-                          <strong>
-                            {
-                              logEntries.length
-                            }
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span>
-                            HIGH INTEREST
-                          </span>
-
-                          <strong>
-                            {
-                              logStars
-                            }
-                          </strong>
-                        </div>
-                      </div>
+                      <span className="savedOpen">
+                        Open →
+                      </span>
                     </button>
                   );
-                }
+                })
               )}
             </div>
-          )}
+          ) : null}
         </section>
-
-        <footer>
-          <strong>
-            HireMinds™
-          </strong>
-
-          <span>
-            Prepare with Confidence. Build with Purpose.
-          </span>
-        </footer>
       </div>
-
-      {/* ===================================================
-          STYLES
-      =================================================== */}
 
       <style jsx>{`
         * {
@@ -1679,1059 +1068,657 @@ export default function JobLogGeneratorPage() {
         }
 
         .page {
-          position: relative;
-
           min-height: 100vh;
-
-          padding: 28px;
-
-          overflow: hidden;
-
+          padding: 24px 18px 54px;
           background:
             radial-gradient(
-              circle at top right,
-              rgba(0,229,255,.12),
-              transparent 30%
-            ),
-            radial-gradient(
-              circle at bottom left,
-              rgba(255,210,73,.05),
-              transparent 30%
+              circle at 88% 5%,
+              rgba(31, 130, 188, 0.11),
+              transparent 23%
             ),
             linear-gradient(
-              135deg,
-              #050814,
-              #0b1220,
-              #05060d
+              180deg,
+              #edf2f5 0%,
+              #f8fafb 46%,
+              #ffffff 100%
             );
-
-          color: white;
-
+          color: #101820;
           font-family:
             Inter,
-            system-ui,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
+            Arial,
+            Helvetica,
             sans-serif;
         }
 
-        .gridBackground {
-          position: fixed;
-
-          inset: 0;
-
-          pointer-events: none;
-
-          opacity: .045;
-
-          background-image:
-            linear-gradient(
-              rgba(255,255,255,.045) 1px,
-              transparent 1px
-            ),
-            linear-gradient(
-              90deg,
-              rgba(255,255,255,.045) 1px,
-              transparent 1px
-            );
-
-          background-size:
-            70px 70px;
-        }
-
-        .glow {
-          position: fixed;
-
-          border-radius: 50%;
-
-          filter: blur(110px);
-
-          pointer-events: none;
-        }
-
-        .glowOne {
-          width: 420px;
-          height: 420px;
-
-          top: -180px;
-          right: -120px;
-
-          background:
-            rgba(0,229,255,.07);
-        }
-
-        .glowTwo {
-          width: 500px;
-          height: 500px;
-
-          bottom: -260px;
-          left: -220px;
-
-          background:
-            rgba(255,210,73,.035);
-        }
-
         .shell {
-          position: relative;
-
-          z-index: 2;
-
-          max-width: 1200px;
-
+          width: min(1240px, 100%);
           margin: 0 auto;
         }
 
-        /* ===============================================
-           TOP
-        =============================================== */
-
-        .topBar {
-          display: flex;
-
-          justify-content: space-between;
-
-          align-items: center;
-
-          gap: 20px;
-
-          margin-bottom: 28px;
-        }
-
-        .brand {
-          margin: 0;
-
-          color: #10f3ff;
-
-          font-size: 11px;
-
-          font-weight: 950;
-
-          letter-spacing: .13em;
-        }
-
-        .brandSub {
-          display: block;
-
-          margin-top: 3px;
-
-          color:
-            rgba(255,255,255,.42);
-
-          font-size: 8px;
-        }
-
         .backBtn {
-          padding: 10px 15px;
-
-          border-radius: 999px;
-
-          border:
-            1px solid rgba(255,255,255,.12);
-
-          background:
-            rgba(255,255,255,.04);
-
-          color: white;
-
-          cursor: pointer;
-
-          font-size: 10px;
-
+          margin-bottom: 14px;
+          padding: 8px 0;
+          border: none;
+          background: transparent;
+          color: #385466;
+          font-size: 12px;
           font-weight: 850;
-        }
-
-        /* ===============================================
-           HERO
-        =============================================== */
-
-        .hero {
-          padding: 34px;
-
-          display: flex;
-
-          justify-content: space-between;
-
-          align-items: center;
-
-          gap: 28px;
-
-          border-radius: 27px;
-
-          background:
-            linear-gradient(
-              135deg,
-              rgba(16,243,255,.09),
-              rgba(255,210,73,.035)
-            );
-
-          border:
-            1px solid rgba(16,243,255,.17);
+          cursor: pointer;
         }
 
         .eyebrow {
-          margin: 0 0 7px;
-
-          color: #10f3ff;
-
+          display: block;
+          margin: 0;
+          color: #176fa8;
           font-size: 9px;
-
           font-weight: 950;
+          letter-spacing: 0.14em;
+        }
 
-          letter-spacing: .14em;
-
-          text-transform: uppercase;
+        .titleArea {
+          display: grid;
+          grid-template-columns:
+            minmax(0, 1fr)
+            auto;
+          gap: 34px;
+          align-items: end;
+          padding: 10px 2px 24px;
+          border-bottom:
+            1px solid #ccd7df;
         }
 
         h1 {
-          margin: 0;
-
-          color: white;
-
+          margin: 6px 0 0;
+          color: #101820;
           font-size:
             clamp(
-              2.5rem,
-              5vw,
-              4.8rem
+              48px,
+              6vw,
+              76px
             );
-
-          line-height: 1;
-
-          letter-spacing: -.04em;
+          line-height: 0.94;
+          font-weight: 950;
+          letter-spacing: -0.055em;
         }
 
         .intro {
-          max-width: 730px;
+          max-width: 760px;
+          margin: 16px 0 0;
+          color: #65737d;
+          font-size: 14px;
+          line-height: 1.65;
+        }
 
-          margin: 17px 0 0;
+        .titleStats {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
 
-          color:
-            rgba(255,255,255,.68);
+        .titleStats div {
+          min-width: 112px;
+          padding: 11px 12px;
+          border-left:
+            2px solid #73b6da;
+          background:
+            rgba(255, 255, 255, 0.6);
+        }
 
-          line-height: 1.7;
+        .titleStats strong {
+          display: block;
+          color: #17384b;
+          font-size: 16px;
+        }
 
+        .titleStats span {
+          display: block;
+          margin-top: 3px;
+          color: #78858e;
+          font-size: 8px;
+          font-weight: 800;
+        }
+
+        .workspace {
+          margin-top: 22px;
+          padding: 29px 30px;
+          border-radius: 22px;
+          background:
+            rgba(255, 255, 255, 0.94);
+          border: 1px solid #cad6de;
+          box-shadow:
+            0 13px 32px
+            rgba(25, 52, 68, 0.055);
+        }
+
+        .logTop {
+          display: flex;
+          justify-content: space-between;
+          gap: 28px;
+          align-items: flex-end;
+        }
+
+        .logTop h2 {
+          margin: 5px 0 0;
+          font-size:
+            clamp(
+              27px,
+              4vw,
+              38px
+            );
+          line-height: 1;
+          letter-spacing: -0.04em;
+        }
+
+        .logTop > div > p:last-child {
+          margin: 9px 0 0;
+          color: #6f7c85;
+          font-size: 12px;
+        }
+
+        .logDateField {
+          width: 215px;
+          flex: 0 0 215px;
+        }
+
+        .logDateField span,
+        .field > span {
+          display: block;
+          margin-bottom: 7px;
+          color: #314a59;
+          font-size: 9px;
+          font-weight: 900;
+        }
+
+        .logDateField input,
+        .field input,
+        .field textarea,
+        .field select {
+          width: 100%;
+          padding: 11px 12px;
+          border-radius: 10px;
+          border: 1px solid #b8c7d1;
+          background: #ffffff;
+          color: #162731;
+          font-family: inherit;
+          outline: none;
+        }
+
+        .starHelp {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-top: 20px;
+          padding: 11px 0 13px;
+          border-top:
+            1px solid #d9e1e7;
+          border-bottom:
+            1px solid #d9e1e7;
+        }
+
+        .starHelpIcon {
+          color: #c99622;
+          font-size: 17px;
+        }
+
+        .starHelp p {
+          margin: 0;
+          color: #6d7881;
+          font-size: 10px;
+        }
+
+        .opportunityRow {
+          border-bottom:
+            1px solid #d6dfe5;
+        }
+
+        .opportunityStarred {
+          background:
+            linear-gradient(
+              90deg,
+              rgba(219, 170, 54, 0.055),
+              transparent 55%
+            );
+        }
+
+        .opportunityHeader {
+          width: 100%;
+          min-height: 74px;
+          display: grid;
+          grid-template-columns:
+            34px
+            minmax(0, 1fr)
+            auto
+            26px;
+          gap: 13px;
+          align-items: center;
+          padding: 12px 4px;
+          border: none;
+          background: transparent;
+          text-align: left;
+          color: #172832;
+          cursor: pointer;
+        }
+
+        .opportunityNumber {
+          width: 32px;
+          height: 32px;
+          display: grid;
+          place-items: center;
+          border-radius: 9px;
+          background: #e9f2f7;
+          color: #176fa8;
+          font-size: 10px;
+          font-weight: 950;
+        }
+
+        .opportunitySummary strong {
+          display: block;
           font-size: 13px;
         }
 
-        .weekBadge {
-          min-width: 190px;
-
-          padding: 17px;
-
-          display: grid;
-
-          gap: 4px;
-
-          border-radius: 17px;
-
-          background:
-            rgba(255,210,73,.07);
-
-          border:
-            1px solid rgba(255,210,73,.18);
+        .opportunitySummary span {
+          display: block;
+          margin-top: 4px;
+          color: #79858d;
+          font-size: 9px;
         }
 
-        .weekBadge span {
-          color: #ffd249;
-
-          font-size: 7px;
-
-          font-weight: 950;
-
-          letter-spacing: .12em;
-        }
-
-        .weekBadge strong {
-          font-size: 15px;
-        }
-
-        /* ===============================================
-           PARTICIPANT
-        =============================================== */
-
-        .participantPanel {
-          margin: 18px auto;
-
-          display: grid;
-
-          grid-template-columns:
-            repeat(
-              3,
-              minmax(0,1fr)
-            );
-
-          gap: 10px;
-        }
-
-        .participantPanel div {
-          padding: 14px;
-
-          display: grid;
-
-          gap: 4px;
-
-          border-radius: 14px;
-
-          background:
-            rgba(255,255,255,.04);
-
-          border:
-            1px solid rgba(255,255,255,.08);
-        }
-
-        .participantPanel span {
-          color:
-            rgba(255,255,255,.45);
-
-          font-size: 7px;
-
-          font-weight: 900;
-
-          letter-spacing: .1em;
-        }
-
-        .participantPanel strong {
-          font-size: 11px;
-        }
-
-        .submittedStatus {
-          color: #86efac;
-        }
-
-        .draftStatus {
-          color: #ffd249;
-        }
-
-        /* ===============================================
-           MAIN PANEL
-        =============================================== */
-
-        .mainPanel,
-        .historyPanel {
-          margin-top: 18px;
-
-          padding: 30px;
-
-          border-radius: 25px;
-
-          background:
-            rgba(255,255,255,.035);
-
-          border:
-            1px solid rgba(255,255,255,.09);
-        }
-
-        .sectionHeader {
-          display: flex;
-
-          justify-content: space-between;
-
-          align-items: flex-start;
-
-          gap: 20px;
-        }
-
-        .sectionHeader h2,
-        .historyHeader h2 {
-          margin: 3px 0 6px;
-
-          font-size: 24px;
-        }
-
-        .sectionHeader p:not(.eyebrow),
-        .historyHeader p:not(.eyebrow) {
-          margin: 0;
-
-          color:
-            rgba(255,255,255,.59);
-
-          font-size: 10px;
-
-          line-height: 1.55;
-        }
-
-        .weekField {
-          max-width: 380px;
-
-          margin-top: 18px;
-
-          display: grid;
-
-          gap: 7px;
-        }
-
-        .weekField label,
-        .field label {
-          color: #dce4ee;
-
-          font-size: 10px;
-
-          font-weight: 850;
-        }
-
-        input,
-        textarea,
-        select {
-          width: 100%;
-
-          padding: 13px;
-
-          border-radius: 12px;
-
-          border:
-            1px solid rgba(255,255,255,.11);
-
-          background: #070b13;
-
-          color: white;
-
-          outline: none;
-
-          font-family: inherit;
-        }
-
-        select option {
-          background: #070b13;
-
-          color: white;
-        }
-
-        textarea {
-          min-height: 105px;
-
-          resize: vertical;
-
-          line-height: 1.6;
-        }
-
-        .sectionDivider {
-          height: 1px;
-
-          margin: 29px 0;
-
-          background:
-            rgba(255,255,255,.08);
-        }
-
-        .counter {
-          padding: 7px 10px;
-
+        .interestBadge,
+        .entryBadge {
+          padding: 6px 8px;
           border-radius: 999px;
-
-          background:
-            rgba(16,243,255,.07);
-
-          border:
-            1px solid rgba(16,243,255,.16);
-
-          color: #10f3ff;
-
-          font-size: 9px;
-
-          font-weight: 900;
-        }
-
-        /* ===============================================
-           STAR NOTICE
-        =============================================== */
-
-        .starNotice {
-          margin-top: 18px;
-
-          padding: 16px;
-
-          display: flex;
-
-          gap: 13px;
-
-          align-items: center;
-
-          border-radius: 15px;
-
-          background:
-            linear-gradient(
-              135deg,
-              rgba(255,210,73,.07),
-              rgba(16,243,255,.02)
-            );
-
-          border:
-            1px solid rgba(255,210,73,.16);
-        }
-
-        .starNoticeIcon {
-          color: #ffd249;
-
-          font-size: 31px;
-        }
-
-        .starNotice strong {
-          color: #ffe486;
-
-          font-size: 11px;
-        }
-
-        .starNotice p {
-          margin: 4px 0 0;
-
-          color:
-            rgba(255,255,255,.58);
-
-          font-size: 9px;
-        }
-
-        /* ===============================================
-           JOB CARDS
-        =============================================== */
-
-        .jobEntries {
-          display: grid;
-
-          gap: 15px;
-
-          margin-top: 18px;
-        }
-
-        .jobCard {
-          padding: 22px;
-
-          border-radius: 20px;
-
-          background:
-            linear-gradient(
-              135deg,
-              rgba(255,255,255,.045),
-              rgba(0,0,0,.13)
-            );
-
-          border:
-            1px solid rgba(255,255,255,.08);
-
-          transition:
-            border-color .2s ease,
-            box-shadow .2s ease;
-        }
-
-        .jobCardStarred {
-          border-color:
-            rgba(255,210,73,.27);
-
-          box-shadow:
-            0 0 35px rgba(255,210,73,.035);
-        }
-
-        .jobCardHeader {
-          display: flex;
-
-          justify-content: space-between;
-
-          align-items: center;
-
-          gap: 15px;
-
-          flex-wrap: wrap;
-
-          margin-bottom: 18px;
-        }
-
-        .entryHeading {
-          display: flex;
-
-          align-items: center;
-
-          gap: 12px;
-        }
-
-        .entryNumber {
-          width: 43px;
-          height: 43px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          border-radius: 13px;
-
-          background:
-            rgba(16,243,255,.07);
-
-          border:
-            1px solid rgba(16,243,255,.16);
-
-          color: #10f3ff;
-
-          font-size: 12px;
-
+          white-space: nowrap;
+          font-size: 7px;
           font-weight: 950;
         }
 
-        .entryHeading p {
-          margin: 0;
-
-          color:
-            rgba(255,255,255,.38);
-
-          font-size: 7px;
-
-          font-weight: 900;
-
-          letter-spacing: .12em;
+        .interestBadge {
+          background: #fff4d7;
+          border: 1px solid #e7cc81;
+          color: #7b5e18;
         }
 
-        .entryHeading h3 {
-          margin: 3px 0 0;
+        .entryBadge {
+          background: #edf5f9;
+          border: 1px solid #c8dae5;
+          color: #39708e;
+        }
 
+        .expandIcon {
+          color: #176fa8;
           font-size: 18px;
+          text-align: center;
         }
 
-        .highInterestBadge {
-          padding: 7px 10px;
-
-          border-radius: 999px;
-
-          background:
-            rgba(255,210,73,.07);
-
-          border:
-            1px solid rgba(255,210,73,.18);
-
-          color: #ffd249;
-
-          font-size: 8px;
-
-          font-weight: 950;
-
-          letter-spacing: .07em;
+        .entryBody {
+          padding:
+            5px
+            3px
+            22px
+            50px;
         }
 
         .fieldGrid {
           display: grid;
-
           grid-template-columns:
             repeat(
               2,
-              minmax(0,1fr)
+              minmax(0, 1fr)
             );
-
-          gap: 12px;
+          gap: 13px;
         }
 
         .field {
-          display: grid;
-
-          gap: 7px;
+          display: block;
         }
 
-        .fullField {
-          margin-top: 12px;
-        }
-
-        .starFieldLabel {
-          display: flex;
-
+        .labelWithStar {
+          display: flex !important;
           align-items: center;
-
           gap: 7px;
         }
 
         .starButton {
           padding: 0;
-
           border: none;
-
           background: transparent;
-
-          color:
-            rgba(255,255,255,.34);
-
-          font-size: 21px;
-
-          line-height: 1;
-
+          color: #9ba7ae;
+          font-size: 18px;
           cursor: pointer;
         }
 
         .starSelected {
-          color: #ffd249;
-
-          text-shadow:
-            0 0 14px rgba(255,210,73,.3);
+          color: #cc9821;
         }
 
-        /* ===============================================
-           ACTIONS
-        =============================================== */
+        .fullField {
+          display: block;
+          margin-top: 13px;
+        }
+
+        .detailGrid {
+          display: grid;
+          grid-template-columns:
+            minmax(0, 1.45fr)
+            minmax(220px, 0.55fr);
+          gap: 13px;
+          margin-top: 13px;
+        }
+
+        .field textarea {
+          min-height: 95px;
+          resize: vertical;
+          line-height: 1.55;
+        }
+
+        .fieldHint {
+          margin: 7px 0 0;
+          color: #89949b;
+          font-size: 8px;
+        }
+
+        .nextOpportunity {
+          margin-top: 14px;
+          padding: 8px 0;
+          border: none;
+          background: transparent;
+          color: #176fa8;
+          font-size: 9px;
+          font-weight: 900;
+          cursor: pointer;
+        }
 
         .message,
         .successMessage {
           margin-top: 18px;
-
-          padding: 13px;
-
-          border-radius: 12px;
-
+          padding: 12px 14px;
+          border-radius: 11px;
           font-size: 10px;
-
-          line-height: 1.5;
         }
 
         .message {
-          color: #fde68a;
-
-          background:
-            rgba(250,204,21,.06);
-
-          border:
-            1px solid rgba(250,204,21,.15);
+          border: 1px solid #e3c688;
+          background: #fff8e7;
+          color: #70581c;
         }
 
         .successMessage {
-          color: #9df3b7;
-
-          background:
-            rgba(34,197,94,.06);
-
-          border:
-            1px solid rgba(34,197,94,.16);
+          border: 1px solid #aed3bb;
+          background: #edf8f1;
+          color: #286847;
         }
 
         .actions {
           display: flex;
-
           justify-content: space-between;
-
-          align-items: center;
-
           gap: 14px;
-
           flex-wrap: wrap;
-
-          margin-top: 24px;
-
-          padding-top: 20px;
-
+          margin-top: 22px;
+          padding-top: 18px;
           border-top:
-            1px solid rgba(255,255,255,.08);
+            1px solid #d7e0e6;
         }
 
         .rightActions {
           display: flex;
-
-          gap: 10px;
-
+          gap: 9px;
           flex-wrap: wrap;
         }
 
         .newBtn,
         .draftBtn,
         .submitBtn {
-          padding: 12px 17px;
-
-          border-radius: 999px;
-
+          padding: 11px 15px;
+          border-radius: 10px;
+          font-size: 9px;
           font-weight: 900;
-
           cursor: pointer;
         }
 
         .newBtn {
-          border:
-            1px solid rgba(255,255,255,.13);
-
-          background:
-            rgba(255,255,255,.04);
-
-          color: white;
+          border: 1px solid #bdcad2;
+          background: white;
+          color: #3e5665;
         }
 
         .draftBtn {
-          border:
-            1px solid rgba(16,243,255,.2);
-
-          background:
-            rgba(16,243,255,.06);
-
-          color: #c7fbff;
+          border: 1px solid #88b8d1;
+          background: #eff7fb;
+          color: #176fa8;
         }
 
         .submitBtn {
           border: none;
-
           background:
             linear-gradient(
-              135deg,
-              #10f3ff,
-              #ffd249
+              90deg,
+              #123a52,
+              #1779ae
             );
-
-          color: #06111f;
+          color: white;
         }
 
         .draftBtn:disabled,
         .submitBtn:disabled {
-          opacity: .45;
-
+          opacity: 0.5;
           cursor: not-allowed;
         }
 
-        /* ===============================================
-           HISTORY
-        =============================================== */
-
-        .historyHeader {
-          display: flex;
-
-          justify-content: space-between;
-
-          align-items: flex-start;
-
-          gap: 20px;
-        }
-
-        .historyCount {
-          width: 43px;
-          height: 43px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          border-radius: 50%;
-
+        .savedSection {
+          margin-top: 18px;
+          overflow: hidden;
+          border-radius: 16px;
           background:
-            rgba(16,243,255,.08);
-
-          border:
-            1px solid rgba(16,243,255,.17);
-
-          color: #10f3ff;
-
-          font-weight: 950;
+            rgba(255, 255, 255, 0.88);
+          border: 1px solid #ccd7df;
         }
 
-        .historyList {
-          display: grid;
-
-          gap: 10px;
-
-          margin-top: 19px;
-        }
-
-        .historyCard {
+        .savedToggle {
           width: 100%;
-
-          padding: 16px;
-
-          border-radius: 15px;
-
-          border:
-            1px solid rgba(255,255,255,.08);
-
-          background:
-            rgba(0,0,0,.15);
-
-          color: white;
-
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          padding: 16px 18px;
+          border: none;
+          background: transparent;
+          color: #172832;
           text-align: left;
-
           cursor: pointer;
         }
 
-        .historyCard:hover {
-          border-color:
-            rgba(16,243,255,.2);
+        .savedToggle strong {
+          display: block;
+          margin-top: 4px;
+          font-size: 13px;
         }
 
-        .historyTop {
-          display: flex;
-
-          justify-content: space-between;
-
-          gap: 12px;
-        }
-
-        .historyTop > div {
-          display: grid;
-
-          gap: 3px;
-        }
-
-        .historyWeek {
-          color: #8c98a8;
-
-          font-size: 7px;
-
-          font-weight: 900;
-
-          letter-spacing: .1em;
-        }
-
-        .historyTop strong {
-          font-size: 12px;
-        }
-
-        .historyStatus {
-          padding: 6px 9px;
-
-          border-radius: 999px;
-
+        .savedToggle small {
+          display: block;
+          margin-top: 3px;
+          color: #7c8991;
           font-size: 8px;
-
-          font-weight: 900;
         }
 
-        .historySubmitted {
-          color: #86efac;
-
-          background:
-            rgba(34,197,94,.06);
-
-          border:
-            1px solid rgba(34,197,94,.15);
+        .savedArrow {
+          color: #176fa8;
+          font-size: 18px;
         }
 
-        .historyDraft {
-          color: #fde68a;
-
-          background:
-            rgba(250,204,21,.06);
-
-          border:
-            1px solid rgba(250,204,21,.15);
+        .savedList {
+          padding:
+            0
+            18px
+            8px;
+          border-top:
+            1px solid #d9e1e7;
         }
 
-        .historyStats {
-          display: flex;
-
-          gap: 9px;
-
-          margin-top: 12px;
-        }
-
-        .historyStats div {
-          min-width: 110px;
-
-          padding: 9px 10px;
-
+        .savedRow {
+          width: 100%;
           display: grid;
+          grid-template-columns:
+            minmax(125px, 0.8fr)
+            minmax(85px, 0.45fr)
+            minmax(85px, 0.45fr)
+            auto
+            auto;
+          gap: 18px;
+          align-items: center;
+          padding: 14px 0;
+          border: none;
+          border-bottom:
+            1px solid #d9e1e7;
+          background: transparent;
+          color: #172832;
+          text-align: left;
+          cursor: pointer;
+        }
 
+        .savedRow div {
+          display: grid;
           gap: 3px;
-
-          border-radius: 10px;
-
-          background:
-            rgba(255,255,255,.03);
-
-          border:
-            1px solid rgba(255,255,255,.055);
         }
 
-        .historyStats span {
-          color: #778696;
-
+        .savedRow div span {
+          color: #87939b;
           font-size: 7px;
-
           font-weight: 900;
-
-          letter-spacing: .08em;
         }
 
-        .historyStats strong {
-          font-size: 11px;
-        }
-
-        .emptyHistory {
-          margin-top: 18px;
-
-          padding: 25px;
-
-          border-radius: 14px;
-
-          border:
-            1px dashed rgba(255,255,255,.12);
-
-          color: #8c97a6;
-
-          text-align: center;
-
+        .savedRow div strong {
           font-size: 10px;
         }
 
-        footer {
-          display: flex;
+        .savedStatus {
+          padding: 6px 8px;
+          border-radius: 999px;
+          white-space: nowrap;
+          font-size: 7px;
+          font-weight: 900;
+        }
 
-          justify-content: space-between;
+        .savedSubmitted {
+          background: #e9f6ed;
+          border: 1px solid #b8dcc5;
+          color: #246d46;
+        }
 
-          gap: 20px;
+        .savedDraft {
+          background: #fff5d9;
+          border: 1px solid #efd690;
+          color: #765b13;
+        }
 
-          padding: 27px 5px 4px;
+        .savedOpen {
+          color: #176fa8;
+          font-size: 8px;
+          font-weight: 900;
+        }
 
-          color: #607080;
-
+        .emptySaved {
+          padding: 18px 0;
+          color: #7e8a92;
           font-size: 9px;
         }
 
-        /* ===============================================
-           MOBILE
-        =============================================== */
-
-        @media(max-width:800px) {
-          .page {
-            padding: 14px;
-          }
-
-          .hero {
-            flex-direction: column;
-
-            align-items: stretch;
-
-            padding: 24px;
-          }
-
-          .weekBadge {
-            min-width: 0;
-          }
-
-          .participantPanel {
+        @media (max-width: 850px) {
+          .titleArea {
             grid-template-columns: 1fr;
           }
 
-          .mainPanel,
-          .historyPanel {
-            padding: 20px;
+          .titleStats {
+            justify-content: flex-start;
+          }
+
+          .logTop {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .logDateField {
+            width: 100%;
+            flex: auto;
+          }
+
+          .detailGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .savedRow {
+            grid-template-columns:
+              1fr
+              auto;
+          }
+
+          .savedRow div:nth-child(2),
+          .savedRow div:nth-child(3),
+          .savedOpen {
+            display: none;
+          }
+        }
+
+        @media (max-width: 650px) {
+          .page {
+            padding: 15px 12px 38px;
+          }
+
+          h1 {
+            font-size:
+              clamp(
+                43px,
+                15vw,
+                64px
+              );
+          }
+
+          .titleStats div {
+            min-width: 0;
+            flex: 1;
+          }
+
+          .workspace {
+            padding: 22px 19px;
           }
 
           .fieldGrid {
             grid-template-columns: 1fr;
           }
 
-          .sectionHeader,
-          .historyHeader {
-            flex-direction: column;
+          .entryBody {
+            padding:
+              4px
+              0
+              20px
+              0;
+          }
+
+          .opportunityHeader {
+            grid-template-columns:
+              32px
+              minmax(0, 1fr)
+              22px;
+          }
+
+          .interestBadge,
+          .entryBadge {
+            display: none;
           }
 
           .actions {
             flex-direction: column;
-
             align-items: stretch;
           }
 
           .rightActions {
-            flex-direction: column;
+            width: 100%;
           }
 
           .newBtn,
           .draftBtn,
           .submitBtn {
-            width: 100%;
-          }
-
-          footer {
-            flex-direction: column;
+            flex: 1;
           }
         }
       `}</style>
