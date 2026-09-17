@@ -8,12 +8,7 @@ import {
 } from "react";
 
 import Link from "next/link";
-
 import { supabase } from "../lib/supabase";
-
-/* =========================================================
-   HELPERS
-========================================================= */
 
 function slugify(value: string) {
   return value
@@ -24,54 +19,29 @@ function slugify(value: string) {
     .replace(/-+/g, "-");
 }
 
-/* =========================================================
-   PAGE
-========================================================= */
-
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
-
   const [saving, setSaving] = useState(false);
-
   const [message, setMessage] = useState("");
 
   const [userId, setUserId] = useState("");
-
   const [profileId, setProfileId] = useState("");
 
   const [fullName, setFullName] = useState("");
-
   const [phone, setPhone] = useState("");
-
   const [email, setEmail] = useState("");
-
   const [city, setCity] = useState("");
-
   const [stateName, setStateName] = useState("");
-
   const [bio, setBio] = useState("");
-
   const [headline, setHeadline] = useState("");
-
   const [linkedinUrl, setLinkedinUrl] = useState("");
-
   const [referralCode, setReferralCode] = useState("");
 
-  const [photoFile, setPhotoFile] =
-    useState<File | null>(null);
-
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
-
-  const [
-    publicProfileUrl,
-    setPublicProfileUrl,
-  ] = useState("");
+  const [publicProfileUrl, setPublicProfileUrl] = useState("");
 
   const trackedRef = useRef(false);
-
-  /* =======================================================
-     LOAD PROFILE
-  ======================================================= */
 
   useEffect(() => {
     loadProfile();
@@ -79,7 +49,6 @@ export default function ProfilePage() {
 
   async function loadProfile() {
     setLoading(true);
-
     setMessage("");
 
     const {
@@ -87,511 +56,207 @@ export default function ProfilePage() {
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (
-      authError ||
-      !authData.user
-    ) {
-      window.location.href =
-        "/sign-in";
-
+    if (authError || !authData.user) {
+      window.location.href = "/sign-in";
       return;
     }
 
-    const user =
-      authData.user;
+    const user = authData.user;
 
     setUserId(user.id);
-
-    setEmail(
-      user.email ||
-        ""
-    );
+    setEmail(user.email || "");
 
     const {
       data: profile,
       error: profileError,
     } = await supabase
-      .from(
-        "candidate_profiles"
-      )
+      .from("candidate_profiles")
       .select("*")
-      .eq(
-        "user_id",
-        user.id
-      )
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    if (
-      profileError
-    ) {
-      console.error(
-        "Profile load error:",
-        profileError
-      );
-
-      setMessage(
-        profileError.message
-      );
+    if (profileError) {
+      console.error("Profile load error:", profileError);
+      setMessage(profileError.message);
     }
 
-    if (
-      profile
-    ) {
-      setProfileId(
-        profile.id ||
-          ""
-      );
+    if (profile) {
+      setProfileId(profile.id || "");
+      setFullName(profile.full_name || "");
+      setPhone(profile.phone || "");
+      setEmail(profile.email || user.email || "");
+      setCity(profile.city || "");
+      setStateName(profile.state || "");
+      setBio(profile.bio || "");
+      setHeadline(profile.headline || "");
+      setLinkedinUrl(profile.linkedin_url || "");
+      setPhotoUrl(profile.photo_url || "");
+      setPublicProfileUrl(profile.public_profile_url || "");
+      setReferralCode(profile.referral_code || "");
 
-      setFullName(
-        profile.full_name ||
-          ""
-      );
-
-      setPhone(
-        profile.phone ||
-          ""
-      );
-
-      setEmail(
-        profile.email ||
-          user.email ||
-          ""
-      );
-
-      setCity(
-        profile.city ||
-          ""
-      );
-
-      setStateName(
-        profile.state ||
-          ""
-      );
-
-      setBio(
-        profile.bio ||
-          ""
-      );
-
-      setHeadline(
-        profile.headline ||
-          ""
-      );
-
-      setLinkedinUrl(
-        profile.linkedin_url ||
-          ""
-      );
-
-      setPhotoUrl(
-        profile.photo_url ||
-          ""
-      );
-
-      setPublicProfileUrl(
-        profile.public_profile_url ||
-          ""
-      );
-
-      setReferralCode(
-        profile.referral_code ||
-          ""
-      );
-
-      if (
-        !trackedRef.current
-      ) {
-        trackedRef.current =
-          true;
+      if (!trackedRef.current) {
+        trackedRef.current = true;
 
         await supabase
-          .from(
-            "user_activity"
-          )
+          .from("user_activity")
           .insert({
-            user_id:
-              user.id,
-
-            full_name:
-              profile.full_name ||
-              null,
-
-            email:
-              profile.email ||
-              user.email ||
-              null,
-
-            referral_code:
-              profile.referral_code ||
-              null,
-
-            event_type:
-              "profile_viewed",
-
-            tool_name:
-              "profile",
-
-            page_name:
-              "/profile",
+            user_id: user.id,
+            full_name: profile.full_name || null,
+            email: profile.email || user.email || null,
+            referral_code: profile.referral_code || null,
+            event_type: "profile_viewed",
+            // Profile is the post-login landing page, not a career tool.
+            tool_name: null,
+            page_name: "/profile",
           });
       }
     } else {
-      setFullName(
-        user.user_metadata
-          ?.full_name ||
-          ""
-      );
-
-      setReferralCode(
-        user.user_metadata
-          ?.referral_code ||
-          ""
-      );
+      setFullName(user.user_metadata?.full_name || "");
+      setReferralCode(user.user_metadata?.referral_code || "");
     }
 
     setLoading(false);
   }
-
-  /* =======================================================
-     UPLOAD PHOTO
-  ======================================================= */
 
   async function uploadFile(
     bucket: string,
     file: File,
     folder: string
   ) {
-    const fileExt =
-      file.name
-        .split(".")
-        .pop() ||
-      "file";
+    const fileExt = file.name.split(".").pop() || "file";
+    const filePath = `${folder}/${Date.now()}.${fileExt}`;
 
-    const filePath =
-      `${folder}/${Date.now()}.${fileExt}`;
-
-    const {
-      error,
-    } = await supabase.storage
+    const { error } = await supabase.storage
       .from(bucket)
-      .upload(
-        filePath,
-        file,
-        {
-          upsert: true,
-        }
-      );
+      .upload(filePath, file, {
+        upsert: true,
+      });
 
-    if (
-      error
-    ) {
+    if (error) {
       throw error;
     }
 
-    const {
-      data,
-    } = supabase.storage
+    const { data } = supabase.storage
       .from(bucket)
-      .getPublicUrl(
-        filePath
-      );
+      .getPublicUrl(filePath);
 
     return data.publicUrl;
   }
 
-  /* =======================================================
-     SAVE PROFILE
-  ======================================================= */
-
   async function handleSaveProfile() {
     setMessage("");
 
-    if (
-      !userId
-    ) {
-      setMessage(
-        "You must be signed in."
-      );
-
+    if (!userId) {
+      setMessage("You must be signed in.");
       return;
     }
 
     try {
       setSaving(true);
 
-      let nextPhotoUrl =
-        photoUrl;
+      let nextPhotoUrl = photoUrl;
 
-      if (
-        photoFile
-      ) {
-        nextPhotoUrl =
-          await uploadFile(
-            "profile-photos",
-            photoFile,
-            `${userId}/photo`
-          );
+      if (photoFile) {
+        nextPhotoUrl = await uploadFile(
+          "profile-photos",
+          photoFile,
+          `${userId}/photo`
+        );
       }
 
-      const slug =
-        slugify(
-          fullName ||
-            "career-passport"
-        );
-
-      const publicUrl =
-        `${window.location.origin}/passport/${slug}-${userId.slice(
-          0,
-          8
-        )}`;
+      const slug = slugify(fullName || "career-passport");
+      const publicUrl = `${window.location.origin}/passport/${slug}-${userId.slice(
+        0,
+        8
+      )}`;
 
       const payload = {
-        user_id:
-          userId,
-
-        full_name:
-          fullName,
-
+        user_id: userId,
+        full_name: fullName,
         phone,
-
         email,
-
         city,
-
-        state:
-          stateName,
-
+        state: stateName,
         bio,
-
         headline,
-
-        linkedin_url:
-          linkedinUrl,
-
-        photo_url:
-          nextPhotoUrl ||
-          null,
-
-        public_profile_url:
-          publicUrl,
+        linkedin_url: linkedinUrl,
+        photo_url: nextPhotoUrl || null,
+        public_profile_url: publicUrl,
       };
 
-      if (
-        profileId
-      ) {
-        const {
-          error,
-        } = await supabase
-          .from(
-            "candidate_profiles"
-          )
-          .update(
-            payload
-          )
-          .eq(
-            "id",
-            profileId
-          );
+      if (profileId) {
+        const { error } = await supabase
+          .from("candidate_profiles")
+          .update(payload)
+          .eq("id", profileId);
 
-        if (
-          error
-        ) {
+        if (error) {
           throw error;
         }
       } else {
-        const {
-          data,
-          error,
-        } = await supabase
-          .from(
-            "candidate_profiles"
-          )
-          .insert(
-            payload
-          )
-          .select(
-            "id"
-          )
+        const { data, error } = await supabase
+          .from("candidate_profiles")
+          .insert(payload)
+          .select("id")
           .maybeSingle();
 
-        if (
-          error
-        ) {
+        if (error) {
           throw error;
         }
 
-        if (
-          data?.id
-        ) {
-          setProfileId(
-            data.id
-          );
+        if (data?.id) {
+          setProfileId(data.id);
         }
       }
 
-      setPhotoUrl(
-        nextPhotoUrl
-      );
-
-      setPublicProfileUrl(
-        publicUrl
-      );
-
-      setPhotoFile(
-        null
-      );
-
-      setMessage(
-        "✓ Profile saved successfully."
-      );
-    } catch (
-      error: any
-    ) {
-      console.error(
-        error
-      );
-
-      setMessage(
-        error?.message ||
-          "Unable to save profile."
-      );
+      setPhotoUrl(nextPhotoUrl);
+      setPublicProfileUrl(publicUrl);
+      setPhotoFile(null);
+      setMessage("✓ Profile saved successfully.");
+    } catch (error: any) {
+      console.error(error);
+      setMessage(error?.message || "Unable to save profile.");
     } finally {
       setSaving(false);
     }
   }
 
-  /* =======================================================
-     SIGN OUT
-  ======================================================= */
-
   async function handleSignOut() {
     await supabase.auth.signOut();
-
-    window.location.href =
-      "/sign-in";
+    window.location.href = "/sign-in";
   }
 
-  /* =======================================================
-     LOADING
-  ======================================================= */
-
-  if (
-    loading
-  ) {
+  if (loading) {
     return (
-      <main
-        style={
-          st.loadingPage
-        }
-      >
-        <div
-          style={
-            st.loadingRing
-          }
-        >
-          HM
+      <main style={st.loadingPage}>
+        <div style={st.loadingMark}>HM</div>
+        <div>
+          <strong style={st.loadingTitle}>HireMinds</strong>
+          <p style={st.loadingText}>Loading your Career Passport...</p>
         </div>
-
-        <p
-          style={
-            st.loadingText
-          }
-        >
-          Loading your profile...
-        </p>
       </main>
     );
   }
 
-  /* =======================================================
-     PAGE
-  ======================================================= */
-
   return (
-    <main
-      style={
-        st.page
-      }
-    >
-      <div
-        style={
-          st.backgroundGlowOne
-        }
-      />
-
-      <div
-        style={
-          st.backgroundGlowTwo
-        }
-      />
-
-      <div
-        style={
-          st.backgroundGrid
-        }
-      />
-
-      <div
-        style={
-          st.shell
-        }
-      >
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
-        <header
-          style={
-            st.header
-          }
-        >
-          <div
-            style={
-              st.brandArea
-            }
-          >
-            <div
-              style={
-                st.brandMark
-              }
-            >
-              HM
-            </div>
-
+    <main style={st.page}>
+      <div style={st.shell}>
+        <header style={st.header}>
+          <div style={st.brandArea}>
+            <div style={st.brandMark}>HM</div>
             <div>
-              <strong
-                style={
-                  st.brandName
-                }
-              >
-                HireMinds™
-              </strong>
-
-              <span
-                style={
-                  st.brandSub
-                }
-              >
-                Career Passport
-              </span>
+              <strong style={st.brandName}>HireMinds™</strong>
+              <span style={st.brandSub}>Career Passport</span>
             </div>
           </div>
 
-          <div
-            style={
-              st.headerActions
-            }
-          >
+          <div style={st.headerActions}>
             {publicProfileUrl ? (
               <a
-                href={
-                  publicProfileUrl
-                }
+                href={publicProfileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={
-                  st.headerPassportButton
-                }
+                style={st.headerPassportButton}
               >
                 View Public Profile ↗
               </a>
@@ -599,231 +264,89 @@ export default function ProfilePage() {
 
             <button
               type="button"
-              onClick={
-                handleSignOut
-              }
-              style={
-                st.signOutButton
-              }
+              onClick={handleSignOut}
+              style={st.signOutButton}
             >
               Sign Out
             </button>
           </div>
         </header>
 
-        {/* =================================================
-            1. PROFILE IDENTITY FIRST
-        ================================================= */}
-
-        <section
-          style={
-            st.identityCard
-          }
-        >
-          <div
-            style={
-              st.identityAccent
-            }
-          />
-
-          <div
-            style={
-              st.photoColumn
-            }
-          >
-            <div
-              style={
-                st.photoGlow
-              }
-            />
-
+        <section style={st.identityCard}>
+          <div style={st.photoColumn}>
             {photoUrl ? (
               <img
-                src={
-                  photoUrl
-                }
+                src={photoUrl}
                 alt="Profile"
-                style={
-                  st.profilePhoto
-                }
+                style={st.profilePhoto}
               />
             ) : (
-              <div
-                style={
-                  st.profilePlaceholder
-                }
-              >
+              <div style={st.profilePlaceholder}>
                 {fullName
-                  ? fullName
-                      .charAt(0)
-                      .toUpperCase()
+                  ? fullName.charAt(0).toUpperCase()
                   : "HM"}
               </div>
             )}
 
-            <label
-              style={
-                st.updatePhoto
-              }
-            >
-              + Update Photo
-
+            <label style={st.updatePhoto}>
+              Update Photo
               <input
                 type="file"
                 accept="image/*"
-                style={{
-                  display:
-                    "none",
-                }}
-                onChange={(
-                  e
-                ) =>
-                  setPhotoFile(
-                    e.target.files?.[
-                      0
-                    ] ||
-                      null
-                  )
+                style={{ display: "none" }}
+                onChange={(e) =>
+                  setPhotoFile(e.target.files?.[0] || null)
                 }
               />
             </label>
 
             {photoFile ? (
-              <span
-                style={
-                  st.photoSelected
-                }
-              >
-                {photoFile.name}
-              </span>
+              <span style={st.photoSelected}>{photoFile.name}</span>
             ) : null}
           </div>
 
-          <div
-            style={
-              st.identityInfo
-            }
-          >
-            <div
-              style={
-                st.identityHeader
-              }
-            >
+          <div style={st.identityInfo}>
+            <div style={st.identityHeader}>
               <div>
-                <p
-                  style={
-                    st.eyebrow
-                  }
-                >
-                  CAREER PASSPORT
-                </p>
-
-                <h1
-                  style={
-                    st.profileName
-                  }
-                >
-                  {fullName ||
-                    "Your Name"}
-                </h1>
-
-                <p
-                  style={
-                    st.profileHeadline
-                  }
-                >
-                  {headline ||
-                    "Add your professional headline"}
+                <p style={st.eyebrow}>YOUR CAREER PASSPORT</p>
+                <h1 style={st.profileName}>{fullName || "Your Name"}</h1>
+                <p style={st.profileHeadline}>
+                  {headline || "Add your professional headline"}
                 </p>
               </div>
 
-              <div
-                style={
-                  st.profileStatus
-                }
-              >
-                <span
-                  style={
-                    st.statusDot
-                  }
-                />
-
+              <div style={st.profileStatus}>
+                <span style={st.statusDot} />
                 Profile Active
               </div>
             </div>
 
-            <div
-              style={
-                st.profileMeta
-              }
-            >
-              <div
-                style={
-                  st.metaChip
-                }
-              >
-                ◉{" "}
-                {[city, stateName]
-                  .filter(Boolean)
-                  .join(", ") ||
-                  "Add Location"}
+            <div style={st.profileMeta}>
+              <div style={st.metaChip}>
+                {[city, stateName].filter(Boolean).join(", ") || "Add Location"}
               </div>
 
-              <div
-                style={
-                  st.metaChip
-                }
-              >
-                ✉{" "}
-                {email ||
-                  "Add Email"}
-              </div>
+              <div style={st.metaChip}>{email || "Add Email"}</div>
 
               {linkedinUrl ? (
                 <a
-                  href={
-                    linkedinUrl
-                  }
+                  href={linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={
-                    st.linkedinChip
-                  }
+                  style={st.linkedinChip}
                 >
-                  in LinkedIn ↗
+                  LinkedIn ↗
                 </a>
               ) : null}
 
               {referralCode ? (
-                <div
-                  style={
-                    st.programChip
-                  }
-                >
-                  Program:{" "}
-                  {referralCode}
-                </div>
+                <div style={st.programChip}>Program: {referralCode}</div>
               ) : null}
             </div>
 
-            <div
-              style={
-                st.bioPreview
-              }
-            >
-              <span
-                style={
-                  st.bioLabel
-                }
-              >
-                PROFESSIONAL BIO
-              </span>
-
-              <p
-                style={
-                  st.bioText
-                }
-              >
+            <div style={st.bioPreview}>
+              <span style={st.bioLabel}>PROFESSIONAL BIO</span>
+              <p style={st.bioText}>
                 {bio ||
                   "Add a short professional bio below to introduce who you are, what you do, and where you are headed."}
               </p>
@@ -831,229 +354,109 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* =================================================
-            2. PROFILE EDITOR
-        ================================================= */}
-
-        <section
-          style={
-            st.editor
-          }
-        >
-          <div
-            style={
-              st.sectionTop
-            }
-          >
+        <section style={st.editor}>
+          <div style={st.sectionTop}>
             <div>
-              <p
-                style={
-                  st.eyebrow
-                }
-              >
-                YOUR PROFESSIONAL PROFILE
+              <p style={st.eyebrow}>PROFILE INFORMATION</p>
+              <h2 style={st.sectionTitle}>Keep your Career Passport current.</h2>
+              <p style={st.sectionIntro}>
+                Update your contact information and professional details here. Your
+                completed information can be used on your Career Passport.
               </p>
-
-              <h2
-                style={
-                  st.sectionTitle
-                }
-              >
-                Build Your Professional Profile
-              </h2>
-
-              <p
-                style={
-                  st.sectionIntro
-                }
-              >
-                Keep your contact information and professional identity current.
-                This information helps build your Career Passport.
-              </p>
-            </div>
-
-            <div
-              style={
-                st.smallHM
-              }
-            >
-              HM
             </div>
           </div>
 
-          <div
-            style={
-              st.formGrid
-            }
-          >
+          <div style={st.formGrid}>
             <Field
               label="Full Name"
-              value={
-                fullName
-              }
-              onChange={
-                setFullName
-              }
+              value={fullName}
+              onChange={setFullName}
               placeholder="Your full name"
             />
 
             <Field
               label="Phone"
-              value={
-                phone
-              }
-              onChange={
-                setPhone
-              }
+              value={phone}
+              onChange={setPhone}
               placeholder="Phone number"
             />
 
             <Field
               label="Professional Email"
-              value={
-                email
-              }
-              onChange={
-                setEmail
-              }
+              value={email}
+              onChange={setEmail}
               type="email"
               placeholder="Professional email"
             />
 
             <Field
               label="LinkedIn"
-              value={
-                linkedinUrl
-              }
-              onChange={
-                setLinkedinUrl
-              }
+              value={linkedinUrl}
+              onChange={setLinkedinUrl}
               placeholder="LinkedIn profile URL"
             />
 
             <Field
               label="City"
-              value={
-                city
-              }
-              onChange={
-                setCity
-              }
+              value={city}
+              onChange={setCity}
               placeholder="City"
             />
 
             <Field
               label="State"
-              value={
-                stateName
-              }
-              onChange={
-                setStateName
-              }
+              value={stateName}
+              onChange={setStateName}
               placeholder="State"
             />
           </div>
 
-          <div
-            style={
-              st.wideField
-            }
-          >
+          <div style={st.wideField}>
             <Field
               label="Professional Headline"
-              value={
-                headline
-              }
-              onChange={
-                setHeadline
-              }
+              value={headline}
+              onChange={setHeadline}
               placeholder="Example: Administrative Professional | Customer Service | Operations"
             />
           </div>
 
-          <div
-            style={
-              st.wideField
-            }
-          >
+          <div style={st.wideField}>
             <TextAreaField
               label="Short Professional Bio"
-              value={
-                bio
-              }
-              onChange={
-                setBio
-              }
+              value={bio}
+              onChange={setBio}
               placeholder="Tell people who you are, what you do, your strengths, and where you're headed professionally."
             />
           </div>
 
-          <div
-            style={
-              st.editorBottom
-            }
-          >
-            <div
-              style={
-                st.visibilityNotice
-              }
-            >
-              <div
-                style={
-                  st.visibilityIcon
-                }
-              >
-                ◇
-              </div>
-
+          <div style={st.editorBottom}>
+            <div style={st.visibilityNotice}>
+              <div style={st.visibilityIcon}>◇</div>
               <div>
-                <strong
-                  style={
-                    st.visibilityTitle
-                  }
-                >
-                  Career Passport Visibility
-                </strong>
-
-                <p
-                  style={
-                    st.visibilityText
-                  }
-                >
-                  Your completed professional information may appear on your
-                  Career Passport.
+                <strong style={st.visibilityTitle}>Career Passport Visibility</strong>
+                <p style={st.visibilityText}>
+                  Your completed professional information may appear on your Career Passport.
                 </p>
               </div>
             </div>
 
             <button
               type="button"
-              onClick={
-                handleSaveProfile
-              }
-              disabled={
-                saving
-              }
+              onClick={handleSaveProfile}
+              disabled={saving}
               style={{
                 ...st.saveButton,
-
-                ...(saving
-                  ? st.disabledButton
-                  : {}),
+                ...(saving ? st.disabledButton : {}),
               }}
             >
-              {saving
-                ? "Saving..."
-                : "Save Profile →"}
+              {saving ? "Saving..." : "Save Profile →"}
             </button>
           </div>
 
           {message ? (
             <div
               style={
-                message.startsWith(
-                  "✓"
-                )
+                message.startsWith("✓")
                   ? st.successMessage
                   : st.errorMessage
               }
@@ -1063,156 +466,53 @@ export default function ProfilePage() {
           ) : null}
         </section>
 
-        {/* =================================================
-            3. CONNECT & EXPLORE
-        ================================================= */}
-
-        <section
-          style={
-            st.connectSection
-          }
-        >
-          <div
-            style={
-              st.connectHeader
-            }
-          >
+        <section style={st.connectSection}>
+          <div style={st.connectHeader}>
             <div>
-              <p
-                style={
-                  st.eyebrow
-                }
-              >
-                HIREMINDS™
-              </p>
-
-              <h2
-                style={
-                  st.sectionTitle
-                }
-              >
-                Connect & Explore
-              </h2>
-
-              <p
-                style={
-                  st.sectionIntro
-                }
-              >
-                Access your career-development tools, live support,
-                community spaces, and professional resources.
+              <p style={st.eyebrow}>CONNECT & EXPLORE</p>
+              <h2 style={st.sectionTitle}>Keep moving forward.</h2>
+              <p style={st.sectionIntro}>
+                Your main career-support and weekly development resources are here.
               </p>
             </div>
           </div>
 
-          <div
-            style={
-              st.toolGrid
-            }
-          >
-            {/* CAREER DEVELOPMENT */}
+          <div style={st.toolGrid}>
+            <ToolCard
+              href="/career-connect"
+              kicker="CAREER SUPPORT"
+              title="Career Connect"
+              description="Request career support, manage appointments, confirm or reschedule meetings, and check in for scheduled services."
+              action="Enter Career Connect"
+              featured
+            />
 
             <ToolCard
               href="/career-development-generator"
-              icon="↗"
               kicker="WEEKLY DEVELOPMENT"
               title="Career Development Generator"
               description="Complete your weekly career-development activity, save your progress, and document your next step."
               action="Open Generator"
-              accent="cyan"
             />
-
-            {/* JOB LOG */}
 
             <ToolCard
               href="/job-log-generator"
-              icon="✓"
               kicker="JOB SEARCH"
               title="Weekly Job Log"
-              description="Track up to five job opportunities, applications, outcomes, and the positions you are most interested in."
+              description="Track job opportunities, applications, outcomes, and the positions you are most interested in."
               action="Open Job Log"
-              accent="blue"
-            />
-
-            {/* CAREER CONNECT */}
-
-            <ToolCard
-              href="/open-room/live"
-              icon="◉"
-              kicker="CAREER SUPPORT"
-              title="Career Connect"
-              description="Request career support, manage appointments, confirm meetings, reschedule, cancel, and check in for scheduled services."
-              action="Enter Career Connect"
-              accent="cyan"
-              badge="CAREER SERVICES"
-            />
-
-            {/* OPEN ROOM */}
-
-            <ToolCard
-              href="/open-room"
-              icon="◇"
-              kicker="COMMUNITY"
-              title="Open Room"
-              description="Step into the HireMinds community space for live conversations, connections, opportunities, updates, and resources."
-              action="View Open Room"
-              accent="gold"
-              badge="MONTHLY"
-            />
-
-            {/* LIVE BOARD */}
-
-            <ToolCard
-              href="/live-board"
-              icon="⌁"
-              kicker="WHAT'S HAPPENING"
-              title="Live Bulletin Board"
-              description="View current opportunities, announcements, events, resources, and other updates shared through HireMinds."
-              action="View Live Board"
-              accent="blue"
             />
           </div>
         </section>
 
-        {/* =================================================
-            FOOTER
-        ================================================= */}
-
-        <footer
-          style={
-            st.footer
-          }
-        >
-          <div>
-            <strong
-              style={
-                st.footerBrand
-              }
-            >
-              HireMinds™
-            </strong>
-
-            <span
-              style={
-                st.footerTagline
-              }
-            >
-              Prepare with Confidence. Build with Purpose.
-            </span>
-          </div>
-
-          <span>
-            Career Passport
-          </span>
+        <footer style={st.footer}>
+          <strong style={st.footerBrand}>HireMinds™</strong>
+          <span style={st.footerTagline}>Prepare with Confidence. Build with Purpose.</span>
         </footer>
       </div>
     </main>
   );
 }
-
-/* =========================================================
-   FIELD
-========================================================= */
 
 function Field({
   label,
@@ -1223,54 +523,23 @@ function Field({
 }: {
   label: string;
   value: string;
-  onChange: (
-    value: string
-  ) => void;
+  onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
 }) {
   return (
-    <div
-      style={
-        st.field
-      }
-    >
-      <label
-        style={
-          st.label
-        }
-      >
-        {label}
-      </label>
-
+    <div style={st.field}>
+      <label style={st.label}>{label}</label>
       <input
-        type={
-          type
-        }
-        value={
-          value
-        }
-        onChange={(
-          e
-        ) =>
-          onChange(
-            e.target.value
-          )
-        }
-        placeholder={
-          placeholder
-        }
-        style={
-          st.input
-        }
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={st.input}
       />
     </div>
   );
 }
-
-/* =========================================================
-   TEXT AREA
-========================================================= */
 
 function TextAreaField({
   label,
@@ -1280,1738 +549,689 @@ function TextAreaField({
 }: {
   label: string;
   value: string;
-  onChange: (
-    value: string
-  ) => void;
+  onChange: (value: string) => void;
   placeholder?: string;
 }) {
   return (
-    <div
-      style={
-        st.field
-      }
-    >
-      <label
-        style={
-          st.label
-        }
-      >
-        {label}
-      </label>
-
+    <div style={st.field}>
+      <label style={st.label}>{label}</label>
       <textarea
-        value={
-          value
-        }
-        onChange={(
-          e
-        ) =>
-          onChange(
-            e.target.value
-          )
-        }
-        placeholder={
-          placeholder
-        }
-        style={
-          st.textarea
-        }
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={st.textarea}
       />
     </div>
   );
 }
 
-/* =========================================================
-   TOOL CARD
-========================================================= */
-
 function ToolCard({
   href,
-  icon,
   kicker,
   title,
   description,
   action,
-  accent,
-  badge,
+  featured = false,
 }: {
   href: string;
-  icon: string;
   kicker: string;
   title: string;
   description: string;
   action: string;
-  accent:
-    | "cyan"
-    | "blue"
-    | "gold";
-  badge?: string;
+  featured?: boolean;
 }) {
-  const iconStyle =
-    accent ===
-    "gold"
-      ? st.goldIcon
-      : accent ===
-          "blue"
-        ? st.blueIcon
-        : st.cyanIcon;
-
   return (
-    <Link
-      href={
-        href
-      }
-      style={
-        st.toolLink
-      }
-    >
-      <div
-        style={
-          st.toolCard
-        }
+    <Link href={href} style={st.toolLink}>
+      <article
+        style={{
+          ...st.toolCard,
+          ...(featured ? st.toolCardFeatured : {}),
+        }}
       >
-        <div
-          style={
-            st.toolTop
-          }
-        >
-          <div
-            style={{
-              ...st.toolIcon,
-              ...iconStyle,
-            }}
-          >
-            {icon}
-          </div>
-
-          {badge ? (
-            <span
-              style={
-                accent ===
-                "gold"
-                  ? st.goldBadge
-                  : st.smallBadge
-              }
-            >
-              {badge}
-            </span>
-          ) : (
-            <span
-              style={
-                st.cardArrow
-              }
-            >
-              →
-            </span>
-          )}
-        </div>
-
-        <div>
+        <div style={st.toolCardTop}>
           <span
-            style={
-              st.toolKicker
-            }
+            style={{
+              ...st.toolKicker,
+              ...(featured ? st.toolKickerFeatured : {}),
+            }}
           >
             {kicker}
           </span>
-
-          <h3
-            style={
-              st.toolTitle
-            }
+          <span
+            style={{
+              ...st.toolArrow,
+              ...(featured ? st.toolArrowFeatured : {}),
+            }}
           >
-            {title}
-          </h3>
-
-          <p
-            style={
-              st.toolDescription
-            }
-          >
-            {description}
-          </p>
-        </div>
-
-        <div
-          style={
-            st.toolFooter
-          }
-        >
-          <span>
-            {action}
-          </span>
-
-          <span>
             →
           </span>
         </div>
-      </div>
+
+        <h3
+          style={{
+            ...st.toolTitle,
+            ...(featured ? st.toolTitleFeatured : {}),
+          }}
+        >
+          {title}
+        </h3>
+
+        <p
+          style={{
+            ...st.toolDescription,
+            ...(featured ? st.toolDescriptionFeatured : {}),
+          }}
+        >
+          {description}
+        </p>
+
+        <span
+          style={{
+            ...st.toolAction,
+            ...(featured ? st.toolActionFeatured : {}),
+          }}
+        >
+          {action}
+        </span>
+      </article>
     </Link>
   );
 }
 
-/* =========================================================
-   STYLES
-========================================================= */
-
-const st:
-  Record<
-    string,
-    CSSProperties
-  > = {
-  /* PAGE */
-
+const st: Record<string, CSSProperties> = {
   page: {
-    position:
-      "relative",
-
-    minHeight:
-      "100vh",
-
-    overflow:
-      "hidden",
-
-    padding:
-      "24px 24px 50px",
-
+    minHeight: "100vh",
+    padding: "28px 18px 56px",
+    boxSizing: "border-box",
+    color: "#111820",
     background:
-      `
-      radial-gradient(
-        circle at 10% 4%,
-        rgba(11, 115, 135, .13),
-        transparent 25%
-      ),
-      radial-gradient(
-        circle at 92% 12%,
-        rgba(27, 82, 122, .12),
-        transparent 27%
-      ),
-      radial-gradient(
-        circle at 70% 90%,
-        rgba(202, 170, 70, .035),
-        transparent 30%
-      ),
-      linear-gradient(
-        145deg,
-        #050a10 0%,
-        #08121c 44%,
-        #09111a 70%,
-        #05080d 100%
-      )
-      `,
-
-    color:
-      "#f6f9fc",
-
+      "linear-gradient(180deg, #e8edf1 0%, #f7f9fb 28%, #ffffff 68%, #edf2f5 100%)",
     fontFamily:
       "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
-  backgroundGlowOne: {
-    position:
-      "fixed",
-
-    width:
-      "460px",
-
-    height:
-      "460px",
-
-    top:
-      "-220px",
-
-    left:
-      "-130px",
-
-    borderRadius:
-      "50%",
-
-    background:
-      "rgba(21, 180, 203, .055)",
-
-    filter:
-      "blur(120px)",
-
-    pointerEvents:
-      "none",
-  },
-
-  backgroundGlowTwo: {
-    position:
-      "fixed",
-
-    width:
-      "500px",
-
-    height:
-      "500px",
-
-    right:
-      "-220px",
-
-    top:
-      "20%",
-
-    borderRadius:
-      "50%",
-
-    background:
-      "rgba(50, 112, 162, .05)",
-
-    filter:
-      "blur(130px)",
-
-    pointerEvents:
-      "none",
-  },
-
-  backgroundGrid: {
-    position:
-      "fixed",
-
-    inset:
-      0,
-
-    pointerEvents:
-      "none",
-
-    opacity:
-      .035,
-
-    backgroundImage:
-      `
-      linear-gradient(
-        rgba(255,255,255,.05) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        rgba(255,255,255,.05) 1px,
-        transparent 1px
-      )
-      `,
-
-    backgroundSize:
-      "72px 72px",
-  },
-
   shell: {
-    position:
-      "relative",
-
-    zIndex:
-      2,
-
-    width:
-      "100%",
-
-    maxWidth:
-      "1320px",
-
-    margin:
-      "0 auto",
-
-    display:
-      "grid",
-
-    gap:
-      "20px",
+    width: "100%",
+    maxWidth: "1180px",
+    margin: "0 auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: "22px",
   },
-
-  /* LOADING */
 
   loadingPage: {
-    minHeight:
-      "100vh",
-
-    display:
-      "flex",
-
-    flexDirection:
-      "column",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    gap:
-      "15px",
-
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "14px",
     background:
-      "#07101a",
-
-    color:
-      "white",
+      "linear-gradient(180deg, #e9eef2 0%, #ffffff 100%)",
+    color: "#111820",
+    fontFamily:
+      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
-  loadingRing: {
-    width:
-      "62px",
+  loadingMark: {
+    width: "52px",
+    height: "52px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "15px",
+    backgroundColor: "#12344a",
+    color: "#ffffff",
+    fontSize: "12px",
+    fontWeight: 950,
+  },
 
-    height:
-      "62px",
-
-    borderRadius:
-      "50%",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    border:
-      "1px solid rgba(34,211,238,.32)",
-
-    background:
-      "rgba(34,211,238,.06)",
-
-    color:
-      "#77e8f2",
-
-    fontSize:
-      "13px",
-
-    fontWeight:
-      950,
-
-    boxShadow:
-      "0 0 30px rgba(34,211,238,.08)",
+  loadingTitle: {
+    display: "block",
+    color: "#111820",
+    fontSize: "15px",
   },
 
   loadingText: {
-    color:
-      "#8da0b0",
-
-    fontSize:
-      "11px",
+    margin: "4px 0 0",
+    color: "#6a7680",
+    fontSize: "12px",
   },
 
-  /* HEADER */
-
   header: {
-    minHeight:
-      "62px",
-
-    display:
-      "flex",
-
-    justifyContent:
-      "space-between",
-
-    alignItems:
-      "center",
-
-    gap:
-      "20px",
-
-    padding:
-      "2px 4px",
+    minHeight: "58px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "18px",
+    flexWrap: "wrap",
+    padding: "2px 4px",
   },
 
   brandArea: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    gap:
-      "11px",
+    display: "flex",
+    alignItems: "center",
+    gap: "11px",
   },
 
   brandMark: {
-    width:
-      "39px",
-
-    height:
-      "39px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    borderRadius:
-      "12px",
-
-    background:
-      "rgba(23, 167, 189, .09)",
-
-    border:
-      "1px solid rgba(55, 201, 219, .23)",
-
-    color:
-      "#71dbe7",
-
-    fontSize:
-      "10px",
-
-    fontWeight:
-      950,
+    width: "40px",
+    height: "40px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "12px",
+    backgroundColor: "#12344a",
+    color: "#ffffff",
+    fontSize: "10px",
+    fontWeight: 950,
+    boxShadow: "0 8px 20px rgba(18,52,74,.15)",
   },
 
   brandName: {
-    display:
-      "block",
-
-    color:
-      "#f5f8fb",
-
-    fontSize:
-      "12px",
+    display: "block",
+    color: "#111820",
+    fontSize: "13px",
+    fontWeight: 950,
   },
 
   brandSub: {
-    display:
-      "block",
-
-    marginTop:
-      "2px",
-
-    color:
-      "#637485",
-
-    fontSize:
-      "8px",
+    display: "block",
+    marginTop: "2px",
+    color: "#6b7882",
+    fontSize: "9px",
   },
 
   headerActions: {
-    display:
-      "flex",
-
-    gap:
-      "8px",
-
-    flexWrap:
-      "wrap",
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
   },
 
   headerPassportButton: {
-    padding:
-      "9px 13px",
-
-    borderRadius:
-      "999px",
-
-    border:
-      "1px solid rgba(75, 190, 205, .17)",
-
-    background:
-      "rgba(43, 158, 177, .045)",
-
-    color:
-      "#bfeaf0",
-
-    textDecoration:
-      "none",
-
-    fontSize:
-      "9px",
-
-    fontWeight:
-      800,
+    padding: "10px 14px",
+    borderRadius: "999px",
+    border: "1px solid #b9c9d5",
+    backgroundColor: "#ffffff",
+    color: "#155f91",
+    textDecoration: "none",
+    fontSize: "10px",
+    fontWeight: 900,
   },
 
   signOutButton: {
-    padding:
-      "9px 13px",
-
-    borderRadius:
-      "999px",
-
-    border:
-      "1px solid rgba(255,255,255,.09)",
-
-    background:
-      "rgba(255,255,255,.025)",
-
-    color:
-      "#c5ced6",
-
-    cursor:
-      "pointer",
-
-    fontSize:
-      "9px",
-
-    fontWeight:
-      800,
+    padding: "10px 14px",
+    borderRadius: "999px",
+    border: "1px solid #bfc8cf",
+    backgroundColor: "#f7f9fa",
+    color: "#2d3942",
+    cursor: "pointer",
+    fontSize: "10px",
+    fontWeight: 850,
   },
-
-  /* IDENTITY */
 
   identityCard: {
-    position:
-      "relative",
-
-    overflow:
-      "hidden",
-
-    minHeight:
-      "300px",
-
-    display:
-      "grid",
-
-    gridTemplateColumns:
-      "225px minmax(0,1fr)",
-
-    alignItems:
-      "center",
-
-    gap:
-      "32px",
-
-    padding:
-      "32px",
-
-    borderRadius:
-      "27px",
-
+    display: "grid",
+    gridTemplateColumns: "190px minmax(0,1fr)",
+    alignItems: "center",
+    gap: "32px",
+    padding: "36px",
+    borderRadius: "30px",
     background:
-      "linear-gradient(135deg, rgba(15,29,40,.93), rgba(11,20,30,.93))",
-
-    border:
-      "1px solid rgba(139, 187, 200, .13)",
-
-    boxShadow:
-      "0 25px 70px rgba(0,0,0,.20)",
-  },
-
-  identityAccent: {
-    position:
-      "absolute",
-
-    width:
-      "340px",
-
-    height:
-      "340px",
-
-    left:
-      "-160px",
-
-    top:
-      "-140px",
-
-    borderRadius:
-      "50%",
-
-    background:
-      "rgba(39, 184, 203, .07)",
-
-    filter:
-      "blur(60px)",
-
-    pointerEvents:
-      "none",
+      "linear-gradient(135deg, #111820 0%, #17384f 72%, #1f6e9e 135%)",
+    boxShadow: "0 22px 52px rgba(17,24,32,.17)",
   },
 
   photoColumn: {
-    position:
-      "relative",
-
-    display:
-      "flex",
-
-    flexDirection:
-      "column",
-
-    alignItems:
-      "center",
-
-    gap:
-      "11px",
-  },
-
-  photoGlow: {
-    position:
-      "absolute",
-
-    width:
-      "180px",
-
-    height:
-      "180px",
-
-    top:
-      "10px",
-
-    borderRadius:
-      "50%",
-
-    background:
-      "rgba(29, 191, 208, .07)",
-
-    filter:
-      "blur(35px)",
-
-    pointerEvents:
-      "none",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "10px",
   },
 
   profilePhoto: {
-    position:
-      "relative",
-
-    width:
-      "170px",
-
-    height:
-      "170px",
-
-    objectFit:
-      "cover",
-
-    borderRadius:
-      "50%",
-
-    border:
-      "1px solid rgba(75, 204, 219, .34)",
-
-    padding:
-      "4px",
-
-    background:
-      "#0b151f",
+    width: "152px",
+    height: "152px",
+    objectFit: "cover",
+    borderRadius: "50%",
+    border: "4px solid rgba(255,255,255,.92)",
+    boxShadow: "0 12px 32px rgba(0,0,0,.22)",
   },
 
   profilePlaceholder: {
-    position:
-      "relative",
-
-    width:
-      "170px",
-
-    height:
-      "170px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    borderRadius:
-      "50%",
-
+    width: "152px",
+    height: "152px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "50%",
     background:
-      "linear-gradient(145deg, #102735, #0d1823)",
-
-    border:
-      "1px solid rgba(65, 200, 217, .34)",
-
-    color:
-      "#56dbe9",
-
-    fontSize:
-      "45px",
-
-    fontWeight:
-      950,
+      "linear-gradient(145deg, #f8fbfd 0%, #dbeaf3 100%)",
+    border: "4px solid rgba(255,255,255,.92)",
+    color: "#176fae",
+    fontSize: "44px",
+    fontWeight: 950,
+    boxShadow: "0 12px 32px rgba(0,0,0,.18)",
   },
 
   updatePhoto: {
-    padding:
-      "8px 12px",
-
-    borderRadius:
-      "999px",
-
-    border:
-      "1px solid rgba(69,196,211,.17)",
-
-    background:
-      "rgba(49,165,180,.045)",
-
-    color:
-      "#afe3e9",
-
-    fontSize:
-      "8px",
-
-    fontWeight:
-      850,
-
-    cursor:
-      "pointer",
+    padding: "8px 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,.25)",
+    backgroundColor: "rgba(255,255,255,.08)",
+    color: "#ffffff",
+    fontSize: "9px",
+    fontWeight: 850,
+    cursor: "pointer",
   },
 
   photoSelected: {
-    maxWidth:
-      "190px",
-
-    overflow:
-      "hidden",
-
-    textOverflow:
-      "ellipsis",
-
-    whiteSpace:
-      "nowrap",
-
-    color:
-      "#718291",
-
-    fontSize:
-      "8px",
+    maxWidth: "185px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    color: "#b9cedd",
+    fontSize: "8px",
   },
 
   identityInfo: {
-    minWidth:
-      0,
+    minWidth: 0,
   },
 
   identityHeader: {
-    display:
-      "flex",
-
-    justifyContent:
-      "space-between",
-
-    alignItems:
-      "flex-start",
-
-    gap:
-      "20px",
-
-    flexWrap:
-      "wrap",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "20px",
+    flexWrap: "wrap",
   },
 
   eyebrow: {
-    margin:
-      "0 0 6px",
-
-    color:
-      "#59c9d6",
-
-    fontSize:
-      "8px",
-
-    fontWeight:
-      950,
-
-    letterSpacing:
-      ".15em",
-
-    textTransform:
-      "uppercase",
+    margin: "0 0 7px",
+    color: "#176fae",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: ".15em",
+    textTransform: "uppercase",
   },
 
   profileName: {
-    margin:
-      0,
-
-    color:
-      "#f7fafc",
-
-    fontSize:
-      "clamp(2.4rem,5vw,4.6rem)",
-
-    lineHeight:
-      .95,
-
-    letterSpacing:
-      "-.05em",
-
-    fontWeight:
-      900,
+    margin: 0,
+    color: "#ffffff",
+    fontSize: "clamp(2.4rem,5vw,4.3rem)",
+    lineHeight: .96,
+    letterSpacing: "-.05em",
+    fontWeight: 950,
   },
 
   profileHeadline: {
-    margin:
-      "13px 0 0",
-
-    color:
-      "#a9b9c6",
-
-    fontSize:
-      "14px",
-
-    lineHeight:
-      1.5,
+    margin: "13px 0 0",
+    color: "#d8e4eb",
+    fontSize: "15px",
+    lineHeight: 1.5,
   },
 
   profileStatus: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    gap:
-      "7px",
-
-    padding:
-      "7px 10px",
-
-    borderRadius:
-      "999px",
-
-    background:
-      "rgba(65, 183, 133, .045)",
-
-    border:
-      "1px solid rgba(81, 191, 146, .13)",
-
-    color:
-      "#8dd6b3",
-
-    fontSize:
-      "8px",
-
-    fontWeight:
-      800,
+    display: "flex",
+    alignItems: "center",
+    gap: "7px",
+    padding: "8px 11px",
+    borderRadius: "999px",
+    backgroundColor: "rgba(255,255,255,.08)",
+    border: "1px solid rgba(255,255,255,.16)",
+    color: "#e8f6ee",
+    fontSize: "9px",
+    fontWeight: 850,
   },
 
   statusDot: {
-    width:
-      "6px",
-
-    height:
-      "6px",
-
-    borderRadius:
-      "50%",
-
-    background:
-      "#6acb9d",
+    width: "7px",
+    height: "7px",
+    borderRadius: "50%",
+    backgroundColor: "#68d49d",
   },
 
   profileMeta: {
-    display:
-      "flex",
-
-    flexWrap:
-      "wrap",
-
-    gap:
-      "8px",
-
-    marginTop:
-      "20px",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "21px",
   },
 
   metaChip: {
-    padding:
-      "8px 10px",
-
-    borderRadius:
-      "10px",
-
-    background:
-      "rgba(255,255,255,.025)",
-
-    border:
-      "1px solid rgba(255,255,255,.055)",
-
-    color:
-      "#a3b0bc",
-
-    fontSize:
-      "9px",
+    padding: "8px 10px",
+    borderRadius: "10px",
+    backgroundColor: "rgba(255,255,255,.075)",
+    border: "1px solid rgba(255,255,255,.12)",
+    color: "#dbe6ec",
+    fontSize: "10px",
   },
 
   linkedinChip: {
-    padding:
-      "8px 10px",
-
-    borderRadius:
-      "10px",
-
-    background:
-      "rgba(63, 130, 171, .045)",
-
-    border:
-      "1px solid rgba(79, 143, 181, .11)",
-
-    color:
-      "#a7cadf",
-
-    textDecoration:
-      "none",
-
-    fontSize:
-      "9px",
+    padding: "8px 10px",
+    borderRadius: "10px",
+    backgroundColor: "rgba(49,148,208,.16)",
+    border: "1px solid rgba(123,196,239,.25)",
+    color: "#d8f0ff",
+    textDecoration: "none",
+    fontSize: "10px",
   },
 
   programChip: {
-    padding:
-      "8px 10px",
-
-    borderRadius:
-      "10px",
-
-    background:
-      "rgba(187, 157, 72, .04)",
-
-    border:
-      "1px solid rgba(187, 157, 72, .10)",
-
-    color:
-      "#c7b77e",
-
-    fontSize:
-      "9px",
+    padding: "8px 10px",
+    borderRadius: "10px",
+    backgroundColor: "rgba(255,255,255,.075)",
+    border: "1px solid rgba(255,255,255,.12)",
+    color: "#dbe6ec",
+    fontSize: "10px",
   },
 
   bioPreview: {
-    marginTop:
-      "17px",
-
-    padding:
-      "15px",
-
-    borderRadius:
-      "13px",
-
-    background:
-      "rgba(1,7,12,.22)",
-
-    border:
-      "1px solid rgba(255,255,255,.045)",
+    marginTop: "18px",
+    paddingTop: "18px",
+    borderTop: "1px solid rgba(255,255,255,.14)",
   },
 
   bioLabel: {
-    color:
-      "#657887",
-
-    fontSize:
-      "7px",
-
-    fontWeight:
-      900,
-
-    letterSpacing:
-      ".13em",
+    color: "#7ec1e8",
+    fontSize: "8px",
+    fontWeight: 950,
+    letterSpacing: ".13em",
   },
 
   bioText: {
-    margin:
-      "6px 0 0",
-
-    color:
-      "#91a0ad",
-
-    fontSize:
-      "10px",
-
-    lineHeight:
-      1.65,
+    margin: "7px 0 0",
+    maxWidth: "760px",
+    color: "#c2d1da",
+    fontSize: "11px",
+    lineHeight: 1.7,
   },
 
-  /* EDITOR */
-
   editor: {
-    padding:
-      "29px",
-
-    borderRadius:
-      "25px",
-
-    background:
-      "linear-gradient(135deg, rgba(18,28,38,.82), rgba(11,18,26,.84))",
-
-    border:
-      "1px solid rgba(143,171,190,.11)",
-
-    boxShadow:
-      "0 22px 65px rgba(0,0,0,.17)",
+    padding: "34px",
+    borderRadius: "28px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #cbd4db",
+    boxShadow: "0 16px 42px rgba(20,34,47,.07)",
   },
 
   sectionTop: {
-    display:
-      "flex",
-
-    alignItems:
-      "flex-start",
-
-    justifyContent:
-      "space-between",
-
-    gap:
-      "20px",
-
-    marginBottom:
-      "23px",
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "20px",
+    marginBottom: "24px",
   },
 
   sectionTitle: {
-    margin:
-      0,
-
-    color:
-      "#f5f8fa",
-
-    fontSize:
-      "28px",
-
-    lineHeight:
-      1.1,
-
-    fontWeight:
-      900,
-
-    letterSpacing:
-      "-.03em",
+    margin: 0,
+    color: "#111820",
+    fontSize: "clamp(28px,4vw,38px)",
+    lineHeight: 1.05,
+    fontWeight: 950,
+    letterSpacing: "-.035em",
   },
 
   sectionIntro: {
-    maxWidth:
-      "690px",
-
-    margin:
-      "8px 0 0",
-
-    color:
-      "#7f909f",
-
-    fontSize:
-      "10px",
-
-    lineHeight:
-      1.6,
-  },
-
-  smallHM: {
-    width:
-      "50px",
-
-    height:
-      "50px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    borderRadius:
-      "15px",
-
-    border:
-      "1px solid rgba(66, 194, 208, .16)",
-
-    background:
-      "rgba(40, 160, 177, .045)",
-
-    color:
-      "#69cfda",
-
-    fontSize:
-      "10px",
-
-    fontWeight:
-      950,
+    maxWidth: "700px",
+    margin: "9px 0 0",
+    color: "#68747e",
+    fontSize: "13px",
+    lineHeight: 1.65,
   },
 
   formGrid: {
-    display:
-      "grid",
-
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(250px,1fr))",
-
-    gap:
-      "13px",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px,1fr))",
+    gap: "16px",
   },
 
   wideField: {
-    marginTop:
-      "14px",
+    marginTop: "16px",
   },
 
   field: {
-    display:
-      "grid",
-
-    gap:
-      "7px",
+    display: "grid",
+    gap: "7px",
   },
 
   label: {
-    color:
-      "#b7c3cc",
-
-    fontSize:
-      "9px",
-
-    fontWeight:
-      800,
+    color: "#34434e",
+    fontSize: "10px",
+    fontWeight: 850,
   },
 
   input: {
-    width:
-      "100%",
-
-    padding:
-      "13px 14px",
-
-    borderRadius:
-      "12px",
-
-    border:
-      "1px solid rgba(174,195,209,.11)",
-
-    background:
-      "rgba(255,255,255,.035)",
-
-    color:
-      "#f5f8fb",
-
-    outline:
-      "none",
-
-    fontSize:
-      "11px",
-
-    boxSizing:
-      "border-box",
+    width: "100%",
+    padding: "14px 15px",
+    borderRadius: "12px",
+    border: "1px solid #b9c6cf",
+    backgroundColor: "#f7f9fa",
+    color: "#111820",
+    outline: "none",
+    fontSize: "13px",
+    boxSizing: "border-box",
   },
 
   textarea: {
-    width:
-      "100%",
-
-    minHeight:
-      "125px",
-
-    padding:
-      "13px 14px",
-
-    borderRadius:
-      "12px",
-
-    border:
-      "1px solid rgba(174,195,209,.11)",
-
-    background:
-      "rgba(255,255,255,.035)",
-
-    color:
-      "#f5f8fb",
-
-    outline:
-      "none",
-
-    resize:
-      "vertical",
-
-    lineHeight:
-      1.6,
-
-    fontSize:
-      "11px",
-
-    boxSizing:
-      "border-box",
+    width: "100%",
+    minHeight: "125px",
+    padding: "14px 15px",
+    borderRadius: "12px",
+    border: "1px solid #b9c6cf",
+    backgroundColor: "#f7f9fa",
+    color: "#111820",
+    outline: "none",
+    resize: "vertical",
+    lineHeight: 1.65,
+    fontSize: "13px",
+    boxSizing: "border-box",
   },
 
   editorBottom: {
-    display:
-      "flex",
-
-    justifyContent:
-      "space-between",
-
-    alignItems:
-      "center",
-
-    gap:
-      "20px",
-
-    flexWrap:
-      "wrap",
-
-    marginTop:
-      "22px",
-
-    paddingTop:
-      "20px",
-
-    borderTop:
-      "1px solid rgba(255,255,255,.055)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    flexWrap: "wrap",
+    marginTop: "23px",
+    paddingTop: "21px",
+    borderTop: "1px solid #dce3e8",
   },
 
   visibilityNotice: {
-    display:
-      "flex",
-
-    alignItems:
-      "flex-start",
-
-    gap:
-      "11px",
-
-    maxWidth:
-      "700px",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "11px",
+    maxWidth: "700px",
   },
 
   visibilityIcon: {
-    width:
-      "35px",
-
-    height:
-      "35px",
-
-    minWidth:
-      "35px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    borderRadius:
-      "11px",
-
-    background:
-      "rgba(46, 160, 177, .04)",
-
-    border:
-      "1px solid rgba(65,181,198,.12)",
-
-    color:
-      "#65c6d1",
+    width: "36px",
+    height: "36px",
+    minWidth: "36px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "11px",
+    backgroundColor: "#e8f3fa",
+    border: "1px solid #c8deeb",
+    color: "#176fae",
   },
 
   visibilityTitle: {
-    color:
-      "#cbd5dc",
-
-    fontSize:
-      "10px",
+    color: "#1d2932",
+    fontSize: "11px",
   },
 
   visibilityText: {
-    margin:
-      "4px 0 0",
-
-    color:
-      "#748391",
-
-    fontSize:
-      "8px",
-
-    lineHeight:
-      1.5,
+    margin: "4px 0 0",
+    color: "#6c7882",
+    fontSize: "10px",
+    lineHeight: 1.5,
   },
 
   saveButton: {
-    minWidth:
-      "160px",
-
-    padding:
-      "12px 18px",
-
-    border:
-      "none",
-
-    borderRadius:
-      "999px",
-
+    minWidth: "160px",
+    padding: "13px 18px",
+    border: "none",
+    borderRadius: "12px",
     background:
-      "linear-gradient(135deg, #5ed2dc, #83cbd2 62%, #c9b56a)",
-
-    color:
-      "#061016",
-
-    cursor:
-      "pointer",
-
-    fontSize:
-      "10px",
-
-    fontWeight:
-      950,
-
-    boxShadow:
-      "0 9px 26px rgba(55, 174, 189, .08)",
+      "linear-gradient(90deg, #111820 0%, #176fae 72%, #2588c7 100%)",
+    color: "#ffffff",
+    cursor: "pointer",
+    fontSize: "11px",
+    fontWeight: 950,
+    boxShadow: "0 10px 24px rgba(23,111,174,.20)",
   },
 
   disabledButton: {
-    opacity:
-      .45,
-
-    cursor:
-      "not-allowed",
+    opacity: .48,
+    cursor: "not-allowed",
   },
 
   successMessage: {
-    marginTop:
-      "14px",
-
-    padding:
-      "11px 13px",
-
-    borderRadius:
-      "11px",
-
-    color:
-      "#91d6b1",
-
-    background:
-      "rgba(70,171,121,.045)",
-
-    border:
-      "1px solid rgba(70,171,121,.12)",
-
-    fontSize:
-      "9px",
+    marginTop: "15px",
+    padding: "12px 14px",
+    borderRadius: "11px",
+    color: "#26734f",
+    backgroundColor: "#edf8f2",
+    border: "1px solid #bfe2cd",
+    fontSize: "10px",
+    fontWeight: 800,
   },
 
   errorMessage: {
-    marginTop:
-      "14px",
-
-    padding:
-      "11px 13px",
-
-    borderRadius:
-      "11px",
-
-    color:
-      "#dcb98b",
-
-    background:
-      "rgba(185,136,69,.04)",
-
-    border:
-      "1px solid rgba(185,136,69,.12)",
-
-    fontSize:
-      "9px",
+    marginTop: "15px",
+    padding: "12px 14px",
+    borderRadius: "11px",
+    color: "#8a2e2e",
+    backgroundColor: "#fff0f0",
+    border: "1px solid #dfb6b6",
+    fontSize: "10px",
+    fontWeight: 800,
   },
 
-  /* CONNECT */
-
   connectSection: {
-    padding:
-      "10px 2px 0",
+    padding: "26px 2px 4px",
+    borderTop: "1px solid #d7dfe5",
   },
 
   connectHeader: {
-    padding:
-      "7px 3px 4px",
+    padding: "0 2px 6px",
   },
 
   toolGrid: {
-    display:
-      "grid",
-
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(290px,1fr))",
-
-    gap:
-      "12px",
-
-    marginTop:
-      "15px",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
+    gap: "14px",
+    marginTop: "19px",
   },
 
   toolLink: {
-    color:
-      "inherit",
-
-    textDecoration:
-      "none",
+    color: "inherit",
+    textDecoration: "none",
   },
 
   toolCard: {
-    minHeight:
-      "215px",
+    height: "100%",
+    minHeight: "195px",
+    padding: "22px",
+    display: "flex",
+    flexDirection: "column",
+    borderRadius: "18px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #cbd5dc",
+    boxShadow: "0 10px 28px rgba(20,34,47,.06)",
+  },
 
-    padding:
-      "20px",
-
-    display:
-      "flex",
-
-    flexDirection:
-      "column",
-
-    justifyContent:
-      "space-between",
-
-    borderRadius:
-      "19px",
-
+  toolCardFeatured: {
     background:
-      "linear-gradient(145deg, rgba(15,27,37,.84), rgba(9,16,23,.88))",
-
-    border:
-      "1px solid rgba(145,176,194,.10)",
-
-    boxShadow:
-      "0 16px 45px rgba(0,0,0,.16)",
+      "linear-gradient(145deg, #111820 0%, #17384f 68%, #1e6f9f 135%)",
+    border: "1px solid #173b54",
+    boxShadow: "0 16px 34px rgba(17,24,32,.16)",
   },
 
-  toolTop: {
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "space-between",
-
-    gap:
-      "15px",
-  },
-
-  toolIcon: {
-    width:
-      "42px",
-
-    height:
-      "42px",
-
-    display:
-      "flex",
-
-    alignItems:
-      "center",
-
-    justifyContent:
-      "center",
-
-    borderRadius:
-      "13px",
-
-    fontSize:
-      "17px",
-
-    fontWeight:
-      900,
-  },
-
-  cyanIcon: {
-    background:
-      "rgba(49,178,194,.065)",
-
-    border:
-      "1px solid rgba(61,191,206,.16)",
-
-    color:
-      "#68cfdb",
-  },
-
-  blueIcon: {
-    background:
-      "rgba(55,111,153,.065)",
-
-    border:
-      "1px solid rgba(69,128,169,.15)",
-
-    color:
-      "#8bb8d5",
-  },
-
-  goldIcon: {
-    background:
-      "rgba(185,155,69,.06)",
-
-    border:
-      "1px solid rgba(189,159,78,.14)",
-
-    color:
-      "#c8b676",
-  },
-
-  cardArrow: {
-    color:
-      "#647686",
-
-    fontSize:
-      "14px",
-  },
-
-  smallBadge: {
-    padding:
-      "5px 7px",
-
-    borderRadius:
-      "999px",
-
-    color:
-      "#76cbd4",
-
-    background:
-      "rgba(63,167,180,.04)",
-
-    border:
-      "1px solid rgba(63,167,180,.11)",
-
-    fontSize:
-      "7px",
-
-    fontWeight:
-      900,
-  },
-
-  goldBadge: {
-    padding:
-      "5px 7px",
-
-    borderRadius:
-      "999px",
-
-    color:
-      "#c5b476",
-
-    background:
-      "rgba(184,154,72,.04)",
-
-    border:
-      "1px solid rgba(184,154,72,.11)",
-
-    fontSize:
-      "7px",
-
-    fontWeight:
-      900,
+  toolCardTop: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
   },
 
   toolKicker: {
-    display:
-      "block",
+    color: "#176fae",
+    fontSize: "8px",
+    fontWeight: 950,
+    letterSpacing: ".13em",
+  },
 
-    marginTop:
-      "18px",
+  toolKickerFeatured: {
+    color: "#7fc5ec",
+  },
 
-    color:
-      "#617584",
+  toolArrow: {
+    color: "#176fae",
+    fontSize: "19px",
+  },
 
-    fontSize:
-      "7px",
-
-    fontWeight:
-      950,
-
-    letterSpacing:
-      ".13em",
+  toolArrowFeatured: {
+    color: "#ffffff",
   },
 
   toolTitle: {
-    margin:
-      "6px 0 0",
+    margin: "24px 0 0",
+    color: "#111820",
+    fontSize: "23px",
+    lineHeight: 1.08,
+    fontWeight: 950,
+    letterSpacing: "-.025em",
+  },
 
-    color:
-      "#f4f7f9",
-
-    fontSize:
-      "18px",
-
-    lineHeight:
-      1.2,
-
-    fontWeight:
-      900,
+  toolTitleFeatured: {
+    color: "#ffffff",
   },
 
   toolDescription: {
-    margin:
-      "9px 0 0",
-
-    color:
-      "#81909e",
-
-    fontSize:
-      "9px",
-
-    lineHeight:
-      1.6,
+    margin: "10px 0 0",
+    color: "#65717b",
+    fontSize: "11px",
+    lineHeight: 1.65,
   },
 
-  toolFooter: {
-    display:
-      "flex",
-
-    justifyContent:
-      "space-between",
-
-    alignItems:
-      "center",
-
-    gap:
-      "12px",
-
-    marginTop:
-      "18px",
-
-    paddingTop:
-      "12px",
-
-    borderTop:
-      "1px solid rgba(255,255,255,.045)",
-
-    color:
-      "#b6c3cc",
-
-    fontSize:
-      "8px",
-
-    fontWeight:
-      800,
+  toolDescriptionFeatured: {
+    color: "#cedde6",
   },
 
-  /* FOOTER */
+  toolAction: {
+    marginTop: "auto",
+    paddingTop: "24px",
+    color: "#176fae",
+    fontSize: "10px",
+    fontWeight: 950,
+  },
+
+  toolActionFeatured: {
+    color: "#ffffff",
+  },
 
   footer: {
-    display:
-      "flex",
-
-    justifyContent:
-      "space-between",
-
-    alignItems:
-      "center",
-
-    gap:
-      "20px",
-
-    padding:
-      "24px 5px 3px",
-
-    color:
-      "#586a78",
-
-    fontSize:
-      "8px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "9px",
+    flexWrap: "wrap",
+    padding: "21px 6px 2px",
+    color: "#74808a",
+    fontSize: "9px",
   },
 
   footerBrand: {
-    color:
-      "#8798a4",
+    color: "#111820",
+    fontWeight: 950,
+    letterSpacing: ".08em",
   },
 
   footerTagline: {
-    marginLeft:
-      "10px",
-
-    color:
-      "#536572",
+    color: "#74808a",
   },
 };
