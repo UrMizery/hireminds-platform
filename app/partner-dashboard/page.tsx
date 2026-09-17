@@ -1305,7 +1305,7 @@ export default function PartnerDashboardPage() {
     setRequestFilter,
   ] =
     useState(
-      "all"
+      "active"
     );
 
   const [
@@ -1475,7 +1475,7 @@ export default function PartnerDashboardPage() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("hireminds_archived_meeting_ids");
+      const saved = localStorage.getItem("hireminds_archived_meeting_ids_v2");
       const parsed = saved ? JSON.parse(saved) : [];
       if (Array.isArray(parsed)) {
         setArchivedMeetingIds(parsed.filter((item) => typeof item === "string"));
@@ -2274,7 +2274,13 @@ export default function PartnerDashboardPage() {
     );
 
     setRequestFilter(
-      "all"
+      request && archivedMeetingIds.includes(request.id)
+        ? "archived"
+        : request?.status === "completed"
+          ? "completed"
+          : ["cancelled", "declined"].includes(request?.status || "")
+            ? "closed"
+            : "active"
     );
 
     setRequestSearch(
@@ -3215,18 +3221,24 @@ export default function PartnerDashboardPage() {
             request
           ) => {
             const archived = archivedMeetingIds.includes(request.id);
+            const activeStatuses = [
+              "pending",
+              "approved",
+              "confirmed",
+              "reschedule_requested",
+              "rescheduled",
+            ];
 
             if (requestFilter === "archived") {
-              if (!archived) return false;
+              if (!archived || request.status !== "completed") return false;
+            } else if (requestFilter === "completed") {
+              if (archived || request.status !== "completed") return false;
+            } else if (requestFilter === "closed") {
+              if (archived || !["cancelled", "declined"].includes(request.status)) return false;
+            } else if (requestFilter === "active") {
+              if (archived || !activeStatuses.includes(request.status)) return false;
             } else {
-              if (archived) return false;
-
-              if (
-                requestFilter !== "all" &&
-                request.status !== requestFilter
-              ) {
-                return false;
-              }
+              if (archived || request.status !== requestFilter) return false;
             }
 
             if (
@@ -3411,14 +3423,42 @@ export default function PartnerDashboardPage() {
     ).length;
 
   const bookedSlotCount =
-    availabilitySlots.filter(
-      (
-        slot
-      ) =>
-        Boolean(
-          slot.booked_request_id
-        )
-    ).length;
+    availabilitySlots.filter((slot) => {
+      if (!slot.booked_request_id) return false;
+
+      const request = meetingRequests.find(
+        (item) => item.id === slot.booked_request_id
+      );
+
+      if (!request) return true;
+
+      if (archivedMeetingIds.includes(request.id)) return false;
+
+      return !["completed", "cancelled", "declined"].includes(
+        request.status
+      );
+    }).length;
+
+  const completedUnarchivedSlotCount =
+    availabilitySlots.filter((slot) => {
+      if (!slot.booked_request_id) return false;
+
+      const request = meetingRequests.find(
+        (item) => item.id === slot.booked_request_id
+      );
+
+      return Boolean(
+        request &&
+          request.status === "completed" &&
+          !archivedMeetingIds.includes(request.id)
+      );
+    }).length;
+
+  const archivedCompletedCount = archivedMeetingIds.filter((requestId) =>
+    meetingRequests.some(
+      (request) => request.id === requestId && request.status === "completed"
+    )
+  ).length;
 
   const participantCancellationTotal =
     meetingCancellations.filter(
@@ -3657,14 +3697,14 @@ export default function PartnerDashboardPage() {
 
     try {
       localStorage.setItem(
-        "hireminds_archived_meeting_ids",
+        "hireminds_archived_meeting_ids_v2",
         JSON.stringify(next)
       );
     } catch {
       // Local archive state still works for this session.
     }
 
-    setMessage("Completed appointment archived from the active Meeting Requests view.");
+    setMessage("Completed appointment moved to Meeting Requests → Archived.");
   }
 
   function restoreArchivedMeeting(requestId: string) {
@@ -3673,14 +3713,14 @@ export default function PartnerDashboardPage() {
 
     try {
       localStorage.setItem(
-        "hireminds_archived_meeting_ids",
+        "hireminds_archived_meeting_ids_v2",
         JSON.stringify(next)
       );
     } catch {
       // Local archive state still works for this session.
     }
 
-    setMessage("Appointment restored to Meeting Requests.");
+    setMessage("Appointment restored to Meeting Requests → Completed.");
   }
 
   /* =======================================================
@@ -5520,6 +5560,67 @@ export default function PartnerDashboardPage() {
               <div style={styles.requestMiniStat}><strong>{archivedMeetingIds.length}</strong><span>Archived</span></div>
             </div>
 
+            <div style={styles.meetingViewBar}>
+              <button
+                type="button"
+                onClick={() => setRequestFilter("active")}
+                style={{
+                  ...styles.meetingViewButton,
+                  ...(requestFilter === "active" ? styles.meetingViewButtonActive : {}),
+                }}
+              >
+                Active ({
+                  meetingRequests.filter((request) =>
+                    ["pending", "approved", "confirmed", "reschedule_requested", "rescheduled"].includes(request.status) &&
+                    !archivedMeetingIds.includes(request.id)
+                  ).length
+                })
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRequestFilter("completed")}
+                style={{
+                  ...styles.meetingViewButton,
+                  ...(requestFilter === "completed" ? styles.meetingViewButtonActive : {}),
+                }}
+              >
+                Completed ({
+                  meetingRequests.filter((request) =>
+                    request.status === "completed" &&
+                    !archivedMeetingIds.includes(request.id)
+                  ).length
+                })
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRequestFilter("archived")}
+                style={{
+                  ...styles.meetingViewButton,
+                  ...(requestFilter === "archived" ? styles.meetingViewButtonActive : {}),
+                }}
+              >
+                Archived ({archivedCompletedCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRequestFilter("closed")}
+                style={{
+                  ...styles.meetingViewButton,
+                  ...(requestFilter === "closed" ? styles.meetingViewButtonActive : {}),
+                }}
+              >
+                Cancelled / Declined ({
+                  meetingRequests.filter((request) =>
+                    ["cancelled", "declined"].includes(request.status) &&
+                    !archivedMeetingIds.includes(request.id)
+                  ).length
+                })
+              </button>
+            </div>
+
             <div style={styles.requestControls}>
               <input
                 value={requestSearch}
@@ -5529,22 +5630,26 @@ export default function PartnerDashboardPage() {
               />
 
               <select
-                value={requestFilter}
-                onChange={(e) => setRequestFilter(e.target.value)}
+                value={["active", "completed", "archived", "closed"].includes(requestFilter) ? "" : requestFilter}
+                onChange={(e) => {
+                  if (e.target.value) setRequestFilter(e.target.value);
+                }}
                 style={styles.input}
               >
-                <option value="all">Active Workflow</option>
+                <option value="">Filter active workflow by status</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved - Awaiting Participant</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="reschedule_requested">Reschedule Requested</option>
                 <option value="rescheduled">Rescheduled</option>
-                <option value="completed">Completed - Not Archived</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="declined">Declined</option>
-                <option value="archived">Archived Completed Appointments</option>
               </select>
             </div>
+
+            {requestFilter === "archived" ? (
+              <div style={styles.archiveNotice}>
+                Archived appointments are kept here for history. They are not deleted. Use Restore if you want to return one to Completed.
+              </div>
+            ) : null}
 
             <div style={styles.participantAppointmentList}>
               {meetingRequestGroups.map((group) => {
@@ -5910,9 +6015,37 @@ export default function PartnerDashboardPage() {
                   </strong>
 
                   <span>
-                    Booked Times
+                    Active Booked Times
                   </span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("meeting_requests");
+                    setRequestFilter("completed");
+                    setRequestSearch("");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  style={styles.availabilityMetricButton}
+                >
+                  <strong>{completedUnarchivedSlotCount}</strong>
+                  <span>Completed - Needs Archive</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("meeting_requests");
+                    setRequestFilter("archived");
+                    setRequestSearch("");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  style={styles.availabilityMetricButton}
+                >
+                  <strong>{archivedCompletedCount}</strong>
+                  <span>Archived Completed</span>
+                </button>
               </div>
 
               {editingAvailabilityId ? (
@@ -6521,7 +6654,7 @@ export default function PartnerDashboardPage() {
                     styles.emptyPanel
                   }
                 >
-                  No availability has been added yet.
+                  No active availability or appointment times are currently shown here.
                 </div>
               ) : null}
             </section>
@@ -8723,6 +8856,41 @@ const styles: Record<
       4,
   },
 
+  meetingViewBar: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+    marginTop: 20,
+  },
+
+  meetingViewButton: {
+    padding: "9px 13px",
+    borderRadius: 999,
+    border: "1px solid #34343a",
+    background: "#0f0f11",
+    color: "#d4d4d8",
+    fontSize: 11,
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  meetingViewButtonActive: {
+    background: "#ffffff",
+    color: "#111111",
+    border: "1px solid #ffffff",
+  },
+
+  archiveNotice: {
+    marginTop: 12,
+    padding: "11px 13px",
+    borderRadius: 10,
+    background: "rgba(59,130,246,.08)",
+    border: "1px solid rgba(59,130,246,.22)",
+    color: "#bfdbfe",
+    fontSize: 11,
+    lineHeight: 1.5,
+  },
+
   requestControls: {
     display:
       "grid",
@@ -9734,6 +9902,18 @@ const styles: Record<
 
     gap:
       4,
+  },
+
+  availabilityMetricButton: {
+    padding: 15,
+    borderRadius: 14,
+    background: "#0f0f11",
+    border: "1px solid #29292e",
+    color: "#ffffff",
+    display: "grid",
+    gap: 4,
+    textAlign: "left",
+    cursor: "pointer",
   },
 
   availabilityBuilder: {
