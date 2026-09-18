@@ -3,15 +3,19 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
+const BLOCKED_REFERRAL_CODES = new Set(["YWCA", "COHORT1Y"]);
+
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [subscriptionRequired, setSubscriptionRequired] = useState(false);
 
   async function handleSignIn() {
     setMessage("");
+    setSubscriptionRequired(false);
 
     if (!email || !password) {
       setMessage("Email and password are required.");
@@ -21,13 +25,56 @@ export default function SignInPage() {
     try {
       setLoading(true);
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const {
+        data: signInData,
+        error: signInError,
+      } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        throw error;
+      if (signInError) throw signInError;
+
+      const user = signInData.user;
+
+      if (!user) {
+        throw new Error("Unable to verify your account.");
+      }
+
+      const {
+        data: profile,
+        error: profileError,
+      } = await supabase
+        .from("candidate_profiles")
+        .select("referral_code,has_paid_access")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        await supabase.auth.signOut();
+        throw new Error(
+          "We could not verify your HireMinds access. Please try again."
+        );
+      }
+
+      const referralCode = String(profile?.referral_code ?? "")
+        .trim()
+        .toUpperCase();
+
+      const hasPaidAccess = profile?.has_paid_access === true;
+
+      if (
+        BLOCKED_REFERRAL_CODES.has(referralCode) &&
+        !hasPaidAccess
+      ) {
+        await supabase.auth.signOut();
+
+        setSubscriptionRequired(true);
+        setMessage(
+          "Your complimentary HireMinds access has ended. To continue using HireMinds, please subscribe for access."
+        );
+
+        return;
       }
 
       window.location.href = "/profile";
@@ -56,9 +103,14 @@ export default function SignInPage() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setMessage("");
+                setSubscriptionRequired(false);
+              }}
               placeholder="name@email.com"
               style={styles.input}
+              autoComplete="email"
             />
           </div>
 
@@ -69,9 +121,19 @@ export default function SignInPage() {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setMessage("");
+                  setSubscriptionRequired(false);
+                }}
                 placeholder="Enter password"
                 style={styles.passwordInput}
+                autoComplete="current-password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !loading) {
+                    void handleSignIn();
+                  }
+                }}
               />
 
               <button
@@ -120,7 +182,10 @@ export default function SignInPage() {
           <button
             onClick={handleSignIn}
             disabled={loading}
-            style={styles.button}
+            style={{
+              ...styles.button,
+              ...(loading ? styles.disabledButton : {}),
+            }}
           >
             {loading ? "Signing In..." : "Sign In"}
           </button>
@@ -129,7 +194,24 @@ export default function SignInPage() {
             Forgot Password?
           </a>
 
-          {message ? <p style={styles.message}>{message}</p> : null}
+          {message ? (
+            <div
+              style={{
+                ...styles.messageBox,
+                ...(subscriptionRequired
+                  ? styles.subscriptionMessageBox
+                  : {}),
+              }}
+            >
+              <p style={styles.message}>{message}</p>
+
+              {subscriptionRequired ? (
+                <a href="/sign-up" style={styles.subscribeButton}>
+                  Subscribe to HireMinds
+                </a>
+              ) : null}
+            </div>
+          ) : null}
 
           <p style={styles.footerText}>
             Need an account?{" "}
@@ -261,6 +343,11 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
 
+  disabledButton: {
+    opacity: 0.6,
+    cursor: "not-allowed",
+  },
+
   forgotLink: {
     display: "inline-block",
     marginTop: "14px",
@@ -269,11 +356,38 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
   },
 
-  message: {
+  messageBox: {
     marginTop: "16px",
+  },
+
+  subscriptionMessageBox: {
+    padding: "16px",
+    borderRadius: "16px",
+    border: "1px solid rgba(22,119,255,0.35)",
+    background: "rgba(22,119,255,0.08)",
+  },
+
+  message: {
+    margin: 0,
     color: "#e5e9ef",
     fontSize: "14px",
     lineHeight: 1.6,
+  },
+
+  subscribeButton: {
+    width: "100%",
+    marginTop: "14px",
+    minHeight: "44px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "14px",
+    background: "#1677FF",
+    color: "#ffffff",
+    textDecoration: "none",
+    fontSize: "14px",
+    fontWeight: 800,
+    boxSizing: "border-box",
   },
 
   footerText: {
