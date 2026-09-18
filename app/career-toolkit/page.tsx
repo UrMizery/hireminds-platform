@@ -11,7 +11,7 @@ type Tool = {
   cta: string;
 };
 
-const heroWords = ["build.", "match.", "prepare.", "advance."];
+const heroWords = ["build.", "match.", "explore.", "advance."];
 
 const careerMaterials: Tool[] = [
   {
@@ -75,22 +75,14 @@ const jobMatchTools: Tool[] = [
   },
 ];
 
-const interviewTools: Tool[] = [
+const mediaTools: Tool[] = [
   {
-    title: "Interview Prep Studio",
+    title: "Media Library",
     description:
-      "Prepare in one place with role-focused questions, answer guidance, STAR support, employer questions, and interview readiness.",
-    href: "/career-toolkit/interview-question-generator",
-    label: "Interview",
-    cta: "START PREP",
-  },
-  {
-    title: "Job Search Tips",
-    description:
-      "Use practical guidance for applications, employer research, job descriptions, follow-up, and smarter job-search strategy.",
-    href: "/career-toolkit/job-search-tips",
-    label: "Guide",
-    cta: "VIEW TIPS",
+      "Explore HireMinds career videos, workshops, demonstrations, and practical career-development resources in one place.",
+    href: "/career-toolkit/community-feed",
+    label: "Media",
+    cta: "OPEN MEDIA LIBRARY",
   },
 ];
 
@@ -142,11 +134,10 @@ export default function CareerToolkitPage() {
     () => [
       "CAREER MATERIALS",
       "JOB MATCH",
-      "INTERVIEW PREP STUDIO",
+      "MEDIA LIBRARY",
       "CAREER DIRECTION",
       "SKILLS EXPLORER",
       "HOUSE OF LETTERS",
-      "JOB SEARCH TIPS",
     ],
     []
   );
@@ -342,7 +333,7 @@ export default function CareerToolkitPage() {
           </h1>
 
           <p style={styles.heroText}>
-            Build your materials, understand the job, prepare for the interview,
+            Build your materials, understand the job, explore career resources,
             and make your next move without bouncing between disconnected tools.
           </p>
 
@@ -363,7 +354,7 @@ export default function CareerToolkitPage() {
             <i>•</i>
             <span>MATCH</span>
             <i>•</i>
-            <span>PREPARE</span>
+            <span>EXPLORE</span>
             <i>•</i>
             <span>ADVANCE</span>
           </div>
@@ -591,7 +582,7 @@ export default function CareerToolkitPage() {
       </section>
 
       <section
-        id="interview"
+        id="media-library"
         className="hm-section hm-showcase-grid"
         style={styles.interviewSection}
       >
@@ -601,54 +592,52 @@ export default function CareerToolkitPage() {
           <div className="hm-phone" style={styles.phone}>
             <div style={styles.phoneTop}>
               <span>HIREMINDS</span>
-              <strong>INTERVIEW PREP</strong>
+              <strong>MEDIA LIBRARY</strong>
             </div>
 
-            <div style={styles.phoneQuestionLabel}>QUESTION</div>
+            <div style={styles.phoneQuestionLabel}>FEATURED MEDIA</div>
             <div style={styles.phoneQuestion}>
-              Tell me about a time you had to solve a problem quickly.
+              Career guidance you can watch, revisit, and use.
             </div>
 
-            <div style={styles.phoneTip}>BUILD YOUR ANSWER</div>
+            <div style={styles.phoneTip}>EXPLORE TOPICS</div>
 
             <div style={styles.starRow}>
-              <span>S</span>
-              <p>Situation</p>
+              <span>01</span>
+              <p>Resume & Application Support</p>
             </div>
             <div style={styles.starRow}>
-              <span>T</span>
-              <p>Task</p>
+              <span>02</span>
+              <p>Career Development</p>
             </div>
             <div style={styles.starRow}>
-              <span>A</span>
-              <p>Action</p>
+              <span>03</span>
+              <p>Job Search & Workplace Guidance</p>
             </div>
             <div style={styles.starRow}>
-              <span>R</span>
-              <p>Result</p>
+              <span>04</span>
+              <p>Professional Growth</p>
             </div>
 
             <div style={styles.phoneFooter}>
-              <span>Practice. Strengthen. Repeat.</span>
-              <strong>→</strong>
+              <span>Watch. Learn. Apply.</span>
             </div>
           </div>
         </div>
 
         <div style={styles.sectionCopy}>
-          <p style={styles.sectionEyebrow}>INTERVIEW PREP STUDIO</p>
+          <p style={styles.sectionEyebrow}>MEDIA LIBRARY</p>
           <h2 className="hm-display" style={styles.lightTitle}>
-            Prepare the answer.
+            Watch the guidance.
             <br />
-            <span style={styles.blueWord}>Not just the question.</span>
+            <span style={styles.blueWord}>Use it when you need it.</span>
           </h2>
           <p style={styles.lightText}>
-            The interview tools are now presented as one preparation experience:
-            questions, answer guidance, STAR structure, employer questions, and
-            interview readiness.
+            Explore HireMinds career videos, demonstrations, workshops, and
+            practical resources you can revisit throughout your career journey.
           </p>
 
-          <ToolRows tools={interviewTools} dark={false} />
+          <ToolRows tools={mediaTools} dark={false} />
         </div>
       </section>
 
@@ -677,7 +666,7 @@ export default function CareerToolkitPage() {
 
       <section style={styles.finalSection}>
         <p style={styles.finalKicker}>ONE ACCOUNT. EVERY TOOL.</p>
-        <h2 style={styles.finalTitle}>Build. Match. Prepare. Advance.</h2>
+        <h2 style={styles.finalTitle}>Build. Match. Explore. Advance.</h2>
         <p style={styles.finalText}>
           Start where you are. Use the tool you need now. Come back for the next
           move when you’re ready.
