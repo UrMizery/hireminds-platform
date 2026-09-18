@@ -5,6 +5,41 @@ import { supabase } from "../lib/supabase";
 
 const BLOCKED_REFERRAL_CODES = new Set(["YWCA", "COHORT1Y"]);
 
+function normalizeReferralCode(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+}
+
+async function getCandidateAccessProfile(userId: string, emailAddress: string) {
+  const { data: byUserId, error: byUserIdError } = await supabase
+    .from("candidate_profiles")
+    .select("user_id,email,referral_code,has_paid_access")
+    .eq("user_id", userId)
+    .limit(1);
+
+  if (byUserIdError) throw byUserIdError;
+
+  if (byUserId && byUserId.length > 0) {
+    return byUserId[0];
+  }
+
+  const normalizedEmail = emailAddress.trim();
+
+  if (!normalizedEmail) return null;
+
+  const { data: byEmail, error: byEmailError } = await supabase
+    .from("candidate_profiles")
+    .select("user_id,email,referral_code,has_paid_access")
+    .ilike("email", normalizedEmail)
+    .limit(1);
+
+  if (byEmailError) throw byEmailError;
+
+  return byEmail && byEmail.length > 0 ? byEmail[0] : null;
+}
+
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +64,7 @@ export default function SignInPage() {
         data: signInData,
         error: signInError,
       } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -38,30 +73,37 @@ export default function SignInPage() {
       const user = signInData.user;
 
       if (!user) {
+        await supabase.auth.signOut();
         throw new Error("Unable to verify your account.");
       }
 
       const {
-        data: profile,
-        error: profileError,
-      } = await supabase
-        .from("candidate_profiles")
-        .select("referral_code,has_paid_access")
-        .eq("user_id", user.id)
-        .maybeSingle();
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-      if (profileError) {
+      if (sessionError || !session?.user) {
         await supabase.auth.signOut();
-        throw new Error(
-          "We could not verify your HireMinds access. Please try again."
-        );
+        throw new Error("Unable to verify your HireMinds session.");
       }
 
-      const referralCode = String(profile?.referral_code ?? "")
-        .trim()
-        .toUpperCase();
+      const profile = await getCandidateAccessProfile(
+        user.id,
+        user.email || email
+      );
 
-      const hasPaidAccess = profile?.has_paid_access === true;
+      if (!profile) {
+        await supabase.auth.signOut();
+
+        setMessage(
+          "We could not verify your HireMinds access. Please try again."
+        );
+
+        return;
+      }
+
+      const referralCode = normalizeReferralCode(profile.referral_code);
+      const hasPaidAccess = profile.has_paid_access === true;
 
       if (
         BLOCKED_REFERRAL_CODES.has(referralCode) &&
@@ -77,9 +119,14 @@ export default function SignInPage() {
         return;
       }
 
-      window.location.href = "/profile";
+      window.location.replace("/profile");
     } catch (error: any) {
-      setMessage(error?.message || "Unable to sign in.");
+      await supabase.auth.signOut();
+
+      setMessage(
+        error?.message ||
+          "Unable to sign in."
+      );
     } finally {
       setLoading(false);
     }
