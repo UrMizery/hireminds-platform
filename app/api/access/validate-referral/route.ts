@@ -1,98 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-type ReferralCodeConfig = {
-  active: boolean;
-  label: string;
-};
-
-/*
-  ==================================================
-  HIREMINDS ACTIVE REFERRAL CODES
-  ==================================================
-
-  THESE ARE THE ONLY CODES THAT CAN BE USED
-  FOR NEW REGISTRATIONS.
-
-  Referral access:
-  - One-time access
-  - 30 days
-  - No payment required
-*/
-
-const REFERRAL_CODES: Record<
-  string,
-  ReferralCodeConfig
-> = {
-  "12.2026": {
-    active: true,
-    label: "HireMinds Referral Access",
-  },
-
-  RDS1: {
-    active: true,
-    label: "RDS Referral Access",
-  },
-
-  COHORT2Y: {
-    active: true,
-    label: "HireMinds Cohort Referral Access",
-  },
-
-  COHORT3Y: {
-    active: true,
-    label: "HireMinds Cohort Referral Access",
-  },
-
-  COHORT4Y: {
-    active: true,
-    label: "HireMinds Cohort Referral Access",
-  },
-
-  COHORT5Y: {
-    active: true,
-    label: "HireMinds Cohort Referral Access",
-  },
-
-  DEMO1: {
-    active: true,
-    label: "HireMinds Demo Referral Access",
-  },
-};
-
-/*
-  ==================================================
-  OLD / BLOCKED CODES
-  ==================================================
-
-  These are recognized as old HireMinds codes,
-  but they CANNOT be used for a new registration.
-*/
-
-const BLOCKED_REFERRAL_CODES = new Set([
-  "YWCA",
-  "COHORT1Y",
-  "RDS",
-  "YWORK4C3",
-]);
-
-function normalizeReferralCode(
-  value: unknown
-) {
+function normalizeReferralCode(value: unknown) {
   return String(value ?? "")
     .trim()
     .toUpperCase();
 }
 
-function getReferralExpiration() {
+function normalizeStatus(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function getReferralExpiration(accessDays: number | null) {
+  if (
+    accessDays === null ||
+    accessDays === undefined ||
+    !Number.isFinite(accessDays) ||
+    accessDays <= 0
+  ) {
+    return null;
+  }
+
   const expiresAt = new Date();
 
   expiresAt.setDate(
-    expiresAt.getDate() + 30
+    expiresAt.getDate() + accessDays
   );
 
   return expiresAt.toISOString();
+}
+
+function getSupabaseAdmin() {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL."
+    );
+  }
+
+  if (!serviceRoleKey) {
+    throw new Error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY."
+    );
+  }
+
+  return createClient(
+    supabaseUrl,
+    serviceRoleKey,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    }
+  );
 }
 
 export async function POST(
@@ -107,12 +77,6 @@ export async function POST(
         body?.code
       );
 
-    /*
-      =========================================
-      NO CODE ENTERED
-      =========================================
-    */
-
     if (!code) {
       return NextResponse.json(
         {
@@ -126,16 +90,74 @@ export async function POST(
       );
     }
 
-    /*
-      =========================================
-      BLOCK OLD CODES
-      =========================================
-    */
+    const supabase =
+      getSupabaseAdmin();
+
+    const {
+      data: referral,
+      error: referralError,
+    } = await supabase
+      .from("referral_codes")
+      .select(
+        `
+          code,
+          status,
+          is_active,
+          allow_new_signups,
+          allow_existing_access,
+          access_days
+        `
+      )
+      .eq("code", code)
+      .maybeSingle();
+
+    if (referralError) {
+      console.error(
+        "Referral lookup error:",
+        referralError
+      );
+
+      return NextResponse.json(
+        {
+          valid: false,
+          message:
+            "We could not verify the referral code. Please try again.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    if (!referral) {
+      return NextResponse.json(
+        {
+          valid: false,
+          code,
+          message:
+            "That referral code is not currently active. Check the code and try again.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const status =
+      normalizeStatus(
+        referral.status
+      );
+
+    const isActive =
+      referral.is_active === true;
+
+    const allowNewSignups =
+      referral.allow_new_signups === true;
 
     if (
-      BLOCKED_REFERRAL_CODES.has(
-        code
-      )
+      status !== "active" ||
+      !isActive ||
+      !allowNewSignups
     ) {
       return NextResponse.json(
         {
@@ -150,57 +172,50 @@ export async function POST(
       );
     }
 
-    /*
-      =========================================
-      LOOK UP ACTIVE CODE
-      =========================================
-    */
-
-    const referral =
-      REFERRAL_CODES[code];
+    let accessDays: number | null =
+      null;
 
     if (
-      !referral ||
-      !referral.active
+      referral.access_days !== null &&
+      referral.access_days !== undefined
     ) {
-      return NextResponse.json(
-        {
-          valid: false,
-          code,
-          message:
-            "That referral code is not currently active. Check the code and try again.",
-        },
-        {
-          status: 400,
-        }
-      );
+      const parsed =
+        Number(
+          referral.access_days
+        );
+
+      if (
+        Number.isFinite(parsed) &&
+        parsed > 0
+      ) {
+        accessDays = parsed;
+      }
     }
 
-    /*
-      =========================================
-      VALID REFERRAL CODE
-      =========================================
-    */
-
     const expiresAt =
-      getReferralExpiration();
+      getReferralExpiration(
+        accessDays
+      );
 
     return NextResponse.json(
       {
         valid: true,
 
-        code,
-
-        label:
-          referral.label,
+        code:
+          normalizeReferralCode(
+            referral.code
+          ),
 
         accessType:
           "referral",
 
-        accessDays:
-          30,
+        accessDays,
 
         expiresAt,
+
+        allowExistingAccess:
+          referral.allow_existing_access ===
+          true,
 
         message:
           "Referral code verified.",
@@ -238,19 +253,6 @@ export async function GET() {
 
       message:
         "HireMinds referral validation endpoint is running.",
-
-      activeReferralCodes: [
-        "12.2026",
-        "RDS1",
-        "COHORT2Y",
-        "COHORT3Y",
-        "COHORT4Y",
-        "COHORT5Y",
-        "DEMO1",
-      ],
-
-      referralAccessDays:
-        30,
     },
     {
       status: 200,
