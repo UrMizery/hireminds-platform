@@ -1,1579 +1,823 @@
 "use client";
 
-const sections = [
-  {
-    id: "healthcare",
-    title: "Healthcare / Medical",
-    intro:
-      "Core skills for direct care, clinical support, documentation, compliance, medical systems, patient interaction, and healthcare operations.",
-    groups: [
-      {
-        role: "LPN / RN",
-        skills: [
-          "Patient assessment",
-          "Medication administration",
-          "Wound care",
-          "IV therapy",
-          "Care planning",
-          "Charting and documentation",
-          "Vital signs",
-          "Patient education",
-          "Discharge support",
-          "Specimen collection",
-          "Medication reconciliation",
-          "Infection prevention",
-          "Physician order follow-through",
-          "Patient safety",
-          "Treatment plan implementation",
-          "Catheter care",
-          "Trach care",
-          "Tube feeding support",
-          "Blood glucose testing",
-          "Provider communication",
-          "HIPAA compliance",
-          "EMR/EHR charting",
-        ],
-      },
-      {
-        role: "CNA / HHA / Nursing Home Staff",
-        skills: [
-          "ADL assistance",
-          "Bathing and grooming assistance",
-          "Feeding assistance",
-          "Toileting support",
-          "Mobility support",
-          "Transfer and gait belt use",
-          "Hoyer lift support",
-          "Vital signs",
-          "Observation and reporting",
-          "Resident safety",
-          "Repositioning and pressure prevention",
-          "Dementia care support",
-          "Fall prevention",
-          "Infection prevention",
-          "Companionship",
-          "Range of motion support",
-          "Resident dignity",
-          "Intake and output tracking",
-          "Long-term care support",
-          "Family communication",
-          "HIPAA compliance",
-        ],
-      },
-      {
-        role: "Medical Assistant",
-        skills: [
-          "Patient intake",
-          "Vital signs",
-          "Exam room prep",
-          "EMR/EHR documentation",
-          "Specimen collection",
-          "Injections",
-          "EKG",
-          "Phlebotomy support",
-          "Insurance verification",
-          "Appointment scheduling",
-          "Front desk support",
-          "Prior authorizations",
-          "Referral coordination",
-          "Sterilization",
-          "Medication refill requests",
-          "Provider assistance",
-          "Medical terminology",
-          "HIPAA compliance",
-        ],
-      },
-      {
-        role: "Medical Coding and Billing",
-        skills: [
-          "ICD-10",
-          "CPT",
-          "HCPCS",
-          "Claims processing",
-          "Claim submission",
-          "Billing accuracy",
-          "Payment posting",
-          "Denial resolution",
-          "Insurance follow-up",
-          "Prior authorizations",
-          "Medical terminology",
-          "A/R follow-up",
-          "Coding audits",
-          "Compliance",
-          "EMR/EHR review",
-          "Documentation review",
-          "HIPAA compliance",
-        ],
-      },
-      {
-        role: "Phlebotomy",
-        skills: [
-          "Venipuncture",
-          "Capillary sticks",
-          "Specimen labeling",
-          "Specimen transport",
-          "Sample handling",
-          "Patient identification",
-          "Safety procedures",
-          "Lab requisitions",
-          "Chain of custody procedures",
-          "Bedside manner",
-          "Infection control",
-          "Documentation",
-          "Attention to detail",
-        ],
-      },
-      {
-        role: "Pharmacy Tech",
-        skills: [
-          "Prescription processing",
-          "Medication counting",
-          "Medication prep",
-          "Insurance processing",
-          "Insurance adjudication",
-          "Inventory control",
-          "Labeling accuracy",
-          "Refill processing",
-          "Dosage support",
-          "Controlled substance handling procedures",
-          "Customer service",
-          "Pharmacy workflow",
-          "Data entry",
-          "Confidentiality",
-          "HIPAA compliance",
-        ],
-      },
-      {
-        role: "Dental Hygienist / Dental Support",
-        skills: [
-          "Patient education",
-          "Charting",
-          "X-ray support",
-          "Sterilization",
-          "Instrument prep",
-          "Periodontal assessment",
-          "Scheduling support",
-          "Infection control",
-          "Bedside manner",
-          "Dental software systems",
-        ],
-      },
-      {
-        role: "X-Ray Tech",
-        skills: [
-          "Imaging procedures",
-          "Patient positioning",
-          "Radiation safety",
-          "Equipment operation",
-          "Image processing",
-          "Image documentation",
-          "PACS",
-          "Anatomy knowledge",
-          "Provider collaboration",
-          "Patient prep",
-          "Accuracy",
-          "Compliance",
-        ],
-      },
-      {
-        role: "EMS / Paramedic",
-        skills: [
-          "Emergency response",
-          "Patient assessment",
-          "CPR",
-          "BLS",
-          "ALS",
-          "Airway management",
-          "Trauma response",
-          "Triage",
-          "Transport coordination",
-          "Bleeding control",
-          "ECG monitoring",
-          "Scene safety",
-          "Documentation",
-          "Communication under pressure",
-          "Emergency protocol knowledge",
-        ],
-      },
-      {
-        role: "Occupational Therapist / Rehab Tech",
-        skills: [
-          "Patient assessment",
-          "Treatment planning",
-          "Rehabilitation support",
-          "ADL training",
-          "Adaptive equipment training",
-          "Mobility support",
-          "Exercise assistance",
-          "Transfer support",
-          "Therapy room setup",
-          "Patient education",
-          "Progress tracking",
-          "Care coordination",
-          "Documentation",
-          "Teamwork with providers",
-          "Empathy",
-        ],
-      },
-      {
-        role: "Drug and Alcohol Counselor / Tech",
-        skills: [
-          "Client support",
-          "Intake documentation",
-          "Treatment plan support",
-          "Progress notes",
-          "Group facilitation",
-          "Behavioral observation",
-          "Relapse prevention support",
-          "Case notes",
-          "Crisis support",
-          "Community resources",
-          "Documentation",
-          "Confidentiality",
-          "Empathy",
-        ],
-      },
-      {
-        role: "Social Worker / Case Manager",
-        skills: [
-          "Client assessment",
-          "Biopsychosocial assessment",
-          "Discharge planning",
-          "Case documentation",
-          "Crisis support",
-          "Referrals",
-          "Community resources",
-          "Care coordination",
-          "Advocacy",
-          "Resource navigation",
-          "Utilization review support",
-          "Scheduling",
-          "Organization",
-          "Confidentiality",
-          "Empathy",
-        ],
-      },
-      {
-        role: "Dietitian",
-        skills: [
-          "Nutrition assessment",
-          "Meal planning",
-          "Patient education",
-          "Dietary compliance",
-          "Health counseling",
-          "Wellness support",
-          "Documentation",
-          "Communication",
-          "Care coordination",
-          "Attention to detail",
-        ],
-      },
-      {
-        role: "Massage Therapist",
-        skills: [
-          "Body mechanics",
-          "Client care",
-          "Muscle tension relief",
-          "Relaxation techniques",
-          "Anatomy knowledge",
-          "Client communication",
-          "Scheduling",
-          "Sanitation",
-          "Professionalism",
-          "Documentation",
-        ],
-      },
-      {
-        role: "Group Home / Disability Support Staff",
-        skills: [
-          "Daily living support",
-          "Behavior support",
-          "Medication reminders",
-          "Transportation support",
-          "Community integration",
-          "Documentation",
-          "Resident dignity",
-          "Safety monitoring",
-          "Crisis de-escalation",
-          "Communication",
-        ],
-      },
-      {
-        role: "Healthcare Systems / Acronyms / Software",
-        skills: [
-          "HIPAA",
-          "EMR",
-          "EHR",
-          "MAR",
-          "eMAR",
-          "ICD-10",
-          "CPT",
-          "HCPCS",
-          "CPR",
-          "BLS",
-          "ALS",
-          "EKG / ECG",
-          "PACS",
-          "EPIC",
-          "Cerner",
-          "Meditech",
-          "eClinicalWorks",
-          "Allscripts",
-        ],
-      },
-    ],
-  },
-  {
-    id: "customer-service-sales",
-    title: "Customer Service / Sales",
-    intro:
-      "Core skills for client-facing, support, outreach, retail-facing, and service-centered roles.",
-    groups: [
-      {
-        role: "Customer Service",
-        skills: [
-          "Customer retention",
-          "Client relationship building",
-          "Customer issue resolution",
-          "Service recovery",
-          "Active listening",
-          "De-escalation",
-          "Conflict management",
-          "Call handling",
-          "Phone etiquette",
-          "Complaint resolution",
-          "CRM systems",
-          "Account support",
-          "Order processing",
-          "Escalation management",
-          "Customer satisfaction focus",
-          "Multitasking",
-          "Documentation",
-          "Problem solving",
-          "Cash handling",
-          "Payment processing",
-          "Front desk support",
-          "Appointment scheduling",
-          "Bilingual communication",
-        ],
-      },
-      {
-        role: "Sales Representative / Canvasser",
-        skills: [
-          "Lead generation",
-          "Relationship building",
-          "Communication",
-          "Persuasion",
-          "Product knowledge",
-          "Goal tracking",
-          "Follow-up",
-          "Territory outreach",
-          "Customer service",
-          "Professionalism",
-          "Objection handling",
-          "Cold outreach",
-          "Closing support",
-        ],
-      },
-      {
-        role: "Merchandiser",
-        skills: [
-          "Product placement",
-          "Inventory checks",
-          "Planogram setup",
-          "Visual presentation",
-          "Store support",
-          "Attention to detail",
-          "Organization",
-          "Communication",
-          "Stocking",
-          "Time management",
-        ],
-      },
-      {
-        role: "Marketer",
-        skills: [
-          "Campaign support",
-          "Communication",
-          "Branding",
-          "Content planning",
-          "Audience awareness",
-          "Organization",
-          "Analytics awareness",
-          "Creativity",
-          "Project coordination",
-          "Problem solving",
-        ],
-      },
-      {
-        role: "Designer",
-        skills: [
-          "Creativity",
-          "Layout and composition",
-          "Branding",
-          "Visual communication",
-          "Software proficiency",
-          "Attention to detail",
-          "Collaboration",
-          "Revisions",
-          "Presentation skills",
-          "Project management",
-        ],
-      },
-    ],
-  },
-  {
-    id: "drivers",
-    title: "Drivers",
-    intro: "Core skills for commercial, passenger, delivery, and service driving roles.",
-    groups: [
-      {
-        role: "CDL A / CDL B",
-        skills: [
-          "DOT compliance",
-          "Route planning",
-          "Safety inspections",
-          "Logbooks and ELD",
-          "Cargo securement",
-          "Time management",
-          "Defensive driving",
-          "Vehicle checks",
-          "On-time delivery",
-          "Manifest review",
-          "Pre-trip inspections",
-          "Post-trip inspections",
-          "Proof of delivery",
-          "Trip logging",
-          "Customer delivery service",
-        ],
-      },
-      {
-        role: "Non-CDL / Delivery",
-        skills: [
-          "Local routing",
-          "Safe driving",
-          "Loading and unloading",
-          "Customer interaction",
-          "Proof of delivery",
-          "Schedule adherence",
-          "Navigation tools",
-          "Vehicle care",
-          "Reliability",
-          "Time management",
-          "Cash handling",
-          "Route optimization",
-          "Manifest review",
-          "Trip logging",
-        ],
-      },
-      {
-        role: "Passenger / Limo / Livery / Taxi",
-        skills: [
-          "Passenger safety",
-          "Customer service",
-          "Punctuality",
-          "Route knowledge",
-          "Clean vehicle upkeep",
-          "Professional appearance",
-          "Defensive driving",
-          "Cash and payment handling",
-          "Trip documentation",
-          "Communication",
-          "Customer interaction",
-          "Bilingual communication",
-        ],
-      },
-    ],
-  },
-  {
-    id: "warehouse-logistics-forklift",
-    title: "Warehouse / Logistics / Forklift",
-    intro:
-      "Core skills for inventory, shipping, fulfillment, powered equipment, receiving, and dispatch support.",
-    groups: [
-      {
-        role: "Warehouse",
-        skills: [
-          "Picking and packing",
-          "Shipping and receiving",
-          "Inventory control",
-          "Inventory auditing",
-          "Cycle counts",
-          "RF scanner operation",
-          "Barcode scanning",
-          "Palletizing",
-          "Loading and unloading",
-          "Order accuracy",
-          "Order staging",
-          "Shipping documentation",
-          "Receiving inspections",
-          "Stock replenishment",
-          "Material handling",
-          "Warehouse organization",
-          "Safety compliance",
-          "Deadline management",
-          "Quality checks",
-          "Basic computer entry",
-        ],
-      },
-      {
-        role: "Forklift",
-        skills: [
-          "Forklift operation",
-          "Forklift certification",
-          "Pallet movement",
-          "Loading and unloading",
-          "Warehouse safety",
-          "Inventory movement",
-          "Equipment checks",
-          "Order staging",
-          "Shipping support",
-          "Accuracy",
-          "Productivity",
-          "Pallet jack operation",
-        ],
-      },
-      {
-        role: "Logistics",
-        skills: [
-          "Dispatching",
-          "Shipment tracking",
-          "Route coordination",
-          "Inventory movement",
-          "Documentation",
-          "Vendor communication",
-          "Scheduling",
-          "Compliance",
-          "Problem solving",
-          "Data entry",
-          "Load verification",
-          "Dispatch support",
-        ],
-      },
-    ],
-  },
-  {
-    id: "manufacturing-aerospace",
-    title: "Manufacturing / Aerospace",
-    intro:
-      "Core skills for production, assembly, inspection, compliance, and regulated manufacturing work.",
-    groups: [
-      {
-        role: "Manufacturing",
-        skills: [
-          "Machine operation",
-          "Assembly",
-          "Quality inspection",
-          "Production line work",
-          "Safety procedures",
-          "Measuring tools",
-          "Troubleshooting",
-          "Packaging",
-          "Documentation",
-          "Efficiency",
-          "Production support",
-          "Quality checks",
-        ],
-      },
-      {
-        role: "Aerospace",
-        skills: [
-          "Precision assembly",
-          "Blueprint reading",
-          "Quality standards",
-          "Safety compliance",
-          "Documentation",
-          "Mechanical aptitude",
-          "Inspection",
-          "Tool usage",
-          "Production support",
-          "Attention to detail",
-          "Regulated process adherence",
-        ],
-      },
-    ],
-  },
-  {
-    id: "hospitality-cleaning-food-service",
-    title: "Hospitality / Cleaning / Food Service",
-    intro:
-      "Core skills for guest service, kitchen support, housekeeping, and food operations.",
-    groups: [
-      {
-        role: "Hospitality",
-        skills: [
-          "Guest service",
-          "Reservations",
-          "Front desk support",
-          "Housekeeping standards",
-          "Event support",
-          "Multitasking",
-          "Communication",
-          "Problem resolution",
-          "Professionalism",
-          "Teamwork",
-        ],
-      },
-      {
-        role: "Housekeeping",
-        skills: [
-          "Room cleaning",
-          "Sanitation",
-          "Linen changes",
-          "Supply restocking",
-          "Attention to detail",
-          "Guest readiness",
-          "Time management",
-          "Safety procedures",
-          "Organization",
-          "Reliability",
-        ],
-      },
-      {
-        role: "Housewife / Household Manager",
-        skills: [
-          "Household organization",
-          "Scheduling",
-          "Budgeting",
-          "Meal planning",
-          "Multitasking",
-          "Caregiving support",
-          "Cleaning coordination",
-          "Time management",
-          "Problem solving",
-          "Adaptability",
-        ],
-      },
-      {
-        role: "Chef / Cook",
-        skills: [
-          "Menu prep",
-          "Food safety",
-          "Knife skills",
-          "Cooking techniques",
-          "Plating and presentation",
-          "Kitchen organization",
-          "Time management",
-          "Inventory awareness",
-          "Sanitation",
-          "Teamwork",
-          "Recipe execution",
-          "Line support",
-        ],
-      },
-      {
-        role: "Dishwasher",
-        skills: [
-          "Dishwashing",
-          "Sanitation",
-          "Kitchen cleanliness",
-          "Time management",
-          "Organization",
-          "Safety procedures",
-          "Support to kitchen staff",
-          "Reliability",
-          "Attention to detail",
-          "Fast-paced work",
-        ],
-      },
-      {
-        role: "Prep Cook / Kitchen Prep",
-        skills: [
-          "Ingredient prep",
-          "Portioning",
-          "Food safety",
-          "Knife skills",
-          "Station setup",
-          "Labeling and storage",
-          "Sanitation",
-          "Teamwork",
-          "Speed and efficiency",
-          "Recipe support",
-        ],
-      },
-      {
-        role: "Food Service",
-        skills: [
-          "Food prep",
-          "Line prep",
-          "Sanitation",
-          "Food safety",
-          "ServSafe certified",
-          "Food handling certification",
-          "Cashiering",
-          "Cash handling",
-          "Register operation",
-          "Order accuracy",
-          "Ticket timing",
-          "Kitchen support",
-          "Back-of-house support",
-          "Stocking",
-          "Allergen awareness",
-          "Temperature logs",
-          "Banquet support",
-          "Tray line support",
-          "Customer service",
-          "Speed of service",
-        ],
-      },
-    ],
-  },
-  {
-    id: "education-support-human-services",
-    title: "Education / Support / Human Services",
-    intro:
-      "Core skills for teaching support, coaching, tutoring, training, and people-centered service roles.",
-    groups: [
-      {
-        role: "Paraprofessional",
-        skills: [
-          "Classroom support",
-          "Student assistance",
-          "Behavior support",
-          "Communication",
-          "Documentation",
-          "Teamwork with teachers",
-          "Patience",
-          "Adaptability",
-          "Instructional support",
-          "Supervision",
-        ],
-      },
-      {
-        role: "Trainer",
-        skills: [
-          "Onboarding",
-          "Coaching",
-          "Presentation skills",
-          "Communication",
-          "Curriculum support",
-          "Knowledge transfer",
-          "Feedback delivery",
-          "Engagement",
-          "Organization",
-          "Leadership",
-        ],
-      },
-      {
-        role: "Coach",
-        skills: [
-          "Motivation",
-          "Leadership",
-          "Instruction",
-          "Communication",
-          "Teamwork",
-          "Planning",
-          "Performance feedback",
-          "Mentoring",
-          "Adaptability",
-          "Problem solving",
-        ],
-      },
-      {
-        role: "Tutor",
-        skills: [
-          "Subject support",
-          "Lesson planning",
-          "Communication",
-          "Patience",
-          "Active listening",
-          "Adaptability",
-          "Encouragement",
-          "Progress tracking",
-          "Organization",
-          "Student engagement",
-        ],
-      },
-    ],
-  },
-  {
-    id: "admin-clerical-legal-business",
-    title: "Admin / Clerical / Legal / Business",
-    intro:
-      "Core skills for office, legal support, organization, records, communication, and independent business roles.",
-    groups: [
-      {
-        role: "Admin / Clerical",
-        skills: [
-          "Scheduling",
-          "Data entry",
-          "Document preparation",
-          "Calendar management",
-          "Filing",
-          "Phone support",
-          "Email communication",
-          "Microsoft Office",
-          "Records management",
-          "Organization",
-        ],
-      },
-      {
-        role: "Paralegal",
-        skills: [
-          "Legal research",
-          "Document preparation",
-          "Case file organization",
-          "Scheduling",
-          "Client communication",
-          "Attention to detail",
-          "Confidentiality",
-          "Drafting support",
-          "Records management",
-          "Time management",
-        ],
-      },
-      {
-        role: "Financial Advisor",
-        skills: [
-          "Client relationship management",
-          "Financial planning",
-          "Budgeting",
-          "Investment guidance",
-          "Communication",
-          "Compliance awareness",
-          "Documentation",
-          "Presentation skills",
-          "Confidentiality",
-          "Problem solving",
-        ],
-      },
-      {
-        role: "Entrepreneur",
-        skills: [
-          "Business planning",
-          "Customer service",
-          "Communication",
-          "Sales",
-          "Budgeting",
-          "Problem solving",
-          "Adaptability",
-          "Marketing",
-          "Leadership",
-          "Time management",
-        ],
-      },
-    ],
-  },
-  {
-    id: "it-helpdesk-coding",
-    title: "IT / Help Desk / Coding",
-    intro:
-      "Core skills for troubleshooting, systems support, networking basics, software, acronyms, coding tools, and technical problem solving.",
-    groups: [
-      {
-        role: "IT / Help Desk",
-        skills: [
-          "Troubleshooting",
-          "Hardware setup",
-          "Software installation",
-          "Printer support",
-          "Device imaging",
-          "Password resets",
-          "User account management",
-          "Ticketing systems",
-          "Remote desktop support",
-          "Network basics",
-          "VPN support",
-          "Wi-Fi troubleshooting",
-          "Operating system support",
-          "Microsoft 365 support",
-          "Google Workspace support",
-          "Antivirus and endpoint basics",
-          "MFA setup",
-          "Access provisioning",
-          "System updates",
-          "Documentation",
-        ],
-      },
-      {
-        role: "Help Desk / Desktop Support",
-        skills: [
-          "Active Directory",
-          "Azure AD / Entra ID",
-          "Office 365",
-          "Outlook troubleshooting",
-          "Teams support",
-          "Windows support",
-          "macOS support",
-          "Mobile device support",
-          "Printer and scanner setup",
-          "Software deployment",
-          "File permissions",
-          "Shared drives",
-          "Basic networking",
-          "Ticket escalation",
-          "SLA awareness",
-        ],
-      },
-      {
-        role: "Networking Basics",
-        skills: [
-          "TCP/IP",
-          "DNS",
-          "DHCP",
-          "VPN",
-          "LAN/WAN",
-          "Routers and switches",
-          "IP configuration",
-          "Ping / traceroute",
-          "Firewall basics",
-          "Network connectivity checks",
-        ],
-      },
-      {
-        role: "Coding / Technical Tools",
-        skills: [
-          "HTML",
-          "CSS",
-          "JavaScript",
-          "Python",
-          "SQL",
-          "JSON",
-          "API basics",
-          "Git",
-          "GitHub",
-          "VS Code",
-          "Command line basics",
-          "PowerShell basics",
-          "Scripting basics",
-          "Debugging basics",
-          "Data validation",
-          "Automation basics",
-        ],
-      },
-      {
-        role: "IT Systems / Software / Acronyms",
-        skills: [
-          "ITSM",
-          "SLA",
-          "KPI",
-          "VPN",
-          "DNS",
-          "DHCP",
-          "TCP/IP",
-          "MFA",
-          "SSO",
-          "AD",
-          "Azure AD / Entra",
-          "OS",
-          "API",
-          "SQL",
-          "HTML",
-          "CSS",
-          "JS",
-          "QA",
-          "UI",
-          "UX",
-          "CRM",
-          "ERP",
-          "VoIP",
-          "Microsoft 365",
-          "Outlook",
-          "Teams",
-          "SharePoint",
-          "OneDrive",
-          "Google Workspace",
-          "Jira",
-          "ServiceNow",
-          "Zendesk",
-          "Freshdesk",
-          "Salesforce",
-          "HubSpot",
-          "Slack",
-          "Zoom",
-          "Visual Studio Code",
-        ],
-      },
-    ],
-  },
-  {
-    id: "construction-trades",
-    title: "Construction / Trades",
-    intro:
-      "Core skills for field work, repair, installation, fabrication, site support, and trade certifications.",
-    groups: [
-      {
-        role: "Construction",
-        skills: [
-          "Site prep",
-          "Material handling",
-          "Tool usage",
-          "Measurements",
-          "Blueprint awareness",
-          "Safety compliance",
-          "Teamwork",
-          "Physical stamina",
-          "Problem solving",
-          "Reliability",
-          "OSHA 10",
-          "OSHA 30",
-          "Job site safety",
-          "Scaffold safety",
-          "Ladder safety",
-          "Material staging",
-          "Site cleanup",
-          "Heavy lifting",
-          "Crew coordination",
-        ],
-      },
-      {
-        role: "Roofing",
-        skills: [
-          "Roof installation",
-          "Repairs",
-          "Ladder safety",
-          "Measuring",
-          "Material handling",
-          "Weather awareness",
-          "Safety compliance",
-          "Attention to detail",
-          "Teamwork",
-          "Physical stamina",
-          "Shingle installation",
-          "Leak repair",
-          "Flashing work",
-          "Roof tear-off",
-          "Fall protection",
-        ],
-      },
-      {
-        role: "HVAC",
-        skills: [
-          "System installation",
-          "Troubleshooting",
-          "Repairs",
-          "Preventive maintenance",
-          "Safety compliance",
-          "Equipment diagnostics",
-          "Blueprint reading",
-          "Customer communication",
-          "Tool usage",
-          "Time management",
-          "Filter changes",
-          "Ductwork support",
-          "System diagnostics",
-          "Refrigerant handling awareness",
-        ],
-      },
-      {
-        role: "Plumber",
-        skills: [
-          "Pipe installation",
-          "Repairs",
-          "Troubleshooting",
-          "Blueprint reading",
-          "Safety compliance",
-          "Preventive maintenance",
-          "Tool usage",
-          "Inspections",
-          "Customer communication",
-          "Problem solving",
-          "Pipe fitting",
-          "Drain cleaning",
-          "Leak detection",
-          "Fixture installation",
-          "Maintenance repair",
-        ],
-      },
-      {
-        role: "Welding",
-        skills: [
-          "Blueprint reading",
-          "Metal fabrication",
-          "Welding techniques",
-          "Equipment safety",
-          "Measuring",
-          "Quality inspection",
-          "Precision",
-          "Tool usage",
-          "Production support",
-          "Attention to detail",
-          "MIG welding",
-          "TIG welding",
-          "Stick welding",
-          "Weld inspection",
-        ],
-      },
-      {
-        role: "Electrician",
-        skills: [
-          "Wiring",
-          "Electrical troubleshooting",
-          "Blueprint reading",
-          "Safety compliance",
-          "Code awareness",
-          "Installations",
-          "Inspections",
-          "Tool usage",
-          "Problem solving",
-          "Maintenance",
-          "Conduit bending",
-          "Electrical installation",
-          "Panel work",
-          "Circuit testing",
-        ],
-      },
-      {
-        role: "Journeyman",
-        skills: [
-          "Trade expertise",
-          "Blueprint reading",
-          "Job site safety",
-          "Troubleshooting",
-          "Installation",
-          "Repairs",
-          "Leadership",
-          "Mentoring helpers",
-          "Tool usage",
-          "Compliance",
-        ],
-      },
-      {
-        role: "Steel Work",
-        skills: [
-          "Structural assembly",
-          "Measuring",
-          "Blueprint reading",
-          "Fabrication",
-          "Rigging awareness",
-          "Safety procedures",
-          "Heavy equipment coordination",
-          "Welding support",
-          "Teamwork",
-          "Precision",
-        ],
-      },
-      {
-        role: "Trade",
-        skills: [
-          "Hand and power tools",
-          "Safety compliance",
-          "Blueprint reading",
-          "Repairs",
-          "Installation",
-          "Troubleshooting",
-          "Measurements",
-          "Teamwork",
-          "Reliability",
-          "Problem solving",
-        ],
-      },
-      {
-        role: "Landscape",
-        skills: [
-          "Lawn care",
-          "Planting",
-          "Trimming",
-          "Outdoor maintenance",
-          "Tool usage",
-          "Irrigation awareness",
-          "Time management",
-          "Physical stamina",
-          "Safety procedures",
-          "Teamwork",
-        ],
-      },
-    ],
-  },
-  {
-    id: "retail",
-    title: "Retail",
-    intro: "Core skills for store support, sales floor, and customer-facing retail roles.",
-    groups: [
-      {
-        role: "Retail",
-        skills: [
-          "POS systems",
-          "Cash handling",
-          "Customer service",
-          "Merchandising",
-          "Stocking",
-          "Upselling",
-          "Returns and exchanges",
-          "Store presentation",
-          "Teamwork",
-          "Inventory support",
-        ],
-      },
-    ],
-  },
-  {
-    id: "mechanic-auto-maintenance",
-    title: "Mechanic / Auto / Maintenance",
-    intro:
-      "Core skills for automotive work, facility upkeep, oil tech work, repair support, and detail-oriented shop roles.",
-    groups: [
-      {
-        role: "Maintenance",
-        skills: [
-          "Preventive maintenance",
-          "Repairs",
-          "Troubleshooting",
-          "Work orders",
-          "Hand and power tools",
-          "Safety compliance",
-          "Inspections",
-          "Building upkeep",
-          "Time management",
-          "Problem solving",
-        ],
-      },
-      {
-        role: "Janitorial",
-        skills: [
-          "Floor care",
-          "Sanitation",
-          "Trash removal",
-          "Restroom cleaning",
-          "Supply restocking",
-          "Safety procedures",
-          "Attention to detail",
-          "Time management",
-          "Reliability",
-          "Building cleanliness",
-        ],
-      },
-      {
-        role: "Mechanic",
-        skills: [
-          "Diagnostics",
-          "Preventive maintenance",
-          "Brake and suspension repair",
-          "Engine repair",
-          "Tool usage",
-          "Safety compliance",
-          "Inspections",
-          "Problem solving",
-          "Documentation",
-          "Customer communication",
-          "Tune-ups",
-          "Parts replacement",
-          "Inspection reports",
-        ],
-      },
-      {
-        role: "Oil Tech",
-        skills: [
-          "Oil changes",
-          "Fluid checks",
-          "Filter replacement",
-          "Preventive maintenance",
-          "Tire pressure checks",
-          "Vehicle inspections",
-          "Service bay safety",
-          "Customer service",
-          "Work order support",
-          "Speed and efficiency",
-          "Under-hood inspection",
-          "Lubrication services",
-          "Maintenance recommendations",
-          "Basic shop cleanup",
-          "Multi-point inspections",
-        ],
-      },
-      {
-        role: "Car Shop Detailer",
-        skills: [
-          "Interior detailing",
-          "Exterior washing",
-          "Buffing and polishing",
-          "Vacuuming",
-          "Stain removal",
-          "Vehicle presentation",
-          "Chemical safety",
-          "Time management",
-          "Attention to detail",
-          "Teamwork",
-          "Interior shampooing",
-          "Waxing",
-          "Odor removal",
-        ],
-      },
-      {
-        role: "Security",
-        skills: [
-          "Surveillance",
-          "Incident reporting",
-          "Access control",
-          "Patrols",
-          "De-escalation",
-          "Emergency response",
-          "Communication",
-          "Observation",
-          "Professionalism",
-          "Policy enforcement",
-        ],
-      },
-      {
-        role: "Lifeguard",
-        skills: [
-          "Water safety",
-          "Surveillance",
-          "CPR and first aid",
-          "Emergency response",
-          "Communication",
-          "Rule enforcement",
-          "Rescue readiness",
-          "Attention to detail",
-          "Professionalism",
-          "Teamwork",
-        ],
-      },
-    ],
-  },
-  {
-    id: "creative-specialty-language",
-    title: "Creative / Specialty / Language Skills",
-    intro:
-      "Core skills for specialty services, apparel work, creative roles, independent services, and language strengths.",
-    groups: [
-      {
-        role: "Seamstress",
-        skills: [
-          "Sewing",
-          "Alterations",
-          "Measuring",
-          "Fabric handling",
-          "Pattern reading",
-          "Attention to detail",
-          "Time management",
-          "Quality control",
-          "Repairs",
-          "Customer requests",
-        ],
-      },
-      {
-        role: "Farmer",
-        skills: [
-          "Crop care",
-          "Equipment use",
-          "Livestock support",
-          "Irrigation",
-          "Harvesting",
-          "Safety procedures",
-          "Physical stamina",
-          "Time management",
-          "Maintenance support",
-          "Problem solving",
-        ],
-      },
-      {
-        role: "Language Skills",
-        skills: [
-          "Bilingual",
-          "Multilingual",
-          "English / Spanish",
-          "English / Polish",
-          "English / Hindi",
-          "Translation support",
-          "Interpreter support",
-          "Customer-facing bilingual communication",
-          "Medical bilingual communication",
-          "Workplace communication across cultures",
-        ],
-      },
-    ],
-  },
-];
+import { FormEvent, useState } from "react";
+
+type CareerResult = {
+  occupationTitle: string;
+  overview: string;
+  coreSkills: string[];
+  softSkills: string[];
+  transferableSkills: {
+    skill: string;
+    explanation: string;
+  }[];
+  technologySkills: string[];
+  technologyNote?: string;
+  wageTrends: {
+    medianHourly: string;
+    medianAnnual: string;
+    employmentLevel: string;
+    projectedGrowth: string;
+    projectedOpenings: string;
+  };
+  workAttire: string;
+  interviewAttire: string;
+};
 
 export default function IndustryCoreSkillsPage() {
+  const [jobTitle, setJobTitle] = useState("");
+  const [result, setResult] = useState<CareerResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleGenerate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const title = jobTitle.trim();
+
+    if (!title) {
+      setError("Enter a job title to continue.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setResult(null);
+
+    try {
+      /*
+        This page is ready for the O*NET-backed API route.
+
+        Expected route:
+        POST /api/industry-core-skills
+
+        Body:
+        {
+          jobTitle: "Medical Assistant"
+        }
+
+        Expected response shape:
+        CareerResult
+      */
+
+      const response = await fetch("/api/industry-core-skills", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobTitle: title,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+
+        throw new Error(
+          data?.error ||
+            "We couldn't generate career information for that job title."
+        );
+      }
+
+      const data: CareerResult = await response.json();
+      setResult(data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main style={styles.page}>
+      {/* subtle abstract background */}
+      <div style={styles.glowOne} />
+      <div style={styles.glowTwo} />
+
       <div style={styles.shell}>
-        <section style={styles.heroCard}>
-          <p style={styles.kicker}>Career ToolKit</p>
-          <h1 style={styles.title}>Industry Core Skills</h1>
-          <p style={styles.subtitle}>
-            Browse common core skills by industry and role. Use these lists to
-            help build your resume, cover letter, interview talking points, and
-            job application language.
+        {/* HEADER */}
+        <header style={styles.header}>
+          <a href="/career-toolkit" style={styles.backLink}>
+            ← Career ToolKit
+          </a>
+
+          <div style={styles.headerLine} />
+
+          <div style={styles.hero}>
+            <p style={styles.kicker}>HIREMINDS CAREER TOOLKIT</p>
+
+            <h1 style={styles.title}>Industry Core Skills</h1>
+
+            <p style={styles.subtitle}>
+              Explore the skills, technology, wages, and workplace expectations
+              connected to a specific occupation.
+            </p>
+          </div>
+        </header>
+
+        {/* SEARCH */}
+        <section style={styles.searchSection}>
+          <form onSubmit={handleGenerate} style={styles.form}>
+            <div style={styles.inputWrap}>
+              <label htmlFor="jobTitle" style={styles.label}>
+                Job Title
+              </label>
+
+              <input
+                id="jobTitle"
+                type="text"
+                value={jobTitle}
+                onChange={(event) => setJobTitle(event.target.value)}
+                placeholder="Example: Medical Assistant"
+                style={styles.input}
+                autoComplete="off"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                ...styles.generateButton,
+                ...(loading ? styles.buttonDisabled : {}),
+              }}
+            >
+              {loading ? "Generating..." : "Generate"}
+            </button>
+          </form>
+
+          <p style={styles.searchHint}>
+            Enter one occupation or job title for the most relevant results.
           </p>
 
-          <div style={styles.heroButtons}>
-            <a href="/career-toolkit" style={styles.linkButton}>
-              Back to Career ToolKit
-            </a>
-          </div>
+          {error && <div style={styles.error}>{error}</div>}
         </section>
 
-        <section style={styles.jumpCard}>
-          <p style={styles.sectionKicker}>Jump To</p>
-          <div style={styles.jumpGrid}>
-            {sections.map((section) => (
-              <a key={section.id} href={`#${section.id}`} style={styles.jumpLink}>
-                {section.title}
-              </a>
-            ))}
-          </div>
-        </section>
+        {/* EMPTY STATE */}
+        {!result && !loading && (
+          <section style={styles.emptyState}>
+            <div style={styles.emptyAccent} />
 
-        <section style={styles.sectionsWrap}>
-          {sections.map((section) => (
-            <article key={section.id} id={section.id} style={styles.sectionCard}>
-              <p style={styles.sectionKicker}>Industry</p>
-              <h2 style={styles.sectionTitle}>{section.title}</h2>
-              <p style={styles.sectionIntro}>{section.intro}</p>
+            <div>
+              <p style={styles.emptyEyebrow}>CAREER SNAPSHOT</p>
 
-              <div style={styles.groupWrap}>
-                {section.groups.map((group) => (
-                  <div key={group.role} style={styles.groupCard}>
-                    <h3 style={styles.groupTitle}>{group.role}</h3>
-                    <div style={styles.skillGrid}>
-                      {group.skills.map((skill) => (
-                        <div key={skill} style={styles.skillPill}>
-                          {skill}
-                        </div>
-                      ))}
-                    </div>
+              <h2 style={styles.emptyTitle}>
+                Start with the job you want to explore.
+              </h2>
+
+              <p style={styles.emptyText}>
+                HireMinds will organize the occupation into practical career
+                information you can use for your resume, interview preparation,
+                career planning, and job search.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* LOADING */}
+        {loading && (
+          <section style={styles.loadingSection}>
+            <div style={styles.spinner} />
+
+            <div>
+              <h2 style={styles.loadingTitle}>
+                Building your career snapshot
+              </h2>
+
+              <p style={styles.loadingText}>
+                Reviewing occupation skills, technology, wages, and workplace
+                information.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* RESULTS */}
+        {result && !loading && (
+          <section style={styles.results}>
+            {/* OCCUPATION HEADER */}
+            <div style={styles.resultHeader}>
+              <p style={styles.resultEyebrow}>CAREER SNAPSHOT</p>
+
+              <h2 style={styles.occupationTitle}>
+                {result.occupationTitle}
+              </h2>
+
+              <p style={styles.overview}>{result.overview}</p>
+            </div>
+
+            {/* CORE SKILLS */}
+            <ResultSection
+              title="Core Skills"
+              description="Job-specific skills commonly associated with this occupation."
+            >
+              <SkillList skills={result.coreSkills} />
+            </ResultSection>
+
+            {/* SOFT SKILLS */}
+            <ResultSection
+              title="Soft Skills"
+              description="Workplace and people skills that support success in this role."
+            >
+              <SkillList skills={result.softSkills} />
+            </ResultSection>
+
+            {/* TRANSFERABLE */}
+            <ResultSection
+              title="Transferable Skills"
+              description="Skills from this occupation that can carry into other jobs and industries."
+            >
+              <div style={styles.transferGrid}>
+                {result.transferableSkills.map((item) => (
+                  <div key={item.skill} style={styles.transferItem}>
+                    <h3 style={styles.transferTitle}>{item.skill}</h3>
+
+                    <p style={styles.transferText}>{item.explanation}</p>
                   </div>
                 ))}
               </div>
-            </article>
-          ))}
-        </section>
+            </ResultSection>
+
+            {/* TECHNOLOGY */}
+            <ResultSection
+              title="Software & Technology Skills"
+              description="Technology, systems, equipment, or software commonly connected to this occupation."
+            >
+              {result.technologySkills.length > 0 ? (
+                <SkillList skills={result.technologySkills} />
+              ) : (
+                <p style={styles.standardText}>
+                  {result.technologyNote ||
+                    "This occupation does not typically require specialized software or technology."}
+                </p>
+              )}
+            </ResultSection>
+
+            {/* WAGES */}
+            <ResultSection
+              title="Wage & Employment Trends"
+              description="National occupation data. Wages and employment conditions may vary by location, employer, and experience."
+            >
+              <div style={styles.statsGrid}>
+                <Stat
+                  label="Median Hourly Wage"
+                  value={result.wageTrends.medianHourly}
+                />
+
+                <Stat
+                  label="Median Annual Wage"
+                  value={result.wageTrends.medianAnnual}
+                />
+
+                <Stat
+                  label="Employment Level"
+                  value={result.wageTrends.employmentLevel}
+                />
+
+                <Stat
+                  label="Projected Growth / Decline"
+                  value={result.wageTrends.projectedGrowth}
+                />
+
+                <Stat
+                  label="Projected Job Openings"
+                  value={result.wageTrends.projectedOpenings}
+                />
+              </div>
+
+              <p style={styles.dataNote}>
+                National figures are shown by default.
+              </p>
+            </ResultSection>
+
+            {/* ATTIRE */}
+            <ResultSection
+              title="Work Attire & Interview Dress"
+              description="General clothing expectations for the workplace and for interviewing for this type of role."
+            >
+              <div style={styles.attireGrid}>
+                <div style={styles.attireItem}>
+                  <p style={styles.smallLabel}>TYPICAL WORK ATTIRE</p>
+                  <p style={styles.attireText}>{result.workAttire}</p>
+                </div>
+
+                <div style={styles.attireItem}>
+                  <p style={styles.smallLabel}>INTERVIEW ATTIRE</p>
+                  <p style={styles.attireText}>{result.interviewAttire}</p>
+                </div>
+              </div>
+            </ResultSection>
+
+            <div style={styles.footerNote}>
+              <span style={styles.footerMark}>HM</span>
+
+              <p style={styles.footerText}>
+                Use this career snapshot as a guide. Job requirements, wages,
+                technology, and workplace expectations can vary by employer and
+                location.
+              </p>
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* COMPONENTS                                                                 */
+/* -------------------------------------------------------------------------- */
+
+function ResultSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section style={styles.resultSection}>
+      <div style={styles.sectionHeading}>
+        <h2 style={styles.sectionTitle}>{title}</h2>
+        <p style={styles.sectionDescription}>{description}</p>
+      </div>
+
+      <div style={styles.sectionContent}>{children}</div>
+    </section>
+  );
+}
+
+function SkillList({ skills }: { skills: string[] }) {
+  return (
+    <div style={styles.skillList}>
+      {skills.map((skill) => (
+        <span key={skill} style={styles.skillTag}>
+          {skill}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div style={styles.stat}>
+      <p style={styles.statLabel}>{label}</p>
+      <p style={styles.statValue}>{value}</p>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* STYLES                                                                     */
+/* -------------------------------------------------------------------------- */
+
 const styles: Record<string, React.CSSProperties> = {
   page: {
+    position: "relative",
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
-    color: "#e7e7e7",
-    padding: "32px 24px",
+    overflow: "hidden",
+    background:
+      "linear-gradient(145deg, #05080d 0%, #08111d 48%, #0b1420 100%)",
+    color: "#f8fafc",
+    padding: "28px 22px 70px",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
+
+  glowOne: {
+    position: "absolute",
+    width: "620px",
+    height: "620px",
+    top: "-260px",
+    right: "-170px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(37,99,235,.17) 0%, rgba(37,99,235,0) 70%)",
+    pointerEvents: "none",
+  },
+
+  glowTwo: {
+    position: "absolute",
+    width: "520px",
+    height: "520px",
+    left: "-260px",
+    top: "500px",
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(71,85,105,.13) 0%, rgba(71,85,105,0) 72%)",
+    pointerEvents: "none",
+  },
+
   shell: {
-    maxWidth: "1380px",
+    position: "relative",
+    zIndex: 1,
+    maxWidth: "1180px",
     margin: "0 auto",
-    display: "grid",
-    gap: "24px",
   },
-  heroCard: {
-    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-    border: "1px solid #262626",
-    borderRadius: "24px",
-    padding: "24px",
+
+  header: {
+    padding: "8px 0 30px",
   },
-  jumpCard: {
-    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-    border: "1px solid #262626",
-    borderRadius: "24px",
-    padding: "24px",
-  },
-  sectionsWrap: {
-    display: "grid",
-    gap: "20px",
-  },
-  sectionCard: {
-    background: "linear-gradient(180deg, #141414 0%, #181818 100%)",
-    border: "1px solid #262626",
-    borderRadius: "24px",
-    padding: "24px",
-    scrollMarginTop: "100px",
-  },
-  kicker: {
-    margin: "0 0 8px",
-    color: "#9a9a9a",
-    fontSize: "12px",
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-  },
-  title: {
-    margin: "0 0 10px",
-    fontSize: "40px",
-    fontWeight: 600,
-    color: "#f5f5f5",
-  },
-  subtitle: {
-    margin: 0,
-    color: "#c8c8c8",
-    fontSize: "16px",
-    lineHeight: 1.7,
-    maxWidth: "900px",
-  },
-  heroButtons: {
-    display: "flex",
-    gap: "12px",
-    marginTop: "18px",
-    flexWrap: "wrap",
-  },
-  linkButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
+
+  backLink: {
+    display: "inline-block",
+    color: "#94a3b8",
     textDecoration: "none",
-    padding: "12px 16px",
-    borderRadius: "16px",
-    border: "1px solid #3a3a3a",
-    background: "#111111",
-    color: "#f5f5f5",
-    fontWeight: 700,
-  },
-  sectionKicker: {
-    margin: "0 0 8px",
-    color: "#9a9a9a",
-    fontSize: "12px",
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-  },
-  jumpGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "10px",
-  },
-  jumpLink: {
-    textDecoration: "none",
-    color: "#f5f5f5",
-    background: "#101010",
-    border: "1px solid #2f2f2f",
-    borderRadius: "14px",
-    padding: "12px 14px",
     fontSize: "14px",
     fontWeight: 600,
+    marginBottom: "20px",
   },
-  sectionTitle: {
+
+  headerLine: {
+    height: "1px",
+    background:
+      "linear-gradient(90deg, #2563eb 0%, rgba(71,85,105,.65) 35%, rgba(71,85,105,0) 100%)",
+    marginBottom: "36px",
+  },
+
+  hero: {
+    maxWidth: "820px",
+  },
+
+  kicker: {
+    margin: "0 0 12px",
+    color: "#60a5fa",
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: ".18em",
+  },
+
+  title: {
+    margin: 0,
+    color: "#ffffff",
+    fontSize: "clamp(38px, 6vw, 64px)",
+    lineHeight: 1.02,
+    letterSpacing: "-0.045em",
+    fontWeight: 700,
+  },
+
+  subtitle: {
+    maxWidth: "720px",
+    margin: "18px 0 0",
+    color: "#aeb9c7",
+    fontSize: "17px",
+    lineHeight: 1.7,
+  },
+
+  searchSection: {
+    padding: "28px 0 42px",
+    borderBottom: "1px solid rgba(148,163,184,.18)",
+  },
+
+  form: {
+    display: "flex",
+    alignItems: "flex-end",
+    gap: "12px",
+    flexWrap: "wrap",
+  },
+
+  inputWrap: {
+    flex: "1 1 520px",
+  },
+
+  label: {
+    display: "block",
+    marginBottom: "9px",
+    color: "#cbd5e1",
+    fontSize: "13px",
+    fontWeight: 700,
+  },
+
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    background: "rgba(15,23,42,.62)",
+    border: "1px solid #334155",
+    borderRadius: "10px",
+    color: "#ffffff",
+    padding: "15px 16px",
+    outline: "none",
+    fontSize: "16px",
+    boxShadow: "0 12px 40px rgba(0,0,0,.12)",
+  },
+
+  generateButton: {
+    minHeight: "51px",
+    border: "1px solid #3b82f6",
+    borderRadius: "10px",
+    padding: "0 28px",
+    background: "#2563eb",
+    color: "#ffffff",
+    fontSize: "15px",
+    fontWeight: 800,
+    cursor: "pointer",
+    boxShadow: "0 12px 30px rgba(37,99,235,.18)",
+  },
+
+  buttonDisabled: {
+    opacity: 0.65,
+    cursor: "not-allowed",
+  },
+
+  searchHint: {
+    margin: "10px 0 0",
+    color: "#64748b",
+    fontSize: "12px",
+  },
+
+  error: {
+    marginTop: "16px",
+    borderLeft: "3px solid #ef4444",
+    padding: "10px 14px",
+    background: "rgba(127,29,29,.14)",
+    color: "#fecaca",
+    fontSize: "14px",
+  },
+
+  emptyState: {
+    display: "grid",
+    gridTemplateColumns: "4px minmax(0, 680px)",
+    gap: "22px",
+    marginTop: "52px",
+    padding: "8px 0",
+  },
+
+  emptyAccent: {
+    width: "4px",
+    borderRadius: "10px",
+    background: "linear-gradient(180deg, #3b82f6, #1e3a8a)",
+  },
+
+  emptyEyebrow: {
     margin: "0 0 10px",
-    fontSize: "30px",
-    fontWeight: 600,
-    color: "#f5f5f5",
+    color: "#64748b",
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: ".16em",
   },
-  sectionIntro: {
-    margin: "0 0 18px",
-    color: "#c8c8c8",
+
+  emptyTitle: {
+    margin: 0,
+    color: "#f8fafc",
+    fontSize: "26px",
+    fontWeight: 650,
+    letterSpacing: "-.02em",
+  },
+
+  emptyText: {
+    margin: "12px 0 0",
+    color: "#94a3b8",
     fontSize: "15px",
     lineHeight: 1.7,
   },
-  groupWrap: {
+
+  loadingSection: {
+    display: "flex",
+    gap: "18px",
+    alignItems: "center",
+    padding: "55px 0",
+  },
+
+  spinner: {
+    width: "28px",
+    height: "28px",
+    border: "3px solid #334155",
+    borderTopColor: "#3b82f6",
+    borderRadius: "50%",
+  },
+
+  loadingTitle: {
+    margin: 0,
+    fontSize: "20px",
+    color: "#f8fafc",
+  },
+
+  loadingText: {
+    margin: "6px 0 0",
+    color: "#94a3b8",
+    lineHeight: 1.6,
+  },
+
+  results: {
+    paddingTop: "46px",
+  },
+
+  resultHeader: {
+    maxWidth: "850px",
+    paddingBottom: "38px",
+  },
+
+  resultEyebrow: {
+    margin: "0 0 10px",
+    color: "#60a5fa",
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: ".16em",
+  },
+
+  occupationTitle: {
+    margin: 0,
+    color: "#ffffff",
+    fontSize: "clamp(30px, 5vw, 46px)",
+    lineHeight: 1.08,
+    letterSpacing: "-.035em",
+    fontWeight: 700,
+  },
+
+  overview: {
+    margin: "16px 0 0",
+    color: "#b8c2cf",
+    fontSize: "16px",
+    lineHeight: 1.75,
+  },
+
+  resultSection: {
     display: "grid",
-    gap: "14px",
+    gridTemplateColumns: "minmax(220px, 300px) minmax(0, 1fr)",
+    gap: "50px",
+    padding: "34px 0",
+    borderTop: "1px solid rgba(148,163,184,.18)",
   },
-  groupCard: {
-    background: "#101010",
-    border: "1px solid #2d2d2d",
-    borderRadius: "18px",
-    padding: "18px",
+
+  sectionHeading: {
+    alignSelf: "start",
   },
-  groupTitle: {
-    margin: "0 0 14px",
-    fontSize: "22px",
-    fontWeight: 600,
-    color: "#f5f5f5",
+
+  sectionTitle: {
+    margin: 0,
+    color: "#f8fafc",
+    fontSize: "21px",
+    lineHeight: 1.25,
+    fontWeight: 650,
   },
-  skillGrid: {
+
+  sectionDescription: {
+    margin: "9px 0 0",
+    color: "#718096",
+    fontSize: "13px",
+    lineHeight: 1.6,
+  },
+
+  sectionContent: {
+    minWidth: 0,
+  },
+
+  skillList: {
     display: "flex",
     flexWrap: "wrap",
-    gap: "10px",
+    gap: "9px",
   },
-  skillPill: {
-    padding: "10px 12px",
-    borderRadius: "999px",
-    background: "#111827",
-    border: "1px solid #374151",
-    color: "#f3f4f6",
+
+  skillTag: {
+    display: "inline-flex",
+    alignItems: "center",
+    minHeight: "34px",
+    padding: "6px 12px",
+    border: "1px solid #334155",
+    borderRadius: "7px",
+    background: "rgba(30,41,59,.38)",
+    color: "#dbeafe",
+    fontSize: "13px",
+    lineHeight: 1.35,
+  },
+
+  transferGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "0 28px",
+  },
+
+  transferItem: {
+    padding: "0 0 20px",
+  },
+
+  transferTitle: {
+    margin: "0 0 6px",
+    color: "#dbeafe",
+    fontSize: "15px",
+    fontWeight: 700,
+  },
+
+  transferText: {
+    margin: 0,
+    color: "#94a3b8",
+    fontSize: "13px",
+    lineHeight: 1.65,
+  },
+
+  standardText: {
+    margin: 0,
+    color: "#aeb9c7",
     fontSize: "14px",
-    lineHeight: 1.4,
+    lineHeight: 1.7,
+  },
+
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(165px, 1fr))",
+    gap: "1px",
+    overflow: "hidden",
+    border: "1px solid #273449",
+    borderRadius: "10px",
+    background: "#273449",
+  },
+
+  stat: {
+    minHeight: "96px",
+    padding: "17px",
+    background: "#0d1623",
+  },
+
+  statLabel: {
+    margin: "0 0 10px",
+    color: "#718096",
+    fontSize: "11px",
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: ".06em",
+  },
+
+  statValue: {
+    margin: 0,
+    color: "#f8fafc",
+    fontSize: "20px",
+    fontWeight: 700,
+  },
+
+  dataNote: {
+    margin: "12px 0 0",
+    color: "#64748b",
+    fontSize: "11px",
+  },
+
+  attireGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: "28px",
+  },
+
+  attireItem: {
+    borderLeft: "2px solid #2563eb",
+    paddingLeft: "16px",
+  },
+
+  smallLabel: {
+    margin: "0 0 8px",
+    color: "#60a5fa",
+    fontSize: "10px",
+    fontWeight: 800,
+    letterSpacing: ".12em",
+  },
+
+  attireText: {
+    margin: 0,
+    color: "#cbd5e1",
+    fontSize: "14px",
+    lineHeight: 1.7,
+  },
+
+  footerNote: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "14px",
+    marginTop: "20px",
+    paddingTop: "24px",
+    borderTop: "1px solid rgba(148,163,184,.18)",
+  },
+
+  footerMark: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: "0 0 auto",
+    width: "32px",
+    height: "32px",
+    border: "1px solid #334155",
+    borderRadius: "7px",
+    color: "#60a5fa",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: ".04em",
+  },
+
+  footerText: {
+    maxWidth: "720px",
+    margin: 0,
+    color: "#64748b",
+    fontSize: "11px",
+    lineHeight: 1.65,
   },
 };
