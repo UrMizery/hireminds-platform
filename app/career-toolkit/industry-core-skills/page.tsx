@@ -371,7 +371,7 @@ export default function IndustryCoreSkillsPage() {
               />
             </ResultSection>
 
-            {/* TRANSFERABLE */}
+            {/* TRANSFERABLE SKILLS */}
 
             <ResultSection
               title="Transferable Skills"
@@ -413,7 +413,7 @@ export default function IndustryCoreSkillsPage() {
               </div>
             </ResultSection>
 
-            {/* SOFTWARE */}
+            {/* SOFTWARE & TECHNOLOGY */}
 
             <ResultSection
               title="Software & Technology Skills"
@@ -439,16 +439,49 @@ export default function IndustryCoreSkillsPage() {
               )}
             </ResultSection>
 
-            {/* WAGES */}
+            {/* WAGE & EMPLOYMENT TRENDS */}
 
-            <ResultSection
-              title="Wage & Employment Trends"
-              description="General national U.S. career information. Actual wages and employment conditions vary by location, employer, experience, and industry."
+            <section
+              style={
+                styles.wageSection
+              }
             >
               <div
-                style={styles.statsGrid}
+                style={
+                  styles.wageHeading
+                }
               >
-                <Stat
+                <h2
+                  style={
+                    styles.wageSectionTitle
+                  }
+                >
+                  Wage & Employment
+                  Trends
+                </h2>
+
+                <p
+                  style={
+                    styles.wageDescription
+                  }
+                >
+                  General national U.S.
+                  career information.
+                  Actual wages and
+                  employment conditions
+                  vary by location,
+                  employer, experience,
+                  and industry.
+                </p>
+              </div>
+
+              <div
+                style={
+                  styles.wageRows
+                }
+              >
+                <TrendRow
+                  icon="clock"
                   label="Median Hourly Wage"
                   value={
                     result.wageTrends
@@ -456,7 +489,8 @@ export default function IndustryCoreSkillsPage() {
                   }
                 />
 
-                <Stat
+                <TrendRow
+                  icon="money"
                   label="Median Annual Wage"
                   value={
                     result.wageTrends
@@ -464,7 +498,8 @@ export default function IndustryCoreSkillsPage() {
                   }
                 />
 
-                <Stat
+                <TrendRow
+                  icon="people"
                   label="Employment Level"
                   value={
                     result.wageTrends
@@ -472,7 +507,8 @@ export default function IndustryCoreSkillsPage() {
                   }
                 />
 
-                <Stat
+                <TrendRow
+                  icon="growth"
                   label="Projected Growth / Decline"
                   value={
                     result.wageTrends
@@ -480,17 +516,19 @@ export default function IndustryCoreSkillsPage() {
                   }
                 />
 
-                <Stat
+                <TrendRow
+                  icon="briefcase"
                   label="Projected Job Openings"
                   value={
                     result.wageTrends
                       .projectedOpenings
                   }
+                  last
                 />
               </div>
-            </ResultSection>
+            </section>
 
-            {/* ATTIRE */}
+            {/* WORK ATTIRE */}
 
             <ResultSection
               title="Work Attire & Interview Dress"
@@ -649,26 +687,173 @@ function SkillList({
 }
 
 /* -------------------------------------------------------------------------- */
-/* STAT                                                                       */
+/* WAGE / EMPLOYMENT ROW                                                      */
 /* -------------------------------------------------------------------------- */
 
-function Stat({
+type TrendIcon =
+  | "clock"
+  | "money"
+  | "people"
+  | "growth"
+  | "briefcase";
+
+function TrendRow({
+  icon,
   label,
   value,
+  last = false,
 }: {
+  icon: TrendIcon;
   label: string;
   value: string;
+  last?: boolean;
 }) {
   return (
-    <div style={styles.stat}>
-      <p style={styles.statLabel}>
-        {label}
-      </p>
+    <div
+      style={{
+        ...styles.trendRow,
 
-      <p style={styles.statValue}>
-        {value}
-      </p>
+        ...(last
+          ? styles.trendRowLast
+          : {}),
+      }}
+    >
+      <div
+        style={
+          styles.trendIconCircle
+        }
+      >
+        <TrendIconGraphic
+          type={icon}
+        />
+      </div>
+
+      <div
+        style={styles.trendContent}
+      >
+        <p
+          style={styles.trendLabel}
+        >
+          {label}
+        </p>
+
+        <p
+          style={styles.trendValue}
+        >
+          {value}
+        </p>
+      </div>
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* TREND ICONS                                                                */
+/* -------------------------------------------------------------------------- */
+
+function TrendIconGraphic({
+  type,
+}: {
+  type: TrendIcon;
+}) {
+  const common = {
+    width: 29,
+    height: 29,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#2563eb",
+    strokeWidth: 1.9,
+    strokeLinecap:
+      "round" as const,
+    strokeLinejoin:
+      "round" as const,
+  };
+
+  if (type === "clock") {
+    return (
+      <svg {...common}>
+        <circle
+          cx="12"
+          cy="12"
+          r="8.5"
+        />
+
+        <path d="M12 7.5v5l3.5 2" />
+      </svg>
+    );
+  }
+
+  if (type === "money") {
+    return (
+      <svg {...common}>
+        <ellipse
+          cx="12"
+          cy="6"
+          rx="6.5"
+          ry="2.5"
+        />
+
+        <path d="M5.5 6v4c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5V6" />
+
+        <path d="M5.5 10v4c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-4" />
+
+        <path d="M5.5 14v3.5C5.5 18.9 8.4 20 12 20s6.5-1.1 6.5-2.5V14" />
+      </svg>
+    );
+  }
+
+  if (type === "people") {
+    return (
+      <svg {...common}>
+        <circle
+          cx="9"
+          cy="8"
+          r="3"
+        />
+
+        <circle
+          cx="16.5"
+          cy="9"
+          r="2.4"
+        />
+
+        <path d="M3.5 19c.5-4 2.4-6 5.5-6s5 2 5.5 6" />
+
+        <path d="M14.5 14c2.8 0 4.8 1.7 5.5 5" />
+      </svg>
+    );
+  }
+
+  if (type === "growth") {
+    return (
+      <svg {...common}>
+        <path d="M5 19V14" />
+
+        <path d="M10 19V10" />
+
+        <path d="M15 19V7" />
+
+        <path d="M20 19V4" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <rect
+        x="4"
+        y="7"
+        width="16"
+        height="12"
+        rx="2"
+      />
+
+      <path d="M9 7V5.5C9 4.7 9.7 4 10.5 4h3c.8 0 1.5.7 1.5 1.5V7" />
+
+      <path d="M4 11.5c4.7 2 11.3 2 16 0" />
+
+      <path d="M10.5 12h3" />
+    </svg>
   );
 }
 
@@ -1159,7 +1344,7 @@ const styles: Record<
     lineHeight: 1.75,
   },
 
-  /* RESULT SECTIONS */
+  /* STANDARD RESULT SECTIONS */
 
   resultSection: {
     display: "grid",
@@ -1283,57 +1468,134 @@ const styles: Record<
     lineHeight: 1.7,
   },
 
-  /* STATS */
+  /* WAGE & EMPLOYMENT - NO BOXES */
 
-  statsGrid: {
+  wageSection: {
     display: "grid",
 
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(170px, 1fr))",
+      "minmax(220px, 290px) minmax(0, 1fr)",
 
-    gap: "12px",
-  },
+    gap: "52px",
 
-  stat: {
-    minHeight: "92px",
+    padding: "44px 0",
 
-    padding: "16px",
-
-    background: "#f8fafc",
-
-    border:
+    borderTop:
       "1px solid #e2e8f0",
-
-    borderRadius: "9px",
   },
 
-  statLabel: {
-    margin: "0 0 9px",
+  wageHeading: {
+    alignSelf: "start",
+
+    paddingTop: "3px",
+  },
+
+  wageSectionTitle: {
+    margin: 0,
+
+    color: "#0f172a",
+
+    fontSize: "24px",
+
+    fontWeight: 760,
+
+    lineHeight: 1.25,
+
+    letterSpacing: "-.02em",
+  },
+
+  wageDescription: {
+    maxWidth: "270px",
+
+    margin: "12px 0 0",
+
+    color: "#94a3b8",
+
+    fontSize: "13px",
+
+    lineHeight: 1.7,
+  },
+
+  wageRows: {
+    minWidth: 0,
+
+    borderTop:
+      "1px solid #dce5ef",
+  },
+
+  trendRow: {
+    display: "grid",
+
+    gridTemplateColumns:
+      "72px minmax(0, 1fr)",
+
+    alignItems: "center",
+
+    gap: "22px",
+
+    minHeight: "128px",
+
+    padding: "22px 8px",
+
+    borderBottom:
+      "1px solid #dce5ef",
+  },
+
+  trendRowLast: {
+    borderBottom: "none",
+  },
+
+  trendIconCircle: {
+    display: "flex",
+
+    alignItems: "center",
+
+    justifyContent:
+      "center",
+
+    width: "66px",
+    height: "66px",
+
+    borderRadius: "50%",
+
+    background:
+      "linear-gradient(145deg, #eff6ff 0%, #e8f1ff 100%)",
+  },
+
+  trendContent: {
+    minWidth: 0,
+  },
+
+  trendLabel: {
+    margin: "0 0 8px",
 
     color: "#64748b",
 
-    fontSize: "10px",
+    fontSize: "11px",
 
     fontWeight: 800,
 
     textTransform:
       "uppercase",
 
-    letterSpacing: ".05em",
-
-    lineHeight: 1.4,
+    letterSpacing: ".055em",
   },
 
-  statValue: {
+  trendValue: {
+    maxWidth: "720px",
+
     margin: 0,
 
-    color: "#0f172a",
+    color: "#0f2347",
 
-    fontSize: "16px",
+    fontSize:
+      "clamp(18px, 2vw, 25px)",
 
-    fontWeight: 700,
+    fontWeight: 760,
 
-    lineHeight: 1.4,
+    lineHeight: 1.42,
+
+    letterSpacing: "-.015em",
   },
 
   /* ATTIRE */
