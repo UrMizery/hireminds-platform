@@ -382,6 +382,45 @@ async function patchProfile(
   }
 }
 
+/*
+  Subscriber reporting is intentionally
+  separate from candidate_profiles.
+
+  This does NOT change billing, account
+  creation, or access. It only records the
+  paid subscription in the subscriptions
+  table for Super Admin reporting.
+*/
+
+async function upsertSubscriptionRecord(
+  supabaseUrl: string,
+  serviceKey: string,
+  record: Record<string, unknown>
+) {
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/subscriptions?on_conflict=stripe_subscription_id`,
+    {
+      method: "POST",
+
+      headers: {
+        ...authHeaders(serviceKey),
+        Prefer:
+          "resolution=merge-duplicates,return=minimal",
+      },
+
+      body: JSON.stringify(record),
+
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Subscriber record could not be saved: ${await response.text()}`
+    );
+  }
+}
+
 export async function POST(
   request: NextRequest
 ) {
@@ -1185,6 +1224,113 @@ export async function POST(
           "stripe",
       }
     );
+
+    /*
+      =====================================
+      RECORD PAID SUBSCRIBER
+      =====================================
+
+      Tracking only.
+
+      If subscriber reporting ever has a
+      temporary database issue, the working
+      Stripe/account flow is not interrupted.
+    */
+
+    const subscriptionPeriodEnd =
+      Number(
+        subscription?.current_period_end ||
+          firstChargeAt ||
+          0
+      );
+
+    const subscriptionCancelledAt =
+      Number(
+        subscription?.canceled_at ||
+          0
+      );
+
+    try {
+      await upsertSubscriptionRecord(
+        supabaseUrl,
+        serviceKey,
+        {
+          user_id:
+            userId,
+
+          email,
+
+          full_name:
+            fullName,
+
+          state,
+
+          stripe_customer_id:
+            customerId,
+
+          stripe_subscription_id:
+            subscription.id,
+
+          status:
+            String(
+              subscription?.status ||
+                "active"
+            ),
+
+          plan_name:
+            "monthly",
+
+          stripe_price_id:
+            monthlyPriceId,
+
+          intro_amount:
+            2.99,
+
+          monthly_amount:
+            24.99,
+
+          intro_started_at:
+            new Date(
+              paidAt * 1000
+            ).toISOString(),
+
+          current_period_end:
+            subscriptionPeriodEnd > 0
+              ? new Date(
+                  subscriptionPeriodEnd *
+                    1000
+                ).toISOString()
+              : null,
+
+          cancel_at_period_end:
+            subscription
+              ?.cancel_at_period_end ===
+            true,
+
+          cancelled_at:
+            subscriptionCancelledAt > 0
+              ? new Date(
+                  subscriptionCancelledAt *
+                    1000
+                ).toISOString()
+              : null,
+
+          acquisition_source:
+            "paid_signup",
+
+          referral_code:
+            null,
+
+          updated_at:
+            new Date().toISOString(),
+        }
+      );
+    } catch (trackingError) {
+      console.error(
+        "Subscriber tracking error:",
+        trackingError
+      );
+    }
 
     /*
       =====================================
