@@ -24,6 +24,7 @@ export default function SignupPage() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [introConfirmed, setIntroConfirmed] = useState(false);
   const [renewalConfirmed, setRenewalConfirmed] = useState(false);
+  const [cancellationConfirmed, setCancellationConfirmed] = useState(false);
   const [termsConfirmed, setTermsConfirmed] = useState(false);
 
   const [message, setMessage] = useState("");
@@ -408,6 +409,12 @@ export default function SignupPage() {
       if (!renewalConfirmed) {
         throw new Error(
           "Please confirm that you understand the automatic $24.99 monthly renewal."
+        );
+      }
+
+      if (!cancellationConfirmed) {
+        throw new Error(
+          "Please confirm that you understand the HireMinds cancellation process."
         );
       }
 
@@ -1348,6 +1355,29 @@ export default function SignupPage() {
 
                 <span>
                   I understand that unless canceled, my subscription will automatically renew at <strong>$24.99 per month</strong> after the 5-day introductory period.
+                </span>
+              </label>
+
+              <label
+                style={
+                  styles.checkboxRow
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={
+                    cancellationConfirmed
+                  }
+                  onChange={(e) =>
+                    setCancellationConfirmed(
+                      e.target.checked
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I understand that to cancel my HireMinds subscription, I must submit a request through <strong>Contact Us</strong> and select <strong>Cancel Subscription</strong>. To help prevent my next automatic charge, I should submit my request by <strong>6:00 PM ET the day before my next scheduled billing date</strong>. Requests submitted after that cutoff may still be charged.
                 </span>
               </label>
 
