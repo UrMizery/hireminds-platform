@@ -1,142 +1,322 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-export default function ResetPasswordPage() {
+type AccessMethod = "subscription" | "referral";
+
+export default function SignupPage() {
+  const [accessMethod, setAccessMethod] =
+    useState<AccessMethod | null>(null);
+
+  const [referralCode, setReferralCode] = useState("");
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
   const [email, setEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [resetMode, setResetMode] = useState(false);
-  const [checkingLink, setCheckingLink] = useState(false);
-
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [billingConfirmed, setBillingConfirmed] = useState(false);
+  const [termsConfirmed, setTermsConfirmed] = useState(false);
+
   const [message, setMessage] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
+  function clearMessage() {
+    setMessage("");
+  }
 
-    async function checkRecoveryLink() {
-      const params = new URLSearchParams(
-        window.location.search
-      );
+  function chooseAccess(method: AccessMethod) {
+    clearMessage();
+    setAccessMethod(method);
+  }
 
-      const isResetReturn =
-        params.get("mode") === "update";
-
-      const code =
-        params.get("code");
-
-      if (!isResetReturn && !code) {
-        return;
+  async function validateReferralCode(code: string) {
+    const response = await fetch(
+      "/api/access/validate-referral",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code,
+        }),
       }
+    );
 
-      if (mounted) {
-        setCheckingLink(true);
-      }
+    const raw = await response.text();
 
-      try {
-        /*
-          PKCE recovery links may return a code.
-          Exchange it for the temporary recovery session.
-        */
-        if (code) {
-          const { error } =
-            await supabase.auth.exchangeCodeForSession(
-              code
-            );
+    let data: {
+      valid?: boolean;
+      code?: string;
+      expiresAt?: string | null;
+      message?: string;
+    } = {};
 
-          if (error) {
-            throw error;
-          }
-        }
-
-        const {
-          data,
-          error,
-        } =
-          await supabase.auth.getSession();
-
-        if (error) {
-          throw error;
-        }
-
-        if (data.session) {
-          if (mounted) {
-            setResetMode(true);
-            setMessage("");
-          }
-
-          window.history.replaceState(
-            {},
-            "",
-            "/reset-password?mode=update"
-          );
-        }
-      } catch (error: any) {
-        if (mounted) {
-          setMessage(
-            error?.message ||
-              "This password reset link is invalid or has expired."
-          );
-        }
-      } finally {
-        if (mounted) {
-          setCheckingLink(false);
-        }
-      }
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch {
+      data = {};
     }
 
-    void checkRecoveryLink();
-
-    /*
-      Supabase fires PASSWORD_RECOVERY when the
-      customer opens a valid recovery email link.
-    */
-    const {
-      data: listener,
-    } =
-      supabase.auth.onAuthStateChange(
-        (event) => {
-          if (
-            event === "PASSWORD_RECOVERY"
-          ) {
-            setResetMode(true);
-            setCheckingLink(false);
-            setMessage("");
-          }
-        }
+    if (!response.ok || !data.valid) {
+      throw new Error(
+        data.message ||
+          "This referral code is not active or available. Please check the code and try again."
       );
+    }
 
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
+    return data;
+  }
+
+  async function createReferralAccount({
+    normalizedReferralCode,
+    firstName: submittedFirstName,
+    lastName: submittedLastName,
+    phone: submittedPhone,
+    city: submittedCity,
+    stateName: submittedStateName,
+    email: submittedEmail,
+    password: submittedPassword,
+  }: {
+    normalizedReferralCode: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    city: string;
+    stateName: string;
+    email: string;
+    password: string;
+  }) {
+    const cleanFirstName = submittedFirstName.trim();
+    const cleanLastName = submittedLastName.trim();
+    const fullName =
+      `${cleanFirstName} ${cleanLastName}`.trim();
+
+    const cleanPhone = submittedPhone.trim();
+    const cleanCity = submittedCity.trim();
+    const cleanState = submittedStateName.trim();
+    const cleanEmail = submittedEmail.trim().toLowerCase();
+
+    const { data, error } =
+      await supabase.auth.signUp({
+        email: cleanEmail,
+        password: submittedPassword,
+        options: {
+          data: {
+            first_name: cleanFirstName,
+            last_name: cleanLastName,
+            full_name: fullName,
+
+            phone: cleanPhone || null,
+            city: cleanCity || null,
+            state_name: cleanState || null,
+
+            referral_code:
+              normalizedReferralCode,
+
+            has_referral_access: false,
+            has_paid_access: false,
+
+            access_tier:
+              "pending_referral_consent",
+          },
+        },
+      });
+
+    if (error) {
+      const authMessage = String(
+        error.message || ""
+      ).toLowerCase();
+
+      if (
+        authMessage.includes("already registered") ||
+        authMessage.includes("already been registered") ||
+        authMessage.includes("user already")
+      ) {
+        throw new Error(
+          "An account already exists with this email. Please sign in or use Forgot Password."
+        );
+      }
+
+      throw new Error(error.message);
+    }
+
+    const user = data.user;
+
+    if (!user) {
+      throw new Error(
+        "Your account could not be created."
+      );
+    }
+
+    const profilePayload: Record<
+      string,
+      any
+    > = {
+      user_id: user.id,
+
+      full_name: fullName,
+
+      phone: cleanPhone || null,
+      email: cleanEmail,
+      city: cleanCity || null,
+      state: cleanState || null,
+
+      referral_code:
+        normalizedReferralCode,
+
+      access_referral_code:
+        normalizedReferralCode,
+
+      access_referral_verified_at:
+        new Date().toISOString(),
+
+      referral_consent_accepted: false,
+      referral_consent_accepted_at: null,
+
+      has_referral_access: false,
+      has_paid_access: false,
+
+      access_tier:
+        "pending_referral_consent",
+
+      subscription_status: null,
+      subscription_plan: null,
+      subscription_provider: null,
     };
-  }, []);
 
-  async function handleSendReset(
-    e: React.FormEvent
+    const { error: profileError } =
+      await supabase
+        .from("candidate_profiles")
+        .insert(profilePayload);
+
+    if (profileError) {
+      await supabase.auth.signOut();
+
+      throw new Error(
+        `Your login was created, but your HireMinds profile could not be completed: ${profileError.message}`
+      );
+    }
+
+    const { error: activityError } =
+      await supabase
+        .from("user_activity")
+        .insert({
+          user_id: user.id,
+
+          full_name: fullName,
+          email: cleanEmail,
+
+          referral_code:
+            normalizedReferralCode,
+
+          event_type: "signup",
+          tool_name: null,
+          page_name: "sign-up",
+        });
+
+    if (activityError) {
+      console.error(
+        "Activity tracking error:",
+        activityError
+      );
+    }
+
+    return user;
+  }
+
+  async function handleSignUp(
+    e: React.FormEvent<HTMLFormElement>
   ) {
     e.preventDefault();
 
-    setMessage("");
-    setSuccess(false);
+    if (loading) return;
 
-    const cleanEmail =
-      email.trim().toLowerCase();
+    clearMessage();
 
-    if (!cleanEmail) {
+    if (!accessMethod) {
       setMessage(
-        "Please enter your email address."
+        "Please choose Paid Subscription or Referral Code."
       );
       return;
     }
 
-    if (!cleanEmail.includes("@")) {
+    const formData = new FormData(e.currentTarget);
+
+    const cleanFirstName = String(
+      formData.get("firstName") ?? firstName
+    ).trim();
+
+    const cleanLastName = String(
+      formData.get("lastName") ?? lastName
+    ).trim();
+
+    const cleanPhone = String(
+      formData.get("phone") ?? phone
+    ).trim();
+
+    const cleanCity = String(
+      formData.get("city") ?? city
+    ).trim();
+
+    const cleanState = String(
+      formData.get("stateName") ?? stateName
+    ).trim();
+
+    const cleanEmail = String(
+      formData.get("email") ?? email
+    )
+      .trim()
+      .toLowerCase();
+
+    const cleanReferralCode = String(
+      formData.get("referralCode") ?? referralCode
+    ).trim();
+
+    const submittedPassword = String(
+      formData.get("password") ?? password
+    );
+
+    const fullName =
+      `${cleanFirstName} ${cleanLastName}`.trim();
+
+    setFirstName(cleanFirstName);
+    setLastName(cleanLastName);
+    setPhone(cleanPhone);
+    setCity(cleanCity);
+    setStateName(cleanState);
+    setEmail(cleanEmail);
+
+    if (accessMethod === "referral") {
+      setReferralCode(cleanReferralCode.toUpperCase());
+    }
+
+    if (!cleanFirstName) {
+      setMessage(
+        "Please enter your first name."
+      );
+      return;
+    }
+
+    if (!cleanLastName) {
+      setMessage(
+        "Please enter your last name."
+      );
+      return;
+    }
+
+    if (
+      !cleanEmail ||
+      !cleanEmail.includes("@")
+    ) {
       setMessage(
         "Please enter a valid email address."
       );
@@ -146,456 +326,1719 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
 
-      /*
-        IMPORTANT:
-        The recovery email comes back to THIS page.
+      if (
+        accessMethod === "referral"
+      ) {
+        const code =
+          cleanReferralCode.toUpperCase();
 
-        We no longer use /update-password.
-      */
-      const redirectTo =
-        `${window.location.origin}/reset-password?mode=update`;
+        if (!code) {
+          throw new Error(
+            "Please enter your referral code."
+          );
+        }
 
-      const {
-        error,
-      } =
-        await supabase.auth.resetPasswordForEmail(
-          cleanEmail,
+        if (!submittedPassword) {
+          throw new Error(
+            "Please create a password for your HireMinds account."
+          );
+        }
+
+        if (submittedPassword.length < 6) {
+          throw new Error(
+            "Your password must contain at least 6 characters."
+          );
+        }
+
+        const referral =
+          await validateReferralCode(
+            code
+          );
+
+        const normalizedReferralCode =
+          referral.code ||
+          code;
+
+        await createReferralAccount({
+          normalizedReferralCode,
+          firstName: cleanFirstName,
+          lastName: cleanLastName,
+          phone: cleanPhone,
+          city: cleanCity,
+          stateName: cleanState,
+          email: cleanEmail,
+          password: submittedPassword,
+        });
+
+        try {
+          localStorage.setItem(
+            "hireminds_pending_referral_code",
+            normalizedReferralCode
+          );
+
+          if (referral.expiresAt) {
+            localStorage.setItem(
+              "hireminds_pending_referral_expires_at",
+              referral.expiresAt
+            );
+          }
+        } catch {
+          // Server/database remains authoritative.
+        }
+
+        window.location.href =
+          "/access";
+
+        return;
+      }
+
+      if (!ageConfirmed) {
+        throw new Error(
+          "Please confirm that you are 18 years of age or older."
+        );
+      }
+
+      if (!termsConfirmed) {
+        throw new Error(
+          "Please agree to the HireMinds Terms and Privacy Policy."
+        );
+      }
+
+      if (!billingConfirmed) {
+        throw new Error(
+          "Please confirm that you understand the $24.99 monthly charge, automatic renewal, and cancellation process."
+        );
+      }
+
+      const checkoutResponse =
+        await fetch(
+          "/api/stripe/create-checkout-session",
           {
-            redirectTo,
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              plan: "monthly",
+              fullName,
+              firstName:
+                cleanFirstName,
+              lastName:
+                cleanLastName,
+              email: cleanEmail,
+              phone:
+                cleanPhone,
+              city:
+                cleanCity,
+              state:
+                cleanState,
+            }),
           }
         );
 
-      if (error) {
-        throw error;
+      const checkoutRaw =
+        await checkoutResponse.text();
+
+      let checkoutData: {
+        ok?: boolean;
+        url?: string;
+        error?: string;
+      } = {};
+
+      try {
+        checkoutData =
+          checkoutRaw
+            ? JSON.parse(
+                checkoutRaw
+              )
+            : {};
+      } catch {
+        checkoutData = {};
       }
 
-      setSuccess(true);
-
-      setMessage(
-        "Password reset email sent. Check your inbox and click the secure link to create a new password."
-      );
-    } catch (error: any) {
-      setMessage(
-        error?.message ||
-          "Unable to send password reset email."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleUpdatePassword(
-    e: React.FormEvent
-  ) {
-    e.preventDefault();
-
-    setMessage("");
-    setSuccess(false);
-
-    if (!newPassword) {
-      setMessage(
-        "Please enter a new password."
-      );
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setMessage(
-        "Your password must contain at least 6 characters."
-      );
-      return;
-    }
-
-    if (
-      newPassword !==
-      confirmPassword
-    ) {
-      setMessage(
-        "The passwords do not match."
-      );
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const {
-        data,
-        error: sessionError,
-      } =
-        await supabase.auth.getSession();
-
       if (
-        sessionError ||
-        !data.session
+        !checkoutResponse.ok ||
+        !checkoutData.url
       ) {
         throw new Error(
-          "Your password reset link is invalid or has expired. Please request a new reset link."
+          checkoutData.error ||
+            "Stripe checkout could not be started. Please try again."
         );
       }
 
-      const {
-        error: updateError,
-      } =
-        await supabase.auth.updateUser({
-          password: newPassword,
-        });
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      setSuccess(true);
-
-      setMessage(
-        "Your password has been changed successfully. Returning you to Sign In..."
-      );
-
-      /*
-        Supabase temporarily authenticates the user
-        through the recovery link.
-
-        Sign them OUT after the password is changed
-        so the reset email cannot simply leave them
-        inside HireMinds.
-      */
-      await supabase.auth.signOut();
-
-      setTimeout(() => {
-        window.location.href =
-          "/sign-in";
-      }, 1500);
+      window.location.href =
+        checkoutData.url;
     } catch (error: any) {
       setMessage(
         error?.message ||
-          "Unable to update your password."
+          "We could not complete your signup. Please try again."
       );
-    } finally {
+
       setLoading(false);
     }
-  }
-
-  if (checkingLink) {
-    return (
-      <main style={styles.page}>
-        <div style={styles.card}>
-          <p style={styles.kicker}>
-            HireMinds
-          </p>
-
-          <h1 style={styles.title}>
-            Verifying Reset Link
-          </h1>
-
-          <p style={styles.subtitle}>
-            Please wait while we verify
-            your secure password reset
-            link.
-          </p>
-        </div>
-      </main>
-    );
   }
 
   return (
     <main style={styles.page}>
-      <div style={styles.card}>
-        <p style={styles.kicker}>
-          HireMinds
-        </p>
+      <form
+        onSubmit={handleSignUp}
+        style={styles.shell}
+        autoComplete="on"
+      >
+        <section style={styles.hero}>
+          <div
+            style={styles.heroGlowOne}
+          />
+          <div
+            style={styles.heroGlowTwo}
+          />
 
-        {!resetMode ? (
-          <>
-            <h1 style={styles.title}>
-              Reset Password
-            </h1>
+          <div style={styles.heroGrid}>
+            <div style={styles.heroContent}>
+              <div style={styles.brandRow}>
+                <span
+                  style={styles.brandMark}
+                >
+                  HM
+                </span>
 
-            <p style={styles.subtitle}>
-              Enter your email and
-              we&apos;ll send you a
-              secure link to create a
-              new password.
-            </p>
+                <div>
+                  <div
+                    style={styles.brandName}
+                  >
+                    HIREMINDS
+                  </div>
 
-            <form
-              onSubmit={
-                handleSendReset
-              }
-              style={styles.form}
-            >
-              <label
-                style={styles.label}
-              >
-                Email
-              </label>
+                  <div
+                    style={
+                      styles.brandDescriptor
+                    }
+                  >
+                    YOUR CAREER PASSPORT
+                  </div>
+                </div>
+              </div>
 
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(
-                    e.target.value
-                  );
-                  setMessage("");
-                  setSuccess(false);
-                }}
-                placeholder="you@email.com"
-                style={styles.input}
-                autoComplete="email"
-              />
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...styles.button,
-                  ...(loading
-                    ? styles.disabledButton
-                    : {}),
-                }}
-              >
-                {loading
-                  ? "Sending..."
-                  : "Send Reset Link"}
-              </button>
-            </form>
-
-            {message ? (
               <p
-                style={{
-                  ...styles.message,
-                  ...(success
-                    ? styles.successMessage
-                    : {}),
-                }}
+                style={styles.heroEyebrow}
               >
-                {message}
+                CAREER DEVELOPMENT + JOB SEARCH INTELLIGENCE
               </p>
-            ) : null}
 
-            <a
-              href="/sign-in"
-              style={styles.link}
-            >
-              Back to Sign In
-            </a>
-          </>
-        ) : (
-          <>
-            <h1 style={styles.title}>
-              Create New Password
-            </h1>
-
-            <p style={styles.subtitle}>
-              Enter and confirm your new
-              HireMinds password.
-            </p>
-
-            <form
-              onSubmit={
-                handleUpdatePassword
-              }
-              style={styles.form}
-            >
-              <label
-                style={styles.label}
+              <h1
+                style={styles.heroTitle}
               >
-                New Password
-              </label>
+                Stop guessing.
+                <br />
+                <span
+                  style={
+                    styles.heroAccent
+                  }
+                >
+                  Build your next move.
+                </span>
+              </h1>
+
+              <p
+                style={styles.heroText}
+              >
+                HireMinds helps you
+                understand the job,
+                position your experience,
+                strengthen your
+                application, prepare for
+                interviews, and move
+                through your career with
+                more direction.
+              </p>
+            </div>
+
+            <aside
+              style={styles.heroOffer}
+            >
+              <span
+                style={
+                  styles.offerEyebrow
+                }
+              >
+                HIREMINDS ALL ACCESS
+              </span>
 
               <div
                 style={
-                  styles.passwordWrap
+                  styles.offerPriceRow
                 }
               >
-                <input
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(
-                      e.target.value
-                    );
-                    setMessage("");
-                    setSuccess(false);
-                  }}
-                  placeholder="Enter new password"
+                <span
                   style={
-                    styles.passwordInput
-                  }
-                  autoComplete="new-password"
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowPassword(
-                      (prev) =>
-                        !prev
-                    )
-                  }
-                  style={
-                    styles.passwordToggle
+                    styles.offerPrice
                   }
                 >
-                  {showPassword
-                    ? "Hide"
-                    : "Show"}
-                </button>
+                  $24.99
+                </span>
               </div>
 
-              <label
-                style={styles.label}
+              <span
+                style={styles.offerTerm}
               >
-                Confirm New Password
-              </label>
+                PER MONTH
+              </span>
 
-              <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
+              <div
+                style={
+                  styles.offerDivider
                 }
-                value={
-                  confirmPassword
-                }
-                onChange={(e) => {
-                  setConfirmPassword(
-                    e.target.value
-                  );
-                  setMessage("");
-                  setSuccess(false);
-                }}
-                placeholder="Confirm new password"
-                style={styles.input}
-                autoComplete="new-password"
               />
 
               <span
                 style={
-                  styles.passwordHelp
+                  styles.offerThenLabel
                 }
               >
-                Password must contain at
-                least 6 characters.
+                BILLED TODAY
               </span>
 
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...styles.button,
-                  ...(loading
-                    ? styles.disabledButton
-                    : {}),
-                }}
+              <strong
+                style={
+                  styles.offerRenewal
+                }
               >
-                {loading
-                  ? "Updating..."
-                  : "Update Password"}
-              </button>
-            </form>
+                Renews monthly
+              </strong>
 
-            {message ? (
               <p
-                style={{
-                  ...styles.message,
-                  ...(success
-                    ? styles.successMessage
-                    : {}),
-                }}
+                style={styles.offerText}
               >
-                {message}
+                Charged today and
+                automatically renews
+                monthly unless canceled.
               </p>
-            ) : null}
+            </aside>
+          </div>
+        </section>
 
-            {!success ? (
-              <a
-                href="/reset-password"
-                style={styles.link}
+        <section style={styles.valueSection}>
+          <div style={styles.valueFocus}>
+            <h2 style={styles.sectionHeadline}>
+              More than tools.
+              <br />
+              <span style={styles.sectionAccent}>
+                A smarter way to move.
+              </span>
+            </h2>
+
+            <div style={styles.moveDirection}>
+              <h3 style={styles.moveDirectionTitle}>
+                Move With Direction
+              </h3>
+
+              <p style={styles.moveDirectionText}>
+                Prepare for interviews, track your search, explore career paths, set goals, and know what your next move should be.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          style={styles.sectionWrap}
+        >
+          <div style={styles.sectionIntroBlock}>
+            <p style={styles.sectionEyebrow}>
+              CHOOSE YOUR ACCESS
+            </p>
+
+            <h2 style={styles.stepTitle}>
+              How will you access HireMinds?
+            </h2>
+
+            <p style={styles.stepText}>
+              Choose the option that applies to you before creating your Career Passport.
+            </p>
+          </div>
+
+          <div
+            style={
+              styles.accessChoiceGrid
+            }
+          >
+            <button
+              type="button"
+              onClick={() =>
+                chooseAccess(
+                  "subscription"
+                )
+              }
+              style={{
+                ...styles.accessCard,
+                ...(accessMethod ===
+                "subscription"
+                  ? styles.accessCardSelected
+                  : {}),
+              }}
+            >
+              <div
+                style={
+                  styles.accessCardTop
+                }
               >
-                Request a New Reset Link
-              </a>
-            ) : null}
-          </>
-        )}
-      </div>
+                <span
+                  style={
+                    styles.accessCardLabel
+                  }
+                >
+                  PAID SUBSCRIPTION
+                </span>
+
+                {accessMethod ===
+                "subscription" ? (
+                  <span
+                    style={
+                      styles.selectedPill
+                    }
+                  >
+                    ✓ SELECTED
+                  </span>
+                ) : null}
+              </div>
+
+              <div
+                style={
+                  styles.accessPriceRow
+                }
+              >
+                <strong
+                  style={
+                    styles.accessPrice
+                  }
+                >
+                  $24.99
+                </strong>
+
+                <span
+                  style={
+                    styles.accessPriceDetail
+                  }
+                >
+                  per month
+                </span>
+              </div>
+
+              <div
+                style={
+                  styles.accessRenewal
+                }
+              >
+                Charged today •{" "}
+                <strong>
+                  renews monthly
+                </strong>
+              </div>
+
+              <p
+                style={
+                  styles.accessDescription
+                }
+              >
+                Full HireMinds access.
+                Your $24.99 subscription
+                renews automatically each
+                month unless canceled.
+              </p>
+
+              <span
+                style={
+                  styles.accessSelectText
+                }
+              >
+                Choose Paid Access →
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                chooseAccess(
+                  "referral"
+                )
+              }
+              style={{
+                ...styles.accessCard,
+                ...(accessMethod ===
+                "referral"
+                  ? styles.accessCardSelected
+                  : {}),
+              }}
+            >
+              <div
+                style={
+                  styles.accessCardTop
+                }
+              >
+                <span
+                  style={
+                    styles.accessCardLabel
+                  }
+                >
+                  REFERRAL ACCESS
+                </span>
+
+                {accessMethod ===
+                "referral" ? (
+                  <span
+                    style={
+                      styles.selectedPill
+                    }
+                  >
+                    ✓ SELECTED
+                  </span>
+                ) : null}
+              </div>
+
+              <div
+                style={
+                  styles.referralBigTitle
+                }
+              >
+                I Have a Referral Code
+              </div>
+
+              <div
+                style={
+                  styles.accessRenewal
+                }
+              >
+                Complimentary{" "}
+                <strong>
+                  3 weeks (21 days) of access
+                </strong>
+              </div>
+
+              <p
+                style={
+                  styles.accessDescription
+                }
+              >
+                Each user is eligible
+                for one complimentary
+                referral access period
+                only. An active code
+                must be provided by an
+                approved program or
+                partner.
+              </p>
+
+              <span
+                style={
+                  styles.accessSelectText
+                }
+              >
+                Use Referral Code →
+              </span>
+            </button>
+          </div>
+
+          {accessMethod ===
+          "referral" ? (
+            <div
+              style={
+                styles.referralCodeArea
+              }
+            >
+              <div>
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  REFERRAL CODE
+                </span>
+
+                <p
+                  style={
+                    styles.referralCodeHelp
+                  }
+                >
+                  Enter the active code
+                  that was provided to
+                  you.
+                </p>
+              </div>
+
+              <input
+                id="hm-referral-code"
+                name="referralCode"
+                placeholder="Enter Referral Code"
+                value={referralCode}
+                onChange={(e) => {
+                  setReferralCode(
+                    e.target.value.toUpperCase()
+                  );
+                  clearMessage();
+                }}
+                style={
+                  styles.referralInput
+                }
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                inputMode="text"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                aria-label="Referral Code"
+              />
+
+              <div
+                style={
+                  styles.previousReferralNote
+                }
+              >
+                <strong>
+                  Previously used
+                  referral access?
+                </strong>
+
+                <span>
+                  Each user may receive
+                  complimentary referral
+                  access one time only.
+                  If you previously used
+                  your complimentary
+                  referral access, Paid
+                  Access remains
+                  available.
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        {accessMethod ? (
+          <section
+            style={styles.sectionWrap}
+          >
+            <div style={styles.sectionIntroBlock}>
+              <p style={styles.sectionEyebrow}>
+                CREATE YOUR CAREER PASSPORT
+              </p>
+
+              <h2 style={styles.stepTitle}>
+                Tell us who you are.
+              </h2>
+
+              <p style={styles.stepText}>
+                Enter your basic information to continue with the access option you selected.
+              </p>
+            </div>
+
+            <div
+              style={styles.formGrid}
+            >
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  First Name *
+                </span>
+
+                <input
+                  id="firstName"
+                  name="firstName"
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => {
+                    setFirstName(
+                      e.target.value
+                    );
+                    clearMessage();
+                  }}
+                  style={styles.input}
+                  autoComplete="given-name"
+                  required
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  Last Name *
+                </span>
+
+                <input
+                  id="lastName"
+                  name="lastName"
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => {
+                    setLastName(
+                      e.target.value
+                    );
+                    clearMessage();
+                  }}
+                  style={styles.input}
+                  autoComplete="family-name"
+                  required
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  Email Address *
+                </span>
+
+                <input
+                  id="email"
+                  name="email"
+                  placeholder="Email Address"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(
+                      e.target.value
+                    );
+                    clearMessage();
+                  }}
+                  style={styles.input}
+                  autoComplete="email"
+                  required
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  Phone Number
+                </span>
+
+                <input
+                  id="phone"
+                  name="phone"
+                  placeholder="Phone Number"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(
+                      e.target.value
+                    );
+                    clearMessage();
+                  }}
+                  style={styles.input}
+                  autoComplete="tel"
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  City
+                </span>
+
+                <input
+                  id="city"
+                  name="city"
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => {
+                    setCity(
+                      e.target.value
+                    );
+                    clearMessage();
+                  }}
+                  style={styles.input}
+                  autoComplete="address-level2"
+                />
+              </label>
+
+              <label
+                style={styles.field}
+              >
+                <span
+                  style={
+                    styles.fieldLabel
+                  }
+                >
+                  State
+                </span>
+
+                <input
+                  id="stateName"
+                  name="stateName"
+                  placeholder="State"
+                  value={stateName}
+                  onChange={(e) => {
+                    setStateName(
+                      e.target.value
+                    );
+                    clearMessage();
+                  }}
+                  style={styles.input}
+                  autoComplete="address-level1"
+                />
+              </label>
+
+              {accessMethod ===
+              "referral" ? (
+                <label
+                  style={{
+                    ...styles.field,
+                    ...styles.fullWidth,
+                  }}
+                >
+                  <span
+                    style={
+                      styles.fieldLabel
+                    }
+                  >
+                    Create Password *
+                  </span>
+
+                  <div
+                    style={
+                      styles.passwordWrap
+                    }
+                  >
+                    <input
+                      id="password"
+                      name="password"
+                      placeholder="Create a password"
+                      type={
+                        showPassword
+                          ? "text"
+                          : "password"
+                      }
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(
+                          e.target.value
+                        );
+                        clearMessage();
+                      }}
+                      style={
+                        styles.passwordInput
+                      }
+                      autoComplete="new-password"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowPassword(
+                          (prev) =>
+                            !prev
+                        )
+                      }
+                      style={
+                        styles.passwordToggle
+                      }
+                    >
+                      {showPassword
+                        ? "Hide"
+                        : "Show"}
+                    </button>
+                  </div>
+
+                  <span
+                    style={
+                      styles.passwordNote
+                    }
+                  >
+                    This password is for
+                    signing back into
+                    your HireMinds
+                    account after
+                    activation.
+                  </span>
+                </label>
+              ) : (
+                <div
+                  style={{
+                    ...styles.fullWidth,
+                    ...styles.paymentPasswordNotice,
+                  }}
+                >
+                  <strong>
+                    Password comes
+                    after payment.
+                  </strong>
+
+                  <span>
+                    Paid subscribers
+                    will create their
+                    HireMinds password
+                    after Stripe
+                    confirms the $24.99
+                    monthly subscription
+                    payment.
+                  </span>
+                </div>
+              )}
+            </div>
+          </section>
+        ) : null}
+
+        {accessMethod ===
+        "subscription" ? (
+          <section
+            style={styles.sectionWrap}
+          >
+            <div style={styles.sectionIntroBlock}>
+              <p style={styles.sectionEyebrow}>
+                CONFIRM & CONTINUE
+              </p>
+
+              <h2
+                style={
+                  styles.stepTitle
+                }
+              >
+                Know exactly what
+                you&apos;re signing up
+                for.
+              </h2>
+            </div>
+
+            <div
+              style={
+                styles.billingSummary
+              }
+            >
+              <div
+                style={
+                  styles.billingCellLeft
+                }
+              >
+                <span
+                  style={
+                    styles.billingSmall
+                  }
+                >
+                  TODAY
+                </span>
+
+                <strong
+                  style={
+                    styles.billingBig
+                  }
+                >
+                  $24.99
+                </strong>
+
+                <span
+                  style={
+                    styles.billingDescription
+                  }
+                >
+                  Monthly subscription
+                </span>
+              </div>
+
+              <div
+                style={
+                  styles.billingArrow
+                }
+              >
+                →
+              </div>
+
+              <div
+                style={
+                  styles.billingCellRight
+                }
+              >
+                <span
+                  style={
+                    styles.billingSmall
+                  }
+                >
+                  NEXT BILLING DATE
+                </span>
+
+                <strong
+                  style={
+                    styles.billingBig
+                  }
+                >
+                  $24.99
+                </strong>
+
+                <span
+                  style={
+                    styles.billingDescription
+                  }
+                >
+                  Automatically renews
+                  until canceled
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={styles.ackPanel}
+            >
+              <label
+                style={
+                  styles.checkboxRow
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(e) =>
+                    setAgeConfirmed(
+                      e.target.checked
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I confirm that I am{" "}
+                  <strong>
+                    18 years of age or
+                    older.
+                  </strong>
+                </span>
+              </label>
+
+              <label
+                style={
+                  styles.checkboxRow
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={
+                    termsConfirmed
+                  }
+                  onChange={(e) =>
+                    setTermsConfirmed(
+                      e.target.checked
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I agree to the
+                  HireMinds Terms and
+                  Privacy Policy.
+                </span>
+              </label>
+
+              <label
+                style={
+                  styles.checkboxRow
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={
+                    billingConfirmed
+                  }
+                  onChange={(e) =>
+                    setBillingConfirmed(
+                      e.target.checked
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I understand that I
+                  will be charged{" "}
+                  <strong>
+                    $24.99 today
+                  </strong>{" "}
+                  for my HireMinds
+                  subscription. My
+                  subscription will
+                  automatically renew at{" "}
+                  <strong>
+                    $24.99 per month
+                  </strong>{" "}
+                  unless canceled. To
+                  cancel, I must go to{" "}
+                  <strong>
+                    Contact Us
+                  </strong>{" "}
+                  and select{" "}
+                  <strong>
+                    Cancel Subscription
+                  </strong>
+                  . To help prevent my
+                  next automatic charge,
+                  I should submit my
+                  cancellation request
+                  by{" "}
+                  <strong>
+                    6:00 PM ET the day
+                    before my next
+                    scheduled billing
+                    date
+                  </strong>
+                  . Requests submitted
+                  after that cutoff may
+                  still be charged.
+                </span>
+              </label>
+            </div>
+          </section>
+        ) : null}
+
+        {accessMethod ===
+        "referral" ? (
+          <section
+            style={styles.sectionWrap}
+          >
+            <div
+              style={
+                styles.sectionIntroBlock
+              }
+            >
+              <p
+                style={
+                  styles.sectionEyebrow
+                }
+              >
+                VERIFY & CONTINUE
+              </p>
+
+              <h2
+                style={
+                  styles.stepTitle
+                }
+              >
+                Confirm your referral
+                access.
+              </h2>
+
+              <p
+                style={
+                  styles.stepText
+                }
+              >
+                Your referral code will
+                be verified before you
+                continue to the Consent
+                & Access page.
+              </p>
+            </div>
+
+            <div
+              style={
+                styles.referralSummary
+              }
+            >
+              <div>
+                <span
+                  style={
+                    styles.referralSummaryLabel
+                  }
+                >
+                  REFERRAL ACCESS
+                </span>
+
+                <strong
+                  style={
+                    styles.referralSummaryTitle
+                  }
+                >
+                  One-time complimentary
+                  3-week access
+                </strong>
+              </div>
+
+              <p
+                style={
+                  styles.referralSummaryText
+                }
+              >
+                Includes 21 days of
+                HireMinds access. Each
+                user receives one
+                complimentary referral
+                period only.
+              </p>
+            </div>
+          </section>
+        ) : null}
+
+        {message ? (
+          <div
+            style={styles.message}
+          >
+            {message}
+          </div>
+        ) : null}
+
+        {accessMethod ? (
+          <button
+            type="submit"
+            style={
+              styles.submitButton
+            }
+            disabled={loading}
+          >
+            <span
+              style={
+                styles.submitInner
+              }
+            >
+              <span>
+                {loading
+                  ? "Please wait..."
+                  : accessMethod ===
+                      "subscription"
+                  ? "Continue to Secure Payment"
+                  : "Create Career Passport & Continue"}
+              </span>
+
+              {!loading ? (
+                <span
+                  style={
+                    styles.buttonArrow
+                  }
+                >
+                  →
+                </span>
+              ) : null}
+            </span>
+          </button>
+        ) : null}
+
+        <footer
+          style={styles.footer}
+        >
+          <div
+            style={styles.footerBrand}
+          >
+            HIREMINDS
+          </div>
+
+          <p
+            style={styles.footerText}
+          >
+            Your career is bigger than
+            one application.
+          </p>
+        </footer>
+      </form>
     </main>
   );
 }
 
-const styles: Record<
-  string,
-  React.CSSProperties
-> = {
+const styles: {
+  [key: string]: React.CSSProperties;
+} = {
   page: {
     minHeight: "100vh",
+    background:
+      "linear-gradient(180deg, #eef2f5 0%, #ffffff 40%, #edf2f6 100%)",
+    color: "#111820",
+    padding:
+      "28px 18px 60px",
+    boxSizing: "border-box",
+    fontFamily:
+      "Inter, Arial, Helvetica, sans-serif",
+  },
+
+  shell: {
+    width: "100%",
+    maxWidth: "1180px",
+    margin: "0 auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: "24px",
+  },
+
+  hero: {
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: "32px",
+    background:
+      "linear-gradient(135deg, #0d151d 0%, #13222e 55%, #115b88 130%)",
+    border:
+      "1px solid rgba(255,255,255,0.08)",
+    boxShadow:
+      "0 24px 65px rgba(9, 22, 34, 0.22)",
+  },
+
+  heroGlowOne: {
+    position: "absolute",
+    width: "540px",
+    height: "540px",
+    borderRadius: "50%",
+    right: "-180px",
+    top: "-260px",
+    background:
+      "radial-gradient(circle, rgba(37, 144, 207, 0.38) 0%, rgba(37, 144, 207, 0) 68%)",
+    pointerEvents: "none",
+  },
+
+  heroGlowTwo: {
+    position: "absolute",
+    width: "420px",
+    height: "420px",
+    borderRadius: "50%",
+    left: "-200px",
+    bottom: "-230px",
+    background:
+      "radial-gradient(circle, rgba(150, 173, 190, 0.18) 0%, rgba(150, 173, 190, 0) 70%)",
+    pointerEvents: "none",
+  },
+
+  heroGrid: {
+    position: "relative",
+    zIndex: 1,
+    display: "grid",
+    gridTemplateColumns:
+      "minmax(0, 1.45fr) minmax(300px, 0.55fr)",
+    gap: "38px",
+    padding: "52px",
+    alignItems: "stretch",
+  },
+
+  heroContent: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+
+  brandRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "34px",
+  },
+
+  brandMark: {
+    width: "47px",
+    height: "47px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background:
-      "linear-gradient(180deg, #050505 0%, #0d0d0f 100%)",
-    padding: "24px",
-    fontFamily:
-      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    borderRadius: "14px",
+    backgroundColor: "#ffffff",
+    color: "#0f6092",
+    fontSize: "13px",
+    fontWeight: 950,
+    boxShadow:
+      "0 10px 28px rgba(0,0,0,0.18)",
   },
 
-  card: {
-    width: "100%",
-    maxWidth: "520px",
-    background:
-      "linear-gradient(180deg, #141414 0%, #181818 100%)",
-    border: "1px solid #262626",
-    borderRadius: "24px",
-    padding: "28px",
-    color: "#f5f5f5",
+  brandName: {
+    color: "#ffffff",
+    fontSize: "13px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
   },
 
-  kicker: {
-    margin: "0 0 8px",
-    color: "#9a9a9a",
+  brandDescriptor: {
+    color: "#7fbde2",
+    marginTop: "4px",
+    fontSize: "9px",
+    fontWeight: 850,
+    letterSpacing: "0.13em",
+  },
+
+  heroEyebrow: {
+    margin: "0 0 13px",
+    color: "#79bde8",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
+  },
+
+  heroTitle: {
+    margin: 0,
+    color: "#ffffff",
+    maxWidth: "780px",
+    fontSize:
+      "clamp(46px, 7vw, 78px)",
+    lineHeight: 0.95,
+    fontWeight: 950,
+    letterSpacing: "-0.055em",
+  },
+
+  heroAccent: {
+    color: "#5fb3e5",
+  },
+
+  heroText: {
+    maxWidth: "720px",
+    margin: "25px 0 0",
+    color: "#c9d4dc",
+    fontSize: "17px",
+    lineHeight: 1.72,
+    fontWeight: 500,
+  },
+
+  heroOffer: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    padding: "29px",
+    borderRadius: "25px",
+    background:
+      "linear-gradient(160deg, #ffffff 0%, #e9f3fa 100%)",
+    boxShadow:
+      "0 20px 45px rgba(0,0,0,0.20)",
+  },
+
+  offerEyebrow: {
+    color: "#176fae",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.14em",
+  },
+
+  offerPriceRow: {
+    marginTop: "17px",
+  },
+
+  offerPrice: {
+    color: "#111820",
+    fontSize: "57px",
+    lineHeight: 0.95,
+    fontWeight: 950,
+    letterSpacing: "-0.055em",
+  },
+
+  offerTerm: {
+    marginTop: "7px",
+    color: "#537080",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: "0.05em",
+  },
+
+  offerDivider: {
+    height: "1px",
+    backgroundColor: "#c5d4dd",
+    margin: "22px 0",
+  },
+
+  offerThenLabel: {
+    color: "#74838e",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.11em",
+  },
+
+  offerRenewal: {
+    marginTop: "4px",
+    color: "#111820",
+    fontSize: "24px",
+    fontWeight: 950,
+  },
+
+  offerText: {
+    margin: "8px 0 0",
+    color: "#5f6d78",
     fontSize: "12px",
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
+    lineHeight: 1.55,
   },
 
-  title: {
-    margin: "0 0 10px",
-    fontSize: "34px",
-    fontWeight: 600,
+  valueSection: {
+    padding: "34px 6px 10px",
+    borderTop: "1px solid #d7dfe5",
+    borderBottom: "1px solid #d7dfe5",
   },
 
-  subtitle: {
-    margin: "0 0 20px",
-    color: "#c8c8c8",
-    fontSize: "15px",
+  valueFocus: {
+    display: "grid",
+    gridTemplateColumns:
+      "minmax(0, 1.15fr) minmax(300px, 0.85fr)",
+    gap: "56px",
+    alignItems: "end",
+    padding: "0 0 30px",
+  },
+
+  sectionHeadline: {
+    margin: 0,
+    color: "#101820",
+    fontSize:
+      "clamp(35px, 5vw, 55px)",
+    lineHeight: 1,
+    fontWeight: 950,
+    letterSpacing: "-0.045em",
+  },
+
+  sectionAccent: {
+    color: "#176fae",
+  },
+
+  moveDirection: {
+    paddingLeft: "28px",
+    borderLeft:
+      "1px solid #d7dfe5",
+  },
+
+  moveDirectionTitle: {
+    margin: 0,
+    color: "#111820",
+    fontSize: "24px",
+    lineHeight: 1.15,
+    fontWeight: 950,
+    letterSpacing: "-0.02em",
+  },
+
+  moveDirectionText: {
+    margin: "10px 0 0",
+    color: "#55636e",
+    fontSize: "14px",
     lineHeight: 1.7,
   },
 
-  form: {
-    display: "grid",
-    gap: "12px",
+  sectionEyebrow: {
+    margin: "0 0 8px",
+    color: "#1671ad",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
   },
 
-  label: {
+  sectionWrap: {
+    padding: "32px 0 0",
+    borderTop:
+      "1px solid #d5dde3",
+  },
+
+  sectionIntroBlock: {
+    maxWidth: "760px",
+    marginBottom: "22px",
+  },
+
+  stepTitle: {
+    margin: 0,
+    color: "#111820",
+    fontSize:
+      "clamp(28px, 4vw, 38px)",
+    lineHeight: 1.05,
+    fontWeight: 950,
+    letterSpacing: "-0.035em",
+  },
+
+  stepText: {
+    margin: "8px 0 0",
+    color: "#68747f",
+    fontSize: "13px",
+    lineHeight: 1.65,
+  },
+
+  accessChoiceGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(300px, 1fr))",
+    gap: "14px",
+  },
+
+  accessCard: {
+    minHeight: "260px",
+    display: "flex",
+    flexDirection: "column",
+    textAlign: "left",
+    padding: "24px",
+    borderRadius: "20px",
+    border:
+      "1px solid #c7d0d8",
+    background:
+      "linear-gradient(145deg, #ffffff 0%, #f7fafc 100%)",
+    color: "#111820",
+    cursor: "pointer",
+    transition:
+      "all 0.2s ease",
+    boxShadow:
+      "0 8px 22px rgba(20, 46, 65, 0.05)",
+  },
+
+  accessCardSelected: {
+    border:
+      "2px solid #176fae",
+    background:
+      "linear-gradient(145deg, #ffffff 0%, #e7f4fc 100%)",
+    boxShadow:
+      "0 16px 34px rgba(23, 111, 174, 0.17)",
+  },
+
+  accessCardTop: {
+    display: "flex",
+    justifyContent:
+      "space-between",
+    gap: "10px",
+    alignItems: "center",
+  },
+
+  accessCardLabel: {
+    color: "#176fae",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.12em",
+  },
+
+  selectedPill: {
+    padding: "5px 8px",
+    borderRadius: "999px",
+    backgroundColor:
+      "#176fae",
+    color: "#ffffff",
+    fontSize: "8px",
+    fontWeight: 950,
+    letterSpacing: "0.06em",
+  },
+
+  accessPriceRow: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: "9px",
+    marginTop: "30px",
+  },
+
+  accessPrice: {
+    color: "#111820",
+    fontSize: "48px",
+    lineHeight: 1,
+    fontWeight: 950,
+    letterSpacing: "-0.055em",
+  },
+
+  accessPriceDetail: {
+    color: "#687680",
+    fontSize: "12px",
+    fontWeight: 800,
+  },
+
+  accessRenewal: {
+    marginTop: "8px",
+    color: "#3d4a55",
     fontSize: "14px",
-    color: "#d4d4d8",
-    fontWeight: 600,
+  },
+
+  accessDescription: {
+    margin: "14px 0 0",
+    maxWidth: "450px",
+    color: "#65727d",
+    fontSize: "12px",
+    lineHeight: 1.6,
+  },
+
+  accessSelectText: {
+    marginTop: "auto",
+    paddingTop: "22px",
+    color: "#176fae",
+    fontSize: "11px",
+    fontWeight: 950,
+  },
+
+  referralBigTitle: {
+    marginTop: "33px",
+    color: "#111820",
+    fontSize: "26px",
+    lineHeight: 1.05,
+    fontWeight: 950,
+    letterSpacing: "-0.025em",
+  },
+
+  referralCodeArea: {
+    marginTop: "18px",
+    display: "grid",
+    gap: "12px",
+    padding: "0",
+  },
+
+  referralCodeHelp: {
+    margin: "4px 0 0",
+    color: "#667580",
+    fontSize: "12px",
+  },
+
+  referralInput: {
+    width: "100%",
+    padding:
+      "15px 16px",
+    borderRadius: "12px",
+    border:
+      "1px solid #9db9cb",
+    backgroundColor: "#ffffff",
+    color: "#111820",
+    outline: "none",
+    boxSizing: "border-box",
+    fontSize: "16px",
+    fontWeight: 850,
+    letterSpacing: "0.04em",
+  },
+
+  previousReferralNote: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    padding:
+      "14px 0 0",
+    color: "#4e5c67",
+    fontSize: "11px",
+    lineHeight: 1.5,
+  },
+
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: "16px",
+  },
+
+  field: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "7px",
+  },
+
+  fullWidth: {
+    gridColumn: "1 / -1",
+  },
+
+  fieldLabel: {
+    color: "#293640",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: "0.03em",
   },
 
   input: {
     width: "100%",
-    padding: "14px 16px",
-    borderRadius: "16px",
+    padding:
+      "14px 15px",
+    borderRadius: "12px",
     border:
-      "1px solid #313131",
-    background: "#0f0f10",
-    color: "#f4f4f5",
-    fontSize: "15px",
+      "1px solid #b8c5ce",
+    backgroundColor: "#f7f9fa",
+    color: "#111820",
+    outline: "none",
     boxSizing: "border-box",
+    fontSize: "15px",
   },
 
   passwordWrap: {
@@ -606,72 +2049,242 @@ const styles: Record<
   passwordInput: {
     width: "100%",
     padding:
-      "14px 72px 14px 16px",
-    borderRadius: "16px",
+      "14px 80px 14px 15px",
+    borderRadius: "12px",
     border:
-      "1px solid #313131",
-    background: "#0f0f10",
-    color: "#f4f4f5",
-    fontSize: "15px",
+      "1px solid #b8c5ce",
+    backgroundColor: "#f7f9fa",
+    color: "#111820",
+    outline: "none",
     boxSizing: "border-box",
+    fontSize: "15px",
   },
 
   passwordToggle: {
     position: "absolute",
-    right: "14px",
     top: "50%",
+    right: "14px",
     transform:
       "translateY(-50%)",
     border: "none",
     background: "transparent",
-    color: "#d4d4d8",
-    fontSize: "13px",
-    fontWeight: 700,
+    color: "#176fae",
     cursor: "pointer",
+    fontWeight: 900,
   },
 
-  passwordHelp: {
-    color: "#9a9a9a",
-    fontSize: "12px",
-    marginTop: "-3px",
+  passwordNote: {
+    color: "#74818b",
+    fontSize: "10px",
+    lineHeight: 1.5,
   },
 
-  button: {
-    marginTop: "8px",
-    width: "100%",
-    padding: "14px 16px",
-    borderRadius: "16px",
-    border:
-      "1px solid #d1d5db",
+  paymentPasswordNotice: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+    padding: "15px",
+    borderRadius: "12px",
     background:
-      "linear-gradient(180deg, #d4d4d8 0%, #a3a3a3 100%)",
-    color: "#09090b",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
+      "linear-gradient(90deg, #e8edf1 0%, #e5f1f8 100%)",
+    border:
+      "1px solid #c9d7df",
+    color: "#42515d",
+    fontSize: "12px",
   },
 
-  disabledButton: {
-    opacity: 0.6,
-    cursor: "not-allowed",
+  billingSummary: {
+    width: "fit-content",
+    maxWidth: "100%",
+    margin: "0 auto",
+    display: "grid",
+    gridTemplateColumns:
+      "auto 44px auto",
+    gap: "18px",
+    alignItems: "center",
+    padding:
+      "18px 24px",
+    borderRadius: "16px",
+    background:
+      "linear-gradient(135deg, #111820 0%, #193c54 100%)",
+    boxSizing: "border-box",
+  },
+
+  billingCellLeft: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    textAlign: "right",
+  },
+
+  billingCellRight: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    textAlign: "left",
+  },
+
+  billingSmall: {
+    display: "block",
+    color: "#78bce6",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.12em",
+  },
+
+  billingBig: {
+    display: "block",
+    marginTop: "5px",
+    color: "#ffffff",
+    fontSize: "30px",
+    fontWeight: 950,
+    letterSpacing: "-0.04em",
+  },
+
+  billingDescription: {
+    display: "block",
+    marginTop: "3px",
+    color: "#c8d4dc",
+    fontSize: "11px",
+  },
+
+  billingArrow: {
+    color: "#6db8e5",
+    fontSize: "25px",
+    lineHeight: 1,
+    alignSelf: "center",
+    justifySelf: "center",
+    transform:
+      "translateY(2px)",
+  },
+
+  ackPanel: {
+    marginTop: "18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0",
+    borderTop:
+      "1px solid #d7e0e6",
+  },
+
+  checkboxRow: {
+    display: "flex",
+    gap: "10px",
+    alignItems:
+      "flex-start",
+    color: "#404d57",
+    fontSize: "12px",
+    lineHeight: 1.65,
+    cursor: "pointer",
+    padding: "14px 2px",
+    borderBottom:
+      "1px solid #d7e0e6",
+  },
+
+  checkbox: {
+    width: "18px",
+    height: "18px",
+    minWidth: "18px",
+    marginTop: "1px",
+    accentColor: "#176fae",
+  },
+
+  referralSummary: {
+    display: "flex",
+    justifyContent:
+      "space-between",
+    gap: "25px",
+    flexWrap: "wrap",
+    padding: "20px 0 0",
+    borderTop:
+      "1px solid #d7e0e6",
+  },
+
+  referralSummaryLabel: {
+    display: "block",
+    color: "#176fae",
+    fontSize: "9px",
+    fontWeight: 950,
+    letterSpacing: "0.12em",
+    marginBottom: "6px",
+  },
+
+  referralSummaryTitle: {
+    color: "#111820",
+    fontSize: "18px",
+    fontWeight: 950,
+  },
+
+  referralSummaryText: {
+    maxWidth: "470px",
+    margin: 0,
+    color: "#65727d",
+    fontSize: "12px",
+    lineHeight: 1.65,
   },
 
   message: {
-    marginTop: "16px",
-    color: "#e5e5e5",
-    lineHeight: 1.7,
-    fontSize: "14px",
+    padding:
+      "14px 16px",
+    borderRadius: "12px",
+    backgroundColor:
+      "#fff0f0",
+    border:
+      "1px solid #daa8a8",
+    color: "#8c2f2f",
+    fontSize: "13px",
+    fontWeight: 850,
   },
 
-  successMessage: {
-    color: "#b7efcb",
+  submitButton: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding:
+      "18px 22px",
+    borderRadius: "16px",
+    border:
+      "1px solid #0b5d93",
+    background:
+      "linear-gradient(90deg, #111820 0%, #176fae 55%, #2588c7 100%)",
+    color: "#ffffff",
+    fontSize: "15px",
+    fontWeight: 950,
+    cursor: "pointer",
+    boxShadow:
+      "0 14px 32px rgba(23, 111, 174, 0.25)",
   },
 
-  link: {
-    display: "inline-block",
-    marginTop: "18px",
-    color: "#f5f5f5",
-    textDecoration: "underline",
-    fontSize: "14px",
+  submitInner: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "12px",
+  },
+
+  buttonArrow: {
+    fontSize: "20px",
+    fontWeight: 400,
+    lineHeight: 1,
+  },
+
+  footer: {
+    textAlign: "center",
+    padding:
+      "18px 12px 3px",
+  },
+
+  footerBrand: {
+    color: "#111820",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
+  },
+
+  footerText: {
+    margin: "6px 0 0",
+    color: "#72808a",
+    fontSize: "11px",
   },
 };
